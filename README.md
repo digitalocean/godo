@@ -1,5 +1,7 @@
 # Godo
 
+[![Build Status](https://travis-ci.org/digitalocean/godo.svg)](https://travis-ci.org/digitalocean/godo)
+
 Godo is a Go client library for accessing the DigitalOcean V2 API.
 
 You can view the client API docs here: [http://godoc.org/github.com/digitalocean/godo](http://godoc.org/github.com/digitalocean/godo)
