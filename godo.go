@@ -121,12 +121,15 @@ func addOptions(s string, opt interface{}) (string, error) {
 }
 
 // NewClient returns a new Digital Ocean API client.
-func NewClient(httpClient *http.Client) *Client {
+func NewClient(httpClient *http.Client, baseURL string) *Client {
 	if httpClient == nil {
 		httpClient = http.DefaultClient
 	}
 
-	baseURL, _ := url.Parse(defaultBaseURL)
+	if baseURL == "" {
+		baseURL = defaultBaseURL
+	}
+	baseURL, _ := url.Parse(baseURL)
 
 	c := &Client{client: httpClient, BaseURL: baseURL, UserAgent: userAgent}
 	c.Actions = &ActionsServiceOp{client: c}
