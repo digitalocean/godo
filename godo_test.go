@@ -25,7 +25,7 @@ func setup() {
 	mux = http.NewServeMux()
 	server = httptest.NewServer(mux)
 
-	client = NewClient(nil)
+	client = NewClient(nil, "")
 	url, _ := url.Parse(server.URL)
 	client.BaseURL = url
 }
@@ -68,7 +68,7 @@ func testURLParseError(t *testing.T, err error) {
 }
 
 func TestNewClient(t *testing.T) {
-	c := NewClient(nil)
+	c := NewClient(nil, "")
 	if c.BaseURL.String() != defaultBaseURL {
 		t.Errorf("NewClient BaseURL = %v, expected %v", c.BaseURL.String(), defaultBaseURL)
 	}
@@ -78,8 +78,16 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
+func TestNewClientCustomBaseURL(t *testing.T) {
+	testURL := "http://test"
+	c := NewClient(nil, testURL)
+	if c.BaseURL.String() != testURL {
+		t.Errorf("NewClient BaseURL = %v, expected %v", c.BaseURL.String(), testURL)
+	}
+}
+
 func TestNewRequest(t *testing.T) {
-	c := NewClient(nil)
+	c := NewClient(nil, "")
 
 	inURL, outURL := "/foo", defaultBaseURL+"foo"
 	inBody, outBody := &DropletCreateRequest{Name: "l"},
@@ -107,7 +115,7 @@ func TestNewRequest(t *testing.T) {
 }
 
 func TestNewRequest_invalidJSON(t *testing.T) {
-	c := NewClient(nil)
+	c := NewClient(nil, "")
 
 	type T struct {
 		A map[int]interface{}
@@ -123,7 +131,7 @@ func TestNewRequest_invalidJSON(t *testing.T) {
 }
 
 func TestNewRequest_badURL(t *testing.T) {
-	c := NewClient(nil)
+	c := NewClient(nil, "")
 	_, err := c.NewRequest("GET", ":", nil)
 	testURLParseError(t, err)
 }
