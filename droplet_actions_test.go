@@ -145,6 +145,41 @@ func TestDropletAction_Reboot(t *testing.T) {
 	}
 }
 
+func TestDropletAction_PasswordReset(t *testing.T) {
+	setup()
+	defer teardown()
+
+	request := &ActionRequest{
+		"type": "password_reset",
+	}
+
+	mux.HandleFunc("/v2/droplets/1/actions", func(w http.ResponseWriter, r *http.Request) {
+		v := new(ActionRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		testMethod(t, r, "POST")
+		if !reflect.DeepEqual(v, request) {
+			t.Errorf("Request body = %+v, expected %+v", v, request)
+		}
+
+		fmt.Fprintf(w, `{"action":{"status":"in-progress"}}`)
+
+	})
+
+	action, _, err := client.DropletActions.PasswordReset(1)
+	if err != nil {
+		t.Errorf("DropletActions.PasswordReset returned error: %v", err)
+	}
+
+	expected := &Action{Status: "in-progress"}
+	if !reflect.DeepEqual(action, expected) {
+		t.Errorf("DropletActions.PasswordReset returned %+v, expected %+v", action, expected)
+	}
+}
+
 func TestDropletAction_Restore(t *testing.T) {
 	setup()
 	defer teardown()

@@ -17,6 +17,7 @@ type DropletActionsService interface {
 	PowerOn(int) (*Action, *Response, error)
 	PowerCycle(int) (*Action, *Response, error)
 	Reboot(int) (*Action, *Response, error)
+	PasswordReset(int) (*Action, *Response, error)
 	Restore(int, int) (*Action, *Response, error)
 	Resize(int, string, bool) (*Action, *Response, error)
 	Rename(int, string) (*Action, *Response, error)
@@ -64,7 +65,14 @@ func (s *DropletActionsServiceOp) Reboot(id int) (*Action, *Response, error) {
 	return s.doAction(id, request)
 }
 
-// Restore an image to a Droplet
+// Reset the root password on a Droplet
+func (s *DropletActionsServiceOp) PasswordReset(id int) (*Action, *Response, error) {
+	request := &ActionRequest{"type": "password_reset"}
+	return s.doAction(id, request)
+}
+
+// Restore an image to a Droplet. The new password is emailed to the account
+// associated with the Droplet.
 func (s *DropletActionsServiceOp) Restore(id, imageID int) (*Action, *Response, error) {
 	requestType := "restore"
 	request := &ActionRequest{
