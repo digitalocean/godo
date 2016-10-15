@@ -7,7 +7,7 @@ import "fmt"
 // See: https://developers.digitalocean.com/documentation/v2#storage-actions
 type StorageActionsService interface {
 	Attach(volumeID string, dropletID int) (*Action, *Response, error)
-	Detach(volumeID string) (*Action, *Response, error)
+	Detach(volumeID string, dropletID int) (*Action, *Response, error)
 	Get(volumeID string, actionID int) (*Action, *Response, error)
 	List(volumeID string, opt *ListOptions) ([]Action, *Response, error)
 	Resize(volumeID string, sizeGigabytes int, regionSlug string) (*Action, *Response, error)
@@ -35,9 +35,10 @@ func (s *StorageActionsServiceOp) Attach(volumeID string, dropletID int) (*Actio
 }
 
 // Detach a storage volume from a droplet.
-func (s *StorageActionsServiceOp) Detach(volumeID string) (*Action, *Response, error) {
+func (s *StorageActionsServiceOp) Detach(volumeID string, dropletID int) (*Action, *Response, error) {
 	request := &ActionRequest{
-		"type": "detach",
+		"type":       "detach",
+		"droplet_id": dropletID,
 	}
 	return s.doAction(volumeID, request)
 }
