@@ -46,9 +46,11 @@ func TestStoragesActions_Detach(t *testing.T) {
 	setup()
 	defer teardown()
 	volumeID := "98d414c6-295e-4e3a-ac58-eb9456c1e1d1"
+	dropletID := 12345
 
 	detachRequest := &ActionRequest{
-		"type": "detach",
+		"type":       "detach",
+		"droplet_id": float64(dropletID),
 	}
 
 	mux.HandleFunc("/v2/volumes/"+volumeID+"/actions", func(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +68,7 @@ func TestStoragesActions_Detach(t *testing.T) {
 		fmt.Fprintf(w, `{"action":{"status":"in-progress"}}`)
 	})
 
-	_, _, err := client.StorageActions.Detach(volumeID)
+	_, _, err := client.StorageActions.Detach(volumeID, dropletID)
 	if err != nil {
 		t.Errorf("StoragesActions.Detach returned error: %v", err)
 	}
