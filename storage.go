@@ -2,7 +2,6 @@ package godo
 
 import (
 	"fmt"
-	"time"
 )
 
 const (
@@ -47,13 +46,13 @@ var _ StorageService = &StorageServiceOp{}
 
 // Volume represents a Digital Ocean block store volume.
 type Volume struct {
-	ID            string    `json:"id"`
-	Region        *Region   `json:"region"`
-	Name          string    `json:"name"`
-	SizeGigaBytes int64     `json:"size_gigabytes"`
-	Description   string    `json:"description"`
-	DropletIDs    []int     `json:"droplet_ids"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID            string     `json:"id"`
+	Region        *Region    `json:"region"`
+	Name          string     `json:"name"`
+	SizeGigaBytes int64      `json:"size_gigabytes"`
+	Description   string     `json:"description"`
+	DropletIDs    []int      `json:"droplet_ids"`
+	Created       *Timestamp `json:"created_at"`
 }
 
 func (f Volume) String() string {

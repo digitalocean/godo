@@ -28,15 +28,15 @@ var _ ImagesService = &ImagesServiceOp{}
 
 // Image represents a DigitalOcean Image
 type Image struct {
-	ID           int      `json:"id,float64,omitempty"`
-	Name         string   `json:"name,omitempty"`
-	Type         string   `json:"type,omitempty"`
-	Distribution string   `json:"distribution,omitempty"`
-	Slug         string   `json:"slug,omitempty"`
-	Public       bool     `json:"public,omitempty"`
-	Regions      []string `json:"regions,omitempty"`
-	MinDiskSize  int      `json:"min_disk_size,omitempty"`
-	Created      string   `json:"created_at,omitempty"`
+	ID           int        `json:"id,float64,omitempty"`
+	Name         string     `json:"name,omitempty"`
+	Type         string     `json:"type,omitempty"`
+	Distribution string     `json:"distribution,omitempty"`
+	Slug         string     `json:"slug,omitempty"`
+	Public       bool       `json:"public,omitempty"`
+	Regions      []string   `json:"regions,omitempty"`
+	MinDiskSize  int        `json:"min_disk_size,omitempty"`
+	Created      *Timestamp `json:"created_at,omitempty"`
 }
 
 // ImageUpdateRequest represents a request to update an image.
