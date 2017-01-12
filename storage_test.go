@@ -57,6 +57,22 @@ func TestStorageVolumes_ListStorageVolumes(t *testing.T) {
 		t.Errorf("Storage.ListVolumes returned error: %v", err)
 	}
 
+	pt1, err := time.Parse(time.RFC3339, "2002-10-02T15:00:00.05Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	createdFirst := &Timestamp{
+		Time: pt1,
+	}
+
+	pt2, err := time.Parse(time.RFC3339, "2012-10-03T15:00:01.05Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	createdSecond := &Timestamp{
+		Time: pt2,
+	}
+
 	expected := []Volume{
 		{
 			Region:        &Region{Slug: "nyc3"},
@@ -65,7 +81,7 @@ func TestStorageVolumes_ListStorageVolumes(t *testing.T) {
 			Description:   "my description",
 			SizeGigaBytes: 100,
 			DropletIDs:    []int{10},
-			CreatedAt:     time.Date(2002, 10, 02, 15, 00, 00, 50000000, time.UTC),
+			Created:       createdFirst,
 		},
 		{
 			Region:        &Region{Slug: "nyc3"},
@@ -73,7 +89,7 @@ func TestStorageVolumes_ListStorageVolumes(t *testing.T) {
 			Name:          "my other volume",
 			Description:   "my other description",
 			SizeGigaBytes: 100,
-			CreatedAt:     time.Date(2012, 10, 03, 15, 00, 01, 50000000, time.UTC),
+			Created:       createdSecond,
 		},
 	}
 	if !reflect.DeepEqual(volumes, expected) {
@@ -84,13 +100,20 @@ func TestStorageVolumes_ListStorageVolumes(t *testing.T) {
 func TestStorageVolumes_Get(t *testing.T) {
 	setup()
 	defer teardown()
+	pt, err := time.Parse(time.RFC3339, "2002-10-02T15:00:00.05Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	created := &Timestamp{
+		Time: pt,
+	}
 	want := &Volume{
 		Region:        &Region{Slug: "nyc3"},
 		ID:            "80d414c6-295e-4e3a-ac58-eb9456c1e1d1",
 		Name:          "my volume",
 		Description:   "my description",
 		SizeGigaBytes: 100,
-		CreatedAt:     time.Date(2002, 10, 02, 15, 00, 00, 50000000, time.UTC),
+		Created:       created,
 	}
 	jBlob := `{
 		"volume":{
@@ -138,13 +161,20 @@ func TestStorageVolumes_Create(t *testing.T) {
 		SizeGigaBytes: 100,
 	}
 
+	pt, err := time.Parse(time.RFC3339, "2002-10-02T15:00:00.05Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	created := &Timestamp{
+		Time: pt,
+	}
 	want := &Volume{
 		Region:        &Region{Slug: "nyc3"},
 		ID:            "80d414c6-295e-4e3a-ac58-eb9456c1e1d1",
 		Name:          "my volume",
 		Description:   "my description",
 		SizeGigaBytes: 100,
-		CreatedAt:     time.Date(2002, 10, 02, 15, 00, 00, 50000000, time.UTC),
+		Created:       created,
 	}
 	jBlob := `{
 		"volume":{
@@ -215,7 +245,7 @@ func TestStorageSnapshots_ListStorageSnapshots(t *testing.T) {
 				"id": "96d414c6-295e-4e3a-ac59-eb9456c1e1d1",
 				"name": "my other snapshot",
 				"size_gigabytes": 100,
-				"created_at": "2012-10-03T15:00:01.05Z"
+				"created_at": "2002-10-02T15:00:00.05Z"
 			}
 		],
 		"links": {
@@ -239,20 +269,27 @@ func TestStorageSnapshots_ListStorageSnapshots(t *testing.T) {
 		t.Errorf("Storage.ListSnapshots returned error: %v", err)
 	}
 
+	pt, err := time.Parse(time.RFC3339, "2002-10-02T15:00:00.05Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	created := &Timestamp{
+		Time: pt,
+	}
 	expected := []Snapshot{
 		{
 			Regions:       []string{"nyc3"},
 			ID:            "80d414c6-295e-4e3a-ac58-eb9456c1e1d1",
 			Name:          "my snapshot",
 			SizeGigaBytes: 100,
-			Created:       "2002-10-02T15:00:00.05Z",
+			Created:       created,
 		},
 		{
 			Regions:       []string{"nyc3"},
 			ID:            "96d414c6-295e-4e3a-ac59-eb9456c1e1d1",
 			Name:          "my other snapshot",
 			SizeGigaBytes: 100,
-			Created:       "2012-10-03T15:00:01.05Z",
+			Created:       created,
 		},
 	}
 	if !reflect.DeepEqual(volumes, expected) {
@@ -263,12 +300,20 @@ func TestStorageSnapshots_ListStorageSnapshots(t *testing.T) {
 func TestStorageSnapshots_Get(t *testing.T) {
 	setup()
 	defer teardown()
+
+	pt, err := time.Parse(time.RFC3339, "2002-10-02T15:00:00.05Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	created := &Timestamp{
+		Time: pt,
+	}
 	want := &Snapshot{
 		Regions:       []string{"nyc3"},
 		ID:            "80d414c6-295e-4e3a-ac58-eb9456c1e1d1",
 		Name:          "my snapshot",
 		SizeGigaBytes: 100,
-		Created:       "2002-10-02T15:00:00.05Z",
+		Created:       created,
 	}
 	jBlob := `{
 		"snapshot":{
@@ -313,12 +358,19 @@ func TestStorageSnapshots_Create(t *testing.T) {
 		Description: "my description",
 	}
 
+	pt, err := time.Parse(time.RFC3339, "2002-10-02T15:00:00.05Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	created := &Timestamp{
+		Time: pt,
+	}
 	want := &Snapshot{
 		Regions:       []string{"nyc3"},
 		ID:            "80d414c6-295e-4e3a-ac58-eb9456c1e1d1",
 		Name:          "my snapshot",
 		SizeGigaBytes: 100,
-		Created:       "2002-10-02T15:00:00.05Z",
+		Created:       created,
 	}
 	jBlob := `{
 		"snapshot":{

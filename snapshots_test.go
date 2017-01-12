@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestSnapshots_List(t *testing.T) {
@@ -160,6 +161,13 @@ func TestSnapshots_Destroy(t *testing.T) {
 }
 
 func TestSnapshot_String(t *testing.T) {
+	pt, err := time.Parse(time.RFC3339, "2002-10-02T15:00:00.05Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	created := &Timestamp{
+		Time: pt,
+	}
 	snapshot := &Snapshot{
 		ID:            "1",
 		Name:          "Snapsh176ot",
@@ -168,11 +176,12 @@ func TestSnapshot_String(t *testing.T) {
 		Regions:       []string{"one"},
 		MinDiskSize:   20,
 		SizeGigaBytes: 4.84,
-		Created:       "2013-11-27T09:24:55Z",
+		Created:       created,
 	}
 
 	stringified := snapshot.String()
-	expected := `godo.Snapshot{ID:"1", Name:"Snapsh176ot", ResourceID:"0", ResourceType:"droplet", Regions:["one"], MinDiskSize:20, SizeGigaBytes:4.84, Created:"2013-11-27T09:24:55Z"}`
+	expected := `godo.Snapshot{ID:"1", Name:"Snapsh176ot", ResourceID:"0", ResourceType:"droplet", Regions:["one"], MinDiskSize:20, SizeGigaBytes:4.84, Created:godo.Timestamp{2002-10-02 15:00:00.05 +0000 UTC}}`
+
 	if expected != stringified {
 		t.Errorf("Snapshot.String returned %+v, expected %+v", stringified, expected)
 	}

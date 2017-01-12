@@ -25,14 +25,14 @@ var _ SnapshotsService = &SnapshotsServiceOp{}
 
 // Snapshot represents a DigitalOcean Snapshot
 type Snapshot struct {
-	ID            string   `json:"id,omitempty"`
-	Name          string   `json:"name,omitempty"`
-	ResourceID    string   `json:"resource_id,omitempty"`
-	ResourceType  string   `json:"resource_type,omitempty"`
-	Regions       []string `json:"regions,omitempty"`
-	MinDiskSize   int      `json:"min_disk_size,omitempty"`
-	SizeGigaBytes float64  `json:"size_gigabytes,omitempty"`
-	Created       string   `json:"created_at,omitempty"`
+	ID            string     `json:"id,omitempty"`
+	Name          string     `json:"name,omitempty"`
+	ResourceID    string     `json:"resource_id,omitempty"`
+	ResourceType  string     `json:"resource_type,omitempty"`
+	Regions       []string   `json:"regions,omitempty"`
+	MinDiskSize   int        `json:"min_disk_size,omitempty"`
+	SizeGigaBytes float64    `json:"size_gigabytes,omitempty"`
+	Created       *Timestamp `json:"created_at,omitempty"`
 }
 
 type snapshotRoot struct {

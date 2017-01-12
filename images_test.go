@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestImages_List(t *testing.T) {
@@ -242,6 +243,13 @@ func TestImages_Destroy(t *testing.T) {
 }
 
 func TestImage_String(t *testing.T) {
+	pt, err := time.Parse(time.RFC3339, "2013-11-27T09:24:55Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	created := &Timestamp{
+		Time: pt,
+	}
 	image := &Image{
 		ID:           1,
 		Name:         "Image",
@@ -251,11 +259,11 @@ func TestImage_String(t *testing.T) {
 		Public:       true,
 		Regions:      []string{"one", "two"},
 		MinDiskSize:  20,
-		Created:      "2013-11-27T09:24:55Z",
+		Created:      created,
 	}
 
 	stringified := image.String()
-	expected := `godo.Image{ID:1, Name:"Image", Type:"snapshot", Distribution:"Ubuntu", Slug:"image", Public:true, Regions:["one" "two"], MinDiskSize:20, Created:"2013-11-27T09:24:55Z"}`
+	expected := `godo.Image{ID:1, Name:"Image", Type:"snapshot", Distribution:"Ubuntu", Slug:"image", Public:true, Regions:["one" "two"], MinDiskSize:20, Created:godo.Timestamp{2013-11-27 09:24:55 +0000 UTC}}`
 	if expected != stringified {
 		t.Errorf("Image.String returned %+v, expected %+v", stringified, expected)
 	}
