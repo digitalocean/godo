@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -50,10 +51,10 @@ func TestCertificates_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
-	path := "/v2/certificates"
+	urlStr := "/v2/certificates"
 	cID := "892071a0-bb95-49bc-8021-3afd67a210bf"
-	path = fmt.Sprintf("%s/%s", path, cID)
-	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	urlStr = path.Join(urlStr, cID)
+	mux.HandleFunc(urlStr, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		fmt.Fprint(w, certJSONResponse)
 	})
@@ -78,8 +79,8 @@ func TestCertificates_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	path := "/v2/certificates"
-	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	urlStr := "/v2/certificates"
+	mux.HandleFunc(urlStr, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "GET")
 		fmt.Fprint(w, certsJSONResponse)
 	})
@@ -121,8 +122,8 @@ func TestCertificates_Create(t *testing.T) {
 		CertificateChain: "-----BEGIN CERTIFICATE-----",
 	}
 
-	path := "/v2/certificates"
-	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	urlStr := "/v2/certificates"
+	mux.HandleFunc(urlStr, func(w http.ResponseWriter, r *http.Request) {
 		v := new(CertificateRequest)
 		err := json.NewDecoder(r.Body).Decode(v)
 		if err != nil {
@@ -156,9 +157,9 @@ func TestCertificates_Delete(t *testing.T) {
 	defer teardown()
 
 	cID := "892071a0-bb95-49bc-8021-3afd67a210bf"
-	path := "/v2/certificates"
-	path = fmt.Sprintf("%s/%s", path, cID)
-	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+	urlStr := "/v2/certificates"
+	urlStr = path.Join(urlStr, cID)
+	mux.HandleFunc(urlStr, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, "DELETE")
 	})
 

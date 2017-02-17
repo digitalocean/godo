@@ -1,8 +1,6 @@
 package godo
 
-import (
-	"fmt"
-)
+import "path"
 
 const certificatesBasePath = "/v2/certificates"
 
@@ -50,9 +48,9 @@ var _ CertificatesService = &CertificatesServiceOp{}
 
 // Get an existing certificate by its identifier.
 func (c *CertificatesServiceOp) Get(cID string) (*Certificate, *Response, error) {
-	path := fmt.Sprintf("%s/%s", certificatesBasePath, cID)
+	urlStr := path.Join(certificatesBasePath, cID)
 
-	req, err := c.client.NewRequest("GET", path, nil)
+	req, err := c.client.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -68,12 +66,12 @@ func (c *CertificatesServiceOp) Get(cID string) (*Certificate, *Response, error)
 
 // List all certificates.
 func (c *CertificatesServiceOp) List(opt *ListOptions) ([]Certificate, *Response, error) {
-	path, err := addOptions(certificatesBasePath, opt)
+	urlStr, err := addOptions(certificatesBasePath, opt)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	req, err := c.client.NewRequest("GET", path, nil)
+	req, err := c.client.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -108,9 +106,9 @@ func (c *CertificatesServiceOp) Create(cr *CertificateRequest) (*Certificate, *R
 
 // Delete a certificate by its identifier.
 func (c *CertificatesServiceOp) Delete(cID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", certificatesBasePath, cID)
+	urlStr := path.Join(certificatesBasePath, cID)
 
-	req, err := c.client.NewRequest("DELETE", path, nil)
+	req, err := c.client.NewRequest("DELETE", urlStr, nil)
 	if err != nil {
 		return nil, err
 	}
