@@ -65,7 +65,7 @@ createRequest := &godo.DropletCreateRequest{
     },
 }
 
-ctx := context.Background()
+ctx := context.TODO()
 
 newDroplet, _, err := client.Droplets.Create(ctx, createRequest)
 
