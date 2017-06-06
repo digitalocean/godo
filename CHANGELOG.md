@@ -3,7 +3,7 @@
 ## [v1.1.0] - 2017-06-06
 
 ### Added
-- #144 Add FirewallsService for managing Firewalls with the DigitalOcean API. - @viola
+- #145 Add FirewallsService for managing Firewalls with the DigitalOcean API. - @viola
 - #139 Add TTL field to the Domains. - @xmudrii
 
 ### Fixed
