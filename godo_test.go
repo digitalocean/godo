@@ -445,6 +445,82 @@ func TestDo_completion_callback(t *testing.T) {
 	}
 }
 
+func TestDo_request_callback(t *testing.T) {
+	setup()
+	defer teardown()
+
+	type foo struct {
+		A string
+	}
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if m := "POST"; m != r.Method {
+			t.Errorf("Request method = %v, expected %v", r.Method, m)
+		}
+		fmt.Fprint(w, `{"A":"a"}`)
+	})
+
+	req, _ := client.NewRequest(ctx, "POST", "/", "testdata")
+	body := new(foo)
+	var completedReq string
+
+	client.OnRequest(func(req *http.Request) {
+		b, err := httputil.DumpRequestOut(req, true)
+		if err != nil {
+			t.Errorf("Failed to dump request: %s", err)
+		}
+		completedReq = string(b)
+	})
+	_, err := client.Do(context.Background(), req, body)
+	if err != nil {
+		t.Fatalf("Do(): %v", err)
+	}
+
+	expectedReq := `testdata`
+	if !strings.Contains(completedReq, expectedReq) {
+		t.Errorf("Requests don't match!\nCompleted request: %#v\nExpected: %#v",
+			completedReq, expectedReq)
+	}
+}
+
+func TestDo_response_callback(t *testing.T) {
+	setup()
+	defer teardown()
+
+	type foo struct {
+		A string
+	}
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if m := "POST"; m != r.Method {
+			t.Errorf("Request method = %v, expected %v", r.Method, m)
+		}
+		fmt.Fprint(w, `{"A":"a"}`)
+	})
+
+	req, _ := client.NewRequest(ctx, "POST", "/", "testdata")
+	body := new(foo)
+	var completedResp string
+
+	client.OnResponse(func(resp *http.Response) {
+		b, err := httputil.DumpResponse(resp, true)
+		if err != nil {
+			t.Errorf("Failed to dump response: %s", err)
+		}
+		completedResp = string(b)
+	})
+	_, err := client.Do(context.Background(), req, body)
+	if err != nil {
+		t.Fatalf("Do(): %v", err)
+	}
+
+	expectedResp := `{"A":"a"}`
+	if !strings.Contains(completedResp, expectedResp) {
+		t.Errorf("Responses don't match!\nCompleted response: %#v\nExpected: %#v",
+			completedResp, expectedResp)
+	}
+}
+
 func TestAddOptions(t *testing.T) {
 	cases := []struct {
 		name     string

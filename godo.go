@@ -67,10 +67,18 @@ type Client struct {
 
 	// Optional function called after every successful request made to the DO APIs
 	onRequestCompleted RequestCompletionCallback
+	onRequest          RequestCallback
+	onResponse         ResponseCallback
 }
 
 // RequestCompletionCallback defines the type of the request callback function
 type RequestCompletionCallback func(*http.Request, *http.Response)
+
+// RequestCallback defines the type of the request callback function
+type RequestCallback func(*http.Request)
+
+// ResponseCallback defines the type of the response callback function
+type ResponseCallback func(*http.Response)
 
 // ListOptions specifies the optional parameters to various List methods that
 // support pagination.
@@ -250,6 +258,16 @@ func (c *Client) OnRequestCompleted(rc RequestCompletionCallback) {
 	c.onRequestCompleted = rc
 }
 
+// OnRequest sets the DO API request callback
+func (c *Client) OnRequest(rc RequestCallback) {
+	c.onRequest = rc
+}
+
+// OnResponse sets the DO API response callback
+func (c *Client) OnResponse(rc ResponseCallback) {
+	c.onResponse = rc
+}
+
 // newResponse creates a new Response for the provided http.Response
 func newResponse(r *http.Response) *Response {
 	response := Response{Response: r}
@@ -296,10 +314,19 @@ func (r *Response) populateRate() {
 // pointed to by v, or returned as an error if an API error has occurred. If v implements the io.Writer interface,
 // the raw response will be written to v, without attempting to decode it.
 func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Response, error) {
+	if c.onRequest != nil {
+		c.onRequest(req)
+	}
+
 	resp, err := context.DoRequestWithClient(ctx, c.client, req)
 	if err != nil {
 		return nil, err
 	}
+
+	if c.onResponse != nil {
+		c.onResponse(resp)
+	}
+
 	if c.onRequestCompleted != nil {
 		c.onRequestCompleted(req, resp)
 	}
