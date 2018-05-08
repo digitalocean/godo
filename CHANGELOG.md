@@ -2,6 +2,7 @@
 
 ## [v1.2.0] - 2018-05-08
 
+- #166 Remove support for Go 1.6 - @iheanyi
 - #165 Add support for Let's Encrypt Certificates - @viola
 
 ## [v1.1.3] - 2018-03-07
