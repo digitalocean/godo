@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.2.0] - 2018-05-08
+
+- #165 Add support for Let's Encrypt Certificates - @viola
+
 ## [v1.1.3] - 2018-03-07
 
 - #156 Handle non-json errors from the API - @aknuds1
