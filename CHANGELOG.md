@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.3.1] - 2018-08-21
+
+- #172 Allow creating domains without an IP address - @andrewsomething
+
 ## [v1.3.0] - 2018-05-24
 
 - #170 Add support for volume formatting - @adamwg
