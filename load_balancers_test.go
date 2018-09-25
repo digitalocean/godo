@@ -836,7 +836,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		Name:      "test-loadbalancer",
 		Algorithm: "least_connections",
 		Region:    "lon1",
-		ForwardingRules: []ForwardingRule{ForwardingRule{
+		ForwardingRules: []ForwardingRule{{
 			EntryProtocol:  "http",
 			EntryPort:      80,
 			TargetProtocol: "http",
@@ -884,13 +884,13 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 	})
 	assert.Equal(t, []int{12345, 54321}, r.DropletIDs)
 	assert.Equal(t, []ForwardingRule{
-		ForwardingRule{
+		{
 			EntryProtocol:  "http",
 			EntryPort:      80,
 			TargetProtocol: "http",
 			TargetPort:     80,
 		},
-		ForwardingRule{
+		{
 			EntryProtocol:  "https",
 			EntryPort:      443,
 			TargetProtocol: "https",
