@@ -104,6 +104,32 @@ func TestImages_ListUser(t *testing.T) {
 	}
 }
 
+func TestImages_ListByTag(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/images", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		expected := "foo"
+		actual := r.URL.Query().Get("tag_name")
+		if actual != expected {
+			t.Errorf("'tag_name' query = %v, expected %v", actual, expected)
+		}
+
+		fmt.Fprint(w, `{"images":[{"id":1},{"id":2}]}`)
+	})
+
+	images, _, err := client.Images.ListByTag(ctx, "foo", nil)
+	if err != nil {
+		t.Errorf("Images.ListByTag returned error: %v", err)
+	}
+
+	expected := []Image{{ID: 1}, {ID: 2}}
+	if !reflect.DeepEqual(images, expected) {
+		t.Errorf("Images.ListByTag returned %+v, expected %+v", images, expected)
+	}
+}
+
 func TestImages_ListImagesMultiplePages(t *testing.T) {
 	setup()
 	defer teardown()

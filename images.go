@@ -16,6 +16,7 @@ type ImagesService interface {
 	ListDistribution(ctx context.Context, opt *ListOptions) ([]Image, *Response, error)
 	ListApplication(ctx context.Context, opt *ListOptions) ([]Image, *Response, error)
 	ListUser(ctx context.Context, opt *ListOptions) ([]Image, *Response, error)
+	ListByTag(ctx context.Context, tag string, opt *ListOptions) ([]Image, *Response, error)
 	GetByID(context.Context, int) (*Image, *Response, error)
 	GetBySlug(context.Context, string) (*Image, *Response, error)
 	Create(context.Context, *CustomImageCreateRequest) (*Image, *Response, error)
@@ -76,6 +77,7 @@ type imagesRoot struct {
 type listImageOptions struct {
 	Private bool   `url:"private,omitempty"`
 	Type    string `url:"type,omitempty"`
+	Tag     string `url:"tag_name,omitempty"`
 }
 
 func (i Image) String() string {
@@ -102,6 +104,12 @@ func (s *ImagesServiceOp) ListApplication(ctx context.Context, opt *ListOptions)
 // ListUser lists all the user images.
 func (s *ImagesServiceOp) ListUser(ctx context.Context, opt *ListOptions) ([]Image, *Response, error) {
 	listOpt := listImageOptions{Private: true}
+	return s.list(ctx, opt, &listOpt)
+}
+
+// ListByTag lists all images with a specific tag applied.
+func (s *ImagesServiceOp) ListByTag(ctx context.Context, tag string, opt *ListOptions) ([]Image, *Response, error) {
+	listOpt := listImageOptions{Tag: tag}
 	return s.list(ctx, opt, &listOpt)
 }
 
