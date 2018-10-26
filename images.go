@@ -18,6 +18,7 @@ type ImagesService interface {
 	ListUser(ctx context.Context, opt *ListOptions) ([]Image, *Response, error)
 	GetByID(context.Context, int) (*Image, *Response, error)
 	GetBySlug(context.Context, string) (*Image, *Response, error)
+	Create(context.Context, *CustomImageCreateRequest) (*Image, *Response, error)
 	Update(context.Context, int, *ImageUpdateRequest) (*Image, *Response, error)
 	Delete(context.Context, int) (*Response, error)
 }
@@ -32,20 +33,35 @@ var _ ImagesService = &ImagesServiceOp{}
 
 // Image represents a DigitalOcean Image
 type Image struct {
-	ID           int      `json:"id,float64,omitempty"`
-	Name         string   `json:"name,omitempty"`
-	Type         string   `json:"type,omitempty"`
-	Distribution string   `json:"distribution,omitempty"`
-	Slug         string   `json:"slug,omitempty"`
-	Public       bool     `json:"public,omitempty"`
-	Regions      []string `json:"regions,omitempty"`
-	MinDiskSize  int      `json:"min_disk_size,omitempty"`
-	Created      string   `json:"created_at,omitempty"`
+	ID            int      `json:"id,float64,omitempty"`
+	Name          string   `json:"name,omitempty"`
+	Type          string   `json:"type,omitempty"`
+	Distribution  string   `json:"distribution,omitempty"`
+	Slug          string   `json:"slug,omitempty"`
+	Public        bool     `json:"public,omitempty"`
+	Regions       []string `json:"regions,omitempty"`
+	MinDiskSize   int      `json:"min_disk_size,omitempty"`
+	SizeGigaBytes float64  `json:"size_gigabytes,omitempty"`
+	Created       string   `json:"created_at,omitempty"`
+	Description   string   `json:"description,omitempty"`
+	Tags          []string `json:"tags,omitempty"`
+	Status        string   `json:"status,omitempty"`
+	ErrorMessage  string   `json:"error_message,omitempty"`
 }
 
 // ImageUpdateRequest represents a request to update an image.
 type ImageUpdateRequest struct {
 	Name string `json:"name"`
+}
+
+// CustomImageCreateRequest represents a request to create a custom image.
+type CustomImageCreateRequest struct {
+	Name         string   `json:"name"`
+	Url          string   `json:"url"`
+	Region       string   `json:"region"`
+	Distribution string   `json:"distribution,omitempty"`
+	Description  string   `json:"description,omitempty"`
+	Tags         []string `json:"tags,omitempty"`
 }
 
 type imageRoot struct {
@@ -105,6 +121,25 @@ func (s *ImagesServiceOp) GetBySlug(ctx context.Context, slug string) (*Image, *
 	}
 
 	return s.get(ctx, interface{}(slug))
+}
+
+func (s *ImagesServiceOp) Create(ctx context.Context, createRequest *CustomImageCreateRequest) (*Image, *Response, error) {
+	if createRequest == nil {
+		return nil, nil, NewArgError("createRequest", "cannot be nil")
+	}
+
+	req, err := s.client.NewRequest(ctx, "POST", imageBasePath, createRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(imageRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Image, resp, err
 }
 
 // Update an image name.
