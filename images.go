@@ -136,7 +136,7 @@ func (s *ImagesServiceOp) Create(ctx context.Context, createRequest *CustomImage
 		return nil, nil, NewArgError("createRequest", "cannot be nil")
 	}
 
-	req, err := s.client.NewRequest(ctx, "POST", imageBasePath, createRequest)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, imageBasePath, createRequest)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -161,7 +161,7 @@ func (s *ImagesServiceOp) Update(ctx context.Context, imageID int, updateRequest
 	}
 
 	path := fmt.Sprintf("%s/%d", imageBasePath, imageID)
-	req, err := s.client.NewRequest(ctx, "PUT", path, updateRequest)
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
 	}
