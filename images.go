@@ -58,7 +58,7 @@ type ImageUpdateRequest struct {
 // CustomImageCreateRequest represents a request to create a custom image.
 type CustomImageCreateRequest struct {
 	Name         string   `json:"name"`
-	Url          string   `json:"url"`
+	URL          string   `json:"url"`
 	Region       string   `json:"region"`
 	Distribution string   `json:"distribution,omitempty"`
 	Description  string   `json:"description,omitempty"`
@@ -131,6 +131,7 @@ func (s *ImagesServiceOp) GetBySlug(ctx context.Context, slug string) (*Image, *
 	return s.get(ctx, interface{}(slug))
 }
 
+// Create creates custom image.
 func (s *ImagesServiceOp) Create(ctx context.Context, createRequest *CustomImageCreateRequest) (*Image, *Response, error) {
 	if createRequest == nil {
 		return nil, nil, NewArgError("createRequest", "cannot be nil")
