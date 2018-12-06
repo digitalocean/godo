@@ -138,7 +138,12 @@ var lbCreateJSONResponse = `
                 "storage"
             ],
             "available":true
-        },
+		},
+		"tags": [
+			{
+				"name": "my-tag"
+			}
+		],
         "droplet_ids":[
             2,
             21
@@ -364,7 +369,12 @@ func TestLoadBalancers_Create(t *testing.T) {
 			CookieName:       "DO-LB",
 			CookieTtlSeconds: 5,
 		},
-		Tag:                 "my-tag",
+		Tag: "my-tag",
+		Tags: []*Tag{
+			&Tag{
+				Name: "my-tag",
+			},
+		},
 		DropletIDs:          []int{2, 21},
 		RedirectHttpToHttps: true,
 	}
@@ -432,6 +442,11 @@ func TestLoadBalancers_Create(t *testing.T) {
 			Sizes:     []string{"512mb", "1gb", "2gb", "4gb", "8gb", "16gb"},
 			Available: true,
 			Features:  []string{"private_networking", "backups", "ipv6", "metadata", "storage"},
+		},
+		Tags: []*Tag{
+			&Tag{
+				Name: "my-tag",
+			},
 		},
 		DropletIDs:          []int{2, 21},
 		RedirectHttpToHttps: true,
