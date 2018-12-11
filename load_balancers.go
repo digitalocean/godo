@@ -25,10 +25,8 @@ type LoadBalancersService interface {
 	RemoveForwardingRules(ctx context.Context, lbID string, rules ...ForwardingRule) (*Response, error)
 }
 
-// Tags represents tags with which load balancers can be identified with.
-// They can only be provided upon ceation of a Load Balancer.
-
 // LoadBalancer represents a DigitalOcean load balancer configuration.
+// Tags can only be provided upon the creation of a Load Balancer.
 type LoadBalancer struct {
 	ID                  string           `json:"id,omitempty"`
 	Name                string           `json:"name,omitempty"`
@@ -42,7 +40,7 @@ type LoadBalancer struct {
 	Region              *Region          `json:"region,omitempty"`
 	DropletIDs          []int            `json:"droplet_ids,omitempty"`
 	Tag                 string           `json:"tag,omitempty"`
-	Tags                []*Tag           `json:"tags,omitempty"`
+	Tags                []string         `json:"tags,omitempty"`
 	RedirectHttpToHttps bool             `json:"redirect_http_to_https,omitempty"`
 }
 
@@ -135,7 +133,7 @@ type LoadBalancerRequest struct {
 	StickySessions      *StickySessions  `json:"sticky_sessions,omitempty"`
 	DropletIDs          []int            `json:"droplet_ids,omitempty"`
 	Tag                 string           `json:"tag,omitempty"`
-	Tags                []*Tag           `json:"tags,omitempty"`
+	Tags                []string         `json:"tags,omitempty"`
 	RedirectHttpToHttps bool             `json:"redirect_http_to_https,omitempty"`
 }
 
