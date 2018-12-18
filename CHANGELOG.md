@@ -1,6 +1,6 @@
 # Change Log
 
-## [v1.7.3] - 2018-12-06
+## [v1.7.3] - UNRELEASED
 
 - #196 Expose tag support for creating Load Balancers.
 
