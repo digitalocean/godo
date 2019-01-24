@@ -299,13 +299,13 @@ func (s *DomainsServiceOp) EditRecord(ctx context.Context,
 		return nil, nil, err
 	}
 
-	d := new(DomainRecord)
+	d := new(domainRecordRoot)
 	resp, err := s.client.Do(ctx, req, d)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return d, resp, err
+	return d.DomainRecord, resp, err
 }
 
 // CreateRecord creates a record using a DomainRecordEditRequest
