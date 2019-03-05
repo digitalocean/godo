@@ -41,8 +41,8 @@ var _ DatabasesService = &DatabasesServiceOp{}
 type Database struct {
 	ID                string                     `json:"id,omitempty"`
 	Name              string                     `json:"name,omitempty"`
-	Engine            string                     `json:"engine,omitempty"`
-	Version           string                     `json:"version,omitempty"`
+	EngineSlug        string                     `json:"engine,omitempty"`
+	VersionSlug       string                     `json:"version,omitempty"`
 	Connection        *DatabaseConnection        `json:"connection,omitempty"`
 	Users             []*DatabaseUser            `json:"users,omitempty"` // TODO(ez): Pointers?
 	NumNodes          int                        `json:"num_nodes,omitempty"`
@@ -88,16 +88,16 @@ type DatabaseBackup struct {
 
 // DatabaseCreateRequest represents a request to create a database cluster
 type DatabaseCreateRequest struct {
-	Name     string `json:"name,omitempty"`
-	Engine   string `json:"engine,omitempty"`
-	Version  string `json:"version,omitempty"`
-	Size     string `json:"size,omitempty"`
-	Region   string `json:"region,omitempty"`
-	NumNodes int    `json:"num_nodes,omitempty"`
+	Name       string `json:"name,omitempty"`
+	EngineSlug string `json:"engine,omitempty"`
+	Version    string `json:"version,omitempty"`
+	SizeSlug   string `json:"size,omitempty"`
+	Region     string `json:"region,omitempty"`
+	NumNodes   int    `json:"num_nodes,omitempty"`
 }
 
 type DatabaseResizeRequest struct {
-	Size     string `json:"size,omitempty"`
+	SizeSlug string `json:"size,omitempty"`
 	NumNodes int    `json:"num_nodes,omitempty"`
 }
 
@@ -201,9 +201,9 @@ func (svc *DatabasesServiceOp) Resize(ctx context.Context, databaseID string, re
 }
 
 // Migrate migrates a database cluster to a new region
-func (svc *DatabasesServiceOp) Migrate(ctx context.Context, databaseID string, resize *DatabaseMigrateRequest) (*Response, error) {
+func (svc *DatabasesServiceOp) Migrate(ctx context.Context, databaseID string, migrate *DatabaseMigrateRequest) (*Response, error) {
 	path := fmt.Sprintf(databaseMigratePath, databaseID)
-	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, resize)
+	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, migrate)
 	if err != nil {
 		return nil, err
 	}
