@@ -1,8 +1,8 @@
 # Change Log
 
-## [v1.7.6] - 2019-03-13
+## [v1.8.0] - 2019-03-13
 
-- #210 Expose tags on storage volume create/list/get.
+- #210 Expose tags on storage volume create/list/get. - @jcodybaker
 
 ## [v1.7.5] - 2019-03-04
 
