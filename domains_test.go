@@ -281,7 +281,7 @@ func TestDomains_EditRecordForDomainName(t *testing.T) {
 	setup()
 	defer teardown()
 
-	port := 10
+	port := 0
 
 	editRequest := &DomainRecordEditRequest{
 		Type:     "CNAME",
@@ -296,16 +296,24 @@ func TestDomains_EditRecordForDomainName(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/domains/example.com/records/1", func(w http.ResponseWriter, r *http.Request) {
-		v := new(DomainRecordEditRequest)
-		err := json.NewDecoder(r.Body).Decode(v)
+		testMethod(t, r, http.MethodPut)
+
+		reqBody, err := ioutil.ReadAll(r.Body)
 		if err != nil {
-			t.Fatalf("decode json: %v", err)
+			t.Errorf("failed to read request body: %s", err)
 		}
 
-		testMethod(t, r, http.MethodPut)
-		if !reflect.DeepEqual(v, editRequest) {
-			t.Errorf("Request body = %+v, expected %+v", v, editRequest)
-		}
+		require.JSONEq(t, string(reqBody), `{
+				"type": "CNAME",
+				"name": "example",
+				"data": "@",
+				"port": 0,
+				"priority": 10,
+				"ttl": 1800,
+				"weight": 10,
+				"flags": 1,
+				"tag": "test"
+				}`)
 
 		fmt.Fprintf(w, `{"domain_record": {"id":1, "type": "CNAME", "name": "example"}}`)
 	})
