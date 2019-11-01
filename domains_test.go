@@ -3,9 +3,12 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDomains_ListDomains(t *testing.T) {
@@ -233,7 +236,6 @@ func TestDomains_CreateRecordForDomainName(t *testing.T) {
 		Name:     "example",
 		Data:     "@",
 		Priority: 10,
-		Port:     10,
 		TTL:      1800,
 		Weight:   10,
 		Flags:    1,
@@ -242,17 +244,24 @@ func TestDomains_CreateRecordForDomainName(t *testing.T) {
 
 	mux.HandleFunc("/v2/domains/example.com/records",
 		func(w http.ResponseWriter, r *http.Request) {
-			v := new(DomainRecordEditRequest)
-			err := json.NewDecoder(r.Body).Decode(v)
-
-			if err != nil {
-				t.Fatalf("decode json: %v", err)
-			}
-
 			testMethod(t, r, http.MethodPost)
-			if !reflect.DeepEqual(v, createRequest) {
-				t.Errorf("Request body = %+v, expected %+v", v, createRequest)
+
+			reqBody, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				t.Errorf("failed to read request body: %s", err)
 			}
+
+			require.JSONEq(t, string(reqBody), `{
+				"type": "CNAME",
+				"name": "example",
+				"data": "@",
+				"port": null,
+				"priority": 10,
+				"ttl": 1800,
+				"weight": 10,
+				"flags": 1,
+				"tag": "test"
+				}`)
 
 			fmt.Fprintf(w, `{"domain_record": {"id":1}}`)
 		})
@@ -272,12 +281,14 @@ func TestDomains_EditRecordForDomainName(t *testing.T) {
 	setup()
 	defer teardown()
 
+	port := 10
+
 	editRequest := &DomainRecordEditRequest{
 		Type:     "CNAME",
 		Name:     "example",
 		Data:     "@",
 		Priority: 10,
-		Port:     10,
+		Port:     &port,
 		TTL:      1800,
 		Weight:   10,
 		Flags:    1,
@@ -311,13 +322,14 @@ func TestDomains_EditRecordForDomainName(t *testing.T) {
 }
 
 func TestDomainRecord_String(t *testing.T) {
+	port := 10
 	record := &DomainRecord{
 		ID:       1,
 		Type:     "CNAME",
 		Name:     "example",
 		Data:     "@",
 		Priority: 10,
-		Port:     10,
+		Port:     &port,
 		TTL:      1800,
 		Weight:   10,
 		Flags:    1,
@@ -332,12 +344,13 @@ func TestDomainRecord_String(t *testing.T) {
 }
 
 func TestDomainRecordEditRequest_String(t *testing.T) {
+	port := 10
 	record := &DomainRecordEditRequest{
 		Type:     "CNAME",
 		Name:     "example",
 		Data:     "@",
 		Priority: 10,
-		Port:     10,
+		Port:     &port,
 		TTL:      1800,
 		Weight:   10,
 		Flags:    1,
