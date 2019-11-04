@@ -72,11 +72,11 @@ type DomainRecord struct {
 	Type     string `json:"type,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Data     string `json:"data,omitempty"`
-	Priority int    `json:"priority"`
+	Priority *int   `json:"priority"`
 	Port     *int   `json:"port"`
 	TTL      int    `json:"ttl,omitempty"`
-	Weight   int    `json:"weight"`
-	Flags    int    `json:"flags"`
+	Weight   *int   `json:"weight"`
+	Flags    *int   `json:"flags"`
 	Tag      string `json:"tag,omitempty"`
 }
 
@@ -85,11 +85,11 @@ type DomainRecordEditRequest struct {
 	Type     string `json:"type,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Data     string `json:"data,omitempty"`
-	Priority int    `json:"priority"`
+	Priority *int   `json:"priority"`
 	Port     *int   `json:"port"`
 	TTL      int    `json:"ttl,omitempty"`
-	Weight   int    `json:"weight"`
-	Flags    int    `json:"flags"`
+	Weight   *int   `json:"weight"`
+	Flags    *int   `json:"flags"`
 	Tag      string `json:"tag,omitempty"`
 }
 

@@ -231,14 +231,18 @@ func TestDomains_CreateRecordForDomainName(t *testing.T) {
 	setup()
 	defer teardown()
 
+	priority := 10
+	weight := 10
+	flags := 1
+
 	createRequest := &DomainRecordEditRequest{
 		Type:     "CNAME",
 		Name:     "example",
 		Data:     "@",
-		Priority: 10,
+		Priority: &priority,
 		TTL:      1800,
-		Weight:   10,
-		Flags:    1,
+		Weight:   &weight,
+		Flags:    &flags,
 		Tag:      "test",
 	}
 
@@ -277,21 +281,71 @@ func TestDomains_CreateRecordForDomainName(t *testing.T) {
 	}
 }
 
+func TestDomains_CreateRecordAllNullFields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &DomainRecordEditRequest{
+		Type: "CNAME",
+		Name: "example",
+		Data: "@",
+		TTL:  1800,
+		Tag:  "test",
+	}
+
+	mux.HandleFunc("/v2/domains/example.com/records",
+		func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodPost)
+
+			reqBody, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				t.Errorf("failed to read request body: %s", err)
+			}
+
+			require.JSONEq(t, string(reqBody), `{
+				"type": "CNAME",
+				"name": "example",
+				"data": "@",
+				"port": null,
+				"priority": null,
+				"ttl": 1800,
+				"weight": null,
+				"flags": null,
+				"tag": "test"
+				}`)
+
+			fmt.Fprintf(w, `{"domain_record": {"id":1}}`)
+		})
+
+	record, _, err := client.Domains.CreateRecord(ctx, "example.com", createRequest)
+	if err != nil {
+		t.Errorf("Domains.CreateRecord returned error: %v", err)
+	}
+
+	expected := &DomainRecord{ID: 1}
+	if !reflect.DeepEqual(record, expected) {
+		t.Errorf("Domains.CreateRecord returned %+v, expected %+v", record, expected)
+	}
+}
+
 func TestDomains_EditRecordForDomainName(t *testing.T) {
 	setup()
 	defer teardown()
 
+	priority := 10
 	port := 0
+	weight := 10
+	flags := 1
 
 	editRequest := &DomainRecordEditRequest{
 		Type:     "CNAME",
 		Name:     "example",
 		Data:     "@",
-		Priority: 10,
+		Priority: &priority,
 		Port:     &port,
 		TTL:      1800,
-		Weight:   10,
-		Flags:    1,
+		Weight:   &weight,
+		Flags:    &flags,
 		Tag:      "test",
 	}
 
@@ -329,18 +383,68 @@ func TestDomains_EditRecordForDomainName(t *testing.T) {
 	}
 }
 
+func TestDomains_EditRecordAllNullFields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	editRequest := &DomainRecordEditRequest{
+		Type: "CNAME",
+		Name: "example",
+		Data: "@",
+		TTL:  1800,
+		Tag:  "test",
+	}
+
+	mux.HandleFunc("/v2/domains/example.com/records/1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		reqBody, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			t.Errorf("failed to read request body: %s", err)
+		}
+
+		require.JSONEq(t, string(reqBody), `{
+				"type": "CNAME",
+				"name": "example",
+				"data": "@",
+				"port": null,
+				"priority": null,
+				"ttl": 1800,
+				"weight": null,
+				"flags": null,
+				"tag": "test"
+				}`)
+
+		fmt.Fprintf(w, `{"domain_record": {"id":1, "type": "CNAME", "name": "example"}}`)
+	})
+
+	record, _, err := client.Domains.EditRecord(ctx, "example.com", 1, editRequest)
+	if err != nil {
+		t.Errorf("Domains.EditRecord returned error: %v", err)
+	}
+
+	expected := &DomainRecord{ID: 1, Type: "CNAME", Name: "example"}
+	if !reflect.DeepEqual(record, expected) {
+		t.Errorf("Domains.EditRecord returned %+v, expected %+v", record, expected)
+	}
+}
+
 func TestDomainRecord_String(t *testing.T) {
+	priority := 10
 	port := 10
+	weight := 10
+	flags := 1
+
 	record := &DomainRecord{
 		ID:       1,
 		Type:     "CNAME",
 		Name:     "example",
 		Data:     "@",
-		Priority: 10,
+		Priority: &priority,
 		Port:     &port,
 		TTL:      1800,
-		Weight:   10,
-		Flags:    1,
+		Weight:   &weight,
+		Flags:    &flags,
 		Tag:      "test",
 	}
 
@@ -352,16 +456,20 @@ func TestDomainRecord_String(t *testing.T) {
 }
 
 func TestDomainRecordEditRequest_String(t *testing.T) {
+	priority := 10
 	port := 10
+	weight := 10
+	flags := 1
+
 	record := &DomainRecordEditRequest{
 		Type:     "CNAME",
 		Name:     "example",
 		Data:     "@",
-		Priority: 10,
+		Priority: &priority,
 		Port:     &port,
 		TTL:      1800,
-		Weight:   10,
-		Flags:    1,
+		Weight:   &weight,
+		Flags:    &flags,
 		Tag:      "test",
 	}
 
