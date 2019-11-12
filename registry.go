@@ -1,7 +1,9 @@
 package godo
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 )
 
@@ -16,6 +18,7 @@ type RegistryService interface {
 	Create(context.Context, *RegistryCreateRequest) (*Registry, *Response, error)
 	Get(context.Context) (*Registry, *Response, error)
 	Delete(context.Context) (*Response, error)
+	DockerCredentials(context.Context) ([]byte, *Response, error)
 }
 
 var _ RegistryService = &RegistryServiceOp{}
@@ -79,4 +82,21 @@ func (svc *RegistryServiceOp) Delete(ctx context.Context) (*Response, error) {
 		return resp, err
 	}
 	return resp, nil
+}
+
+// DockerCredentials retrieves a Docker config file with the registry's credentials.
+func (svc *RegistryServiceOp) DockerCredentials(ctx context.Context) ([]byte, *Response, error) {
+	path := fmt.Sprintf("%s/%s", registryPath, "docker-credentials")
+
+	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var buf bytes.Buffer
+	resp, err := svc.client.Do(ctx, req, &buf)
+	if err != nil {
+		return nil, resp, err
+	}
+	return buf.Bytes(), resp, nil
 }
