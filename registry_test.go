@@ -94,5 +94,5 @@ func TestRegistry_DockerCredentials(t *testing.T) {
 	got, _, err := client.Registry.DockerCredentials(ctx)
 
 	require.NoError(t, err)
-	require.Equal(t, want, got)
+	require.Equal(t, want, got.DockerConfigJSON)
 }
