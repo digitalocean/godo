@@ -18,7 +18,7 @@ type RegistryService interface {
 	Create(context.Context, *RegistryCreateRequest) (*Registry, *Response, error)
 	Get(context.Context) (*Registry, *Response, error)
 	Delete(context.Context) (*Response, error)
-	DockerCredentials(context.Context) (*DockerConfig, *Response, error)
+	DockerCredentials(context.Context) (*DockerCredentials, *Response, error)
 }
 
 var _ RegistryService = &RegistryServiceOp{}
@@ -84,15 +84,15 @@ func (svc *RegistryServiceOp) Delete(ctx context.Context) (*Response, error) {
 	return resp, nil
 }
 
-// DockerConfig is the content of a Docker config file
+// DockerCredentials is the content of a Docker config file
 // that is used by the docker CLI
 // See: https://docs.docker.com/engine/reference/commandline/cli/#configjson-properties
-type DockerConfig struct {
+type DockerCredentials struct {
 	DockerConfigJSON []byte
 }
 
 // DockerCredentials retrieves a Docker config file with the registry's credentials.
-func (svc *RegistryServiceOp) DockerCredentials(ctx context.Context) (*DockerConfig, *Response, error) {
+func (svc *RegistryServiceOp) DockerCredentials(ctx context.Context) (*DockerCredentials, *Response, error) {
 	path := fmt.Sprintf("%s/%s", registryPath, "docker-credentials")
 
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -106,7 +106,7 @@ func (svc *RegistryServiceOp) DockerCredentials(ctx context.Context) (*DockerCon
 		return nil, resp, err
 	}
 
-	dc := &DockerConfig{
+	dc := &DockerCredentials{
 		DockerConfigJSON: buf.Bytes(),
 	}
 	return dc, resp, nil
