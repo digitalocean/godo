@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -155,6 +156,25 @@ func addOptions(s string, opt interface{}) (string, error) {
 	return origURL.String(), nil
 }
 
+type tokenSource struct {
+	AccessToken string
+}
+
+// Token returns the OAuth2 token from this token source.
+//
+// This is required so the tokenSource implements the `Token()` interface.
+func (t *tokenSource) Token() (*oauth2.Token, error) {
+	return &oauth2.Token{AccessToken: t.AccessToken}, nil
+}
+
+// NewFromToken returns a new DigitalOcean API client with the given API
+// token.
+func NewFromToken(token string) *Client {
+	ts := &tokenSource{AccessToken: token}
+	oauthClient := oauth2.NewClient(context.Background(), ts)
+	return NewClient(oauthClient)
+}
+
 // NewClient returns a new DigitalOcean API client.
 func NewClient(httpClient *http.Client) *Client {
 	if httpClient == nil {
@@ -197,7 +217,7 @@ func NewClient(httpClient *http.Client) *Client {
 // ClientOpt are options for New.
 type ClientOpt func(*Client) error
 
-// New returns a new DIgitalOcean API client instance.
+// New returns a new DigitalOcean API client instance.
 func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 	c := NewClient(httpClient)
 	for _, opt := range opts {
