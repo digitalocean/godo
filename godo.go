@@ -157,23 +157,15 @@ func addOptions(s string, opt interface{}) (string, error) {
 	return origURL.String(), nil
 }
 
-type tokenSource struct {
-	AccessToken string
-}
-
-// Token returns the OAuth2 token from this token source.
-//
-// This is required so the tokenSource implements the `Token()` interface.
-func (t *tokenSource) Token() (*oauth2.Token, error) {
-	return &oauth2.Token{AccessToken: t.AccessToken}, nil
-}
-
 // NewFromToken returns a new DigitalOcean API client with the given API
 // token.
 func NewFromToken(token string) *Client {
-	ts := &tokenSource{AccessToken: token}
-	oauthClient := oauth2.NewClient(context.Background(), ts)
-	return NewClient(oauthClient)
+	ctx := context.Background()
+
+	config := &oauth2.Config{}
+	ts := config.TokenSource(ctx, &oauth2.Token{AccessToken: token})
+
+	return NewClient(oauth2.NewClient(ctx, ts))
 }
 
 // NewClient returns a new DigitalOcean API client.
