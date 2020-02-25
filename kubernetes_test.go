@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -79,6 +79,9 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 					Name:  "antoine-1",
 					Size:  "s-1vcpu-2gb",
 					Count: 5,
+					Labels: map[string]string{
+						"foo": "bar",
+					},
 					Nodes: []*KubernetesNode{
 						{
 							ID:        "deadbeef-dead-beef-dead-deadbeefb4b1",
@@ -127,6 +130,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 					"size": "s-1vcpu-2gb",
 					"count": 2,
 					"tags": null,
+					"labels": null,
 					"nodes": [
 						{
 							"id": "",
@@ -175,6 +179,9 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 					"size": "s-1vcpu-2gb",
 					"count": 5,
 					"tags": null,
+					"labels": {
+						"foo": "bar"
+					},
 					"nodes": [
 						{
 							"id": "deadbeef-dead-beef-dead-deadbeefb4b1",
@@ -262,6 +269,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 				Name:  "antoine-1",
 				Size:  "s-1vcpu-2gb",
 				Count: 5,
+				Labels: map[string]string{
+					"foo": "bar",
+				},
 				Nodes: []*KubernetesNode{
 					{
 						ID:        "deadbeef-dead-beef-dead-deadbeefb4b1",
@@ -312,6 +322,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 				"size": "s-1vcpu-2gb",
 				"count": 5,
 				"tags": null,
+				"labels": {
+					"foo": "bar"
+				},
 				"nodes": [
 					{
 						"id": "deadbeef-dead-beef-dead-deadbeefb4b1",
@@ -416,6 +429,36 @@ func TestKubernetesClusters_GetCredentials(t *testing.T) {
 }`
 	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/credentials", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+		assert.Empty(t, r.URL.Query())
+		fmt.Fprint(w, jBlob)
+	})
+	got, _, err := kubeSvc.GetCredentials(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterCredentialsGetRequest{})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestKubernetesClusters_GetCredentials_WithExpirySeconds(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	timestamp, err := time.Parse(time.RFC3339, "2014-11-12T11:45:26.371Z")
+	require.NoError(t, err)
+	want := &KubernetesClusterCredentials{
+		Token:     "secret",
+		ExpiresAt: timestamp,
+	}
+	jBlob := `
+{
+	"token": "secret",
+	"expires_at": "2014-11-12T11:45:26.371Z"
+}`
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/credentials", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		expirySeconds, ok := r.URL.Query()["expiry_seconds"]
+		assert.True(t, ok)
+		assert.Len(t, expirySeconds, 1)
+		assert.Contains(t, expirySeconds, "3600")
 		fmt.Fprint(w, jBlob)
 	})
 	got, _, err := kubeSvc.GetCredentials(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterCredentialsGetRequest{
@@ -481,11 +524,12 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		NodePools: []*KubernetesNodePool{
 			&KubernetesNodePool{
-				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
-				Size:  "s-1vcpu-1gb",
-				Count: 2,
-				Name:  "pool-a",
-				Tags:  []string{"tag-1"},
+				ID:     "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+				Size:   "s-1vcpu-1gb",
+				Count:  2,
+				Name:   "pool-a",
+				Tags:   []string{"tag-1"},
+				Labels: map[string]string{"foo": "bar"},
 			},
 		},
 		MaintenancePolicy: &KubernetesMaintenancePolicy{
@@ -505,6 +549,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 				Count:     want.NodePools[0].Count,
 				Name:      want.NodePools[0].Name,
 				Tags:      want.NodePools[0].Tags,
+				Labels:    want.NodePools[0].Labels,
 				AutoScale: want.NodePools[0].AutoScale,
 				MinNodes:  want.NodePools[0].MinNodes,
 				MaxNodes:  want.NodePools[0].MaxNodes,
@@ -535,7 +580,10 @@ func TestKubernetesClusters_Create(t *testing.T) {
 				"name": "pool-a",
 				"tags": [
 					"tag-1"
-				]
+				],
+				"labels": {
+					"foo": "bar"
+				}
 			}
 		],
 		"maintenance_policy": {
@@ -688,6 +736,9 @@ func TestKubernetesClusters_Update(t *testing.T) {
 				Count: 2,
 				Name:  "pool-a",
 				Tags:  []string{"tag-1"},
+				Labels: map[string]string{
+					"foo": "bar",
+				},
 			},
 		},
 		MaintenancePolicy: &KubernetesMaintenancePolicy{
@@ -723,7 +774,10 @@ func TestKubernetesClusters_Update(t *testing.T) {
 				"name": "pool-a",
 				"tags": [
 					"tag-1"
-				]
+				],
+				"labels": {
+					"foo": "bar"
+				}
 			}
 		],
 		"maintenance_policy": {
@@ -893,6 +947,7 @@ func TestKubernetesClusters_CreateNodePool(t *testing.T) {
 		Count:     2,
 		Name:      "pool-a",
 		Tags:      []string{"tag-1"},
+		Labels:    map[string]string{"foo": "bar"},
 		AutoScale: false,
 		MinNodes:  0,
 		MaxNodes:  0,
@@ -913,7 +968,10 @@ func TestKubernetesClusters_CreateNodePool(t *testing.T) {
 		"name": "pool-a",
 		"tags": [
 			"tag-1"
-		]
+		],
+		"labels": {
+			"foo": "bar"
+		}
 	}
 }`
 
@@ -1116,6 +1174,7 @@ func TestKubernetesClusters_UpdateNodePool(t *testing.T) {
 		Size:      "s-1vcpu-1gb",
 		Count:     4,
 		Tags:      []string{"tag-1", "tag-2"},
+		Labels:    map[string]string{"foo": "bar"},
 		AutoScale: false,
 		MinNodes:  0,
 		MaxNodes:  0,
@@ -1135,7 +1194,10 @@ func TestKubernetesClusters_UpdateNodePool(t *testing.T) {
 		"name": "a better name",
 		"tags": [
 			"tag-1", "tag-2"
-		]
+		],
+		"labels": {
+			"foo": "bar"
+		}
 	}
 }`
 
