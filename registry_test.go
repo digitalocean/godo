@@ -102,9 +102,10 @@ func TestRegistry_Delete(t *testing.T) {
 func TestRegistry_DockerCredentials(t *testing.T) {
 	returnedConfig := "this could be a docker config"
 	tests := []struct {
-		name              string
-		params            *RegistryDockerCredentialsRequest
-		expectedReadWrite string
+		name                  string
+		params                *RegistryDockerCredentialsRequest
+		expectedReadWrite     string
+		expectedExpirySeconds string
 	}{
 		{
 			name:              "read-only (default)",
@@ -116,6 +117,18 @@ func TestRegistry_DockerCredentials(t *testing.T) {
 			params:            &RegistryDockerCredentialsRequest{ReadWrite: true},
 			expectedReadWrite: "true",
 		},
+		{
+			name:                  "read-only + custom expiry",
+			params:                &RegistryDockerCredentialsRequest{ExpirySeconds: intPtr(60 * 60)},
+			expectedReadWrite:     "false",
+			expectedExpirySeconds: "3600",
+		},
+		{
+			name:                  "read/write + custom expiry",
+			params:                &RegistryDockerCredentialsRequest{ReadWrite: true, ExpirySeconds: intPtr(60 * 60)},
+			expectedReadWrite:     "true",
+			expectedExpirySeconds: "3600",
+		},
 	}
 
 	for _, test := range tests {
@@ -125,6 +138,7 @@ func TestRegistry_DockerCredentials(t *testing.T) {
 
 			mux.HandleFunc("/v2/registry/docker-credentials", func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, test.expectedReadWrite, r.URL.Query().Get("read_write"))
+				require.Equal(t, test.expectedExpirySeconds, r.URL.Query().Get("expiry_seconds"))
 				testMethod(t, r, http.MethodGet)
 				fmt.Fprint(w, returnedConfig)
 			})
