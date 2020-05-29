@@ -32,17 +32,17 @@ type OneClicksRoot struct {
 	List []*OneClick `json:"list"`
 }
 
-// List returns a list of the caller's VPCs, with optional pagination.
-func (v *OneClickServiceOp) List(ctx context.Context, oneClickType string) ([]*OneClick, *Response, error) {
+// List returns a list of the available 1-click applications.
+func (ocs *OneClickServiceOp) List(ctx context.Context, oneClickType string) ([]*OneClick, *Response, error) {
 	path := fmt.Sprintf(`%s?type=%s`, oneClickBasePath, oneClickType)
 
-	req, err := v.client.NewRequest(ctx, http.MethodGet, path, nil)
+	req, err := ocs.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	root := new(OneClicksRoot)
-	resp, err := v.client.Do(ctx, req, root)
+	resp, err := ocs.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}

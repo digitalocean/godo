@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var vTestOneClick = &OneClick{
+var testOneClick = &OneClick{
 	Slug: "test-slug",
 	Type: "droplet",
 }
 
-var vTestOneClickJSON = `
+var testOneClickJSON = `
     {
       "slug":"test-slug",
       "type":"droplet"
@@ -28,13 +28,13 @@ func TestOneClick_List(t *testing.T) {
 	svc := client.OneClick
 	path := "/v2/1-click"
 	want := []*OneClick{
-		vTestOneClick,
+		testOneClick,
 	}
 
 	jsonBlob := `
 {
   "list": [
-` + vTestOneClickJSON + `
+` + testOneClickJSON + `
   ]
 }
 `
