@@ -12,12 +12,13 @@ import (
 )
 
 const (
-	testRegistry       = "test-registry"
-	testRepository     = "test-repository"
-	testTag            = "test-tag"
-	testDigest         = "sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f"
-	testCompressedSize = 2789669
-	testSize           = 5843968
+	testRegistry          = "test-registry"
+	testRepository        = "test/repository"
+	testEncodedRepository = "test%2Frepository"
+	testTag               = "test-tag"
+	testDigest            = "sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f"
+	testCompressedSize    = 2789669
+	testSize              = 5843968
 )
 
 var (
@@ -252,8 +253,8 @@ func TestRepository_ListTags(t *testing.T) {
 	],
 	"links": {
 	    "pages": {
-			"next": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/repositories/` + testRepository + `/tags?page=2",
-			"last": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/repositories/` + testRepository + `/tags?page=2"
+			"next": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/repositories/` + testEncodedRepository + `/tags?page=2",
+			"last": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/repositories/` + testEncodedRepository + `/tags?page=2"
 		}
 	},
 	"meta": {
@@ -273,8 +274,8 @@ func TestRepository_ListTags(t *testing.T) {
 	gotRespLinks := response.Links
 	wantRespLinks := &Links{
 		Pages: &Pages{
-			Next: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositories/%s/tags?page=2", testRegistry, testRepository),
-			Last: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositories/%s/tags?page=2", testRegistry, testRepository),
+			Next: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositories/%s/tags?page=2", testRegistry, testEncodedRepository),
+			Last: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositories/%s/tags?page=2", testRegistry, testEncodedRepository),
 		},
 	}
 	assert.Equal(t, wantRespLinks, gotRespLinks)
