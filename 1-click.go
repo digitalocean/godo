@@ -6,10 +6,11 @@ import (
 	"net/http"
 )
 
-const oneClickBasePath = "v2/1-click"
+const oneClickBasePath = "v2/1-clicks"
 
 // OneClickService is an interface for interacting with 1-clicks with the
 // DigitalOcean API.
+// See: https://developers.digitalocean.com/documentation/v2#1-clicks
 type OneClickService interface {
 	List(context.Context, string) ([]*OneClick, *Response, error)
 }
@@ -29,7 +30,7 @@ type OneClick struct {
 
 // OneClicksRoot is the root of the json payload that contains a list of 1-clicks
 type OneClicksRoot struct {
-	List []*OneClick `json:"list"`
+	List []*OneClick `json:"1_clicks"`
 }
 
 // List returns a list of the available 1-click applications.
