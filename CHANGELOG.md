@@ -1,6 +1,27 @@
 # Change Log
 
-## unreleased
+## [v1.37.0] - 2020-06-01
+
+- #336 registry: URL encode repository names when building URLs. @adamwg
+- #335 Add 1-click service and request. @scottcrawford03
+
+## [v1.36.0] - 2020-05-12
+
+- #331 Expose expiry_seconds for Registry.DockerCredentials. @andrewsomething
+
+## [v1.35.1] - 2020-04-21
+
+- #328 Update vulnerable x/crypto dependency - @bentranter
+
+## [v1.35.0] - 2020-04-20
+
+- #326 Add TagCount field to registry/Repository - @nicktate
+- #325 Add DOCR EA routes - @nicktate
+- #324 Upgrade godo to Go 1.14 - @bentranter
+
+## [v1.34.0] - 2020-03-30
+
+- #320 Add VPC v3 attributes - @viola
 
 ## [v1.33.1] - 2020-03-23
 
