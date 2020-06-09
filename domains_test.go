@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDomains_ListDomains(t *testing.T) {
@@ -181,7 +185,7 @@ func TestDomains_AllRecordsForDomainName(t *testing.T) {
 
 	expected := []DomainRecord{{ID: 1}, {ID: 2}}
 	if !reflect.DeepEqual(records, expected) {
-		t.Errorf("Domains.List returned %+v, expected %+v", records, expected)
+		t.Errorf("Domains.Records returned %+v, expected %+v", records, expected)
 	}
 }
 
@@ -206,7 +210,167 @@ func TestDomains_AllRecordsForDomainName_PerPage(t *testing.T) {
 
 	expected := []DomainRecord{{ID: 1}, {ID: 2}}
 	if !reflect.DeepEqual(records, expected) {
-		t.Errorf("Domains.List returned %+v, expected %+v", records, expected)
+		t.Errorf("Domains.Records returned %+v, expected %+v", records, expected)
+	}
+}
+
+func TestDomains_RecordsByType(t *testing.T) {
+	tests := []struct {
+		name        string
+		recordType  string
+		pagination  *ListOptions
+		expectedErr *ArgError
+	}{
+		{
+			name:       "success",
+			recordType: "CNAME",
+		},
+		{
+			name:        "when record type is empty it returns argument error",
+			expectedErr: &ArgError{arg: "type", reason: "cannot be an empty string"},
+		},
+		{
+			name:       "with pagination",
+			recordType: "CNAME",
+			pagination: &ListOptions{Page: 1, PerPage: 10},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			mux.HandleFunc("/v2/domains/example.com/records", func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, tt.recordType, r.URL.Query().Get("type"))
+				if tt.pagination != nil {
+					require.Equal(t, strconv.Itoa(tt.pagination.Page), r.URL.Query().Get("page"))
+					require.Equal(t, strconv.Itoa(tt.pagination.PerPage), r.URL.Query().Get("per_page"))
+				}
+				testMethod(t, r, http.MethodGet)
+				fmt.Fprint(w, `{"domain_records":[{"id":1},{"id":2}]}`)
+			})
+
+			records, _, err := client.Domains.RecordsByType(ctx, "example.com", tt.recordType, tt.pagination)
+			if tt.expectedErr != nil {
+				assert.Equal(t, tt.expectedErr, err)
+			} else {
+				expected := []DomainRecord{{ID: 1}, {ID: 2}}
+				if !reflect.DeepEqual(records, expected) {
+					t.Errorf("Domains.RecordsByType returned %+v, expected %+v", records, expected)
+				}
+			}
+		})
+	}
+}
+
+func TestDomains_RecordsByName(t *testing.T) {
+	tests := []struct {
+		name        string
+		recordName  string
+		pagination  *ListOptions
+		expectedErr *ArgError
+	}{
+		{
+			name:       "success",
+			recordName: "foo.com",
+		},
+		{
+			name:        "when record name is empty it returns argument error",
+			expectedErr: &ArgError{arg: "name", reason: "cannot be an empty string"},
+		},
+		{
+			name:       "with pagination",
+			recordName: "foo.com",
+			pagination: &ListOptions{Page: 2, PerPage: 1},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			mux.HandleFunc("/v2/domains/example.com/records", func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, tt.recordName, r.URL.Query().Get("name"))
+				if tt.pagination != nil {
+					require.Equal(t, strconv.Itoa(tt.pagination.Page), r.URL.Query().Get("page"))
+					require.Equal(t, strconv.Itoa(tt.pagination.PerPage), r.URL.Query().Get("per_page"))
+				}
+				testMethod(t, r, http.MethodGet)
+				fmt.Fprint(w, `{"domain_records":[{"id":1},{"id":2}]}`)
+			})
+
+			records, _, err := client.Domains.RecordsByName(ctx, "example.com", tt.recordName, tt.pagination)
+			if tt.expectedErr != nil {
+				assert.Equal(t, tt.expectedErr, err)
+			} else {
+				expected := []DomainRecord{{ID: 1}, {ID: 2}}
+				if !reflect.DeepEqual(records, expected) {
+					t.Errorf("Domains.RecordsByName returned %+v, expected %+v", records, expected)
+				}
+			}
+		})
+	}
+}
+
+func TestDomains_RecordsByTypeAndName(t *testing.T) {
+	tests := []struct {
+		name        string
+		recordType  string
+		recordName  string
+		pagination  *ListOptions
+		expectedErr *ArgError
+	}{
+		{
+			name:       "success",
+			recordType: "NS",
+			recordName: "foo.com",
+		},
+		{
+			name:        "when record type is empty it returns argument error",
+			recordName:  "foo.com",
+			expectedErr: &ArgError{arg: "type", reason: "cannot be an empty string"},
+		},
+		{
+			name:        "when record name is empty it returns argument error",
+			recordType:  "NS",
+			expectedErr: &ArgError{arg: "name", reason: "cannot be an empty string"},
+		},
+		{
+			name:       "with pagination",
+			recordType: "CNAME",
+			recordName: "foo.com",
+			pagination: &ListOptions{Page: 1, PerPage: 1},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			mux.HandleFunc("/v2/domains/example.com/records", func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, tt.recordType, r.URL.Query().Get("type"))
+				require.Equal(t, tt.recordName, r.URL.Query().Get("name"))
+				if tt.pagination != nil {
+					require.Equal(t, strconv.Itoa(tt.pagination.Page), r.URL.Query().Get("page"))
+					require.Equal(t, strconv.Itoa(tt.pagination.PerPage), r.URL.Query().Get("per_page"))
+				}
+				testMethod(t, r, http.MethodGet)
+				fmt.Fprint(w, `{"domain_records":[{"id":1},{"id":2}]}`)
+			})
+
+			records, _, err := client.Domains.RecordsByTypeAndName(ctx, "example.com", tt.recordType, tt.recordName, tt.pagination)
+			if tt.expectedErr != nil {
+				assert.Equal(t, tt.expectedErr, err)
+			} else {
+				expected := []DomainRecord{{ID: 1}, {ID: 2}}
+				if !reflect.DeepEqual(records, expected) {
+					t.Errorf("Domains.RecordsByTypeAndName returned %+v, expected %+v", records, expected)
+				}
+			}
+		})
 	}
 }
 
