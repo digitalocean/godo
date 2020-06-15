@@ -47,3 +47,31 @@ func TestOneClick_List(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 }
+
+
+func TestOneClick_InstallKubernetes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	svc := client.OneClick
+	path := "/v2/1-clicks"
+	want := []*OneClick{
+		testOneClick,
+	}
+
+	jsonBlob := `
+{
+  "1_clicks": [
+` + testOneClickJSON + `
+  ]
+}
+`
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, jsonBlob)
+	})
+
+	got, _, err := svc.List(ctx, "")
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
