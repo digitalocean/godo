@@ -20,6 +20,19 @@ var testOneClickJSON = `
       "type":"droplet"
     }
 `
+var testMessage =&Message{
+	 MessageRsp: "test message",
+}
+var testMessageJSON = `
+{
+  "MessageRsp" : "test message"
+}
+`
+
+var kubernetesPayload = &InstallKubernetesAddons{
+	ClusterUUID: "123",
+	Slugs: []string{"slug1", "slug2"},
+}
 
 func TestOneClick_List(t *testing.T) {
 	setup()
@@ -54,24 +67,16 @@ func TestOneClick_InstallKubernetes(t *testing.T) {
 	defer teardown()
 
 	svc := client.OneClick
-	path := "/v2/1-clicks"
-	want := []*OneClick{
-		testOneClick,
-	}
+	path := "/v2/1-clicks/kubernetes"
+	want := "test message"
 
-	jsonBlob := `
-{
-  "1_clicks": [
-` + testOneClickJSON + `
-  ]
-}
-`
+
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		fmt.Fprint(w, jsonBlob)
+		fmt.Fprint(w, testMessageJSON)
 	})
 
-	got, _, err := svc.List(ctx, "")
+	got, _, err := svc.InstallKubernetes(ctx, kubernetesPayload)
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 }
