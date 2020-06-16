@@ -37,7 +37,7 @@ func TestOneClick_List(t *testing.T) {
 	defer teardown()
 
 	svc := client.OneClick
-	path := "/v2/1-clicks"``
+	path := "/v2/1-clicks"
 	want := []*OneClick{
 		testOneClick,
 	}
