@@ -20,12 +20,10 @@ var testOneClickJSON = `
       "type":"droplet"
     }
 `
-var testMessage =&Message{
-	 MessageRsp: "test message",
-}
+
 var testMessageJSON = `
 {
-  "MessageRsp" : "test message"
+  "message" : "test message"
 }
 `
 
