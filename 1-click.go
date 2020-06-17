@@ -13,7 +13,7 @@ const oneClickBasePath = "v2/1-clicks"
 // See: https://developers.digitalocean.com/documentation/v2/#1-click-applications
 type OneClickService interface {
 	List(context.Context, string) ([]*OneClick, *Response, error)
-	InstallKubernetes(context.Context, *InstallKubernetesApps)(string, *Response, error)
+	InstallKubernetes(context.Context, *InstallKubernetesAppsRequest)(*InstallKubernetesAppsResponse, *Response, error)
 }
 
 var _ OneClickService = &OneClickServiceOp{}
@@ -34,15 +34,15 @@ type OneClicksRoot struct {
 	List []*OneClick `json:"1_clicks"`
 }
 
-// InstallKubernetesApps represents a request required to install 1-click kubernetes apps
-type InstallKubernetesApps struct {
+// InstallKubernetesAppsRequest represents a request required to install 1-click kubernetes apps
+type InstallKubernetesAppsRequest struct {
 	Slugs       []string `json:"addon_slugs"`
 	ClusterUUID string   `json:"cluster_uuid"`
 }
 
-// Message is the reponse of an kubernetes 1-click install request
-type Message struct {
-	MessageRsp string `json:"message"`
+// InstallKubernetesAppsResponse is the response of a kubernetes 1-click install request
+type InstallKubernetesAppsResponse struct {
+	Message string   `json:"message"`
 }
 
 // List returns a list of the available 1-click applications.
@@ -64,18 +64,18 @@ func (ocs *OneClickServiceOp) List(ctx context.Context, oneClickType string) ([]
 }
 
 // InstallKubernetes installs an addon on a kubernetes cluster
-func (ocs *OneClickServiceOp) InstallKubernetes(ctx context.Context, install *InstallKubernetesApps ) (string, *Response, error) {
+func (ocs *OneClickServiceOp) InstallKubernetes(ctx context.Context, install *InstallKubernetesAppsRequest ) (*InstallKubernetesAppsResponse, *Response, error) {
 	path := fmt.Sprintf(oneClickBasePath+"/kubernetes")
 
 	req, err := ocs.client.NewRequest(ctx, http.MethodPost, path, install)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
 
-	msg := new(Message)
-	resp, err := ocs.client.Do(ctx, req, msg)
+	responseMessage := new(InstallKubernetesAppsResponse)
+	resp, err := ocs.client.Do(ctx, req, responseMessage)
 	if err != nil {
-		return "", resp, err
+		return nil, resp, err
 	}
-	return msg.MessageRsp, resp, err
+	return responseMessage, resp, err
 }
