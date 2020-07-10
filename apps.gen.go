@@ -25,6 +25,11 @@ const (
 	APPDATABASESPECENGINE_REDIS AppDatabaseSpecEngine = "REDIS"
 )
 
+// AppDomainSpec struct for AppDomainSpec
+type AppDomainSpec struct {
+	Domain string `json:"domain"`
+}
+
 // AppRouteSpec struct for AppRouteSpec
 type AppRouteSpec struct {
 	Path string `json:"path,omitempty"`
@@ -41,11 +46,10 @@ type AppServiceSpec struct {
 	GitHub           GitHubSourceSpec        `json:"github,omitempty"`
 	Envs             []AppVariableDefinition `json:"envs,omitempty"`
 	InstanceSizeSlug string                  `json:"instance_size_slug,omitempty"`
-	// grpc-gateway's protoc-gen-swagger annonations only allow for a string-type default; encoding the default num type as a string openapi/validate to reject the spec. TODO(cbaker) - file bug / patch w/ upstream.
-	InstanceCount   int64          `json:"instance_count,omitempty"`
-	Routes          []AppRouteSpec `json:"routes,omitempty"`
-	SourceDir       string         `json:"source_dir,omitempty"`
-	EnvironmentSlug string         `json:"environment_slug,omitempty"`
+	InstanceCount    int64                   `json:"instance_count,omitempty"`
+	Routes           []AppRouteSpec          `json:"routes,omitempty"`
+	SourceDir        string                  `json:"source_dir,omitempty"`
+	EnvironmentSlug  string                  `json:"environment_slug,omitempty"`
 }
 
 // AppSpec struct for AppSpec
@@ -56,6 +60,7 @@ type AppSpec struct {
 	Workers     []AppWorkerSpec     `json:"workers,omitempty"`
 	Region      string              `json:"region,omitempty"`
 	Name        string              `json:"name"`
+	Domains     []AppDomainSpec     `json:"domains,omitempty"`
 }
 
 // AppStaticSiteSpec struct for AppStaticSiteSpec
@@ -97,8 +102,9 @@ type AppWorkerSpec struct {
 
 // GitHubSourceSpec struct for GitHubSourceSpec
 type GitHubSourceSpec struct {
-	Repo   string `json:"repo"`
-	Branch string `json:"branch"`
+	Repo         string `json:"repo"`
+	Branch       string `json:"branch"`
+	DeployOnPush bool   `json:"deploy_on_push,omitempty"`
 }
 
 // GitSourceSpec struct for GitSourceSpec
