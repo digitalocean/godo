@@ -67,23 +67,20 @@ type Deployment struct {
 
 // DeploymentService represents a service component in a deployment.
 type DeploymentService struct {
-	Name             string     `json:"name,omitempty"`
-	Logs             *BuildLogs `json:"logs,omitempty"`
-	SourceCommitHash string     `json:"source_commit_hash"`
+	Name             string `json:"name,omitempty"`
+	SourceCommitHash string `json:"source_commit_hash"`
 }
 
 // DeploymentWorker represents a worker component in a deployment.
 type DeploymentWorker struct {
-	Name             string     `json:"name,omitempty"`
-	Logs             *BuildLogs `json:"logs,omitempty"`
-	SourceCommitHash string     `json:"source_commit_hash"`
+	Name             string `json:"name,omitempty"`
+	SourceCommitHash string `json:"source_commit_hash"`
 }
 
 // DeploymentStaticSite represents a static site component in a deployment.
 type DeploymentStaticSite struct {
-	Name             string     `json:"name,omitempty"`
-	Logs             *BuildLogs `json:"logs,omitempty"`
-	SourceCommitHash string     `json:"source_commit_hash"`
+	Name             string `json:"name,omitempty"`
+	SourceCommitHash string `json:"source_commit_hash"`
 }
 
 // DeploymentProgress represents the total progress of a deployment.
@@ -105,11 +102,6 @@ type DeploymentProgressStep struct {
 	Attempts  uint32                    `json:"attempts"`
 	StartedAt time.Time                 `json:"started_at,omitempty"`
 	EndedAt   time.Time                 `json:"ended_at,omitempty"`
-}
-
-// BuildLogs represents build logs for a deployment component.
-type BuildLogs struct {
-	LogURL string `json:"log_url,omitempty"`
 }
 
 // AppLogs represent app logs.
