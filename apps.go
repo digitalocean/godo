@@ -16,11 +16,11 @@ type AppLogType string
 
 const (
 	// AppLogTypeBuild represents build logs.
-	AppLogTypeBuild AppLogType = "build"
+	AppLogTypeBuild AppLogType = "BUILD"
 	// AppLogTypeDeploy represents deploy logs.
-	AppLogTypeDeploy AppLogType = "deploy"
+	AppLogTypeDeploy AppLogType = "DEPLOY"
 	// AppLogTypeRun represents run logs.
-	AppLogTypeRun AppLogType = "run"
+	AppLogTypeRun AppLogType = "RUN"
 )
 
 // AppsService is an interface for interfacing with the App Platform endpoints
@@ -264,8 +264,8 @@ func (s *AppsServiceOp) CreateDeployment(ctx context.Context, appID string) (*De
 
 // GetLogs retrieves app logs.
 func (s *AppsServiceOp) GetLogs(ctx context.Context, appID, deploymentID, component string, logType AppLogType) (*AppLogs, *Response, error) {
-	path := fmt.Sprintf("%s/%s/deployments/%s/components/%s/logs", appsBasePath, appID, deploymentID, component)
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	url := fmt.Sprintf("%s/%s/deployments/%s/components/%s/logs?type=%s", appsBasePath, appID, deploymentID, component, logType)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, nil, err
 	}
