@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -354,6 +355,9 @@ func TestDo_rateLimit(t *testing.T) {
 	if !client.Rate.Reset.IsZero() {
 		t.Errorf("Client rate reset not initialized to zero value")
 	}
+	if client.Rate != client.GetRate() {
+		t.Errorf("Client rate is not the same as client.GetRate()")
+	}
 
 	req, _ := client.NewRequest(ctx, http.MethodGet, "/", nil)
 	_, err := client.Do(context.Background(), req, nil)
@@ -371,6 +375,49 @@ func TestDo_rateLimit(t *testing.T) {
 	if client.Rate.Reset.UTC() != reset {
 		t.Errorf("Client rate reset = %v, expected %v", client.Rate.Reset, reset)
 	}
+	if client.Rate != client.GetRate() {
+		t.Errorf("Client rate is not the same as client.GetRate()")
+	}
+}
+
+func TestDo_rateLimitRace(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add(headerRateLimit, "60")
+		w.Header().Add(headerRateRemaining, "59")
+		w.Header().Add(headerRateReset, "1372700873")
+	})
+
+	var (
+		wg    sync.WaitGroup
+		wait  = make(chan struct{})
+		count = 100
+	)
+	wg.Add(count)
+	for i := 0; i < count; i++ {
+		go func() {
+			<-wait
+			req, _ := client.NewRequest(ctx, http.MethodGet, "/", nil)
+			_, err := client.Do(context.Background(), req, nil)
+			if err != nil {
+				t.Fatalf("Do(): %v", err)
+			}
+			wg.Done()
+		}()
+	}
+	wg.Add(count)
+	for i := 0; i < count; i++ {
+		go func() {
+			<-wait
+			_ = client.GetRate()
+			wg.Done()
+		}()
+	}
+
+	close(wait)
+	wg.Wait()
 }
 
 func TestDo_rateLimit_errorResponse(t *testing.T) {

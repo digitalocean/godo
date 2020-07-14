@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/google/go-querystring/query"
@@ -40,8 +41,9 @@ type Client struct {
 	UserAgent string
 
 	// Rate contains the current rate limit for the client as determined by the most recent
-	// API call.
-	Rate Rate
+	// API call. It is not thread-safe. Please consider using GetRate() instead.
+	Rate    Rate
+	ratemtx sync.Mutex
 
 	// Services used for communicating with the API
 	Account           AccountService
@@ -288,6 +290,14 @@ func (c *Client) OnRequestCompleted(rc RequestCompletionCallback) {
 	c.onRequestCompleted = rc
 }
 
+// GetRate returns the current rate limit for the client as determined by the most recent
+// API call. It is thread-safe.
+func (c *Client) GetRate() Rate {
+	c.ratemtx.Lock()
+	defer c.ratemtx.Unlock()
+	return c.Rate
+}
+
 // newResponse creates a new Response for the provided http.Response
 func newResponse(r *http.Response) *Response {
 	response := Response{Response: r}
@@ -330,7 +340,9 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Res
 	}()
 
 	response := newResponse(resp)
+	c.ratemtx.Lock()
 	c.Rate = response.Rate
+	c.ratemtx.Unlock()
 
 	err = CheckResponse(resp)
 	if err != nil {
