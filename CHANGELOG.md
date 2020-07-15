@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.40.0] - 2020-07-15
+
+- #352, #351 Reuse underlying TCP connection - @itsksaurabh
+
 ## [v1.39.0] - 2020-07-14
 
 - #345, #346 Add app platform support [beta] - @nanzhong
