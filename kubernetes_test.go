@@ -522,6 +522,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		ServiceSubnet: "10.245.0.0/16",
 		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		SurgeUpgrade:  true,
 		NodePools: []*KubernetesNodePool{
 			&KubernetesNodePool{
 				ID:     "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -538,11 +539,12 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		},
 	}
 	createRequest := &KubernetesClusterCreateRequest{
-		Name:        want.Name,
-		RegionSlug:  want.RegionSlug,
-		VersionSlug: want.VersionSlug,
-		Tags:        want.Tags,
-		VPCUUID:     want.VPCUUID,
+		Name:         want.Name,
+		RegionSlug:   want.RegionSlug,
+		VersionSlug:  want.VersionSlug,
+		Tags:         want.Tags,
+		VPCUUID:      want.VPCUUID,
+		SurgeUpgrade: true,
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			&KubernetesNodePoolCreateRequest{
 				Size:      want.NodePools[0].Size,
@@ -572,6 +574,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"surge_upgrade": true,
 		"node_pools": [
 			{
 				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -729,6 +732,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		ServiceSubnet: "10.245.0.0/16",
 		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		SurgeUpgrade:  true,
 		NodePools: []*KubernetesNodePool{
 			&KubernetesNodePool{
 				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -750,6 +754,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		Name:              want.Name,
 		Tags:              want.Tags,
 		MaintenancePolicy: want.MaintenancePolicy,
+		SurgeUpgrade:      true,
 	}
 
 	jBlob := `
@@ -766,6 +771,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"surge_upgrade": true,
 		"node_pools": [
 			{
 				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -787,7 +793,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
