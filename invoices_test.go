@@ -28,7 +28,8 @@ func TestInvoices_GetInvoices(t *testing.T) {
 					"duration_unit": "Hours",
 					"start_time": "2018-06-20T08:44:38Z",
 					"end_time": "2018-06-21T08:44:38Z",
-					"project_name": "My project"
+					"project_name": "My project",
+					"category": "iaas"
 				},
 				{
 					"product": "Load Balancers",
@@ -41,7 +42,8 @@ func TestInvoices_GetInvoices(t *testing.T) {
 					"duration_unit": "Hours",
 					"start_time": "2018-06-20T08:44:38Z",
 					"end_time": "2018-06-21T08:44:38Z",
-					"project_name": "My Second Project"
+					"project_name": "My Second Project",
+					"category": "paas"
 				}
 			],
 			"meta": {
@@ -68,6 +70,7 @@ func TestInvoices_GetInvoices(t *testing.T) {
 			StartTime:        time.Date(2018, 6, 20, 8, 44, 38, 0, time.UTC),
 			EndTime:          time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 			ProjectName:      "My project",
+			Category:         "iaas",
 		},
 		{
 			Product:          "Load Balancers",
@@ -81,6 +84,7 @@ func TestInvoices_GetInvoices(t *testing.T) {
 			StartTime:        time.Date(2018, 6, 20, 8, 44, 38, 0, time.UTC),
 			EndTime:          time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 			ProjectName:      "My Second Project",
+			Category:         "paas",
 		},
 	}
 	actualItems := invoice.InvoiceItems
