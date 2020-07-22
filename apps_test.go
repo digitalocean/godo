@@ -234,10 +234,13 @@ func TestApps_GetLogs(t *testing.T) {
 	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/components/%s/logs", testApp.ID, testDeployment.ID, "service-name"), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 
+		assert.Equal(t, "RUN", r.URL.Query().Get("type"))
+		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+
 		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://live.logs.url"})
 	})
 
-	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "service-name", AppLogTypeRun)
+	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "service-name", AppLogTypeRun, true)
 	require.NoError(t, err)
 	assert.NotEmpty(t, logs.LiveURL)
 }
