@@ -50,6 +50,33 @@ var (
 				RepoCloneURL: "git@githost.com/owner/static.git",
 				Branch:       "branch",
 			},
+			OutputDir: "out",
+		}},
+		Jobs: []AppJobSpec{{
+			Name:           "job-name",
+			RunCommand:     "run-command",
+			BuildCommand:   "build-command",
+			DockerfilePath: "Dockerfile",
+			GitHub: GitHubSourceSpec{
+				Repo:   "owner/job",
+				Branch: "branch",
+			},
+			InstanceSizeSlug: "professional-xs",
+			InstanceCount:    1,
+		}},
+		Databases: []AppDatabaseSpec{{
+			Name:        "db",
+			Engine:      APPDATABASESPECENGINE_MYSQL,
+			Version:     "8",
+			Size:        "size",
+			NumNodes:    1,
+			Production:  true,
+			ClusterName: "cluster-name",
+			DbName:      "app",
+			DbUser:      "appuser",
+		}},
+		Domains: []AppDomainSpec{{
+			Domain: "example.com",
 		}},
 	}
 
@@ -67,6 +94,10 @@ var (
 		StaticSites: []*DeploymentStaticSite{{
 			Name:             "static-name",
 			SourceCommitHash: "static-hash",
+		}},
+		Jobs: []*DeploymentJob{{
+			Name:             "job-name",
+			SourceCommitHash: "job-hash",
 		}},
 	}
 
