@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.43.0] - 2020-09-08
+
+- #362 update apps types - @kamaln7
+
 ## [v1.42.1] - 2020-08-06
 
 - #360 domains: Allow for SRV records with port 0. - @andrewsomething
