@@ -13,6 +13,7 @@ const (
 	databaseSinglePath         = databaseBasePath + "/%s"
 	databaseResizePath         = databaseBasePath + "/%s/resize"
 	databaseMigratePath        = databaseBasePath + "/%s/migrate"
+	databaseUpgradePath        = databaseBasePath + "/%s/upgrade"
 	databaseMaintenancePath    = databaseBasePath + "/%s/maintenance"
 	databaseBackupsPath        = databaseBasePath + "/%s/backups"
 	databaseUsersPath          = databaseBasePath + "/%s/users"
@@ -95,6 +96,7 @@ type DatabasesService interface {
 	Delete(context.Context, string) (*Response, error)
 	Resize(context.Context, string, *DatabaseResizeRequest) (*Response, error)
 	Migrate(context.Context, string, *DatabaseMigrateRequest) (*Response, error)
+	Upgrade(context.Context, string, *DatabaseUpgradeRequest) (*Response, error)
 	UpdateMaintenance(context.Context, string, *DatabaseUpdateMaintenanceRequest) (*Response, error)
 	ListBackups(context.Context, string, *ListOptions) ([]DatabaseBackup, *Response, error)
 	GetUser(context.Context, string, string) (*DatabaseUser, *Response, error)
@@ -215,6 +217,11 @@ type DatabaseResizeRequest struct {
 type DatabaseMigrateRequest struct {
 	Region             string `json:"region,omitempty"`
 	PrivateNetworkUUID string `json:"private_network_uuid"`
+}
+
+// DatabaseUpgradeRequest can be used to initiate a database version upgrade operation.
+type DatabaseUpgradeRequest struct {
+	Version string `json:"version,omitempty"`
 }
 
 // DatabaseUpdateMaintenanceRequest can be used to update the database's maintenance window.
@@ -445,6 +452,20 @@ func (svc *DatabasesServiceOp) Resize(ctx context.Context, databaseID string, re
 func (svc *DatabasesServiceOp) Migrate(ctx context.Context, databaseID string, migrate *DatabaseMigrateRequest) (*Response, error) {
 	path := fmt.Sprintf(databaseMigratePath, databaseID)
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, migrate)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// Upgrade upgrades the database cluster to a new version of the database engine
+func (svc *DatabasesServiceOp) Upgrade(ctx context.Context, databaseID string, upgrade *DatabaseUpgradeRequest) (*Response, error) {
+	path := fmt.Sprintf(databaseUpgradePath, databaseID)
+	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, upgrade)
 	if err != nil {
 		return nil, err
 	}

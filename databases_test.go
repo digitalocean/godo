@@ -340,6 +340,26 @@ func TestDatabases_Migrate_WithPrivateNet(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_Upgrade(t *testing.T) {
+	setup()
+	defer teardown()
+
+	upgradeRequest := &DatabaseUpgradeRequest{
+		Version: "12",
+	}
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/upgrade", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+	})
+
+	_, err := client.Databases.Upgrade(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", upgradeRequest)
+	require.NoError(t, err)
+}
+
 func TestDatabases_UpdateMaintenance(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1350,7 +1370,7 @@ func TestDatabases_CreateDatabaseUserWithMySQLSettings(t *testing.T) {
 			"name": "foo",
 			"mysql_settings": {
 				"auth_plugin": "%s"
-			}	
+			}
 		}
 	}`, SQLAuthPluginNative))
 	expectedUser := &DatabaseUser{
