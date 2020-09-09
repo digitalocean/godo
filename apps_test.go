@@ -262,11 +262,34 @@ func TestApps_GetLogs(t *testing.T) {
 
 	ctx := context.Background()
 
-	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/components/%s/logs", testApp.ID, testDeployment.ID, "service-name"), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/logs", testApp.ID, testDeployment.ID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 
 		assert.Equal(t, "RUN", r.URL.Query().Get("type"))
 		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+		_, hasComponent := r.URL.Query()["component_name"]
+		assert.False(t, hasComponent)
+
+		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://live.logs.url"})
+	})
+
+	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "", AppLogTypeRun, true)
+	require.NoError(t, err)
+	assert.NotEmpty(t, logs.LiveURL)
+}
+
+func TestApps_GetLogs_component(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/logs", testApp.ID, testDeployment.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		assert.Equal(t, "RUN", r.URL.Query().Get("type"))
+		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+		assert.Equal(t, "service-name", r.URL.Query().Get("component_name"))
 
 		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://live.logs.url"})
 	})
