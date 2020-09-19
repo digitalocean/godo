@@ -7,15 +7,22 @@ import ()
 
 // AppDatabaseSpec struct for AppDatabaseSpec
 type AppDatabaseSpec struct {
-	Name        string                `json:"name"`
-	Engine      AppDatabaseSpecEngine `json:"engine,omitempty"`
-	Version     string                `json:"version,omitempty"`
-	Size        string                `json:"size,omitempty"`
-	NumNodes    int64                 `json:"num_nodes,omitempty"`
-	Production  bool                  `json:"production,omitempty"`
-	ClusterName string                `json:"cluster_name,omitempty"`
-	DbName      string                `json:"db_name,omitempty"`
-	DbUser      string                `json:"db_user,omitempty"`
+	// The name. Must be unique across all components within the same app.
+	Name    string                `json:"name"`
+	Engine  AppDatabaseSpecEngine `json:"engine,omitempty"`
+	Version string                `json:"version,omitempty"`
+	// Deprecated.
+	Size string `json:"size,omitempty"`
+	// Deprecated.
+	NumNodes int64 `json:"num_nodes,omitempty"`
+	// Whether this is a production or dev database.
+	Production bool `json:"production,omitempty"`
+	// The name of the underlying DigitalOcean DBaaS cluster. This is required for production databases. For dev databases, if cluster_name is not set, a new cluster will be provisioned.
+	ClusterName string `json:"cluster_name,omitempty"`
+	// The name of the MySQL or PostgreSQL database to configure.
+	DBName string `json:"db_name,omitempty"`
+	// The name of the MySQL or PostgreSQL user to configure.
+	DBUser string `json:"db_user,omitempty"`
 }
 
 // AppDatabaseSpecEngine the model 'AppDatabaseSpecEngine'
@@ -31,11 +38,12 @@ const (
 
 // AppDomainSpec struct for AppDomainSpec
 type AppDomainSpec struct {
+	// The hostname.
 	Domain string            `json:"domain"`
 	Type   AppDomainSpecType `json:"type,omitempty"`
 }
 
-// AppDomainSpecType the model 'AppDomainSpecType'
+// AppDomainSpecType  - DEFAULT: The default .ondigitalocean.app domain assigned to this app.  - PRIMARY: The primary domain for this app. This is the domain that is displayed as the default in the control panel, used in bindable environment variables, and any other places that reference an app's live URL. Only one domain may be set as primary.  - ALIAS: A non-primary domain.
 type AppDomainSpecType string
 
 // List of AppDomainSpecType
@@ -48,111 +56,161 @@ const (
 
 // AppJobSpec struct for AppJobSpec
 type AppJobSpec struct {
-	Name             string                  `json:"name"`
-	RunCommand       string                  `json:"run_command,omitempty"`
-	BuildCommand     string                  `json:"build_command,omitempty"`
-	DockerfilePath   string                  `json:"dockerfile_path,omitempty"`
-	Git              GitSourceSpec           `json:"git,omitempty"`
-	GitHub           GitHubSourceSpec        `json:"github,omitempty"`
-	Envs             []AppVariableDefinition `json:"envs,omitempty"`
-	InstanceSizeSlug string                  `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64                   `json:"instance_count,omitempty"`
-	SourceDir        string                  `json:"source_dir,omitempty"`
-	EnvironmentSlug  string                  `json:"environment_slug,omitempty"`
+	// The name. Must be unique across all components within the same app.
+	Name   string            `json:"name"`
+	Git    *GitSourceSpec    `json:"git,omitempty"`
+	GitHub *GitHubSourceSpec `json:"github,omitempty"`
+	// The path to the Dockerfile relative to the root of the repo. If set, it will be used to build this component. Otherwise, App Platform will attempt to build it using buildpacks.
+	DockerfilePath string `json:"dockerfile_path,omitempty"`
+	// An optional build command to run while building this component from source.
+	BuildCommand string `json:"build_command,omitempty"`
+	// An optional run command to override the component's default.
+	RunCommand string `json:"run_command,omitempty"`
+	// An optional path to the working directory to use for the build. For Dockerfile builds, this will be used as the build context. Must be relative to the root of the repo.
+	SourceDir string `json:"source_dir,omitempty"`
+	// An environment slug describing the type of this app. For a full list, please refer to [the product documentation](https://www.digitalocean.com/docs/app-platform/).
+	EnvironmentSlug string `json:"environment_slug,omitempty"`
+	// A list of environment variables made available to the component.
+	Envs []*AppVariableDefinition `json:"envs,omitempty"`
+	// The instance size to use for this component.
+	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
+	InstanceCount    int64  `json:"instance_count,omitempty"`
 }
 
-// AppRouteSpec AppRouteSpec describes a criteria for routing HTTP traffic to the component.
+// AppRouteSpec struct for AppRouteSpec
 type AppRouteSpec struct {
-	// Path specifies an route by HTTP path prefix. Paths must start with / and must be unique within the app.
+	// An HTTP path prefix. Paths must start with / and must be unique across all components within an app.
 	Path string `json:"path,omitempty"`
 }
 
 // AppServiceSpec struct for AppServiceSpec
 type AppServiceSpec struct {
-	Name             string                    `json:"name"`
-	RunCommand       string                    `json:"run_command,omitempty"`
-	BuildCommand     string                    `json:"build_command,omitempty"`
-	HTTPPort         int64                     `json:"http_port,omitempty"`
-	DockerfilePath   string                    `json:"dockerfile_path,omitempty"`
-	Git              GitSourceSpec             `json:"git,omitempty"`
-	GitHub           GitHubSourceSpec          `json:"github,omitempty"`
-	Envs             []AppVariableDefinition   `json:"envs,omitempty"`
-	InstanceSizeSlug string                    `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64                     `json:"instance_count,omitempty"`
-	Routes           []AppRouteSpec            `json:"routes,omitempty"`
-	SourceDir        string                    `json:"source_dir,omitempty"`
-	EnvironmentSlug  string                    `json:"environment_slug,omitempty"`
-	HealthCheck      AppServiceSpecHealthCheck `json:"health_check,omitempty"`
+	// The name. Must be unique across all components within the same app.
+	Name   string            `json:"name"`
+	Git    *GitSourceSpec    `json:"git,omitempty"`
+	GitHub *GitHubSourceSpec `json:"github,omitempty"`
+	// The path to the Dockerfile relative to the root of the repo. If set, it will be used to build this component. Otherwise, App Platform will attempt to build it using buildpacks.
+	DockerfilePath string `json:"dockerfile_path,omitempty"`
+	// An optional build command to run while building this component from source.
+	BuildCommand string `json:"build_command,omitempty"`
+	// An optional run command to override the component's default.
+	RunCommand string `json:"run_command,omitempty"`
+	// An optional path to the working directory to use for the build. For Dockerfile builds, this will be used as the build context. Must be relative to the root of the repo.
+	SourceDir string `json:"source_dir,omitempty"`
+	// An environment slug describing the type of this app. For a full list, please refer to [the product documentation](https://www.digitalocean.com/docs/app-platform/).
+	EnvironmentSlug string `json:"environment_slug,omitempty"`
+	// A list of environment variables made available to the component.
+	Envs []*AppVariableDefinition `json:"envs,omitempty"`
+	// The instance size to use for this component.
+	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
+	InstanceCount    int64  `json:"instance_count,omitempty"`
+	// The internal port on which this service's run command will listen. Default: 8080 If there is not an environment variable with the name `PORT`, one will be automatically added with its value set to the value of this field.
+	HTTPPort int64 `json:"http_port,omitempty"`
+	// A list of HTTP routes that should be routed to this component.
+	Routes      []*AppRouteSpec            `json:"routes,omitempty"`
+	HealthCheck *AppServiceSpecHealthCheck `json:"health_check,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
 type AppServiceSpecHealthCheck struct {
-	// Path is the route path used for the HTTP health check ping.
+	// Deprecated. Use http_path instead.
 	Path string `json:"path,omitempty"`
+	// The number of seconds to wait before beginning health checks.
+	InitialDelaySeconds int32 `json:"initial_delay_seconds,omitempty"`
+	// The number of seconds to wait between health checks.
+	PeriodSeconds int32 `json:"period_seconds,omitempty"`
+	// The number of seconds after which the check times out.
+	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
+	// The number of successful health checks before considered healthy.
+	SuccessThreshold int32 `json:"success_threshold,omitempty"`
+	// The number of failed health checks before considered unhealthy.
+	FailureThreshold int32 `json:"failure_threshold,omitempty"`
+	// The route path used for the HTTP health check ping. If not set, the HTTP health check will be disabled and a TCP health check used instead.
+	HTTPPath string `json:"http_path,omitempty"`
 }
 
-// AppSpec AppSpec declares the desired configuration of an application.
+// AppSpec The desired configuration of an application.
 type AppSpec struct {
-	// Services describe workloads which expose an HTTP service.
-	Services []AppServiceSpec `json:"services,omitempty"`
-	// Static sites describe content which can be rendered to static web assets.
-	StaticSites []AppStaticSiteSpec `json:"static_sites,omitempty"`
-	// Databases provide database instances which can provide persistence to workloads within the application.
-	Databases []AppDatabaseSpec `json:"databases,omitempty"`
-	// Workers describe workloads which do not expose HTTP routes publicly.
-	Workers []AppWorkerSpec `json:"workers,omitempty"`
-	Region  string          `json:"region,omitempty"`
-	Name    string          `json:"name"`
-	// Domains provides a set of hostnames where the application will be available.
-	Domains []AppDomainSpec `json:"domains,omitempty"`
-	// Jobs describe one-time or recurring workloads which do not expose HTTP routes publicly.
-	Jobs []AppJobSpec `json:"jobs,omitempty"`
+	// The name of the app. Must be unique across all  in the same account.
+	Name string `json:"name"`
+	// Workloads which expose publicy-accessible HTTP services.
+	Services []*AppServiceSpec `json:"services,omitempty"`
+	// Content which can be rendered to static web assets.
+	StaticSites []*AppStaticSiteSpec `json:"static_sites,omitempty"`
+	// Workloads which do not expose publicly-accessible HTTP services.
+	Workers []*AppWorkerSpec `json:"workers,omitempty"`
+	// One-time or recurring workloads which do not expose publicly-accessible HTTP routes.
+	Jobs []*AppJobSpec `json:"jobs,omitempty"`
+	// Database instances which can provide persistence to workloads within the application.
+	Databases []*AppDatabaseSpec `json:"databases,omitempty"`
+	// A set of hostnames where the application will be available.
+	Domains []*AppDomainSpec `json:"domains,omitempty"`
+	// The slug form of the geographical origin of the app.
+	Region string `json:"region,omitempty"`
 }
 
 // AppStaticSiteSpec struct for AppStaticSiteSpec
 type AppStaticSiteSpec struct {
-	Name            string                  `json:"name"`
-	DockerfilePath  string                  `json:"dockerfile_path,omitempty"`
-	BuildCommand    string                  `json:"build_command,omitempty"`
-	Git             GitSourceSpec           `json:"git,omitempty"`
-	GitHub          GitHubSourceSpec        `json:"github,omitempty"`
-	Envs            []AppVariableDefinition `json:"envs,omitempty"`
-	Routes          []AppRouteSpec          `json:"routes,omitempty"`
-	SourceDir       string                  `json:"source_dir,omitempty"`
-	OutputDir       string                  `json:"output_dir,omitempty"`
-	EnvironmentSlug string                  `json:"environment_slug,omitempty"`
-	IndexDocument   string                  `json:"index_document,omitempty"`
-	ErrorDocument   string                  `json:"error_document,omitempty"`
+	// The name. Must be unique across all components within the same app.
+	Name   string            `json:"name"`
+	Git    *GitSourceSpec    `json:"git,omitempty"`
+	GitHub *GitHubSourceSpec `json:"github,omitempty"`
+	// The path to the Dockerfile relative to the root of the repo. If set, it will be used to build this component. Otherwise, App Platform will attempt to build it using buildpacks.
+	DockerfilePath string `json:"dockerfile_path,omitempty"`
+	// An optional build command to run while building this component from source.
+	BuildCommand string `json:"build_command,omitempty"`
+	// An optional path to the working directory to use for the build. For Dockerfile builds, this will be used as the build context. Must be relative to the root of the repo.
+	SourceDir string `json:"source_dir,omitempty"`
+	// An environment slug describing the type of this app. For a full list, please refer to [the product documentation](https://www.digitalocean.com/docs/app-platform/).
+	EnvironmentSlug string `json:"environment_slug,omitempty"`
+	// An optional path to where the built assets will be located, relative to the build context. If not set, App Platform will automatically scan for these directory names: `_static`, `dist`, `public`.
+	OutputDir     string `json:"output_dir,omitempty"`
+	IndexDocument string `json:"index_document,omitempty"`
+	// The name of the error document to use when serving this static site. Default: 404.html. If no such file exists within the built assets, App Platform will supply one.
+	ErrorDocument string `json:"error_document,omitempty"`
+	// A list of environment variables made available to the component.
+	Envs []*AppVariableDefinition `json:"envs,omitempty"`
+	// A list of HTTP routes that should be routed to this component.
+	Routes []*AppRouteSpec `json:"routes,omitempty"`
 }
 
 // AppVariableDefinition struct for AppVariableDefinition
 type AppVariableDefinition struct {
+	// The name
+	Key string `json:"key"`
+	// The value. If the type is SECRET, the value will be encrypted on first submission. On following submissions, the encrypted value must be used.
 	Value string        `json:"value,omitempty"`
 	Scope VariableScope `json:"scope,omitempty"`
-	//
-	Key  string       `json:"key"`
-	Type VariableType `json:"type,omitempty"`
+	Type  VariableType  `json:"type,omitempty"`
 }
 
 // AppWorkerSpec struct for AppWorkerSpec
 type AppWorkerSpec struct {
-	Name             string                  `json:"name"`
-	RunCommand       string                  `json:"run_command,omitempty"`
-	BuildCommand     string                  `json:"build_command,omitempty"`
-	DockerfilePath   string                  `json:"dockerfile_path,omitempty"`
-	Git              GitSourceSpec           `json:"git,omitempty"`
-	GitHub           GitHubSourceSpec        `json:"github,omitempty"`
-	Envs             []AppVariableDefinition `json:"envs,omitempty"`
-	InstanceSizeSlug string                  `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64                   `json:"instance_count,omitempty"`
-	SourceDir        string                  `json:"source_dir,omitempty"`
-	EnvironmentSlug  string                  `json:"environment_slug,omitempty"`
+	// The name. Must be unique across all components within the same app.
+	Name   string            `json:"name"`
+	Git    *GitSourceSpec    `json:"git,omitempty"`
+	GitHub *GitHubSourceSpec `json:"github,omitempty"`
+	// The path to the Dockerfile relative to the root of the repo. If set, it will be used to build this component. Otherwise, App Platform will attempt to build it using buildpacks.
+	DockerfilePath string `json:"dockerfile_path,omitempty"`
+	// An optional build command to run while building this component from source.
+	BuildCommand string `json:"build_command,omitempty"`
+	// An optional run command to override the component's default.
+	RunCommand string `json:"run_command,omitempty"`
+	// An optional path to the working directory to use for the build. For Dockerfile builds, this will be used as the build context. Must be relative to the root of the repo.
+	SourceDir string `json:"source_dir,omitempty"`
+	// An environment slug describing the type of this app. For a full list, please refer to [the product documentation](https://www.digitalocean.com/docs/app-platform/).
+	EnvironmentSlug string `json:"environment_slug,omitempty"`
+	// A list of environment variables made available to the component.
+	Envs []*AppVariableDefinition `json:"envs,omitempty"`
+	// The instance size to use for this component.
+	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
+	InstanceCount    int64  `json:"instance_count,omitempty"`
 }
 
 // GitHubSourceSpec struct for GitHubSourceSpec
 type GitHubSourceSpec struct {
-	Repo         string `json:"repo"`
-	Branch       string `json:"branch"`
+	Repo         string `json:"repo,omitempty"`
+	Branch       string `json:"branch,omitempty"`
 	DeployOnPush bool   `json:"deploy_on_push,omitempty"`
 }
 
@@ -160,8 +218,8 @@ type GitHubSourceSpec struct {
 type GitSourceSpec struct {
 	Repo         string `json:"repo,omitempty"`
 	RequiresAuth bool   `json:"requires_auth,omitempty"`
-	Branch       string `json:"branch,omitempty"`
 	RepoCloneURL string `json:"repo_clone_url,omitempty"`
+	Branch       string `json:"branch,omitempty"`
 }
 
 // VariableScope the model 'VariableScope'

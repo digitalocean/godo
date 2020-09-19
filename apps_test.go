@@ -16,55 +16,55 @@ var (
 	testAppSpec = &AppSpec{
 		Name:   "app-name",
 		Region: "ams3",
-		Services: []AppServiceSpec{{
+		Services: []*AppServiceSpec{{
 			Name: "service-name",
-			Routes: []AppRouteSpec{{
+			Routes: []*AppRouteSpec{{
 				Path: "/",
 			}},
 			RunCommand:     "run-command",
 			BuildCommand:   "build-command",
 			DockerfilePath: "Dockerfile",
-			GitHub: GitHubSourceSpec{
+			GitHub: &GitHubSourceSpec{
 				Repo:   "owner/service",
 				Branch: "branch",
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
 		}},
-		Workers: []AppWorkerSpec{{
+		Workers: []*AppWorkerSpec{{
 			Name:           "worker-name",
 			RunCommand:     "run-command",
 			BuildCommand:   "build-command",
 			DockerfilePath: "Dockerfile",
-			GitHub: GitHubSourceSpec{
+			GitHub: &GitHubSourceSpec{
 				Repo:   "owner/worker",
 				Branch: "branch",
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
 		}},
-		StaticSites: []AppStaticSiteSpec{{
+		StaticSites: []*AppStaticSiteSpec{{
 			Name:         "static-name",
 			BuildCommand: "build-command",
-			Git: GitSourceSpec{
+			Git: &GitSourceSpec{
 				RepoCloneURL: "git@githost.com/owner/static.git",
 				Branch:       "branch",
 			},
 			OutputDir: "out",
 		}},
-		Jobs: []AppJobSpec{{
+		Jobs: []*AppJobSpec{{
 			Name:           "job-name",
 			RunCommand:     "run-command",
 			BuildCommand:   "build-command",
 			DockerfilePath: "Dockerfile",
-			GitHub: GitHubSourceSpec{
+			GitHub: &GitHubSourceSpec{
 				Repo:   "owner/job",
 				Branch: "branch",
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
 		}},
-		Databases: []AppDatabaseSpec{{
+		Databases: []*AppDatabaseSpec{{
 			Name:        "db",
 			Engine:      APPDATABASESPECENGINE_MYSQL,
 			Version:     "8",
@@ -72,10 +72,10 @@ var (
 			NumNodes:    1,
 			Production:  true,
 			ClusterName: "cluster-name",
-			DbName:      "app",
-			DbUser:      "appuser",
+			DBName:      "app",
+			DBUser:      "appuser",
 		}},
-		Domains: []AppDomainSpec{{
+		Domains: []*AppDomainSpec{{
 			Domain: "example.com",
 		}},
 	}
