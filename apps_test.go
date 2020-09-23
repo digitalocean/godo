@@ -66,7 +66,7 @@ var (
 		}},
 		Databases: []*AppDatabaseSpec{{
 			Name:        "db",
-			Engine:      APPDATABASESPECENGINE_MYSQL,
+			Engine:      AppDatabaseSpecEngine_MySQL,
 			Version:     "8",
 			Size:        "size",
 			NumNodes:    1,
@@ -75,9 +75,12 @@ var (
 			DBName:      "app",
 			DBUser:      "appuser",
 		}},
-		Domains: []*AppDomainSpec{{
-			Domain: "example.com",
-		}},
+		Domains: []*AppDomainSpec{
+			{
+				Domain: "example.com",
+				Type:   AppDomainSpecType_Primary,
+			},
+		},
 	}
 
 	testDeployment = Deployment{
@@ -99,16 +102,47 @@ var (
 			Name:             "job-name",
 			SourceCommitHash: "job-hash",
 		}},
+		CreatedAt:          time.Unix(1595959200, 0).UTC(),
+		UpdatedAt:          time.Unix(1595959200, 0).UTC(),
+		PhaseLastUpdatedAt: time.Unix(1595959200, 0).UTC(),
+		Phase:              DeploymentPhase_Active,
+		Progress: &DeploymentProgress{
+			SuccessSteps: 1,
+			TotalSteps:   1,
+			Steps: []*DeploymentProgressStep{{
+				Name:      "step",
+				Status:    DeploymentProgressStepStatus_Success,
+				StartedAt: time.Unix(1595959200, 0).UTC(),
+				EndedAt:   time.Unix(1595959200, 0).UTC(),
+				Steps: []*DeploymentProgressStep{{
+					Name:      "sub",
+					Status:    DeploymentProgressStepStatus_Success,
+					StartedAt: time.Unix(1595959200, 0).UTC(),
+					EndedAt:   time.Unix(1595959200, 0).UTC(),
+				}},
+			}},
+		},
 	}
 
 	testApp = App{
-		ID:                   "1c70f8f3-106e-428b-ae6d-bfc693c77536",
-		Spec:                 testAppSpec,
-		DefaultIngress:       "test.ingress.com",
-		ActiveDeployment:     &testDeployment,
-		InProgressDeployment: &testDeployment,
-		CreatedAt:            time.Unix(1, 0).UTC(),
-		UpdatedAt:            time.Unix(1, 0).UTC(),
+		ID:                      "1c70f8f3-106e-428b-ae6d-bfc693c77536",
+		Spec:                    testAppSpec,
+		DefaultIngress:          "example.com",
+		LiveURL:                 "https://example.com",
+		ActiveDeployment:        &testDeployment,
+		InProgressDeployment:    &testDeployment,
+		LastDeploymentCreatedAt: time.Unix(1595959200, 0).UTC(),
+		CreatedAt:               time.Unix(1595959200, 0).UTC(),
+		UpdatedAt:               time.Unix(1595959200, 0).UTC(),
+		Region: &AppRegion{
+			Slug:        "ams",
+			Label:       "Amsterdam",
+			Continent:   "Europe",
+			Disabled:    true,
+			Reason:      "Scheduled maintenance",
+			DataCenters: []string{"ams3"},
+			Flag:        "nl",
+		},
 	}
 )
 
