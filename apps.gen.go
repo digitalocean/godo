@@ -3,7 +3,24 @@
 
 package godo
 
-import ()
+import (
+	"time"
+)
+
+// App An application's configuration and status.
+type App struct {
+	ID                      string      `json:"id,omitempty"`
+	OwnerUUID               string      `json:"owner_uuid,omitempty"`
+	Spec                    *AppSpec    `json:"spec"`
+	DefaultIngress          string      `json:"default_ingress,omitempty"`
+	CreatedAt               time.Time   `json:"created_at,omitempty"`
+	UpdatedAt               time.Time   `json:"updated_at,omitempty"`
+	ActiveDeployment        *Deployment `json:"active_deployment,omitempty"`
+	InProgressDeployment    *Deployment `json:"in_progress_deployment,omitempty"`
+	LastDeploymentCreatedAt time.Time   `json:"last_deployment_created_at,omitempty"`
+	LiveURL                 string      `json:"live_url,omitempty"`
+	Region                  *AppRegion  `json:"region,omitempty"`
+}
 
 // AppDatabaseSpec struct for AppDatabaseSpec
 type AppDatabaseSpec struct {
@@ -30,10 +47,10 @@ type AppDatabaseSpecEngine string
 
 // List of AppDatabaseSpecEngine
 const (
-	APPDATABASESPECENGINE_UNSET AppDatabaseSpecEngine = "UNSET"
-	APPDATABASESPECENGINE_MYSQL AppDatabaseSpecEngine = "MYSQL"
-	APPDATABASESPECENGINE_PG    AppDatabaseSpecEngine = "PG"
-	APPDATABASESPECENGINE_REDIS AppDatabaseSpecEngine = "REDIS"
+	AppDatabaseSpecEngine_Unset AppDatabaseSpecEngine = "UNSET"
+	AppDatabaseSpecEngine_MySQL AppDatabaseSpecEngine = "MYSQL"
+	AppDatabaseSpecEngine_PG    AppDatabaseSpecEngine = "PG"
+	AppDatabaseSpecEngine_Redis AppDatabaseSpecEngine = "REDIS"
 )
 
 // AppDomainSpec struct for AppDomainSpec
@@ -48,10 +65,10 @@ type AppDomainSpecType string
 
 // List of AppDomainSpecType
 const (
-	APPDOMAINSPECTYPE_UNSPECIFIED AppDomainSpecType = "UNSPECIFIED"
-	APPDOMAINSPECTYPE_DEFAULT     AppDomainSpecType = "DEFAULT"
-	APPDOMAINSPECTYPE_PRIMARY     AppDomainSpecType = "PRIMARY"
-	APPDOMAINSPECTYPE_ALIAS       AppDomainSpecType = "ALIAS"
+	AppDomainSpecType_Unspecified AppDomainSpecType = "UNSPECIFIED"
+	AppDomainSpecType_Default     AppDomainSpecType = "DEFAULT"
+	AppDomainSpecType_Primary     AppDomainSpecType = "PRIMARY"
+	AppDomainSpecType_Alias       AppDomainSpecType = "ALIAS"
 )
 
 // AppJobSpec struct for AppJobSpec
@@ -180,8 +197,8 @@ type AppVariableDefinition struct {
 	Key string `json:"key"`
 	// The value. If the type is SECRET, the value will be encrypted on first submission. On following submissions, the encrypted value must be used.
 	Value string        `json:"value,omitempty"`
-	Scope VariableScope `json:"scope,omitempty"`
-	Type  VariableType  `json:"type,omitempty"`
+	Scope AppVariableScope `json:"scope,omitempty"`
+	Type  AppVariableType  `json:"type,omitempty"`
 }
 
 // AppWorkerSpec struct for AppWorkerSpec
@@ -207,6 +224,74 @@ type AppWorkerSpec struct {
 	InstanceCount    int64  `json:"instance_count,omitempty"`
 }
 
+// Deployment struct for Deployment
+type Deployment struct {
+	ID                 string                  `json:"id,omitempty"`
+	Spec               *AppSpec                `json:"spec,omitempty"`
+	Services           []*DeploymentService    `json:"services,omitempty"`
+	StaticSites        []*DeploymentStaticSite `json:"static_sites,omitempty"`
+	Workers            []*DeploymentWorker     `json:"workers,omitempty"`
+	Jobs               []*DeploymentJob        `json:"jobs,omitempty"`
+	PhaseLastUpdatedAt time.Time               `json:"phase_last_updated_at,omitempty"`
+	CreatedAt          time.Time               `json:"created_at,omitempty"`
+	UpdatedAt          time.Time               `json:"updated_at,omitempty"`
+	Cause              string                  `json:"cause,omitempty"`
+	ClonedFrom         string                  `json:"cloned_from,omitempty"`
+	Progress           *DeploymentProgress     `json:"progress,omitempty"`
+	Phase              DeploymentPhase         `json:"phase,omitempty"`
+}
+
+// DeploymentJob struct for DeploymentJob
+type DeploymentJob struct {
+	Name             string `json:"name,omitempty"`
+	SourceCommitHash string `json:"source_commit_hash,omitempty"`
+}
+
+// DeploymentPhase the model 'DeploymentPhase'
+type DeploymentPhase string
+
+// List of DeploymentPhase
+const (
+	DeploymentPhase_Unknown       DeploymentPhase = "UNKNOWN"
+	DeploymentPhase_PendingBuild  DeploymentPhase = "PENDING_BUILD"
+	DeploymentPhase_Building      DeploymentPhase = "BUILDING"
+	DeploymentPhase_PendingDeploy DeploymentPhase = "PENDING_DEPLOY"
+	DeploymentPhase_Deploying     DeploymentPhase = "DEPLOYING"
+	DeploymentPhase_Active        DeploymentPhase = "ACTIVE"
+	DeploymentPhase_Superseded    DeploymentPhase = "SUPERSEDED"
+	DeploymentPhase_Error         DeploymentPhase = "ERROR"
+	DeploymentPhase_Canceled      DeploymentPhase = "CANCELED"
+)
+
+// DeploymentProgress struct for DeploymentProgress
+type DeploymentProgress struct {
+	PendingSteps int32           `json:"pending_steps,omitempty"`
+	RunningSteps int32           `json:"running_steps,omitempty"`
+	SuccessSteps int32           `json:"success_steps,omitempty"`
+	ErrorSteps   int32           `json:"error_steps,omitempty"`
+	TotalSteps   int32           `json:"total_steps,omitempty"`
+	Steps        []*DeploymentProgressStep `json:"steps,omitempty"`
+	SummarySteps []*DeploymentProgressStep `json:"summary_steps,omitempty"`
+}
+
+// DeploymentService struct for DeploymentService
+type DeploymentService struct {
+	Name             string `json:"name,omitempty"`
+	SourceCommitHash string `json:"source_commit_hash,omitempty"`
+}
+
+// DeploymentStaticSite struct for DeploymentStaticSite
+type DeploymentStaticSite struct {
+	Name             string `json:"name,omitempty"`
+	SourceCommitHash string `json:"source_commit_hash,omitempty"`
+}
+
+// DeploymentWorker struct for DeploymentWorker
+type DeploymentWorker struct {
+	Name             string `json:"name,omitempty"`
+	SourceCommitHash string `json:"source_commit_hash,omitempty"`
+}
+
 // GitHubSourceSpec struct for GitHubSourceSpec
 type GitHubSourceSpec struct {
 	Repo         string `json:"repo,omitempty"`
@@ -216,28 +301,68 @@ type GitHubSourceSpec struct {
 
 // GitSourceSpec struct for GitSourceSpec
 type GitSourceSpec struct {
-	Repo         string `json:"repo,omitempty"`
-	RequiresAuth bool   `json:"requires_auth,omitempty"`
 	RepoCloneURL string `json:"repo_clone_url,omitempty"`
 	Branch       string `json:"branch,omitempty"`
 }
 
-// VariableScope the model 'VariableScope'
-type VariableScope string
+// DeploymentProgressStep struct for DeploymentProgressStep
+type DeploymentProgressStep struct {
+	Name          string             `json:"name,omitempty"`
+	Status        DeploymentProgressStepStatus `json:"status,omitempty"`
+	Steps         []*DeploymentProgressStep    `json:"steps,omitempty"`
+	StartedAt     time.Time          `json:"started_at,omitempty"`
+	EndedAt       time.Time          `json:"ended_at,omitempty"`
+	Reason        *DeploymentProgressStepReason        `json:"reason,omitempty"`
+	ComponentName string             `json:"component_name,omitempty"`
+	// The base of a human-readable description of the step intended to be combined with the component name for presentation. For example:  message_base = \"Building service\" component_name = \"api\"
+	MessageBase string `json:"message_base,omitempty"`
+}
 
-// List of VariableScope
+// DeploymentProgressStepStatus the model 'DeploymentProgressStepStatus'
+type DeploymentProgressStepStatus string
+
+// List of DeploymentProgressStepStatus
 const (
-	VARIABLESCOPE_UNSET              VariableScope = "UNSET"
-	VARIABLESCOPE_RUN_TIME           VariableScope = "RUN_TIME"
-	VARIABLESCOPE_BUILD_TIME         VariableScope = "BUILD_TIME"
-	VARIABLESCOPE_RUN_AND_BUILD_TIME VariableScope = "RUN_AND_BUILD_TIME"
+	DeploymentProgressStepStatus_Unknown DeploymentProgressStepStatus = "UNKNOWN"
+	DeploymentProgressStepStatus_Pending DeploymentProgressStepStatus = "PENDING"
+	DeploymentProgressStepStatus_Running DeploymentProgressStepStatus = "RUNNING"
+	DeploymentProgressStepStatus_Error   DeploymentProgressStepStatus = "ERROR"
+	DeploymentProgressStepStatus_Success DeploymentProgressStepStatus = "SUCCESS"
 )
 
-// VariableType the model 'VariableType'
-type VariableType string
+// AppRegion struct for AppRegion
+type AppRegion struct {
+	Slug        string   `json:"slug,omitempty"`
+	Label       string   `json:"label,omitempty"`
+	Flag        string   `json:"flag,omitempty"`
+	Continent   string   `json:"continent,omitempty"`
+	Disabled    bool     `json:"disabled,omitempty"`
+	DataCenters []string `json:"data_centers,omitempty"`
+	Reason      string   `json:"reason,omitempty"`
+}
 
-// List of VariableType
+// DeploymentProgressStepReason struct for DeploymentProgressStepReason
+type DeploymentProgressStepReason struct {
+	Code    string `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+// AppVariableScope the model 'AppVariableScope'
+type AppVariableScope string
+
+// List of AppVariableScope
 const (
-	VARIABLETYPE_GENERAL VariableType = "GENERAL"
-	VARIABLETYPE_SECRET  VariableType = "SECRET"
+	AppVariableScope_Unset           AppVariableScope = "UNSET"
+	AppVariableScope_RunTime         AppVariableScope = "RUN_TIME"
+	AppVariableScope_BuildTime       AppVariableScope = "BUILD_TIME"
+	AppVariableScope_RunAndBuildTime AppVariableScope = "RUN_AND_BUILD_TIME"
+)
+
+// AppVariableType the model 'AppVariableType'
+type AppVariableType string
+
+// List of AppVariableType
+const (
+	AppVariableType_General AppVariableType = "GENERAL"
+	AppVariableType_Secret  AppVariableType = "SECRET"
 )
