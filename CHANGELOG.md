@@ -1,6 +1,6 @@
 # Change Log
 
-## [v1.45.0] - 2020-09-24
+## [v1.45.0] - 2020-09-25
 
 **Note**: This release contains breaking changes to App Platform features currently in closed beta.
 
