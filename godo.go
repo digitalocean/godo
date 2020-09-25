@@ -166,10 +166,7 @@ func addOptions(s string, opt interface{}) (string, error) {
 // token.
 func NewFromToken(token string) *Client {
 	ctx := context.Background()
-
-	config := &oauth2.Config{}
-	ts := config.TokenSource(ctx, &oauth2.Token{AccessToken: token})
-
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	return NewClient(oauth2.NewClient(ctx, ts))
 }
 
