@@ -402,7 +402,7 @@ func TestDo_rateLimitRace(t *testing.T) {
 			req, _ := client.NewRequest(ctx, http.MethodGet, "/", nil)
 			_, err := client.Do(context.Background(), req, nil)
 			if err != nil {
-				t.Fatalf("Do(): %v", err)
+				t.Errorf("Do(): %v", err)
 			}
 			wg.Done()
 		}()
