@@ -809,6 +809,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
 		Name:      "test-loadbalancer",
 		IP:        "10.0.0.1",
+		SizeSlug:  "lb-small",
 		Algorithm: "least_connections",
 		Status:    "active",
 		Created:   "2011-06-24T12:00:00Z",
@@ -848,6 +849,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		Name:      "test-loadbalancer",
 		Algorithm: "least_connections",
 		Region:    "lon1",
+		SizeSlug:  "lb-small",
 		ForwardingRules: []ForwardingRule{ForwardingRule{
 			EntryProtocol:  "http",
 			EntryPort:      80,
