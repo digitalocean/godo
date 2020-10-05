@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## [v1.46.0] - 2020-10-05
 
 - #373 load balancers: add LB size field, currently in closed beta - @anitgandhi
 
