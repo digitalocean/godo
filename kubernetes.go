@@ -28,6 +28,7 @@ type KubernetesService interface {
 	GetUser(context.Context, string) (*KubernetesClusterUser, *Response, error)
 	GetUpgrades(context.Context, string) ([]*KubernetesVersion, *Response, error)
 	GetKubeConfig(context.Context, string) (*KubernetesClusterConfig, *Response, error)
+	GetKubeConfigWithExpiry(context.Context, string, int64) (*KubernetesClusterConfig, *Response, error)
 	GetCredentials(context.Context, string, *KubernetesClusterCredentialsGetRequest) (*KubernetesClusterCredentials, *Response, error)
 	List(context.Context, *ListOptions) ([]*KubernetesCluster, *Response, error)
 	Update(context.Context, string, *KubernetesClusterUpdateRequest) (*KubernetesCluster, *Response, error)
@@ -544,6 +545,27 @@ func (svc *KubernetesServiceOp) GetKubeConfig(ctx context.Context, clusterID str
 	if err != nil {
 		return nil, nil, err
 	}
+	configBytes := bytes.NewBuffer(nil)
+	resp, err := svc.client.Do(ctx, req, configBytes)
+	if err != nil {
+		return nil, resp, err
+	}
+	res := &KubernetesClusterConfig{
+		KubeconfigYAML: configBytes.Bytes(),
+	}
+	return res, resp, nil
+}
+
+// GetKubeConfigWithExpiry returns a Kubernetes config file for the specified cluster with expiry_seconds.
+func (svc *KubernetesServiceOp) GetKubeConfigWithExpiry(ctx context.Context, clusterID string, expirySeconds int64) (*KubernetesClusterConfig, *Response, error) {
+	path := fmt.Sprintf("%s/%s/kubeconfig", kubernetesClustersPath, clusterID)
+	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := req.URL.Query()
+	q.Add("expiry_seconds", fmt.Sprintf("%d", expirySeconds))
+	req.URL.RawQuery = q.Encode()
 	configBytes := bytes.NewBuffer(nil)
 	resp, err := svc.client.Do(ctx, req, configBytes)
 	if err != nil {
