@@ -42,7 +42,7 @@ type LoadBalancer struct {
 	DropletIDs             []int            `json:"droplet_ids,omitempty"`
 	Tag                    string           `json:"tag,omitempty"`
 	Tags                   []string         `json:"tags,omitempty"`
-	RedirectHttpToHttps    bool             `json:"redirect_http_to_https,omitempty"`
+	RedirectHTTPToHTTPS    bool             `json:"redirect_http_to_https,omitempty"`
 	EnableProxyProtocol    bool             `json:"enable_proxy_protocol,omitempty"`
 	EnableBackendKeepalive bool             `json:"enable_backend_keepalive,omitempty"`
 	VPCUUID                string           `json:"vpc_uuid,omitempty"`
@@ -53,6 +53,7 @@ func (l LoadBalancer) String() string {
 	return Stringify(l)
 }
 
+// URN returns the load balancer ID in a valid DO API URN form.
 func (l LoadBalancer) URN() string {
 	return ToURN("LoadBalancer", l.ID)
 }
@@ -67,7 +68,7 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 		ForwardingRules:        append([]ForwardingRule(nil), l.ForwardingRules...),
 		DropletIDs:             append([]int(nil), l.DropletIDs...),
 		Tag:                    l.Tag,
-		RedirectHttpToHttps:    l.RedirectHttpToHttps,
+		RedirectHTTPToHTTPS:    l.RedirectHTTPToHTTPS,
 		EnableProxyProtocol:    l.EnableProxyProtocol,
 		EnableBackendKeepalive: l.EnableBackendKeepalive,
 		HealthCheck:            l.HealthCheck,
@@ -95,7 +96,7 @@ type ForwardingRule struct {
 	TargetProtocol string `json:"target_protocol,omitempty"`
 	TargetPort     int    `json:"target_port,omitempty"`
 	CertificateID  string `json:"certificate_id,omitempty"`
-	TlsPassthrough bool   `json:"tls_passthrough,omitempty"`
+	TLSPassthrough bool   `json:"tls_passthrough,omitempty"`
 }
 
 // String creates a human-readable description of a ForwardingRule.
@@ -123,7 +124,7 @@ func (h HealthCheck) String() string {
 type StickySessions struct {
 	Type             string `json:"type,omitempty"`
 	CookieName       string `json:"cookie_name,omitempty"`
-	CookieTtlSeconds int    `json:"cookie_ttl_seconds,omitempty"`
+	CookieTTLSeconds int    `json:"cookie_ttl_seconds,omitempty"`
 }
 
 // String creates a human-readable description of a StickySessions instance.
@@ -143,7 +144,7 @@ type LoadBalancerRequest struct {
 	DropletIDs             []int            `json:"droplet_ids,omitempty"`
 	Tag                    string           `json:"tag,omitempty"`
 	Tags                   []string         `json:"tags,omitempty"`
-	RedirectHttpToHttps    bool             `json:"redirect_http_to_https,omitempty"`
+	RedirectHTTPToHTTPS    bool             `json:"redirect_http_to_https,omitempty"`
 	EnableProxyProtocol    bool             `json:"enable_proxy_protocol,omitempty"`
 	EnableBackendKeepalive bool             `json:"enable_backend_keepalive,omitempty"`
 	VPCUUID                string           `json:"vpc_uuid,omitempty"`

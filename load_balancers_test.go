@@ -279,14 +279,14 @@ func TestLoadBalancers_Get(t *testing.T) {
 	defer teardown()
 
 	path := "/v2/load_balancers"
-	loadBalancerId := "37e6be88-01ec-4ec7-9bc6-a514d4719057"
-	path = fmt.Sprintf("%s/%s", path, loadBalancerId)
+	loadBalancerID := "37e6be88-01ec-4ec7-9bc6-a514d4719057"
+	path = fmt.Sprintf("%s/%s", path, loadBalancerID)
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, lbGetJSONResponse)
 	})
 
-	loadBalancer, _, err := client.LoadBalancers.Get(ctx, loadBalancerId)
+	loadBalancer, _, err := client.LoadBalancers.Get(ctx, loadBalancerID)
 	if err != nil {
 		t.Errorf("LoadBalancers.Get returned error: %v", err)
 	}
@@ -305,7 +305,7 @@ func TestLoadBalancers_Get(t *testing.T) {
 				TargetProtocol: "http",
 				TargetPort:     80,
 				CertificateID:  "a-b-c",
-				TlsPassthrough: false,
+				TLSPassthrough: false,
 			},
 		},
 		HealthCheck: &HealthCheck{
@@ -320,7 +320,7 @@ func TestLoadBalancers_Get(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "DO-LB",
-			CookieTtlSeconds: 5,
+			CookieTTLSeconds: 5,
 		},
 		Region: &Region{
 			Slug:      "nyc1",
@@ -364,12 +364,12 @@ func TestLoadBalancers_Create(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "DO-LB",
-			CookieTtlSeconds: 5,
+			CookieTTLSeconds: 5,
 		},
 		Tag:                 "my-tag",
 		Tags:                []string{"my-tag"},
 		DropletIDs:          []int{2, 21},
-		RedirectHttpToHttps: true,
+		RedirectHTTPToHTTPS: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
 	}
 
@@ -405,7 +405,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 				TargetProtocol: "http",
 				TargetPort:     80,
 				CertificateID:  "a-b-c",
-				TlsPassthrough: false,
+				TLSPassthrough: false,
 			},
 			{
 				EntryProtocol:  "https",
@@ -413,7 +413,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 				TargetProtocol: "https",
 				TargetPort:     443,
 				CertificateID:  "",
-				TlsPassthrough: true,
+				TLSPassthrough: true,
 			},
 		},
 		HealthCheck: &HealthCheck{
@@ -428,7 +428,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "DO-LB",
-			CookieTtlSeconds: 5,
+			CookieTTLSeconds: 5,
 		},
 		Region: &Region{
 			Slug:      "nyc1",
@@ -439,7 +439,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		},
 		Tags:                []string{"my-tag"},
 		DropletIDs:          []int{2, 21},
-		RedirectHttpToHttps: true,
+		RedirectHTTPToHTTPS: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
 	}
 
@@ -485,8 +485,8 @@ func TestLoadBalancers_Update(t *testing.T) {
 	}
 
 	path := "/v2/load_balancers"
-	loadBalancerId := "8268a81c-fcf5-423e-a337-bbfe95817f23"
-	path = fmt.Sprintf("%s/%s", path, loadBalancerId)
+	loadBalancerID := "8268a81c-fcf5-423e-a337-bbfe95817f23"
+	path = fmt.Sprintf("%s/%s", path, loadBalancerID)
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		v := new(LoadBalancerRequest)
@@ -501,7 +501,7 @@ func TestLoadBalancers_Update(t *testing.T) {
 		fmt.Fprint(w, lbUpdateJSONResponse)
 	})
 
-	loadBalancer, _, err := client.LoadBalancers.Update(ctx, loadBalancerId, updateRequest)
+	loadBalancer, _, err := client.LoadBalancers.Update(ctx, loadBalancerID, updateRequest)
 	if err != nil {
 		t.Errorf("LoadBalancers.Update returned error: %v", err)
 	}
@@ -598,7 +598,7 @@ func TestLoadBalancers_List(t *testing.T) {
 			StickySessions: &StickySessions{
 				Type:             "cookies",
 				CookieName:       "DO-LB",
-				CookieTtlSeconds: 5,
+				CookieTTLSeconds: 5,
 			},
 			Region: &Region{
 				Slug:      "nyc1",
@@ -825,12 +825,12 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "nomnom",
-			CookieTtlSeconds: 32,
+			CookieTTLSeconds: 32,
 		},
 		Region: &Region{
 			Slug: "lon1",
 		},
-		RedirectHttpToHttps:    true,
+		RedirectHTTPToHTTPS:    true,
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
@@ -868,10 +868,10 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "nomnom",
-			CookieTtlSeconds: 32,
+			CookieTTLSeconds: 32,
 		},
 		DropletIDs:             []int{12345},
-		RedirectHttpToHttps:    true,
+		RedirectHTTPToHTTPS:    true,
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
@@ -888,7 +888,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EntryPort:      443,
 		TargetProtocol: "https",
 		TargetPort:     443,
-		TlsPassthrough: true,
+		TLSPassthrough: true,
 	})
 
 	// Check that original LoadBalancer hasn't changed
@@ -912,7 +912,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 			EntryPort:      443,
 			TargetProtocol: "https",
 			TargetPort:     443,
-			TlsPassthrough: true,
+			TLSPassthrough: true,
 		},
 	}, r.ForwardingRules)
 }

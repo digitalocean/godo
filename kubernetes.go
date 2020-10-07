@@ -198,13 +198,36 @@ type KubernetesMaintenancePolicy struct {
 type KubernetesMaintenancePolicyDay int
 
 const (
+	// KubernetesMaintenanceDayAny sets the KubernetesMaintenancePolicyDay to any
+	// day of the week
 	KubernetesMaintenanceDayAny KubernetesMaintenancePolicyDay = iota
+
+	// KubernetesMaintenanceDayMonday sets the KubernetesMaintenancePolicyDay to
+	// Monday
 	KubernetesMaintenanceDayMonday
+
+	// KubernetesMaintenanceDayTuesday sets the KubernetesMaintenancePolicyDay to
+	// Tuesday
 	KubernetesMaintenanceDayTuesday
+
+	// KubernetesMaintenanceDayWednesday sets the KubernetesMaintenancePolicyDay to
+	// Wednesday
 	KubernetesMaintenanceDayWednesday
+
+	// KubernetesMaintenanceDayThursday sets the KubernetesMaintenancePolicyDay to
+	// Thursday
 	KubernetesMaintenanceDayThursday
+
+	// KubernetesMaintenanceDayFriday sets the KubernetesMaintenancePolicyDay to
+	// Friday
 	KubernetesMaintenanceDayFriday
+
+	// KubernetesMaintenanceDaySaturday sets the KubernetesMaintenancePolicyDay to
+	// Saturday
 	KubernetesMaintenanceDaySaturday
+
+	// KubernetesMaintenanceDaySunday sets the KubernetesMaintenancePolicyDay to
+	// Sunday
 	KubernetesMaintenanceDaySunday
 )
 
@@ -250,6 +273,7 @@ func (k KubernetesMaintenancePolicyDay) String() string {
 
 }
 
+// UnmarshalJSON parses the JSON string into KubernetesMaintenancePolicyDay
 func (k *KubernetesMaintenancePolicyDay) UnmarshalJSON(data []byte) error {
 	var val string
 	if err := json.Unmarshal(data, &val); err != nil {
@@ -264,6 +288,7 @@ func (k *KubernetesMaintenancePolicyDay) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON returns the JSON string for KubernetesMaintenancePolicyDay
 func (k KubernetesMaintenancePolicyDay) MarshalJSON() ([]byte, error) {
 	if KubernetesMaintenanceDayAny <= k && k <= KubernetesMaintenanceDaySunday {
 		return json.Marshal(days[k])
