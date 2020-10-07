@@ -1477,6 +1477,68 @@ func TestKubernetesVersions_List(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestKubernetesClusterRegistry_Add(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+
+	addRequest := &KubernetesClusterRegistryRequest{
+		ClusterUUIDs: []string{"8d91899c-0739-4a1a-acc5-deadbeefbb8f"},
+	}
+
+	jBlob := `
+{
+	"cluster_uuids": ["8d91899c-0739-4a1a-acc5-deadbeefbb8f"]
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/registry", func(w http.ResponseWriter, r *http.Request) {
+		v := new(KubernetesClusterRegistryRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, v, addRequest)
+		fmt.Fprint(w, jBlob)
+	})
+
+	_, err := kubeSvc.AddRegistry(ctx, addRequest)
+	require.NoError(t, err)
+}
+
+func TestKubernetesClusterRegistry_Remove(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+
+	remove := &KubernetesClusterRegistryRequest{
+		ClusterUUIDs: []string{"8d91899c-0739-4a1a-acc5-deadbeefbb8f"},
+	}
+
+	jBlob := `
+{
+	"cluster_uuids": ["8d91899c-0739-4a1a-acc5-deadbeefbb8f"]
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/registry", func(w http.ResponseWriter, r *http.Request) {
+		v := new(KubernetesClusterRegistryRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodDelete)
+		require.Equal(t, v, remove)
+		fmt.Fprint(w, jBlob)
+	})
+
+	_, err := kubeSvc.RemoveRegistry(ctx, remove)
+	require.NoError(t, err)
+}
+
 var maintenancePolicyDayTests = []struct {
 	name  string
 	json  string

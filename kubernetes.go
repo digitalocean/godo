@@ -45,6 +45,8 @@ type KubernetesService interface {
 	DeleteNode(ctx context.Context, clusterID, poolID, nodeID string, req *KubernetesNodeDeleteRequest) (*Response, error)
 
 	GetOptions(context.Context) (*KubernetesOptions, *Response, error)
+	AddRegistry(ctx context.Context, req *KubernetesClusterRegistryRequest) (*Response, error)
+	RemoveRegistry(ctx context.Context, req *KubernetesClusterRegistryRequest) (*Response, error)
 }
 
 var _ KubernetesService = &KubernetesServiceOp{}
@@ -145,6 +147,11 @@ type KubernetesClusterCredentialsGetRequest struct {
 	ExpirySeconds *int `json:"expiry_seconds,omitempty"`
 }
 
+// KubernetesClusterRegistryRequest represents clusters to integrate with docr registry
+type KubernetesClusterRegistryRequest struct {
+	ClusterUUIDs []string `json:"cluster_uuids,omitempty"`
+}
+
 // KubernetesCluster represents a Kubernetes cluster.
 type KubernetesCluster struct {
 	ID            string   `json:"id,omitempty"`
@@ -163,6 +170,7 @@ type KubernetesCluster struct {
 	MaintenancePolicy *KubernetesMaintenancePolicy `json:"maintenance_policy,omitempty"`
 	AutoUpgrade       bool                         `json:"auto_upgrade,omitempty"`
 	SurgeUpgrade      bool                         `json:"surge_upgrade,omitempty"`
+	RegistryEnabled   bool                         `json:"registry_enabled,omitempty"`
 
 	Status    *KubernetesClusterStatus `json:"status,omitempty"`
 	CreatedAt time.Time                `json:"created_at,omitempty"`
@@ -715,4 +723,32 @@ func (svc *KubernetesServiceOp) GetOptions(ctx context.Context) (*KubernetesOpti
 		return nil, resp, err
 	}
 	return root.Options, resp, nil
+}
+
+// AddRegistry integrates docr registry with all the specified clusters
+func (svc *KubernetesServiceOp) AddRegistry(ctx context.Context, req *KubernetesClusterRegistryRequest) (*Response, error) {
+	path := fmt.Sprintf("%s/registry", kubernetesClustersPath)
+	request, err := svc.client.NewRequest(ctx, http.MethodPost, path, req)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, request, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// RemoveRegistry removes docr registry support for all the specified clusters
+func (svc *KubernetesServiceOp) RemoveRegistry(ctx context.Context, req *KubernetesClusterRegistryRequest) (*Response, error) {
+	path := fmt.Sprintf("%s/registry", kubernetesClustersPath)
+	request, err := svc.client.NewRequest(ctx, http.MethodDelete, path, req)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, request, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
 }
