@@ -308,7 +308,7 @@ func TestImages_Create(t *testing.T) {
 
 	createRequest := &CustomImageCreateRequest{
 		Name:         "my-new-image",
-		URL:          "http://example.com/distro-amd64.img",
+		Url:          "http://example.com/distro-amd64.img",
 		Region:       "nyc3",
 		Distribution: "Ubuntu",
 		Description:  "My new custom image",

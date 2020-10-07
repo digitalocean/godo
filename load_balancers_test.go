@@ -305,7 +305,7 @@ func TestLoadBalancers_Get(t *testing.T) {
 				TargetProtocol: "http",
 				TargetPort:     80,
 				CertificateID:  "a-b-c",
-				TLSPassthrough: false,
+				TlsPassthrough: false,
 			},
 		},
 		HealthCheck: &HealthCheck{
@@ -320,7 +320,7 @@ func TestLoadBalancers_Get(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "DO-LB",
-			CookieTTLSeconds: 5,
+			CookieTtlSeconds: 5,
 		},
 		Region: &Region{
 			Slug:      "nyc1",
@@ -364,12 +364,12 @@ func TestLoadBalancers_Create(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "DO-LB",
-			CookieTTLSeconds: 5,
+			CookieTtlSeconds: 5,
 		},
 		Tag:                 "my-tag",
 		Tags:                []string{"my-tag"},
 		DropletIDs:          []int{2, 21},
-		RedirectHTTPToHTTPS: true,
+		RedirectHttpToHttps: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
 	}
 
@@ -405,7 +405,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 				TargetProtocol: "http",
 				TargetPort:     80,
 				CertificateID:  "a-b-c",
-				TLSPassthrough: false,
+				TlsPassthrough: false,
 			},
 			{
 				EntryProtocol:  "https",
@@ -413,7 +413,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 				TargetProtocol: "https",
 				TargetPort:     443,
 				CertificateID:  "",
-				TLSPassthrough: true,
+				TlsPassthrough: true,
 			},
 		},
 		HealthCheck: &HealthCheck{
@@ -428,7 +428,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "DO-LB",
-			CookieTTLSeconds: 5,
+			CookieTtlSeconds: 5,
 		},
 		Region: &Region{
 			Slug:      "nyc1",
@@ -439,7 +439,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		},
 		Tags:                []string{"my-tag"},
 		DropletIDs:          []int{2, 21},
-		RedirectHTTPToHTTPS: true,
+		RedirectHttpToHttps: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
 	}
 
@@ -598,7 +598,7 @@ func TestLoadBalancers_List(t *testing.T) {
 			StickySessions: &StickySessions{
 				Type:             "cookies",
 				CookieName:       "DO-LB",
-				CookieTTLSeconds: 5,
+				CookieTtlSeconds: 5,
 			},
 			Region: &Region{
 				Slug:      "nyc1",
@@ -825,12 +825,12 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "nomnom",
-			CookieTTLSeconds: 32,
+			CookieTtlSeconds: 32,
 		},
 		Region: &Region{
 			Slug: "lon1",
 		},
-		RedirectHTTPToHTTPS:    true,
+		RedirectHttpToHttps:    true,
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
@@ -868,10 +868,10 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		StickySessions: &StickySessions{
 			Type:             "cookies",
 			CookieName:       "nomnom",
-			CookieTTLSeconds: 32,
+			CookieTtlSeconds: 32,
 		},
 		DropletIDs:             []int{12345},
-		RedirectHTTPToHTTPS:    true,
+		RedirectHttpToHttps:    true,
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
@@ -888,7 +888,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EntryPort:      443,
 		TargetProtocol: "https",
 		TargetPort:     443,
-		TLSPassthrough: true,
+		TlsPassthrough: true,
 	})
 
 	// Check that original LoadBalancer hasn't changed
@@ -912,7 +912,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 			EntryPort:      443,
 			TargetProtocol: "https",
 			TargetPort:     443,
-			TLSPassthrough: true,
+			TlsPassthrough: true,
 		},
 	}, r.ForwardingRules)
 }

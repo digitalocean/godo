@@ -58,7 +58,7 @@ type ImageUpdateRequest struct {
 // CustomImageCreateRequest represents a request to create a custom image.
 type CustomImageCreateRequest struct {
 	Name         string   `json:"name"`
-	URL          string   `json:"url"`
+	Url          string   `json:"url"`
 	Region       string   `json:"region"`
 	Distribution string   `json:"distribution,omitempty"`
 	Description  string   `json:"description,omitempty"`
