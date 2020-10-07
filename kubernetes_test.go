@@ -420,6 +420,10 @@ func TestKubernetesClusters_GetKubeConfigWithExpiry(t *testing.T) {
 	blob := []byte(want)
 	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+		expirySeconds, ok := r.URL.Query()["expiry_seconds"]
+		assert.True(t, ok)
+		assert.Len(t, expirySeconds, 1)
+		assert.Contains(t, expirySeconds, "3600")
 		fmt.Fprint(w, want)
 	})
 	got, _, err := kubeSvc.GetKubeConfigWithExpiry(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", 3600)
