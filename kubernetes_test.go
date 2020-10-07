@@ -411,6 +411,22 @@ func TestKubernetesClusters_GetKubeConfig(t *testing.T) {
 	require.Equal(t, blob, got.KubeconfigYAML)
 }
 
+func TestKubernetesClusters_GetKubeConfigWithExpiry(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "some YAML"
+	blob := []byte(want)
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, want)
+	})
+	got, _, err := kubeSvc.GetKubeConfigWithExpiry(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", 3600)
+	require.NoError(t, err)
+	require.Equal(t, blob, got.KubeconfigYAML)
+}
+
 func TestKubernetesClusters_GetCredentials(t *testing.T) {
 	setup()
 	defer teardown()
