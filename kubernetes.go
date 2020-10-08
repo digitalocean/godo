@@ -28,6 +28,7 @@ type KubernetesService interface {
 	GetUser(context.Context, string) (*KubernetesClusterUser, *Response, error)
 	GetUpgrades(context.Context, string) ([]*KubernetesVersion, *Response, error)
 	GetKubeConfig(context.Context, string) (*KubernetesClusterConfig, *Response, error)
+	GetKubeConfigWithExpiry(context.Context, string, int64) (*KubernetesClusterConfig, *Response, error)
 	GetCredentials(context.Context, string, *KubernetesClusterCredentialsGetRequest) (*KubernetesClusterCredentials, *Response, error)
 	List(context.Context, *ListOptions) ([]*KubernetesCluster, *Response, error)
 	Update(context.Context, string, *KubernetesClusterUpdateRequest) (*KubernetesCluster, *Response, error)
@@ -198,13 +199,36 @@ type KubernetesMaintenancePolicy struct {
 type KubernetesMaintenancePolicyDay int
 
 const (
+	// KubernetesMaintenanceDayAny sets the KubernetesMaintenancePolicyDay to any
+	// day of the week
 	KubernetesMaintenanceDayAny KubernetesMaintenancePolicyDay = iota
+
+	// KubernetesMaintenanceDayMonday sets the KubernetesMaintenancePolicyDay to
+	// Monday
 	KubernetesMaintenanceDayMonday
+
+	// KubernetesMaintenanceDayTuesday sets the KubernetesMaintenancePolicyDay to
+	// Tuesday
 	KubernetesMaintenanceDayTuesday
+
+	// KubernetesMaintenanceDayWednesday sets the KubernetesMaintenancePolicyDay to
+	// Wednesday
 	KubernetesMaintenanceDayWednesday
+
+	// KubernetesMaintenanceDayThursday sets the KubernetesMaintenancePolicyDay to
+	// Thursday
 	KubernetesMaintenanceDayThursday
+
+	// KubernetesMaintenanceDayFriday sets the KubernetesMaintenancePolicyDay to
+	// Friday
 	KubernetesMaintenanceDayFriday
+
+	// KubernetesMaintenanceDaySaturday sets the KubernetesMaintenancePolicyDay to
+	// Saturday
 	KubernetesMaintenanceDaySaturday
+
+	// KubernetesMaintenanceDaySunday sets the KubernetesMaintenancePolicyDay to
+	// Sunday
 	KubernetesMaintenanceDaySunday
 )
 
@@ -250,6 +274,7 @@ func (k KubernetesMaintenancePolicyDay) String() string {
 
 }
 
+// UnmarshalJSON parses the JSON string into KubernetesMaintenancePolicyDay
 func (k *KubernetesMaintenancePolicyDay) UnmarshalJSON(data []byte) error {
 	var val string
 	if err := json.Unmarshal(data, &val); err != nil {
@@ -264,6 +289,7 @@ func (k *KubernetesMaintenancePolicyDay) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// MarshalJSON returns the JSON string for KubernetesMaintenancePolicyDay
 func (k KubernetesMaintenancePolicyDay) MarshalJSON() ([]byte, error) {
 	if KubernetesMaintenanceDayAny <= k && k <= KubernetesMaintenanceDaySunday {
 		return json.Marshal(days[k])
@@ -519,6 +545,27 @@ func (svc *KubernetesServiceOp) GetKubeConfig(ctx context.Context, clusterID str
 	if err != nil {
 		return nil, nil, err
 	}
+	configBytes := bytes.NewBuffer(nil)
+	resp, err := svc.client.Do(ctx, req, configBytes)
+	if err != nil {
+		return nil, resp, err
+	}
+	res := &KubernetesClusterConfig{
+		KubeconfigYAML: configBytes.Bytes(),
+	}
+	return res, resp, nil
+}
+
+// GetKubeConfigWithExpiry returns a Kubernetes config file for the specified cluster with expiry_seconds.
+func (svc *KubernetesServiceOp) GetKubeConfigWithExpiry(ctx context.Context, clusterID string, expirySeconds int64) (*KubernetesClusterConfig, *Response, error) {
+	path := fmt.Sprintf("%s/%s/kubeconfig", kubernetesClustersPath, clusterID)
+	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	q := req.URL.Query()
+	q.Add("expiry_seconds", fmt.Sprintf("%d", expirySeconds))
+	req.URL.RawQuery = q.Encode()
 	configBytes := bytes.NewBuffer(nil)
 	resp, err := svc.client.Do(ctx, req, configBytes)
 	if err != nil {

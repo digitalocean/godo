@@ -269,7 +269,7 @@ type DatabaseCreateUserRequest struct {
 	MySQLSettings *DatabaseMySQLUserSettings `json:"mysql_settings,omitempty"`
 }
 
-// DatabaseResetUserAuth request is used to reset a users DB auth
+// DatabaseResetUserAuthRequest is used to reset a users DB auth
 type DatabaseResetUserAuthRequest struct {
 	MySQLSettings *DatabaseMySQLUserSettings `json:"mysql_settings,omitempty"`
 }
@@ -537,6 +537,7 @@ func (svc *DatabasesServiceOp) CreateUser(ctx context.Context, databaseID string
 	return root.User, resp, nil
 }
 
+// ResetUserAuth will reset user authentication
 func (svc *DatabasesServiceOp) ResetUserAuth(ctx context.Context, databaseID, userID string, resetAuth *DatabaseResetUserAuthRequest) (*DatabaseUser, *Response, error) {
 	path := fmt.Sprintf(databaseResetUserAuthPath, databaseID, userID)
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, resetAuth)
