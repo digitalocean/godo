@@ -150,7 +150,7 @@ type AppServiceSpecHealthCheck struct {
 type AppSpec struct {
 	// The name of the app. Must be unique across all  in the same account.
 	Name string `json:"name"`
-	// Workloads which expose publicy-accessible HTTP services.
+	// Workloads which expose publicly-accessible HTTP services.
 	Services []*AppServiceSpec `json:"services,omitempty"`
 	// Content which can be rendered to static web assets.
 	StaticSites []*AppStaticSiteSpec `json:"static_sites,omitempty"`
