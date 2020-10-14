@@ -286,6 +286,18 @@ func TestTags_ListPaging(t *testing.T) {
 	checkCurrentPage(t, resp, 2)
 }
 
+func assertStringTagEqual(t *testing.T, tag string, compareTag, errorMessage string) {
+	if tag != compareTag {
+		t.Errorf(errorMessage)
+	}
+}
+
+func assertIntTagEqual(t *testing.T, tag, compareTag int, errorMessage string) {
+	if tag != compareTag {
+		t.Errorf(errorMessage)
+	}
+}
+
 func TestTags_Get(t *testing.T) {
 	setup()
 	defer teardown()
@@ -300,61 +312,21 @@ func TestTags_Get(t *testing.T) {
 		t.Errorf("Tags.Get returned error: %v", err)
 	}
 
-	if tag.Name != "testing-1" {
-		t.Errorf("Tags.Get return an incorrect name, got %+v, expected %+v", tag.Name, "testing-1")
-	}
+	assertStringTagEqual(t, tag.Name, "testing-1", fmt.Sprintf("Tags.Get return an incorrect name, got %+v, expected %+v", tag.Name, "testing-1"))
+	assertIntTagEqual(t, tag.Resources.Count, 5, fmt.Sprintf("Tags.Get return an incorrect resource count, got %+v, expected %+v", tag.Resources.Count, 5))
+	assertStringTagEqual(t, tag.Resources.LastTaggedURI, "https://api.digitalocean.com/v2/droplets/1", fmt.Sprintf("Tags.Get return an incorrect last tagged uri %+v, expected %+v", tag.Resources.LastTaggedURI, "https://api.digitalocean.com/v2/droplets/1"))
+	assertIntTagEqual(t, tag.Resources.Droplets.Count, 1, fmt.Sprintf("Tags.Get return an incorrect droplet resource count, got %+v, expected %+v", tag.Resources.Droplets.Count, 1))
+	assertIntTagEqual(t, tag.Resources.Droplets.LastTagged.ID, 1, fmt.Sprintf("Tags.Get return an incorrect last tagged droplet %+v, expected %+v", tag.Resources.Droplets.LastTagged.ID, 1))
+	assertStringTagEqual(t, tag.Resources.Droplets.LastTaggedURI, "https://api.digitalocean.com/v2/droplets/1", fmt.Sprintf("Tags.Get return an incorrect last tagged droplet uri %+v, expected %+v", tag.Resources.Droplets.LastTaggedURI, "https://api.digitalocean.com/v2/droplets/1"))
+	assertIntTagEqual(t, tag.Resources.Images.Count, 1, fmt.Sprintf("Tags.Get return an incorrect image resource count, got %+v, expected %+v", tag.Resources.Images.Count, 1))
+	assertStringTagEqual(t, tag.Resources.Images.LastTaggedURI, "https://api.digitalocean.com/v2/images/1", fmt.Sprintf("Tags.Get return an incorrect last tagged droplet uri %+v, expected %+v", tag.Resources.Images.LastTaggedURI, "https://api.digitalocean.com/v2/images/1"))
+	assertIntTagEqual(t, tag.Resources.Volumes.Count, 1, fmt.Sprintf("Tags.Get return an incorrect volume resource count, got %+v, expected %+v", tag.Resources.Volumes.Count, 1))
+	assertStringTagEqual(t, tag.Resources.Volumes.LastTaggedURI, "https://api.digitalocean.com/v2/volumes/abc", fmt.Sprintf("Tags.Get return an incorrect last tagged volume uri %+v, expected %+v", tag.Resources.Volumes.LastTaggedURI, "https://api.digitalocean.com/v2/volumes/abc"))
+	assertIntTagEqual(t, tag.Resources.VolumeSnapshots.Count, 1, fmt.Sprintf("Tags.Get return an incorrect volume snapshot resource count, got %+v, expected %+v", tag.Resources.VolumeSnapshots.Count, 1))
+	assertStringTagEqual(t, tag.Resources.VolumeSnapshots.LastTaggedURI, "https://api.digitalocean.com/v2/snapshots/1", fmt.Sprintf("Tags.Get return an incorrect last tagged volume snapshot uri %+v, expected %+v", tag.Resources.VolumeSnapshots.LastTaggedURI, "https://api.digitalocean.com/v2/snapshots/1"))
+	assertIntTagEqual(t, tag.Resources.Databases.Count, 1, fmt.Sprintf("Tags.Get return an incorrect database resource count, got %+v, expected %+v", tag.Resources.Databases.Count, 1))
+	assertStringTagEqual(t, tag.Resources.Databases.LastTaggedURI, "https://api.digitalocean.com/v2/databases/1", fmt.Sprintf("Tags.Get return an incorrect last tagged database uri %+v, expected %+v", tag.Resources.Databases.LastTaggedURI, "https://api.digitalocean.com/v2/databases/1"))
 
-	if tag.Resources.Count != 5 {
-		t.Errorf("Tags.Get return an incorrect resource count, got %+v, expected %+v", tag.Resources.Count, 5)
-	}
-
-	if tag.Resources.LastTaggedURI != "https://api.digitalocean.com/v2/droplets/1" {
-		t.Errorf("Tags.Get return an incorrect last tagged uri %+v, expected %+v", tag.Resources.LastTaggedURI, "https://api.digitalocean.com/v2/droplets/1")
-	}
-
-	if tag.Resources.Droplets.Count != 1 {
-		t.Errorf("Tags.Get return an incorrect droplet resource count, got %+v, expected %+v", tag.Resources.Droplets.Count, 1)
-	}
-
-	if tag.Resources.Droplets.LastTagged.ID != 1 {
-		t.Errorf("Tags.Get return an incorrect last tagged droplet %+v, expected %+v", tag.Resources.Droplets.LastTagged.ID, 1)
-	}
-
-	if tag.Resources.Droplets.LastTaggedURI != "https://api.digitalocean.com/v2/droplets/1" {
-		t.Errorf("Tags.Get return an incorrect last tagged droplet uri %+v, expected %+v", tag.Resources.Droplets.LastTaggedURI, "https://api.digitalocean.com/v2/droplets/1")
-	}
-
-	if tag.Resources.Images.Count != 1 {
-		t.Errorf("Tags.Get return an incorrect image resource count, got %+v, expected %+v", tag.Resources.Images.Count, 1)
-	}
-
-	if tag.Resources.Images.LastTaggedURI != "https://api.digitalocean.com/v2/images/1" {
-		t.Errorf("Tags.Get return an incorrect last tagged droplet uri %+v, expected %+v", tag.Resources.Images.LastTaggedURI, "https://api.digitalocean.com/v2/images/1")
-	}
-
-	if tag.Resources.Volumes.Count != 1 {
-		t.Errorf("Tags.Get return an incorrect volume resource count, got %+v, expected %+v", tag.Resources.Volumes.Count, 1)
-	}
-
-	if tag.Resources.Volumes.LastTaggedURI != "https://api.digitalocean.com/v2/volumes/abc" {
-		t.Errorf("Tags.Get return an incorrect last tagged volume uri %+v, expected %+v", tag.Resources.Volumes.LastTaggedURI, "https://api.digitalocean.com/v2/volumes/abc")
-	}
-
-	if tag.Resources.VolumeSnapshots.Count != 1 {
-		t.Errorf("Tags.Get return an incorrect volume snapshot resource count, got %+v, expected %+v", tag.Resources.VolumeSnapshots.Count, 1)
-	}
-
-	if tag.Resources.VolumeSnapshots.LastTaggedURI != "https://api.digitalocean.com/v2/snapshots/1" {
-		t.Errorf("Tags.Get return an incorrect last tagged volume snapshot uri %+v, expected %+v", tag.Resources.VolumeSnapshots.LastTaggedURI, "https://api.digitalocean.com/v2/snapshots/1")
-	}
-
-	if tag.Resources.Databases.Count != 1 {
-		t.Errorf("Tags.Get return an incorrect database resource count, got %+v, expected %+v", tag.Resources.Databases.Count, 1)
-	}
-
-	if tag.Resources.Databases.LastTaggedURI != "https://api.digitalocean.com/v2/databases/1" {
-		t.Errorf("Tags.Get return an incorrect last tagged database uri %+v, expected %+v", tag.Resources.Databases.LastTaggedURI, "https://api.digitalocean.com/v2/databases/1")
-	}
 }
 
 func TestTags_Create(t *testing.T) {

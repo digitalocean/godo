@@ -279,14 +279,14 @@ func TestLoadBalancers_Get(t *testing.T) {
 	defer teardown()
 
 	path := "/v2/load_balancers"
-	loadBalancerId := "37e6be88-01ec-4ec7-9bc6-a514d4719057"
-	path = fmt.Sprintf("%s/%s", path, loadBalancerId)
+	loadBalancerID := "37e6be88-01ec-4ec7-9bc6-a514d4719057"
+	path = fmt.Sprintf("%s/%s", path, loadBalancerID)
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, lbGetJSONResponse)
 	})
 
-	loadBalancer, _, err := client.LoadBalancers.Get(ctx, loadBalancerId)
+	loadBalancer, _, err := client.LoadBalancers.Get(ctx, loadBalancerID)
 	if err != nil {
 		t.Errorf("LoadBalancers.Get returned error: %v", err)
 	}
@@ -485,8 +485,8 @@ func TestLoadBalancers_Update(t *testing.T) {
 	}
 
 	path := "/v2/load_balancers"
-	loadBalancerId := "8268a81c-fcf5-423e-a337-bbfe95817f23"
-	path = fmt.Sprintf("%s/%s", path, loadBalancerId)
+	loadBalancerID := "8268a81c-fcf5-423e-a337-bbfe95817f23"
+	path = fmt.Sprintf("%s/%s", path, loadBalancerID)
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		v := new(LoadBalancerRequest)
@@ -501,7 +501,7 @@ func TestLoadBalancers_Update(t *testing.T) {
 		fmt.Fprint(w, lbUpdateJSONResponse)
 	})
 
-	loadBalancer, _, err := client.LoadBalancers.Update(ctx, loadBalancerId, updateRequest)
+	loadBalancer, _, err := client.LoadBalancers.Update(ctx, loadBalancerID, updateRequest)
 	if err != nil {
 		t.Errorf("LoadBalancers.Update returned error: %v", err)
 	}
@@ -850,7 +850,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		Algorithm: "least_connections",
 		Region:    "lon1",
 		SizeSlug:  "lb-small",
-		ForwardingRules: []ForwardingRule{ForwardingRule{
+		ForwardingRules: []ForwardingRule{{
 			EntryProtocol:  "http",
 			EntryPort:      80,
 			TargetProtocol: "http",
@@ -901,13 +901,13 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 	})
 	assert.Equal(t, []int{12345, 54321}, r.DropletIDs)
 	assert.Equal(t, []ForwardingRule{
-		ForwardingRule{
+		{
 			EntryProtocol:  "http",
 			EntryPort:      80,
 			TargetProtocol: "http",
 			TargetPort:     80,
 		},
-		ForwardingRule{
+		{
 			EntryProtocol:  "https",
 			EntryPort:      443,
 			TargetProtocol: "https",

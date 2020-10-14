@@ -19,7 +19,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 	kubeSvc := client.Kubernetes
 
 	wantClusters := []*KubernetesCluster{
-		&KubernetesCluster{
+		{
 			ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
 			Name:          "blablabla",
 			RegionSlug:    "nyc1",
@@ -61,7 +61,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			CreatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 			UpdatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 		},
-		&KubernetesCluster{
+		{
 			ID:            "deadbeef-dead-4aa5-beef-deadbeef347d",
 			Name:          "antoine",
 			RegionSlug:    "nyc1",
@@ -411,6 +411,26 @@ func TestKubernetesClusters_GetKubeConfig(t *testing.T) {
 	require.Equal(t, blob, got.KubeconfigYAML)
 }
 
+func TestKubernetesClusters_GetKubeConfigWithExpiry(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "some YAML"
+	blob := []byte(want)
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		expirySeconds, ok := r.URL.Query()["expiry_seconds"]
+		assert.True(t, ok)
+		assert.Len(t, expirySeconds, 1)
+		assert.Contains(t, expirySeconds, "3600")
+		fmt.Fprint(w, want)
+	})
+	got, _, err := kubeSvc.GetKubeConfigWithExpiry(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", 3600)
+	require.NoError(t, err)
+	require.Equal(t, blob, got.KubeconfigYAML)
+}
+
 func TestKubernetesClusters_GetCredentials(t *testing.T) {
 	setup()
 	defer teardown()
@@ -524,7 +544,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		SurgeUpgrade:  true,
 		NodePools: []*KubernetesNodePool{
-			&KubernetesNodePool{
+			{
 				ID:     "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
 				Size:   "s-1vcpu-1gb",
 				Count:  2,
@@ -546,7 +566,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		VPCUUID:      want.VPCUUID,
 		SurgeUpgrade: true,
 		NodePools: []*KubernetesNodePoolCreateRequest{
-			&KubernetesNodePoolCreateRequest{
+			{
 				Size:      want.NodePools[0].Size,
 				Count:     want.NodePools[0].Count,
 				Name:      want.NodePools[0].Name,
@@ -629,7 +649,7 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		NodePools: []*KubernetesNodePool{
-			&KubernetesNodePool{
+			{
 				ID:        "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
 				Size:      "s-1vcpu-1gb",
 				Count:     2,
@@ -652,7 +672,7 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 		Tags:        want.Tags,
 		VPCUUID:     want.VPCUUID,
 		NodePools: []*KubernetesNodePoolCreateRequest{
-			&KubernetesNodePoolCreateRequest{
+			{
 				Size:      want.NodePools[0].Size,
 				Count:     want.NodePools[0].Count,
 				Name:      want.NodePools[0].Name,
@@ -734,7 +754,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		SurgeUpgrade:  true,
 		NodePools: []*KubernetesNodePool{
-			&KubernetesNodePool{
+			{
 				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
 				Size:  "s-1vcpu-1gb",
 				Count: 2,
@@ -831,7 +851,7 @@ func TestKubernetesClusters_Update_FalseAutoUpgrade(t *testing.T) {
 		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		NodePools: []*KubernetesNodePool{
-			&KubernetesNodePool{
+			{
 				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
 				Size:  "s-1vcpu-1gb",
 				Count: 2,
