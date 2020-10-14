@@ -20,6 +20,9 @@ type App struct {
 	LastDeploymentCreatedAt time.Time   `json:"last_deployment_created_at,omitempty"`
 	LiveURL                 string      `json:"live_url,omitempty"`
 	Region                  *AppRegion  `json:"region,omitempty"`
+	TierSlug                string      `json:"tier_slug,omitempty"`
+	LiveURLBase             string      `json:"live_url_base,omitempty"`
+	LiveDomain              string      `json:"live_domain,omitempty"`
 }
 
 // AppDatabaseSpec struct for AppDatabaseSpec
@@ -58,6 +61,8 @@ type AppDomainSpec struct {
 	// The hostname.
 	Domain string            `json:"domain"`
 	Type   AppDomainSpecType `json:"type,omitempty"`
+	// Whether the domain includes all sub-domains, in addition to the given domain.
+	Wildcard bool `json:"wildcard,omitempty"`
 }
 
 // AppDomainSpecType  - DEFAULT: The default .ondigitalocean.app domain assigned to this app.  - PRIMARY: The primary domain for this app. This is the domain that is displayed as the default in the control panel, used in bindable environment variables, and any other places that reference an app's live URL. Only one domain may be set as primary.  - ALIAS: A non-primary domain.
@@ -90,9 +95,20 @@ type AppJobSpec struct {
 	// A list of environment variables made available to the component.
 	Envs []*AppVariableDefinition `json:"envs,omitempty"`
 	// The instance size to use for this component.
-	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64  `json:"instance_count,omitempty"`
+	InstanceSizeSlug string         `json:"instance_size_slug,omitempty"`
+	InstanceCount    int64          `json:"instance_count,omitempty"`
+	Kind             AppJobSpecKind `json:"kind,omitempty"`
 }
+
+// AppJobSpecKind  - UNSPECIFIED: Default job type, will auto-complete to POST_DEPLOY kind.  - PRE_DEPLOY: Indicates a job that runs before an app deployment.  - POST_DEPLOY: Indicates a job that runs after an app deployment.
+type AppJobSpecKind string
+
+// List of AppJobSpecKind
+const (
+	AppJobSpecKind_Unspecified AppJobSpecKind = "UNSPECIFIED"
+	AppJobSpecKind_PreDeploy   AppJobSpecKind = "PRE_DEPLOY"
+	AppJobSpecKind_PostDeploy  AppJobSpecKind = "POST_DEPLOY"
+)
 
 // AppRouteSpec struct for AppRouteSpec
 type AppRouteSpec struct {
@@ -150,13 +166,13 @@ type AppServiceSpecHealthCheck struct {
 type AppSpec struct {
 	// The name of the app. Must be unique across all  in the same account.
 	Name string `json:"name"`
-	// Workloads which expose publicly-accessible HTTP services.
+	// Workloads which expose publicy-accessible HTTP services.
 	Services []*AppServiceSpec `json:"services,omitempty"`
 	// Content which can be rendered to static web assets.
 	StaticSites []*AppStaticSiteSpec `json:"static_sites,omitempty"`
 	// Workloads which do not expose publicly-accessible HTTP services.
 	Workers []*AppWorkerSpec `json:"workers,omitempty"`
-	// One-time or recurring workloads which do not expose publicly-accessible HTTP routes.
+	// Pre and post deployment workloads which do not expose publicly-accessible HTTP routes.
 	Jobs []*AppJobSpec `json:"jobs,omitempty"`
 	// Database instances which can provide persistence to workloads within the application.
 	Databases []*AppDatabaseSpec `json:"databases,omitempty"`
@@ -195,7 +211,7 @@ type AppStaticSiteSpec struct {
 type AppVariableDefinition struct {
 	// The name
 	Key string `json:"key"`
-	// The value. If the type is SECRET, the value will be encrypted on first submission. On following submissions, the encrypted value must be used.
+	// The value. If the type is `SECRET`, the value will be encrypted on first submission. On following submissions, the encrypted value should be used.
 	Value string           `json:"value,omitempty"`
 	Scope AppVariableScope `json:"scope,omitempty"`
 	Type  AppVariableType  `json:"type,omitempty"`
@@ -239,6 +255,7 @@ type Deployment struct {
 	ClonedFrom         string                  `json:"cloned_from,omitempty"`
 	Progress           *DeploymentProgress     `json:"progress,omitempty"`
 	Phase              DeploymentPhase         `json:"phase,omitempty"`
+	TierSlug           string                  `json:"tier_slug,omitempty"`
 }
 
 // DeploymentJob struct for DeploymentJob
@@ -305,6 +322,30 @@ type GitSourceSpec struct {
 	Branch       string `json:"branch,omitempty"`
 }
 
+// InstanceSize struct for InstanceSize
+type InstanceSize struct {
+	Name            string              `json:"name,omitempty"`
+	Slug            string              `json:"slug,omitempty"`
+	CPUType         InstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs            string              `json:"cpus,omitempty"`
+	MemoryBytes     string              `json:"memory_bytes,omitempty"`
+	USDPerMonth     string              `json:"usd_per_month,omitempty"`
+	USDPerSecond    string              `json:"usd_per_second,omitempty"`
+	TierSlug        string              `json:"tier_slug,omitempty"`
+	TierUpgradeTo   string              `json:"tier_upgrade_to,omitempty"`
+	TierDowngradeTo string              `json:"tier_downgrade_to,omitempty"`
+}
+
+// InstanceSizeCPUType the model 'InstanceSizeCPUType'
+type InstanceSizeCPUType string
+
+// List of InstanceSizeCPUType
+const (
+	InstanceSizeCPUType_Unspecified InstanceSizeCPUType = "UNSPECIFIED"
+	InstanceSizeCPUType_Shared      InstanceSizeCPUType = "SHARED"
+	InstanceSizeCPUType_Dedicated   InstanceSizeCPUType = "DEDICATED"
+)
+
 // DeploymentProgressStep struct for DeploymentProgressStep
 type DeploymentProgressStep struct {
 	Name          string                        `json:"name,omitempty"`
@@ -314,7 +355,7 @@ type DeploymentProgressStep struct {
 	EndedAt       time.Time                     `json:"ended_at,omitempty"`
 	Reason        *DeploymentProgressStepReason `json:"reason,omitempty"`
 	ComponentName string                        `json:"component_name,omitempty"`
-	// The base of a human-readable description of the step intended to be combined with the component name for presentation. For example:  message_base = \"Building service\" component_name = \"api\"
+	// The base of a human-readable description of the step intended to be combined with the component name for presentation. For example:  `message_base` = \"Building service\" `component_name` = \"api\"
 	MessageBase string `json:"message_base,omitempty"`
 }
 
@@ -339,12 +380,23 @@ type AppRegion struct {
 	Disabled    bool     `json:"disabled,omitempty"`
 	DataCenters []string `json:"data_centers,omitempty"`
 	Reason      string   `json:"reason,omitempty"`
+	// Whether or not the region is presented as the default.
+	Default bool `json:"default,omitempty"`
 }
 
 // DeploymentProgressStepReason struct for DeploymentProgressStepReason
 type DeploymentProgressStepReason struct {
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
+}
+
+// AppTier struct for AppTier
+type AppTier struct {
+	Name                 string `json:"name,omitempty"`
+	Slug                 string `json:"slug,omitempty"`
+	StorageBytes         string `json:"storage_bytes,omitempty"`
+	EgressBandwidthBytes string `json:"egress_bandwidth_bytes,omitempty"`
+	BuildSeconds         string `json:"build_seconds,omitempty"`
 }
 
 // AppVariableScope the model 'AppVariableScope'
