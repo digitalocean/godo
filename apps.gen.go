@@ -322,28 +322,28 @@ type GitSourceSpec struct {
 	Branch       string `json:"branch,omitempty"`
 }
 
-// InstanceSize struct for InstanceSize
-type InstanceSize struct {
-	Name            string              `json:"name,omitempty"`
-	Slug            string              `json:"slug,omitempty"`
-	CPUType         InstanceSizeCPUType `json:"cpu_type,omitempty"`
-	CPUs            string              `json:"cpus,omitempty"`
-	MemoryBytes     string              `json:"memory_bytes,omitempty"`
-	USDPerMonth     string              `json:"usd_per_month,omitempty"`
-	USDPerSecond    string              `json:"usd_per_second,omitempty"`
-	TierSlug        string              `json:"tier_slug,omitempty"`
-	TierUpgradeTo   string              `json:"tier_upgrade_to,omitempty"`
-	TierDowngradeTo string              `json:"tier_downgrade_to,omitempty"`
+// AppInstanceSize struct for AppInstanceSize
+type AppInstanceSize struct {
+	Name            string                 `json:"name,omitempty"`
+	Slug            string                 `json:"slug,omitempty"`
+	CPUType         AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs            string                 `json:"cpus,omitempty"`
+	MemoryBytes     string                 `json:"memory_bytes,omitempty"`
+	USDPerMonth     string                 `json:"usd_per_month,omitempty"`
+	USDPerSecond    string                 `json:"usd_per_second,omitempty"`
+	TierSlug        string                 `json:"tier_slug,omitempty"`
+	TierUpgradeTo   string                 `json:"tier_upgrade_to,omitempty"`
+	TierDowngradeTo string                 `json:"tier_downgrade_to,omitempty"`
 }
 
-// InstanceSizeCPUType the model 'InstanceSizeCPUType'
-type InstanceSizeCPUType string
+// AppInstanceSizeCPUType the model 'AppInstanceSizeCPUType'
+type AppInstanceSizeCPUType string
 
-// List of InstanceSizeCPUType
+// List of AppInstanceSizeCPUType
 const (
-	InstanceSizeCPUType_Unspecified InstanceSizeCPUType = "UNSPECIFIED"
-	InstanceSizeCPUType_Shared      InstanceSizeCPUType = "SHARED"
-	InstanceSizeCPUType_Dedicated   InstanceSizeCPUType = "DEDICATED"
+	InstanceSizeCPUType_Unspecified AppInstanceSizeCPUType = "UNSPECIFIED"
+	InstanceSizeCPUType_Shared      AppInstanceSizeCPUType = "SHARED"
+	InstanceSizeCPUType_Dedicated   AppInstanceSizeCPUType = "DEDICATED"
 )
 
 // DeploymentProgressStep struct for DeploymentProgressStep
