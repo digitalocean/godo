@@ -133,15 +133,15 @@ type AppServiceSpec struct {
 	// An environment slug describing the type of this app. For a full list, please refer to [the product documentation](https://www.digitalocean.com/docs/app-platform/).
 	EnvironmentSlug string `json:"environment_slug,omitempty"`
 	// A list of environment variables made available to the component.
-	Envs []*AppVariableDefinition `json:"envs,omitempty"`
-	// The instance size to use for this component.
-	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64  `json:"instance_count,omitempty"`
+	Envs             []*AppVariableDefinition `json:"envs,omitempty"`
+	InstanceSizeSlug string                   `json:"instance_size_slug,omitempty"`
+	InstanceCount    int64                    `json:"instance_count,omitempty"`
 	// The internal port on which this service's run command will listen. Default: 8080 If there is not an environment variable with the name `PORT`, one will be automatically added with its value set to the value of this field.
 	HTTPPort int64 `json:"http_port,omitempty"`
 	// A list of HTTP routes that should be routed to this component.
 	Routes      []*AppRouteSpec            `json:"routes,omitempty"`
 	HealthCheck *AppServiceSpecHealthCheck `json:"health_check,omitempty"`
+	CORS        *AppCORSPolicy             `json:"cors,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
@@ -178,8 +178,7 @@ type AppSpec struct {
 	Databases []*AppDatabaseSpec `json:"databases,omitempty"`
 	// A set of hostnames where the application will be available.
 	Domains []*AppDomainSpec `json:"domains,omitempty"`
-	// The slug form of the geographical origin of the app.
-	Region string `json:"region,omitempty"`
+	Region  string           `json:"region,omitempty"`
 }
 
 // AppStaticSiteSpec struct for AppStaticSiteSpec
@@ -205,6 +204,7 @@ type AppStaticSiteSpec struct {
 	Envs []*AppVariableDefinition `json:"envs,omitempty"`
 	// A list of HTTP routes that should be routed to this component.
 	Routes []*AppRouteSpec `json:"routes,omitempty"`
+	CORS   *AppCORSPolicy  `json:"cors,omitempty"`
 }
 
 // AppVariableDefinition struct for AppVariableDefinition
@@ -238,6 +238,12 @@ type AppWorkerSpec struct {
 	// The instance size to use for this component.
 	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
 	InstanceCount    int64  `json:"instance_count,omitempty"`
+}
+
+// AppCORSPolicy struct for AppCORSPolicy
+type AppCORSPolicy struct {
+	// The set of CORS allowed origins.
+	AllowOrigins []*AppStringMatch `json:"allow_origins,omitempty"`
 }
 
 // Deployment struct for Deployment
@@ -388,6 +394,16 @@ type AppRegion struct {
 type DeploymentProgressStepReason struct {
 	Code    string `json:"code,omitempty"`
 	Message string `json:"message,omitempty"`
+}
+
+// AppStringMatch struct for AppStringMatch
+type AppStringMatch struct {
+	// Exact string match. Only 1 of `exact`, `prefix`, or `regex` must be set.
+	Exact string `json:"exact,omitempty"`
+	// Prefix-based match. Only 1 of `exact`, `prefix`, or `regex` must be set.
+	Prefix string `json:"prefix,omitempty"`
+	// RE2 style regex-based match (https://github.com/google/re2/wiki/Syntax). Only 1 of `exact`, `prefix`, or `regex` must be set.
+	Regex string `json:"regex,omitempty"`
 }
 
 // AppTier struct for AppTier
