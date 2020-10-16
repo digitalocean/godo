@@ -1512,7 +1512,7 @@ func TestKubernetesClusterRegistry_Add(t *testing.T) {
 	"cluster_uuids": ["8d91899c-0739-4a1a-acc5-deadbeefbb8f"]
 }`
 
-	mux.HandleFunc("/v2/kubernetes/clusters/registry", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/kubernetes/registry", func(w http.ResponseWriter, r *http.Request) {
 		v := new(KubernetesClusterRegistryRequest)
 		err := json.NewDecoder(r.Body).Decode(v)
 		if err != nil {
@@ -1543,7 +1543,7 @@ func TestKubernetesClusterRegistry_Remove(t *testing.T) {
 	"cluster_uuids": ["8d91899c-0739-4a1a-acc5-deadbeefbb8f"]
 }`
 
-	mux.HandleFunc("/v2/kubernetes/clusters/registry", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/kubernetes/registry", func(w http.ResponseWriter, r *http.Request) {
 		v := new(KubernetesClusterRegistryRequest)
 		err := json.NewDecoder(r.Body).Decode(v)
 		if err != nil {
