@@ -142,6 +142,8 @@ type AppServiceSpec struct {
 	Routes      []*AppRouteSpec            `json:"routes,omitempty"`
 	HealthCheck *AppServiceSpecHealthCheck `json:"health_check,omitempty"`
 	CORS        *AppCORSPolicy             `json:"cors,omitempty"`
+	// The ports on which this service will listen for internal traffic.
+	InternalPorts []int64 `json:"internal_ports,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
@@ -212,7 +214,7 @@ type AppVariableDefinition struct {
 	// The name
 	Key string `json:"key"`
 	// The value. If the type is `SECRET`, the value will be encrypted on first submission. On following submissions, the encrypted value should be used.
-	Value string           `json:"value,omitempty"`
+	Value string        `json:"value,omitempty"`
 	Scope AppVariableScope `json:"scope,omitempty"`
 	Type  AppVariableType  `json:"type,omitempty"`
 }
@@ -242,7 +244,7 @@ type AppWorkerSpec struct {
 
 // AppCORSPolicy struct for AppCORSPolicy
 type AppCORSPolicy struct {
-	// The set of CORS allowed origins.
+	// The set of allowed CORS origins.
 	AllowOrigins []*AppStringMatch `json:"allow_origins,omitempty"`
 }
 
@@ -288,11 +290,11 @@ const (
 
 // DeploymentProgress struct for DeploymentProgress
 type DeploymentProgress struct {
-	PendingSteps int32                     `json:"pending_steps,omitempty"`
-	RunningSteps int32                     `json:"running_steps,omitempty"`
-	SuccessSteps int32                     `json:"success_steps,omitempty"`
-	ErrorSteps   int32                     `json:"error_steps,omitempty"`
-	TotalSteps   int32                     `json:"total_steps,omitempty"`
+	PendingSteps int32           `json:"pending_steps,omitempty"`
+	RunningSteps int32           `json:"running_steps,omitempty"`
+	SuccessSteps int32           `json:"success_steps,omitempty"`
+	ErrorSteps   int32           `json:"error_steps,omitempty"`
+	TotalSteps   int32           `json:"total_steps,omitempty"`
 	Steps        []*DeploymentProgressStep `json:"steps,omitempty"`
 	SummarySteps []*DeploymentProgressStep `json:"summary_steps,omitempty"`
 }
@@ -354,13 +356,13 @@ const (
 
 // DeploymentProgressStep struct for DeploymentProgressStep
 type DeploymentProgressStep struct {
-	Name          string                        `json:"name,omitempty"`
-	Status        DeploymentProgressStepStatus  `json:"status,omitempty"`
-	Steps         []*DeploymentProgressStep     `json:"steps,omitempty"`
-	StartedAt     time.Time                     `json:"started_at,omitempty"`
-	EndedAt       time.Time                     `json:"ended_at,omitempty"`
-	Reason        *DeploymentProgressStepReason `json:"reason,omitempty"`
-	ComponentName string                        `json:"component_name,omitempty"`
+	Name          string             `json:"name,omitempty"`
+	Status        DeploymentProgressStepStatus `json:"status,omitempty"`
+	Steps         []*DeploymentProgressStep    `json:"steps,omitempty"`
+	StartedAt     time.Time          `json:"started_at,omitempty"`
+	EndedAt       time.Time          `json:"ended_at,omitempty"`
+	Reason        *DeploymentProgressStepReason        `json:"reason,omitempty"`
+	ComponentName string             `json:"component_name,omitempty"`
 	// The base of a human-readable description of the step intended to be combined with the component name for presentation. For example:  `message_base` = \"Building service\" `component_name` = \"api\"
 	MessageBase string `json:"message_base,omitempty"`
 }
@@ -402,8 +404,7 @@ type AppStringMatch struct {
 	Exact string `json:"exact,omitempty"`
 	// Prefix-based match. Only 1 of `exact`, `prefix`, or `regex` must be set.
 	Prefix string `json:"prefix,omitempty"`
-	// RE2 style regex-based match (https://github.com/google/re2/wiki/Syntax). Only 1 of `exact`, `prefix`, or `regex` must be set.
-	Regex string `json:"regex,omitempty"`
+	Regex  string `json:"regex,omitempty"`
 }
 
 // AppTier struct for AppTier
