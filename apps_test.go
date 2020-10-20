@@ -15,7 +15,7 @@ import (
 var (
 	testAppSpec = &AppSpec{
 		Name:   "app-name",
-		Region: "ams3",
+		Region: testAppRegion.Slug,
 		Services: []*AppServiceSpec{{
 			Name: "service-name",
 			Routes: []*AppRouteSpec{{
@@ -83,6 +83,15 @@ var (
 		},
 	}
 
+	testAppRegion = AppRegion{
+		Slug:        "ams",
+		Label:       "Amsterdam",
+		Flag:        "netherlands",
+		Continent:   "Europe",
+		DataCenters: []string{"ams3"},
+		Default:     true,
+	}
+
 	testDeployment = Deployment{
 		ID:   "08f10d33-94c3-4492-b9a3-1603e9ab7fe4",
 		Spec: testAppSpec,
@@ -129,20 +138,36 @@ var (
 		Spec:                    testAppSpec,
 		DefaultIngress:          "example.com",
 		LiveURL:                 "https://example.com",
+		LiveURLBase:             "https://example.com",
+		LiveDomain:              "example.com",
 		ActiveDeployment:        &testDeployment,
 		InProgressDeployment:    &testDeployment,
 		LastDeploymentCreatedAt: time.Unix(1595959200, 0).UTC(),
 		CreatedAt:               time.Unix(1595959200, 0).UTC(),
 		UpdatedAt:               time.Unix(1595959200, 0).UTC(),
-		Region: &AppRegion{
-			Slug:        "ams",
-			Label:       "Amsterdam",
-			Continent:   "Europe",
-			Disabled:    true,
-			Reason:      "Scheduled maintenance",
-			DataCenters: []string{"ams3"},
-			Flag:        "nl",
-		},
+		Region:                  &testAppRegion,
+		TierSlug:                testAppTier.Slug,
+	}
+
+	testAppTier = AppTier{
+		Name:                 "Test",
+		Slug:                 "test",
+		StorageBytes:         "1024",
+		EgressBandwidthBytes: "10240",
+		BuildSeconds:         "3000",
+	}
+
+	testInstanceSize = AppInstanceSize{
+		Name:            "Basic XXS",
+		Slug:            "basic-xxs",
+		CPUType:         AppInstanceSizeCPUType_Dedicated,
+		CPUs:            "1",
+		MemoryBytes:     "536870912",
+		USDPerMonth:     "5",
+		USDPerSecond:    "0.0000018896447",
+		TierSlug:        "basic",
+		TierUpgradeTo:   "professional-xs",
+		TierDowngradeTo: "basic-xxxs",
 	}
 )
 
@@ -273,7 +298,7 @@ func TestApps_GetDeployment(t *testing.T) {
 	assert.Equal(t, &testDeployment, deployment)
 }
 
-func TestApps_ListDeployment(t *testing.T) {
+func TestApps_ListDeployments(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -331,4 +356,89 @@ func TestApps_GetLogs_component(t *testing.T) {
 	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "service-name", AppLogTypeRun, true)
 	require.NoError(t, err)
 	assert.NotEmpty(t, logs.LiveURL)
+}
+
+func TestApps_ListRegions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc("/v2/apps/regions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&appRegionsRoot{Regions: []*AppRegion{&testAppRegion}})
+	})
+
+	regions, _, err := client.Apps.ListRegions(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, []*AppRegion{&testAppRegion}, regions)
+}
+
+func TestApps_ListTiers(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc("/v2/apps/tiers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&appTiersRoot{Tiers: []*AppTier{&testAppTier}})
+	})
+
+	tiers, _, err := client.Apps.ListTiers(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, []*AppTier{&testAppTier}, tiers)
+}
+
+func TestApps_GetTier(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/tiers/%s", testAppTier.Slug), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&appTierRoot{Tier: &testAppTier})
+	})
+
+	tier, _, err := client.Apps.GetTier(ctx, testAppTier.Slug)
+	require.NoError(t, err)
+	assert.Equal(t, &testAppTier, tier)
+}
+
+func TestApps_ListInstanceSizes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc("/v2/apps/tiers/instance_sizes", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&instanceSizesRoot{InstanceSizes: []*AppInstanceSize{&testInstanceSize}})
+	})
+
+	instanceSizes, _, err := client.Apps.ListInstanceSizes(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, []*AppInstanceSize{&testInstanceSize}, instanceSizes)
+}
+
+func TestApps_GetInstanceSize(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/tiers/instance_sizes/%s", testInstanceSize.Slug), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&instanceSizeRoot{InstanceSize: &testInstanceSize})
+	})
+
+	instancesize, _, err := client.Apps.GetInstanceSize(ctx, testInstanceSize.Slug)
+	require.NoError(t, err)
+	assert.Equal(t, &testInstanceSize, instancesize)
 }
