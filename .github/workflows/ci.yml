@@ -7,22 +7,18 @@ on:
     branches: [ main ]
 
 jobs:
-  go-pipeline:
-    name: test
-    runs-on: ubuntu-latest
-
+  test:
+    strategy:
+      matrix:
+        go-version: [ 1.12.x, 1.13.x, 1.14.x, 1.15.x ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
     steps:
-    - name: checkout
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Checkout code
       uses: actions/checkout@v2
-
-    - name: go1.11 test
-      uses: digitalocean/golang-pipeline/go1.11/test@master
-
-    - name: go1.12 test
-      uses: digitalocean/golang-pipeline/go1.12/test@master
-
-    - name: go1.13 test
-      uses: digitalocean/golang-pipeline/go1.13/test@master
-
-    - name: go1.14 test
-      uses: digitalocean/golang-pipeline/go1.14/test@master
+    - name: Test
+      run: go test -race ./...
