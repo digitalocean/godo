@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.50.0] - 2020-10-22
+
+- #398 - @reeseconor - Add support for caching dependencies between GitHub Action runs
+
 ## [v1.49.0] - 2020-10-21
 
 - #383 - @kamaln7 - apps: add ListRegions, Get/ListTiers, Get/ListInstanceSizes
