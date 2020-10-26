@@ -142,39 +142,94 @@ func TestVPCs_Create(t *testing.T) {
 }
 
 func TestVPCs_Update(t *testing.T) {
-	setup()
-	defer teardown()
 
-	svc := client.VPCs
-	path := "/v2/vpcs"
-	want := vTestObj
-	id := "880b7f98-f062-404d-b33c-458d545696f6"
-	req := &VPCUpdateRequest{
-		Name:        "my-new-vpc",
-		Description: "vpc description",
+	tests := []struct {
+		desc                string
+		id                  string
+		req                 *VPCUpdateRequest
+		mockResponse        string
+		expectedRequestBody string
+		expectedUpdatedVPC  *VPC
+	}{
+		{
+			desc: "setting name and description without default argument",
+			id:   "880b7f98-f062-404d-b33c-458d545696f6",
+			req: &VPCUpdateRequest{
+				Name:        "my-new-vpc",
+				Description: "vpc description",
+			},
+			mockResponse: `
+			{
+			  "vpc":
+			` + vTestJSON + `
+			}
+			`,
+			expectedRequestBody: `{"name":"my-new-vpc","description":"vpc description"}`,
+			expectedUpdatedVPC:  vTestObj,
+		},
+
+		{
+			desc: "setting the default vpc option",
+			id:   "880b7f98-f062-404d-b33c-458d545696f6",
+			req: &VPCUpdateRequest{
+				Name:        "my-new-vpc",
+				Description: "vpc description",
+				Default:     boolPtr(false),
+			},
+			mockResponse: `
+			{
+			  "vpc":
+			` + vTestJSON + `
+			}
+			`,
+			expectedRequestBody: `{"name":"my-new-vpc","description":"vpc description","default":false}`,
+			expectedUpdatedVPC:  vTestObj,
+		},
+
+		{
+			desc: "setting the default vpc option",
+			id:   "880b7f98-f062-404d-b33c-458d545696f6",
+			req: &VPCUpdateRequest{
+				Name:        "my-new-vpc",
+				Description: "vpc description",
+				Default:     boolPtr(true),
+			},
+			mockResponse: `
+			{
+			  "vpc":
+			` + vTestJSON + `
+			}
+			`,
+			expectedRequestBody: `{"name":"my-new-vpc","description":"vpc description","default":true}`,
+			expectedUpdatedVPC:  vTestObj,
+		},
 	}
-	jsonBlob := `
-{
-  "vpc":
-` + vTestJSON + `
-}
-`
 
-	mux.HandleFunc(path+"/"+id, func(w http.ResponseWriter, r *http.Request) {
-		c := new(VPCUpdateRequest)
-		err := json.NewDecoder(r.Body).Decode(c)
-		if err != nil {
-			t.Fatal(err)
-		}
+	for _, tt := range tests {
+		setup()
 
-		testMethod(t, r, http.MethodPut)
-		require.Equal(t, c, req)
-		fmt.Fprint(w, jsonBlob)
-	})
+		mux.HandleFunc("/v2/vpcs/"+tt.id, func(w http.ResponseWriter, r *http.Request) {
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(r.Body)
+			require.Equal(t, tt.expectedRequestBody, strings.TrimSpace(buf.String()))
 
-	got, _, err := svc.Update(ctx, id, req)
-	require.NoError(t, err)
-	require.Equal(t, want, got)
+			v := new(VPCUpdateRequest)
+			err := json.NewDecoder(buf).Decode(v)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testMethod(t, r, http.MethodPut)
+			fmt.Fprint(w, tt.mockResponse)
+		})
+
+		got, _, err := client.VPCs.Update(ctx, tt.id, tt.req)
+
+		teardown()
+
+		require.NoError(t, err)
+		require.Equal(t, tt.expectedUpdatedVPC, got)
+	}
 }
 
 func TestVPCs_Set(t *testing.T) {
