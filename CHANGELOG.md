@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.50.0] - 2020-10-26
+
+- #403 - @andrewlouis93 - vpc: add option to update a VPC to the regional default
+
 ## [v1.49.0] - 2020-10-21
 
 - #383 - @kamaln7 - apps: add ListRegions, Get/ListTiers, Get/ListInstanceSizes
