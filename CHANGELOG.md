@@ -2,7 +2,9 @@
 
 ## [v1.50.0] - 2020-10-26
 
-- #403 - @andrewlouis93 - vpc: add option to update a VPC to the regional default
+- #400 - @waynr - registry: add garbage collection support
+- #402 - @snormore - apps: add catchall_document static site spec field and failed-deploy job type
+- #401 - @andrewlouis93 - VPC: adds option to set a VPC as the regional default
 
 ## [v1.49.0] - 2020-10-21
 
