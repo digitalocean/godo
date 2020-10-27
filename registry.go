@@ -28,7 +28,7 @@ type RegistryService interface {
 	ListRepositoryTags(context.Context, string, string, *ListOptions) ([]*RepositoryTag, *Response, error)
 	DeleteTag(context.Context, string, string, string) (*Response, error)
 	DeleteManifest(context.Context, string, string, string) (*Response, error)
-	RequestGarbageCollection(context.Context, string) (*GarbageCollection, *Response, error)
+	StartGarbageCollection(context.Context, string) (*GarbageCollection, *Response, error)
 	GetGarbageCollection(context.Context, string) (*GarbageCollection, *Response, error)
 	ListGarbageCollections(context.Context, string, *ListOptions) ([]*GarbageCollection, *Response, error)
 	UpdateGarbageCollection(context.Context, string, string, *UpdateGarbageCollectionRequest) (*GarbageCollection, *Response, error)
@@ -283,9 +283,9 @@ func (svc *RegistryServiceOp) DeleteManifest(ctx context.Context, registry, repo
 	return resp, nil
 }
 
-// RequestGarbageCollection requests a garbage collection for the specified
+// StartGarbageCollection requests a garbage collection for the specified
 // registry.
-func (svc *RegistryServiceOp) RequestGarbageCollection(ctx context.Context, registry string) (*GarbageCollection, *Response, error) {
+func (svc *RegistryServiceOp) StartGarbageCollection(ctx context.Context, registry string) (*GarbageCollection, *Response, error) {
 	path := fmt.Sprintf("%s/%s/garbage-collection", registryPath, registry)
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {

@@ -337,7 +337,7 @@ func reifyTemplateStr(t *testing.T, tmplStr string, v interface{}) string {
 	return s.String()
 }
 
-func TestGarbageCollection_Request(t *testing.T) {
+func TestGarbageCollection_Start(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -362,7 +362,7 @@ func TestGarbageCollection_Request(t *testing.T) {
 			fmt.Fprint(w, requestResponseJSON)
 		})
 
-	got, _, err := client.Registry.RequestGarbageCollection(ctx, testRegistry)
+	got, _, err := client.Registry.StartGarbageCollection(ctx, testRegistry)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
