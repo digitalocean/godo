@@ -3,7 +3,9 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,11 +21,24 @@ const (
 	testDigest            = "sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f"
 	testCompressedSize    = 2789669
 	testSize              = 5843968
+	testGCBlobsDeleted    = 42
+	testGCFreedBytes      = 666
+	testGCStatus          = "requested"
+	testGCUUID            = "mew-mew-id"
 )
 
 var (
-	testTime       = time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC)
-	testTimeString = testTime.Format(time.RFC3339)
+	testTime              = time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC)
+	testTimeString        = testTime.Format(time.RFC3339)
+	testGarbageCollection = &GarbageCollection{
+		UUID:         testGCUUID,
+		RegistryName: testRegistry,
+		Status:       testGCStatus,
+		CreatedAt:    testTime,
+		UpdatedAt:    testTime,
+		BlobsDeleted: testGCBlobsDeleted,
+		FreedBytes:   testGCFreedBytes,
+	}
 )
 
 func TestRegistry_Create(t *testing.T) {
@@ -309,4 +324,173 @@ func TestRegistry_DeleteManifest(t *testing.T) {
 
 	_, err := client.Registry.DeleteManifest(ctx, testRegistry, testRepository, testDigest)
 	require.NoError(t, err)
+}
+
+func reifyTemplateStr(t *testing.T, tmplStr string, v interface{}) string {
+	tmpl, err := template.New("meow").Parse(tmplStr)
+	require.NoError(t, err)
+
+	s := &strings.Builder{}
+	err = tmpl.Execute(s, v)
+	require.NoError(t, err)
+
+	return s.String()
+}
+
+func TestGarbageCollection_Start(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := testGarbageCollection
+	requestResponseJSONTmpl := `
+{
+  "garbage_collection": {
+    "uuid": "{{.UUID}}",
+    "registry_name": "{{.RegistryName}}",
+    "status": "{{.Status}}",
+    "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "blobs_deleted": {{.BlobsDeleted}},
+    "freed_bytes": {{.FreedBytes}}
+  }
+}`
+	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, want)
+
+	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collection",
+		func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodPost)
+			fmt.Fprint(w, requestResponseJSON)
+		})
+
+	got, _, err := client.Registry.StartGarbageCollection(ctx, testRegistry)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestGarbageCollection_Get(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := testGarbageCollection
+	requestResponseJSONTmpl := `
+{
+  "garbage_collection": {
+    "uuid": "{{.UUID}}",
+    "registry_name": "{{.RegistryName}}",
+    "status": "{{.Status}}",
+    "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "blobs_deleted": {{.BlobsDeleted}},
+    "freed_bytes": {{.FreedBytes}}
+  }
+}`
+	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, want)
+
+	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collection",
+		func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			fmt.Fprint(w, requestResponseJSON)
+		})
+
+	got, _, err := client.Registry.GetGarbageCollection(ctx, testRegistry)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestGarbageCollection_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := []*GarbageCollection{testGarbageCollection}
+	requestResponseJSONTmpl := `
+{
+  "garbage_collections": [
+    {
+      "uuid": "{{.UUID}}",
+      "registry_name": "{{.RegistryName}}",
+      "status": "{{.Status}}",
+      "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+      "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+      "blobs_deleted": {{.BlobsDeleted}},
+      "freed_bytes": {{.FreedBytes}}
+    }
+  ],
+	"links": {
+	    "pages": {
+			"next": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/garbage-collections?page=2",
+			"last": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/garbage-collections?page=2"
+		}
+	},
+	"meta": {
+	    "total": 2
+	}
+}`
+	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, testGarbageCollection)
+
+	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collections",
+		func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			testFormValues(t, r, map[string]string{"page": "1", "per_page": "1"})
+			fmt.Fprint(w, requestResponseJSON)
+		})
+
+	got, resp, err := client.Registry.ListGarbageCollections(ctx, testRegistry, &ListOptions{Page: 1, PerPage: 1})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+
+	gotRespLinks := resp.Links
+	wantRespLinks := &Links{
+		Pages: &Pages{
+			Next: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/garbage-collections?page=2", testRegistry),
+			Last: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/garbage-collections?page=2", testRegistry),
+		},
+	}
+	assert.Equal(t, wantRespLinks, gotRespLinks)
+
+	gotRespMeta := resp.Meta
+	wantRespMeta := &Meta{
+		Total: 2,
+	}
+	assert.Equal(t, wantRespMeta, gotRespMeta)
+}
+
+func TestGarbageCollection_Update(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &UpdateGarbageCollectionRequest{
+		Cancel: true,
+	}
+
+	want := testGarbageCollection
+	requestResponseJSONTmpl := `
+{
+  "garbage_collection": {
+    "uuid": "{{.UUID}}",
+    "registry_name": "{{.RegistryName}}",
+    "status": "{{.Status}}",
+    "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "blobs_deleted": {{.BlobsDeleted}},
+    "freed_bytes": {{.FreedBytes}}
+  }
+}`
+	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, want)
+
+	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collection/"+testGCUUID,
+		func(w http.ResponseWriter, r *http.Request) {
+			v := new(UpdateGarbageCollectionRequest)
+			err := json.NewDecoder(r.Body).Decode(v)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testMethod(t, r, http.MethodPut)
+			require.Equal(t, v, updateRequest)
+			fmt.Fprint(w, requestResponseJSON)
+		})
+
+	got, _, err := client.Registry.UpdateGarbageCollection(ctx, testRegistry, testGCUUID, updateRequest)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
 }
