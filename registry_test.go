@@ -494,3 +494,103 @@ func TestGarbageCollection_Update(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
+
+func TestRegistry_GetOptions(t *testing.T) {
+	responseJSON := `
+{
+  "options": {
+    "subscription_tiers": [
+      {
+        "name": "Starter",
+        "slug": "starter",
+        "included_repositories": 1,
+        "included_storage_bytes": 524288000,
+        "allow_storage_overage": false,
+        "included_bandwidth_bytes": 524288000,
+        "monthly_price_in_cents": 0,
+        "eligible": false,
+        "eligibility_reasons": [
+          "OverStorageLimit",
+          "OverRepositoryLimit"
+        ]
+      },
+      {
+        "name": "Basic",
+        "slug": "basic",
+        "included_repositories": 5,
+        "included_storage_bytes": 5368709120,
+        "allow_storage_overage": true,
+        "included_bandwidth_bytes": 5368709120,
+        "monthly_price_in_cents": 500,
+        "eligible": false,
+        "eligibility_reasons": [
+          "OverRepositoryLimit"
+        ]
+      },
+      {
+        "name": "Professional",
+        "slug": "professional",
+        "included_repositories": 0,
+        "included_storage_bytes": 107374182400,
+        "allow_storage_overage": true,
+        "included_bandwidth_bytes": 107374182400,
+        "monthly_price_in_cents": 2000,
+        "eligible": true
+      }
+    ]
+  }
+}`
+	want := &RegistryOptions{
+		SubscriptionTiers: []*RegistrySubscriptionTier{
+			{
+				Name:                   "Starter",
+				Slug:                   "starter",
+				IncludedRepositories:   1,
+				IncludedStorageBytes:   524288000,
+				AllowStorageOverage:    false,
+				IncludedBandwidthBytes: 524288000,
+				MonthlyPriceInCents:    0,
+				Eligible:               false,
+				EligibilityReasons: []string{
+					"OverStorageLimit",
+					"OverRepositoryLimit",
+				},
+			},
+			{
+				Name:                   "Basic",
+				Slug:                   "basic",
+				IncludedRepositories:   5,
+				IncludedStorageBytes:   5368709120,
+				AllowStorageOverage:    true,
+				IncludedBandwidthBytes: 5368709120,
+				MonthlyPriceInCents:    500,
+				Eligible:               false,
+				EligibilityReasons: []string{
+					"OverRepositoryLimit",
+				},
+			},
+			{
+				Name:                   "Professional",
+				Slug:                   "professional",
+				IncludedRepositories:   0,
+				IncludedStorageBytes:   107374182400,
+				AllowStorageOverage:    true,
+				IncludedBandwidthBytes: 107374182400,
+				MonthlyPriceInCents:    2000,
+				Eligible:               true,
+			},
+		},
+	}
+
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/registry/options", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, responseJSON)
+	})
+
+	got, _, err := client.Registry.GetOptions(ctx)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
