@@ -33,6 +33,7 @@ type RegistryService interface {
 	ListGarbageCollections(context.Context, string, *ListOptions) ([]*GarbageCollection, *Response, error)
 	UpdateGarbageCollection(context.Context, string, string, *UpdateGarbageCollectionRequest) (*GarbageCollection, *Response, error)
 	GetOptions(context.Context) (*RegistryOptions, *Response, error)
+	GetSubscription(context.Context) (*RegistrySubscription, *Response, error)
 }
 
 var _ RegistryService = &RegistryServiceOp{}
@@ -144,6 +145,17 @@ type RegistrySubscriptionTier struct {
 	// EligibilityReaons is included when Eligible is false, and indicates the
 	// reasons why this tier is not availble to the user.
 	EligibilityReasons []string `json:"eligibility_reasons,omitempty"`
+}
+
+// RegistrySubscription is a user's subscription.
+type RegistrySubscription struct {
+	Tier      *RegistrySubscriptionTier `json:"tier"`
+	CreatedAt time.Time                 `json:"created_at"`
+	UpdatedAt time.Time                 `json:"updated_at"`
+}
+
+type registrySubscriptionRoot struct {
+	Subscription *RegistrySubscription `json:"subscription"`
 }
 
 // Get retrieves the details of a Registry.
@@ -413,4 +425,19 @@ func (svc *RegistryServiceOp) GetOptions(ctx context.Context) (*RegistryOptions,
 	}
 
 	return root.Options, resp, nil
+}
+
+// GetSubscription retrieves the user's subscription.
+func (svc *RegistryServiceOp) GetSubscription(ctx context.Context) (*RegistrySubscription, *Response, error) {
+	path := fmt.Sprintf("%s/subscription", registryPath)
+	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(registrySubscriptionRoot)
+	resp, err := svc.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Subscription, resp, nil
 }

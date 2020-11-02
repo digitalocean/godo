@@ -594,3 +594,48 @@ func TestRegistry_GetOptions(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
+
+func TestRegistry_GetSubscription(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &RegistrySubscription{
+		Tier: &RegistrySubscriptionTier{
+			Name:                   "Basic",
+			Slug:                   "basic",
+			IncludedRepositories:   5,
+			IncludedStorageBytes:   5368709120,
+			AllowStorageOverage:    true,
+			IncludedBandwidthBytes: 5368709120,
+			MonthlyPriceInCents:    500,
+		},
+		CreatedAt: testTime,
+		UpdatedAt: testTime,
+	}
+
+	getResponseJSON := `
+{
+  "subscription": {
+    "tier": {
+      "name": "Basic",
+      "slug": "basic",
+      "included_repositories": 5,
+      "included_storage_bytes": 5368709120,
+      "allow_storage_overage": true,
+      "included_bandwidth_bytes": 5368709120,
+      "monthly_price_in_cents": 500
+    },
+    "created_at": "` + testTimeString + `",
+    "updated_at": "` + testTimeString + `"
+  }
+}
+`
+
+	mux.HandleFunc("/v2/registry/subscription", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getResponseJSON)
+	})
+	got, _, err := client.Registry.GetSubscription(ctx)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
