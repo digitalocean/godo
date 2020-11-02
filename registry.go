@@ -45,7 +45,8 @@ type RegistryServiceOp struct {
 
 // RegistryCreateRequest represents a request to create a registry.
 type RegistryCreateRequest struct {
-	Name string `json:"name,omitempty"`
+	Name                 string `json:"name,omitempty"`
+	SubscriptionTierSlug string `json:"subscription_tier_slug,omitempty"`
 }
 
 // RegistryDockerCredentialsRequest represents a request to retrieve docker

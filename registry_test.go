@@ -51,7 +51,8 @@ func TestRegistry_Create(t *testing.T) {
 	}
 
 	createRequest := &RegistryCreateRequest{
-		Name: want.Name,
+		Name:                 want.Name,
+		SubscriptionTierSlug: "basic",
 	}
 
 	createResponseJSON := `
@@ -59,7 +60,20 @@ func TestRegistry_Create(t *testing.T) {
 	"registry": {
 		"name": "` + testRegistry + `",
         "created_at": "` + testTimeString + `"
-	}
+	},
+    "subscription": {
+      "tier": {
+        "name": "Basic",
+        "slug": "basic",
+        "included_repositories": 5,
+        "included_storage_bytes": 5368709120,
+        "allow_storage_overage": true,
+        "included_bandwidth_bytes": 5368709120,
+        "monthly_price_in_cents": 500
+      },
+      "created_at": "` + testTimeString + `",
+      "updated_at": "` + testTimeString + `"
+    }
 }`
 
 	mux.HandleFunc("/v2/registry", func(w http.ResponseWriter, r *http.Request) {
