@@ -265,20 +265,31 @@ func TestApps_DeleteApp(t *testing.T) {
 }
 
 func TestApps_CreateDeployment(t *testing.T) {
-	setup()
-	defer teardown()
+	for _, forceBuild := range []bool{true, false} {
+		t.Run(fmt.Sprintf("ForceBuild_%t", forceBuild), func(t *testing.T) {
+			setup()
+			defer teardown()
 
-	ctx := context.Background()
+			ctx := context.Background()
 
-	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodPost)
+			mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, http.MethodPost)
 
-		json.NewEncoder(w).Encode(&deploymentRoot{Deployment: &testDeployment})
-	})
+				var req DeploymentCreateRequest
+				err := json.NewDecoder(r.Body).Decode(&req)
+				require.NoError(t, err)
+				assert.Equal(t, forceBuild, req.ForceBuild)
 
-	deployment, _, err := client.Apps.CreateDeployment(ctx, testApp.ID)
-	require.NoError(t, err)
-	assert.Equal(t, &testDeployment, deployment)
+				json.NewEncoder(w).Encode(&deploymentRoot{Deployment: &testDeployment})
+			})
+
+			deployment, _, err := client.Apps.CreateDeployment(ctx, testApp.ID, &DeploymentCreateRequest{
+				ForceBuild: forceBuild,
+			})
+			require.NoError(t, err)
+			assert.Equal(t, &testDeployment, deployment)
+		})
+	}
 }
 
 func TestApps_GetDeployment(t *testing.T) {
