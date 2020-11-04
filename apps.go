@@ -217,12 +217,12 @@ func (s *AppsServiceOp) ListDeployments(ctx context.Context, appID string, opts 
 // CreateDeployment creates an app deployment.
 func (s *AppsServiceOp) CreateDeployment(ctx context.Context, appID string, create ...*DeploymentCreateRequest) (*Deployment, *Response, error) {
 	path := fmt.Sprintf("%s/%s/deployments", appsBasePath, appID)
-	
+
 	var createReq *DeploymentCreateRequest
 	for _, c := range create {
 		createReq = c
 	}
-	
+
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createReq)
 	if err != nil {
 		return nil, nil, err
