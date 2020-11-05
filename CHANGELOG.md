@@ -2,6 +2,7 @@
 
 ## [v1.52.0] - 2020-11-05
 
+- #411 - @nicktate - apps: add unspecified type to image source registry types
 - #409 - @andrewsomething - registry: Add support for updating a subscription.
 - #408 - @nicktate - apps: update spec to include image source
 - #407 - @kamaln7 - apps: add the option to force build a new deployment
