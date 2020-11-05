@@ -653,3 +653,61 @@ func TestRegistry_GetSubscription(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
+
+func TestRegistry_UpdateSubscription(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &RegistrySubscriptionUpdateRequest{
+		TierSlug: "professional",
+	}
+
+	want := &RegistrySubscription{
+		Tier: &RegistrySubscriptionTier{
+			Name:                   "Professional",
+			Slug:                   "professional",
+			IncludedRepositories:   0,
+			IncludedStorageBytes:   107374182400,
+			AllowStorageOverage:    true,
+			IncludedBandwidthBytes: 107374182400,
+			MonthlyPriceInCents:    2000,
+			Eligible:               true,
+		},
+		CreatedAt: testTime,
+		UpdatedAt: testTime,
+	}
+
+	updateResponseJSON := `{
+  "subscription": {
+    "tier": {
+        "name": "Professional",
+        "slug": "professional",
+        "included_repositories": 0,
+        "included_storage_bytes": 107374182400,
+        "allow_storage_overage": true,
+        "included_bandwidth_bytes": 107374182400,
+        "monthly_price_in_cents": 2000,
+        "eligible": true
+      },
+    "created_at": "` + testTimeString + `",
+    "updated_at": "` + testTimeString + `"
+  }
+}`
+
+	mux.HandleFunc("/v2/registry/subscription",
+		func(w http.ResponseWriter, r *http.Request) {
+			v := new(RegistrySubscriptionUpdateRequest)
+			err := json.NewDecoder(r.Body).Decode(v)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testMethod(t, r, http.MethodPost)
+			require.Equal(t, v, updateRequest)
+			fmt.Fprint(w, updateResponseJSON)
+		})
+
+	got, _, err := client.Registry.UpdateSubscription(ctx, updateRequest)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
