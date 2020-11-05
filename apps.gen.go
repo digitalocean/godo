@@ -348,12 +348,13 @@ type ImageSourceSpec struct {
 	Tag string `json:"tag,omitempty"`
 }
 
-// ImageSourceSpecRegistryType  - DOCR: The DigitalOcean container registry type.
+// ImageSourceSpecRegistryType  - UNSPECIFIED: Represents an unspecified registry type.  - DOCR: The DigitalOcean container registry type.
 type ImageSourceSpecRegistryType string
 
 // List of ImageSourceSpecRegistryType
 const (
-	ImageSourceSpecRegistryType_DOCR ImageSourceSpecRegistryType = "DOCR"
+	ImageSourceSpecRegistryType_Unspecified ImageSourceSpecRegistryType = "UNSPECIFIED"
+	ImageSourceSpecRegistryType_DOCR        ImageSourceSpecRegistryType = "DOCR"
 )
 
 // AppInstanceSize struct for AppInstanceSize
