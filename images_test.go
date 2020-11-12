@@ -353,12 +353,16 @@ func TestImages_Update(t *testing.T) {
 	defer teardown()
 
 	updateRequest := &ImageUpdateRequest{
-		Name: "name",
+		Name:         "name",
+		Distribution: "Fedora",
+		Description:  "Just testing...",
 	}
 
 	mux.HandleFunc("/v2/images/12345", func(w http.ResponseWriter, r *http.Request) {
 		expected := map[string]interface{}{
-			"name": "name",
+			"name":         "name",
+			"distribution": "Fedora",
+			"description":  "Just testing...",
 		}
 
 		var v map[string]interface{}
