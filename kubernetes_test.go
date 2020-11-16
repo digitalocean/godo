@@ -1507,11 +1507,6 @@ func TestKubernetesClusterRegistry_Add(t *testing.T) {
 		ClusterUUIDs: []string{"8d91899c-0739-4a1a-acc5-deadbeefbb8f"},
 	}
 
-	jBlob := `
-{
-	"cluster_uuids": ["8d91899c-0739-4a1a-acc5-deadbeefbb8f"]
-}`
-
 	mux.HandleFunc("/v2/kubernetes/registry", func(w http.ResponseWriter, r *http.Request) {
 		v := new(KubernetesClusterRegistryRequest)
 		err := json.NewDecoder(r.Body).Decode(v)
@@ -1521,7 +1516,6 @@ func TestKubernetesClusterRegistry_Add(t *testing.T) {
 
 		testMethod(t, r, http.MethodPost)
 		require.Equal(t, v, addRequest)
-		fmt.Fprint(w, jBlob)
 	})
 
 	_, err := kubeSvc.AddRegistry(ctx, addRequest)
@@ -1538,11 +1532,6 @@ func TestKubernetesClusterRegistry_Remove(t *testing.T) {
 		ClusterUUIDs: []string{"8d91899c-0739-4a1a-acc5-deadbeefbb8f"},
 	}
 
-	jBlob := `
-{
-	"cluster_uuids": ["8d91899c-0739-4a1a-acc5-deadbeefbb8f"]
-}`
-
 	mux.HandleFunc("/v2/kubernetes/registry", func(w http.ResponseWriter, r *http.Request) {
 		v := new(KubernetesClusterRegistryRequest)
 		err := json.NewDecoder(r.Body).Decode(v)
@@ -1552,11 +1541,141 @@ func TestKubernetesClusterRegistry_Remove(t *testing.T) {
 
 		testMethod(t, r, http.MethodDelete)
 		require.Equal(t, v, remove)
-		fmt.Fprint(w, jBlob)
 	})
 
 	_, err := kubeSvc.RemoveRegistry(ctx, remove)
 	require.NoError(t, err)
+}
+
+func TestKubernetesRunClusterlint_WithRequestBody(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	request := &KubernetesRunClusterlintRequest{IncludeGroups: []string{"doks"}}
+	want := "1234"
+	jBlob := `
+{
+	"run_id": "1234"
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/clusterlint", func(w http.ResponseWriter, r *http.Request) {
+		v := new(KubernetesRunClusterlintRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, v, request)
+		fmt.Fprint(w, jBlob)
+	})
+
+	runID, _, err := kubeSvc.RunClusterlint(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", request)
+	require.NoError(t, err)
+	assert.Equal(t, want, runID)
+
+}
+
+func TestKubernetesRunClusterlint_WithoutRequestBody(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "1234"
+	jBlob := `
+{
+	"run_id": "1234"
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/clusterlint", func(w http.ResponseWriter, r *http.Request) {
+		v := new(KubernetesRunClusterlintRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, v, &KubernetesRunClusterlintRequest{})
+		fmt.Fprint(w, jBlob)
+	})
+
+	runID, _, err := kubeSvc.RunClusterlint(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", &KubernetesRunClusterlintRequest{})
+	require.NoError(t, err)
+	assert.Equal(t, want, runID)
+
+}
+
+func TestKubernetesGetClusterlint_WithRunID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	r := &KubernetesGetClusterlintRequest{RunId: "1234"}
+	jBlob := `
+{
+	"run_id": "1234",
+  	"requested_at": "2019-10-30T05:34:07Z",
+  	"completed_at": "2019-10-30T05:34:11Z",
+  	"diagnostics": [
+		{
+      		"check_name": "unused-config-map",
+      		"severity": "warning",
+      		"message": "Unused config map",
+      		"object": {
+        		"kind": "config map",
+        		"name": "foo",
+        		"namespace": "kube-system"
+      		}
+    	}
+  	]
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/clusterlint", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		require.Equal(t, "run_id=1234", r.URL.Query().Encode())
+		fmt.Fprint(w, jBlob)
+	})
+
+	_, err := kubeSvc.GetClusterlintResults(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", r)
+	require.NoError(t, err)
+
+}
+
+func TestKubernetesGetClusterlint_WithoutRunID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	r := &KubernetesGetClusterlintRequest{}
+	jBlob := `
+{
+	"run_id": "1234",
+  	"requested_at": "2019-10-30T05:34:07Z",
+  	"completed_at": "2019-10-30T05:34:11Z",
+  	"diagnostics": [
+		{
+      		"check_name": "unused-config-map",
+      		"severity": "warning",
+      		"message": "Unused config map",
+      		"object": {
+        		"kind": "config map",
+        		"name": "foo",
+        		"namespace": "kube-system"
+      		}
+    	}
+  	]
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/clusterlint", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		require.Equal(t, "", r.URL.Query().Encode())
+		fmt.Fprint(w, jBlob)
+	})
+
+	_, err := kubeSvc.GetClusterlintResults(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", r)
+	require.NoError(t, err)
+
 }
 
 var maintenancePolicyDayTests = []struct {

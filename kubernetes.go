@@ -48,6 +48,9 @@ type KubernetesService interface {
 	GetOptions(context.Context) (*KubernetesOptions, *Response, error)
 	AddRegistry(ctx context.Context, req *KubernetesClusterRegistryRequest) (*Response, error)
 	RemoveRegistry(ctx context.Context, req *KubernetesClusterRegistryRequest) (*Response, error)
+
+	RunClusterlint(ctx context.Context, clusterID string, req *KubernetesRunClusterlintRequest) (string, *Response, error)
+	GetClusterlintResults(ctx context.Context, clusterID string, req *KubernetesGetClusterlintRequest) (*Response, error)
 }
 
 var _ KubernetesService = &KubernetesServiceOp{}
@@ -151,6 +154,17 @@ type KubernetesClusterCredentialsGetRequest struct {
 // KubernetesClusterRegistryRequest represents clusters to integrate with docr registry
 type KubernetesClusterRegistryRequest struct {
 	ClusterUUIDs []string `json:"cluster_uuids,omitempty"`
+}
+
+type KubernetesRunClusterlintRequest struct {
+	IncludeGroups []string `json:"include_groups"`
+	ExcludeGroups []string `json:"exclude_groups"`
+	IncludeChecks []string `json:"include_checks"`
+	ExcludeChecks []string `json:"exclude_checks"`
+}
+
+type KubernetesGetClusterlintRequest struct {
+	RunId string `json:"run_id"`
 }
 
 // KubernetesCluster represents a Kubernetes cluster.
@@ -790,6 +804,49 @@ func (svc *KubernetesServiceOp) AddRegistry(ctx context.Context, req *Kubernetes
 func (svc *KubernetesServiceOp) RemoveRegistry(ctx context.Context, req *KubernetesClusterRegistryRequest) (*Response, error) {
 	path := fmt.Sprintf("%s/registry", kubernetesBasePath)
 	request, err := svc.client.NewRequest(ctx, http.MethodDelete, path, req)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, request, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+type runClusterlintRoot struct {
+	RunID string `json:"run_id"`
+}
+
+// RunClusterlint schedules a clusterlint run for the specified cluster
+func (svc *KubernetesServiceOp) RunClusterlint(ctx context.Context, clusterID string, req *KubernetesRunClusterlintRequest) (string, *Response, error) {
+	path := fmt.Sprintf("%s/%s/clusterlint", kubernetesClustersPath, clusterID)
+	request, err := svc.client.NewRequest(ctx, http.MethodPost, path, req)
+	if err != nil {
+		return "", nil, err
+	}
+	root := new(runClusterlintRoot)
+	resp, err := svc.client.Do(ctx, request, root)
+	if err != nil {
+		return "", resp, err
+	}
+	return root.RunID, resp, nil
+}
+
+// GetClusterlintResults fetches the diagnostics after clusterlint run completes
+func (svc *KubernetesServiceOp) GetClusterlintResults(ctx context.Context, clusterID string, req *KubernetesGetClusterlintRequest) (*Response, error) {
+	path := fmt.Sprintf("%s/%s/clusterlint", kubernetesClustersPath, clusterID)
+	if req != nil {
+		v := make(url.Values)
+		if req.RunId != "" {
+			v.Set("run_id", req.RunId)
+		}
+		if query := v.Encode(); query != "" {
+			path = path + "?" + query
+		}
+	}
+
+	request, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, err
 	}
