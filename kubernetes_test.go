@@ -1631,14 +1631,28 @@ func TestKubernetesGetClusterlint_WithRunID(t *testing.T) {
   	]
 }`
 
+	expected := []*ClusterlintDiagnostic{
+		{
+			CheckName: "unused-config-map",
+			Severity:  "warning",
+			Message:   "Unused config map",
+			Object: &ClusterlintObject{
+				Kind:      "config map",
+				Name:      "foo",
+				Namespace: "kube-system",
+				Owners:    nil,
+			},
+		},
+	}
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/clusterlint", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		require.Equal(t, "run_id=1234", r.URL.Query().Encode())
 		fmt.Fprint(w, jBlob)
 	})
 
-	_, err := kubeSvc.GetClusterlintResults(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", r)
+	diagnostics, _, err := kubeSvc.GetClusterlintResults(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", r)
 	require.NoError(t, err)
+	assert.Equal(t, expected, diagnostics)
 
 }
 
@@ -1667,14 +1681,29 @@ func TestKubernetesGetClusterlint_WithoutRunID(t *testing.T) {
   	]
 }`
 
+	expected := []*ClusterlintDiagnostic{
+		{
+			CheckName: "unused-config-map",
+			Severity:  "warning",
+			Message:   "Unused config map",
+			Object: &ClusterlintObject{
+				Kind:      "config map",
+				Name:      "foo",
+				Namespace: "kube-system",
+				Owners:    nil,
+			},
+		},
+	}
+
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/clusterlint", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		require.Equal(t, "", r.URL.Query().Encode())
 		fmt.Fprint(w, jBlob)
 	})
 
-	_, err := kubeSvc.GetClusterlintResults(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", r)
+	diagnostics, _, err := kubeSvc.GetClusterlintResults(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", r)
 	require.NoError(t, err)
+	assert.Equal(t, expected, diagnostics)
 
 }
 

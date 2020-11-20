@@ -50,7 +50,7 @@ type KubernetesService interface {
 	RemoveRegistry(ctx context.Context, req *KubernetesClusterRegistryRequest) (*Response, error)
 
 	RunClusterlint(ctx context.Context, clusterID string, req *KubernetesRunClusterlintRequest) (string, *Response, error)
-	GetClusterlintResults(ctx context.Context, clusterID string, req *KubernetesGetClusterlintRequest) (*Response, error)
+	GetClusterlintResults(ctx context.Context, clusterID string, req *KubernetesGetClusterlintRequest) ([]*ClusterlintDiagnostic, *Response, error)
 }
 
 var _ KubernetesService = &KubernetesServiceOp{}
@@ -421,6 +421,28 @@ type KubernetesNodeSize struct {
 type KubernetesRegion struct {
 	Name string `json:"name"`
 	Slug string `json:"slug"`
+}
+
+// ClusterlintDiagnostic is a diagnostic returned from clusterlint.
+type ClusterlintDiagnostic struct {
+	CheckName string             `json:"check_name"`
+	Severity  string             `json:"severity"`
+	Message   string             `json:"message"`
+	Object    *ClusterlintObject `json:"object"`
+}
+
+// ClusterlintObject is the object a clusterlint diagnostic refers to.
+type ClusterlintObject struct {
+	Kind      string              `json:"kind"`
+	Name      string              `json:"name"`
+	Namespace string              `json:"namespace"`
+	Owners    []*ClusterlintOwner `json:"owners,omitempty"`
+}
+
+// ClusterlintOwner indicates the resource that owns the offending object.
+type ClusterlintOwner struct {
+	Kind string `json:"kind"`
+	Name string `json:"name"`
 }
 
 type kubernetesClustersRoot struct {
@@ -833,8 +855,12 @@ func (svc *KubernetesServiceOp) RunClusterlint(ctx context.Context, clusterID st
 	return root.RunID, resp, nil
 }
 
+type clusterlintDiagnosticsRoot struct {
+	Diagnostics []*ClusterlintDiagnostic
+}
+
 // GetClusterlintResults fetches the diagnostics after clusterlint run completes
-func (svc *KubernetesServiceOp) GetClusterlintResults(ctx context.Context, clusterID string, req *KubernetesGetClusterlintRequest) (*Response, error) {
+func (svc *KubernetesServiceOp) GetClusterlintResults(ctx context.Context, clusterID string, req *KubernetesGetClusterlintRequest) ([]*ClusterlintDiagnostic, *Response, error) {
 	path := fmt.Sprintf("%s/%s/clusterlint", kubernetesClustersPath, clusterID)
 	if req != nil {
 		v := make(url.Values)
@@ -848,11 +874,12 @@ func (svc *KubernetesServiceOp) GetClusterlintResults(ctx context.Context, clust
 
 	request, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	resp, err := svc.client.Do(ctx, request, nil)
+	root := new(clusterlintDiagnosticsRoot)
+	resp, err := svc.client.Do(ctx, request, root)
 	if err != nil {
-		return resp, err
+		return nil, resp, err
 	}
-	return resp, nil
+	return root.Diagnostics, resp, nil
 }
