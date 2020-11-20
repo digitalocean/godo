@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.53.0] - 2020-11-20
+
+- #414 - @varshavaradarajan - kubernetes: add clusterlint support
+- #413 - @andrewsomething - images: Support updating distribution and description.
+
 ## [v1.52.0] - 2020-11-05
 
 - #411 - @nicktate - apps: add unspecified type to image source registry types
