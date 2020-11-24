@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.54.0] - 2020-11-24
+
+- #417 - @waynr - registry: add support for garbage collection types
+
 ## [v1.53.0] - 2020-11-20
 
 - #414 - @varshavaradarajan - kubernetes: add clusterlint support
