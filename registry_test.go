@@ -25,6 +25,7 @@ const (
 	testGCFreedBytes      = 666
 	testGCStatus          = "requested"
 	testGCUUID            = "mew-mew-id"
+	testGCType            = GCTypeUnreferencedBlobsOnly
 )
 
 var (
@@ -38,6 +39,7 @@ var (
 		UpdatedAt:    testTime,
 		BlobsDeleted: testGCBlobsDeleted,
 		FreedBytes:   testGCFreedBytes,
+		Type:         testGCType,
 	}
 )
 
@@ -362,6 +364,7 @@ func TestGarbageCollection_Start(t *testing.T) {
     "uuid": "{{.UUID}}",
     "registry_name": "{{.RegistryName}}",
     "status": "{{.Status}}",
+    "type": "{{.Type}}",
     "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
     "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
     "blobs_deleted": {{.BlobsDeleted}},
@@ -370,9 +373,19 @@ func TestGarbageCollection_Start(t *testing.T) {
 }`
 	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, want)
 
+	createRequest := &StartGarbageCollectionRequest{
+		Type: GCTypeUnreferencedBlobsOnly,
+	}
 	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collection",
 		func(w http.ResponseWriter, r *http.Request) {
+			v := new(StartGarbageCollectionRequest)
+			err := json.NewDecoder(r.Body).Decode(v)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			testMethod(t, r, http.MethodPost)
+			require.Equal(t, v, createRequest)
 			fmt.Fprint(w, requestResponseJSON)
 		})
 
@@ -392,6 +405,7 @@ func TestGarbageCollection_Get(t *testing.T) {
     "uuid": "{{.UUID}}",
     "registry_name": "{{.RegistryName}}",
     "status": "{{.Status}}",
+    "type": "{{.Type}}",
     "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
     "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
     "blobs_deleted": {{.BlobsDeleted}},
@@ -423,6 +437,7 @@ func TestGarbageCollection_List(t *testing.T) {
       "uuid": "{{.UUID}}",
       "registry_name": "{{.RegistryName}}",
       "status": "{{.Status}}",
+      "type": "{{.Type}}",
       "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
       "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
       "blobs_deleted": {{.BlobsDeleted}},
@@ -483,6 +498,7 @@ func TestGarbageCollection_Update(t *testing.T) {
     "uuid": "{{.UUID}}",
     "registry_name": "{{.RegistryName}}",
     "status": "{{.Status}}",
+    "type": "{{.Type}}",
     "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
     "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
     "blobs_deleted": {{.BlobsDeleted}},
