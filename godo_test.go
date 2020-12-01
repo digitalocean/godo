@@ -147,7 +147,7 @@ func TestNewRequest(t *testing.T) {
 		`{"name":"l","region":"","size":"","image":0,`+
 			`"ssh_keys":null,"backups":false,"ipv6":false,`+
 			`"private_networking":false,"monitoring":false,"tags":null}`+"\n"
-	req, _ := c.NewRequest(ctx, http.MethodGet, inURL, inBody)
+	req, _ := c.NewRequest(ctx, http.MethodPost, inURL, inBody)
 
 	// test relative URL was expanded
 	if req.URL.String() != outURL {
@@ -167,6 +167,29 @@ func TestNewRequest(t *testing.T) {
 	}
 }
 
+func TestNewRequest_get(t *testing.T) {
+	c := NewClient(nil)
+
+	inURL, outURL := "/foo", defaultBaseURL+"foo"
+	req, _ := c.NewRequest(ctx, http.MethodGet, inURL, nil)
+
+	// test relative URL was expanded
+	if req.URL.String() != outURL {
+		t.Errorf("NewRequest(%v) URL = %v, expected %v", inURL, req.URL, outURL)
+	}
+
+	// test the content-type header is not set
+	if contentType := req.Header.Get("Content-Type"); contentType != "" {
+		t.Errorf("NewRequest() Content-Type = %v, expected empty string", contentType)
+	}
+
+	// test default user-agent is attached to the request
+	userAgent := req.Header.Get("User-Agent")
+	if c.UserAgent != userAgent {
+		t.Errorf("NewRequest() User-Agent = %v, expected %v", userAgent, c.UserAgent)
+	}
+}
+
 func TestNewRequest_withUserData(t *testing.T) {
 	c := NewClient(nil)
 
@@ -175,7 +198,7 @@ func TestNewRequest_withUserData(t *testing.T) {
 		`{"name":"l","region":"","size":"","image":0,`+
 			`"ssh_keys":null,"backups":false,"ipv6":false,`+
 			`"private_networking":false,"monitoring":false,"user_data":"u","tags":null}`+"\n"
-	req, _ := c.NewRequest(ctx, http.MethodGet, inURL, inBody)
+	req, _ := c.NewRequest(ctx, http.MethodPost, inURL, inBody)
 
 	// test relative URL was expanded
 	if req.URL.String() != outURL {
