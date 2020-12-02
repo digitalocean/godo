@@ -126,8 +126,36 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestNewFromToken(t *testing.T) {
-	c := NewFromToken("my-token")
+	c := NewFromToken("myToken")
 	testClientDefaults(t, c)
+}
+
+func TestNewFromToken_cleaned(t *testing.T) {
+	testTokens := []string{"myToken ", " myToken", " myToken ", "'myToken'", " 'myToken' "}
+	expected := "Bearer myToken"
+
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/foo", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	for _, tt := range testTokens {
+		t.Run(tt, func(t *testing.T) {
+			c := NewFromToken(tt)
+			req, _ := c.NewRequest(ctx, http.MethodGet, server.URL+"/foo", nil)
+			resp, err := c.Do(ctx, req, nil)
+			if err != nil {
+				t.Fatalf("Do(): %v", err)
+			}
+
+			authHeader := resp.Request.Header.Get("Authorization")
+			if authHeader != expected {
+				t.Errorf("Authorization header = %v, expected %v", authHeader, expected)
+			}
+		})
+	}
 }
 
 func TestNew(t *testing.T) {

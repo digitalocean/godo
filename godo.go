@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -165,8 +166,9 @@ func addOptions(s string, opt interface{}) (string, error) {
 // NewFromToken returns a new DigitalOcean API client with the given API
 // token.
 func NewFromToken(token string) *Client {
+	cleanToken := strings.Trim(strings.TrimSpace(token), "'")
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cleanToken})
 	return NewClient(oauth2.NewClient(ctx, ts))
 }
 
