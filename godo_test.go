@@ -240,6 +240,28 @@ func TestNewRequest_withCustomUserAgent(t *testing.T) {
 	}
 }
 
+func TestNewRequest_withCustomHeaders(t *testing.T) {
+	expectedIdentity := "identity"
+	expectedCustom := "x_test_header"
+
+	c, err := New(nil, SetRequestHeaders(map[string]string{
+		"Accept-Encoding": expectedIdentity,
+		"X-Test-Header":   expectedCustom,
+	}))
+	if err != nil {
+		t.Fatalf("New() unexpected error: %v", err)
+	}
+
+	req, _ := c.NewRequest(ctx, http.MethodGet, "/foo", nil)
+
+	if got := req.Header.Get("Accept-Encoding"); got != expectedIdentity {
+		t.Errorf("New() Custom Accept Encoding Header = %s; expected %s", got, expectedIdentity)
+	}
+	if got := req.Header.Get("X-Test-Header"); got != expectedCustom {
+		t.Errorf("New() Custom Accept Encoding Header = %s; expected %s", got, expectedCustom)
+	}
+}
+
 func TestDo(t *testing.T) {
 	setup()
 	defer teardown()
