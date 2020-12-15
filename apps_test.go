@@ -139,7 +139,7 @@ var (
 		DefaultIngress:          "example.com",
 		LiveURL:                 "https://example.com",
 		LiveURLBase:             "https://example.com",
-		LiveAppDomain:           "example.com",
+		LiveDomain:              "example.com",
 		ActiveDeployment:        &testDeployment,
 		InProgressDeployment:    &testDeployment,
 		LastDeploymentCreatedAt: time.Unix(1595959200, 0).UTC(),

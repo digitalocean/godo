@@ -22,7 +22,7 @@ type App struct {
 	Region                  *AppRegion   `json:"region,omitempty"`
 	TierSlug                string       `json:"tier_slug,omitempty"`
 	LiveURLBase             string       `json:"live_url_base,omitempty"`
-	LiveAppDomain           string       `json:"live_domain,omitempty"`
+	LiveDomain              string       `json:"live_domain,omitempty"`
 	Domains                 []*AppDomain `json:"domains,omitempty"`
 }
 
