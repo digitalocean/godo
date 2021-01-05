@@ -48,8 +48,10 @@ func TestRegistry_Create(t *testing.T) {
 	defer teardown()
 
 	want := &Registry{
-		Name:      testRegistry,
-		CreatedAt: testTime,
+		Name:                       testRegistry,
+		StorageUsageBytes:          0,
+		StorageUsageBytesUpdatedAt: testTime,
+		CreatedAt:                  testTime,
 	}
 
 	createRequest := &RegistryCreateRequest{
@@ -61,6 +63,8 @@ func TestRegistry_Create(t *testing.T) {
 {
 	"registry": {
 		"name": "` + testRegistry + `",
+		"storage_usage_bytes": 0,
+        "storage_usage_bytes_updated_at": "` + testTimeString + `",
         "created_at": "` + testTimeString + `"
 	},
     "subscription": {
@@ -100,13 +104,19 @@ func TestRegistry_Get(t *testing.T) {
 	defer teardown()
 
 	want := &Registry{
-		Name: testRegistry,
+		Name:                       testRegistry,
+		StorageUsageBytes:          0,
+		StorageUsageBytesUpdatedAt: testTime,
+		CreatedAt:                  testTime,
 	}
 
 	getResponseJSON := `
 {
 	"registry": {
-		"name": "` + testRegistry + `"
+		"name": "` + testRegistry + `",
+		"storage_usage_bytes": 0,
+        "storage_usage_bytes_updated_at": "` + testTimeString + `",
+        "created_at": "` + testTimeString + `"
 	}
 }`
 
