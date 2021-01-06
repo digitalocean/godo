@@ -1,5 +1,12 @@
 # Change Log
 
+## [v1.38.0] - 2020-01-06
+
+- #425 - @adamwg - registry: Support the storage usage indicator
+- #423 - @ChiefMateStarbuck - Updated README example
+- #421 - @andrewsomething - Add some basic input cleaning to NewFromToken
+- #420 - @bentranter - Don't set "Content-Type" header on GET requests
+
 ## [v1.37.0] - 2020-06-01
 
 - #336 registry: URL encode repository names when building URLs. @adamwg
