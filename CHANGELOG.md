@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.56.0] - 2021-01-08
+
+- #422 - @kamaln7 - apps: add ProposeApp method
+
 ## [v1.55.0] - 2021-01-07
 
 - #425 - @adamwg - registry: Support the storage usage indicator
