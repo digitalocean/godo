@@ -152,7 +152,6 @@ var (
 	testAppTier = AppTier{
 		Name:                 "Test",
 		Slug:                 "test",
-		StorageBytes:         "1024",
 		EgressBandwidthBytes: "10240",
 		BuildSeconds:         "3000",
 	}
@@ -262,6 +261,64 @@ func TestApps_DeleteApp(t *testing.T) {
 
 	_, err := client.Apps.Delete(ctx, testApp.ID)
 	require.NoError(t, err)
+}
+
+func TestApps_ProposeApp(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	spec := &AppSpec{
+		Name: "sample-golang",
+		Services: []*AppServiceSpec{{
+			Name:            "web",
+			EnvironmentSlug: "go",
+			RunCommand:      "bin/sample-golang",
+			GitHub: &GitHubSourceSpec{
+				Repo:   "digitalocean/sample-golang",
+				Branch: "branch",
+			},
+		}},
+	}
+
+	mux.HandleFunc("/v2/apps/propose", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var req AppProposeRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		require.NoError(t, err)
+		assert.Equal(t, spec, req.Spec)
+		assert.Equal(t, testApp.ID, req.AppID)
+
+		json.NewEncoder(w).Encode(&AppProposeResponse{
+			Spec: &AppSpec{
+				Name: "sample-golang",
+				Services: []*AppServiceSpec{{
+					Name:            "web",
+					EnvironmentSlug: "go",
+					RunCommand:      "bin/sample-golang",
+					GitHub: &GitHubSourceSpec{
+						Repo:   "digitalocean/sample-golang",
+						Branch: "branch",
+					},
+					InstanceCount: 1,
+					Routes: []*AppRouteSpec{{
+						Path: "/",
+					}},
+				}},
+			},
+			AppNameAvailable: true,
+		})
+	})
+
+	res, _, err := client.Apps.Propose(ctx, &AppProposeRequest{
+		Spec:  spec,
+		AppID: testApp.ID,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, int64(1), res.Spec.Services[0].InstanceCount)
+	assert.Equal(t, "/", res.Spec.Services[0].Routes[0].Path)
+	assert.True(t, res.AppNameAvailable)
 }
 
 func TestApps_CreateDeployment(t *testing.T) {
