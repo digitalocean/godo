@@ -84,6 +84,7 @@ type AppJobSpec struct {
 	Git    *GitSourceSpec    `json:"git,omitempty"`
 	GitHub *GitHubSourceSpec `json:"github,omitempty"`
 	Image  *ImageSourceSpec  `json:"image,omitempty"`
+	GitLab *GitLabSourceSpec `json:"gitlab,omitempty"`
 	// The path to the Dockerfile relative to the root of the repo. If set, it will be used to build this component. Otherwise, App Platform will attempt to build it using buildpacks.
 	DockerfilePath string `json:"dockerfile_path,omitempty"`
 	// An optional build command to run while building this component from source.
@@ -126,6 +127,7 @@ type AppServiceSpec struct {
 	Git    *GitSourceSpec    `json:"git,omitempty"`
 	GitHub *GitHubSourceSpec `json:"github,omitempty"`
 	Image  *ImageSourceSpec  `json:"image,omitempty"`
+	GitLab *GitLabSourceSpec `json:"gitlab,omitempty"`
 	// The path to the Dockerfile relative to the root of the repo. If set, it will be used to build this component. Otherwise, App Platform will attempt to build it using buildpacks.
 	DockerfilePath string `json:"dockerfile_path,omitempty"`
 	// An optional build command to run while building this component from source.
@@ -195,6 +197,7 @@ type AppStaticSiteSpec struct {
 	Name   string            `json:"name"`
 	Git    *GitSourceSpec    `json:"git,omitempty"`
 	GitHub *GitHubSourceSpec `json:"github,omitempty"`
+	GitLab *GitLabSourceSpec `json:"gitlab,omitempty"`
 	// The path to the Dockerfile relative to the root of the repo. If set, it will be used to build this component. Otherwise, App Platform will attempt to build it using buildpacks.
 	DockerfilePath string `json:"dockerfile_path,omitempty"`
 	// An optional build command to run while building this component from source.
@@ -234,6 +237,7 @@ type AppWorkerSpec struct {
 	Git    *GitSourceSpec    `json:"git,omitempty"`
 	GitHub *GitHubSourceSpec `json:"github,omitempty"`
 	Image  *ImageSourceSpec  `json:"image,omitempty"`
+	GitLab *GitLabSourceSpec `json:"gitlab,omitempty"`
 	// The path to the Dockerfile relative to the root of the repo. If set, it will be used to build this component. Otherwise, App Platform will attempt to build it using buildpacks.
 	DockerfilePath string `json:"dockerfile_path,omitempty"`
 	// An optional build command to run while building this component from source.
@@ -412,6 +416,13 @@ const (
 
 // GitHubSourceSpec struct for GitHubSourceSpec
 type GitHubSourceSpec struct {
+	Repo         string `json:"repo,omitempty"`
+	Branch       string `json:"branch,omitempty"`
+	DeployOnPush bool   `json:"deploy_on_push,omitempty"`
+}
+
+// GitLabSourceSpec struct for GitLabSourceSpec
+type GitLabSourceSpec struct {
 	Repo         string `json:"repo,omitempty"`
 	Branch       string `json:"branch,omitempty"`
 	DeployOnPush bool   `json:"deploy_on_push,omitempty"`
