@@ -1012,6 +1012,11 @@ func TestKubernetesClusters_ListAssociatedResourcesForDeletion(t *testing.T) {
 	defer teardown()
 
 	kubeSvc := client.Kubernetes
+	expectedRes := &KubernetesAssociatedResources{
+		Volumes:         []string{"2241"},
+		VolumeSnapshots: []string{"2425"},
+		LoadBalancers:   []string{"4235"},
+	}
 	jBlob := `
 {
 	"volumes": ["2241"],
@@ -1025,8 +1030,10 @@ func TestKubernetesClusters_ListAssociatedResourcesForDeletion(t *testing.T) {
 		fmt.Fprint(w, jBlob)
 	})
 
-	_, err := kubeSvc.ListAssociatedResourcesForDeletion(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
+	ar, _, err := kubeSvc.ListAssociatedResourcesForDeletion(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
 	require.NoError(t, err)
+	require.Equal(t, expectedRes, ar)
+
 }
 
 func TestKubernetesClusters_CreateNodePool(t *testing.T) {

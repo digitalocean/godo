@@ -36,7 +36,7 @@ type KubernetesService interface {
 	Delete(context.Context, string) (*Response, error)
 	DeleteSelective(context.Context, string, *KubernetesClusterDeleteSelectiveRequest) (*Response, error)
 	DeleteDangerous(context.Context, string) (*Response, error)
-	ListAssociatedResourcesForDeletion(context.Context, string) (*Response, error)
+	ListAssociatedResourcesForDeletion(context.Context, string) (*KubernetesAssociatedResources, *Response, error)
 
 	CreateNodePool(ctx context.Context, clusterID string, req *KubernetesNodePoolCreateRequest) (*KubernetesNodePool, *Response, error)
 	GetNodePool(ctx context.Context, clusterID, poolID string) (*KubernetesNodePool, *Response, error)
@@ -455,6 +455,13 @@ type ClusterlintOwner struct {
 	Name string `json:"name"`
 }
 
+// KubernetesAssociatedResources represents a cluster's associated resources
+type KubernetesAssociatedResources struct {
+	Volumes         []string `json:"volumes"`
+	VolumeSnapshots []string `json:"volume_snapshots"`
+	LoadBalancers   []string `json:"load_balancers"`
+}
+
 type kubernetesClustersRoot struct {
 	Clusters []*KubernetesCluster `json:"kubernetes_clusters,omitempty"`
 	Links    *Links               `json:"links,omitempty"`
@@ -592,17 +599,18 @@ func (svc *KubernetesServiceOp) DeleteDangerous(ctx context.Context, clusterID s
 // ListAssociatedResourcesForDeletion lists a Kubernetes cluster's resources that can be selected
 // for deletion along with the cluster. See DeleteSelective
 // Associated resources include volumes, volume snapshots and load balancers.
-func (svc *KubernetesServiceOp) ListAssociatedResourcesForDeletion(ctx context.Context, clusterID string) (*Response, error) {
+func (svc *KubernetesServiceOp) ListAssociatedResourcesForDeletion(ctx context.Context, clusterID string) (*KubernetesAssociatedResources, *Response, error) {
 	path := fmt.Sprintf("%s/%s/destroy_with_associated_resources", kubernetesClustersPath, clusterID)
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	resp, err := svc.client.Do(ctx, req, nil)
+	root := new(KubernetesAssociatedResources)
+	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
-		return resp, err
+		return nil, resp, err
 	}
-	return resp, nil
+	return root, resp, nil
 }
 
 // List returns a list of the Kubernetes clusters visible with the caller's API token.
