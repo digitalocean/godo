@@ -961,6 +961,81 @@ func TestKubernetesClusters_Destroy(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestKubernetesClusters_DeleteDangerous(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/destroy_with_associated_resources/dangerous", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := kubeSvc.DeleteDangerous(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
+	require.NoError(t, err)
+}
+
+func TestKubernetesClusters_DeleteSelective(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+
+	deleteRequest := &KubernetesClusterDeleteSelectiveRequest{
+		Volumes:         []string{"2241"},
+		VolumeSnapshots: []string{"7258"},
+		LoadBalancers:   []string{"9873"},
+	}
+
+	expectedReqJSON := `{"volumes":["2241"],"volume_snapshots":["7258"],"load_balancers":["9873"]}
+`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/destroy_with_associated_resources/selective", func(w http.ResponseWriter, r *http.Request) {
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(r.Body)
+		require.Equal(t, expectedReqJSON, buf.String())
+
+		v := new(KubernetesClusterDeleteSelectiveRequest)
+		err := json.NewDecoder(buf).Decode(v)
+		require.NoError(t, err)
+
+		testMethod(t, r, http.MethodDelete)
+		require.Equal(t, v, deleteRequest)
+	})
+
+	_, err := kubeSvc.DeleteSelective(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", deleteRequest)
+	require.NoError(t, err)
+}
+
+func TestKubernetesClusters_ListAssociatedResourcesForDeletion(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	expectedRes := &KubernetesAssociatedResources{
+		Volumes:         []string{"2241"},
+		VolumeSnapshots: []string{"2425"},
+		LoadBalancers:   []string{"4235"},
+	}
+	jBlob := `
+{
+	"volumes": ["2241"],
+	"volume_snapshots": ["2425"],
+	"load_balancers": ["4235"]
+}
+`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/destroy_with_associated_resources", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, jBlob)
+	})
+
+	ar, _, err := kubeSvc.ListAssociatedResourcesForDeletion(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
+	require.NoError(t, err)
+	require.Equal(t, expectedRes, ar)
+
+}
+
 func TestKubernetesClusters_CreateNodePool(t *testing.T) {
 	setup()
 	defer teardown()
