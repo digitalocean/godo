@@ -11,15 +11,66 @@ func TestSizes_List(t *testing.T) {
 	setup()
 	defer teardown()
 
+	expectedSizes := []Size{
+		{
+			Slug:         "s-1vcpu-1gb",
+			Memory:       1024,
+			Vcpus:        1,
+			Disk:         25,
+			PriceMonthly: 5,
+			PriceHourly:  0.00744,
+			Regions:      []string{"nyc1", "nyc2"},
+			Available:    true,
+			Transfer:     1,
+			Description:  "Basic",
+		},
+		{
+			Slug:         "512mb",
+			Memory:       512,
+			Vcpus:        1,
+			Disk:         20,
+			PriceMonthly: 5,
+			PriceHourly:  0.00744,
+			Regions:      []string{"nyc1", "nyc2"},
+			Available:    true,
+			Transfer:     1,
+			Description:  "Legacy Basic",
+		},
+	}
+
 	mux.HandleFunc("/v2/sizes", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"sizes": [
 				{
-					"slug": "1"
+					"slug": "s-1vcpu-1gb",
+					"memory": 1024,
+					"vcpus": 1,
+					"disk": 25,
+					"transfer": 1,
+					"price_monthly": 5,
+					"price_hourly": 0.00744,
+					"regions": [
+						"nyc1",
+						"nyc2"
+					],
+					"available": true,
+					"description": "Basic"
 				},
 				{
-					"slug": "2"
+					"slug": "512mb",
+					"memory": 512,
+					"vcpus": 1,
+					"disk": 20,
+					"transfer": 1,
+					"price_monthly": 5,
+					"price_hourly": 0.00744,
+					"regions": [
+						"nyc1",
+						"nyc2"
+					],
+					"available": true,
+					"description": "Legacy Basic"
 				}
 			],
 			"meta": {
@@ -33,7 +84,6 @@ func TestSizes_List(t *testing.T) {
 		t.Errorf("Sizes.List returned error: %v", err)
 	}
 
-	expectedSizes := []Size{{Slug: "1"}, {Slug: "2"}}
 	if !reflect.DeepEqual(sizes, expectedSizes) {
 		t.Errorf("Sizes.List returned sizes %+v, expected %+v", sizes, expectedSizes)
 	}
@@ -103,10 +153,11 @@ func TestSize_String(t *testing.T) {
 		Regions:      []string{"1", "2"},
 		Available:    true,
 		Transfer:     789,
+		Description:  "Basic",
 	}
 
 	stringified := size.String()
-	expected := `godo.Size{Slug:"slize", Memory:123, Vcpus:456, Disk:789, PriceMonthly:123, PriceHourly:456, Regions:["1" "2"], Available:true, Transfer:789}`
+	expected := `godo.Size{Slug:"slize", Memory:123, Vcpus:456, Disk:789, PriceMonthly:123, PriceHourly:456, Regions:["1" "2"], Available:true, Transfer:789, Description:"Basic"}`
 	if expected != stringified {
 		t.Errorf("Size.String returned %+v, expected %+v", stringified, expected)
 	}
