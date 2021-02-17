@@ -1013,15 +1013,48 @@ func TestKubernetesClusters_ListAssociatedResourcesForDeletion(t *testing.T) {
 
 	kubeSvc := client.Kubernetes
 	expectedRes := &KubernetesAssociatedResources{
-		Volumes:         []string{"2241"},
-		VolumeSnapshots: []string{"2425"},
-		LoadBalancers:   []string{"4235"},
+		Volumes: []*AssociatedResource{
+			{
+				ID:   "2241",
+				Name: "test-volume-1",
+			},
+		},
+		VolumeSnapshots: []*AssociatedResource{
+			{
+				ID:   "2425",
+				Name: "test-volume-snapshot-1",
+			},
+		},
+		LoadBalancers: []*AssociatedResource{
+			{
+				ID:   "4235",
+				Name: "test-load-balancer-1",
+			},
+		},
 	}
 	jBlob := `
 {
-	"volumes": ["2241"],
-	"volume_snapshots": ["2425"],
-	"load_balancers": ["4235"]
+	"volumes": 
+	[
+		{
+		  "id": "2241",
+		  "name":"test-volume-1"
+		}
+	],
+	"volume_snapshots": 
+	[
+		{
+		  "id":"2425",
+		  "name":"test-volume-snapshot-1"
+		}
+	],
+	"load_balancers": 
+	[
+		{
+		  "id":"4235",
+		  "name":"test-load-balancer-1"
+		}
+	]
 }
 `
 
