@@ -3,7 +3,9 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -19,11 +21,26 @@ const (
 	testDigest            = "sha256:e692418e4cbaf90ca69d05a66403747baa33ee08806650b51fab815ad7fc331f"
 	testCompressedSize    = 2789669
 	testSize              = 5843968
+	testGCBlobsDeleted    = 42
+	testGCFreedBytes      = 666
+	testGCStatus          = "requested"
+	testGCUUID            = "mew-mew-id"
+	testGCType            = GCTypeUnreferencedBlobsOnly
 )
 
 var (
-	testTime       = time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC)
-	testTimeString = testTime.Format(time.RFC3339)
+	testTime              = time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC)
+	testTimeString        = testTime.Format(time.RFC3339)
+	testGarbageCollection = &GarbageCollection{
+		UUID:         testGCUUID,
+		RegistryName: testRegistry,
+		Status:       testGCStatus,
+		CreatedAt:    testTime,
+		UpdatedAt:    testTime,
+		BlobsDeleted: testGCBlobsDeleted,
+		FreedBytes:   testGCFreedBytes,
+		Type:         testGCType,
+	}
 )
 
 func TestRegistry_Create(t *testing.T) {
@@ -31,20 +48,38 @@ func TestRegistry_Create(t *testing.T) {
 	defer teardown()
 
 	want := &Registry{
-		Name:      testRegistry,
-		CreatedAt: testTime,
+		Name:                       testRegistry,
+		StorageUsageBytes:          0,
+		StorageUsageBytesUpdatedAt: testTime,
+		CreatedAt:                  testTime,
 	}
 
 	createRequest := &RegistryCreateRequest{
-		Name: want.Name,
+		Name:                 want.Name,
+		SubscriptionTierSlug: "basic",
 	}
 
 	createResponseJSON := `
 {
 	"registry": {
 		"name": "` + testRegistry + `",
+		"storage_usage_bytes": 0,
+        "storage_usage_bytes_updated_at": "` + testTimeString + `",
         "created_at": "` + testTimeString + `"
-	}
+	},
+    "subscription": {
+      "tier": {
+        "name": "Basic",
+        "slug": "basic",
+        "included_repositories": 5,
+        "included_storage_bytes": 5368709120,
+        "allow_storage_overage": true,
+        "included_bandwidth_bytes": 5368709120,
+        "monthly_price_in_cents": 500
+      },
+      "created_at": "` + testTimeString + `",
+      "updated_at": "` + testTimeString + `"
+    }
 }`
 
 	mux.HandleFunc("/v2/registry", func(w http.ResponseWriter, r *http.Request) {
@@ -69,13 +104,19 @@ func TestRegistry_Get(t *testing.T) {
 	defer teardown()
 
 	want := &Registry{
-		Name: testRegistry,
+		Name:                       testRegistry,
+		StorageUsageBytes:          0,
+		StorageUsageBytesUpdatedAt: testTime,
+		CreatedAt:                  testTime,
 	}
 
 	getResponseJSON := `
 {
 	"registry": {
-		"name": "` + testRegistry + `"
+		"name": "` + testRegistry + `",
+		"storage_usage_bytes": 0,
+        "storage_usage_bytes_updated_at": "` + testTimeString + `",
+        "created_at": "` + testTimeString + `"
 	}
 }`
 
@@ -309,4 +350,390 @@ func TestRegistry_DeleteManifest(t *testing.T) {
 
 	_, err := client.Registry.DeleteManifest(ctx, testRegistry, testRepository, testDigest)
 	require.NoError(t, err)
+}
+
+func reifyTemplateStr(t *testing.T, tmplStr string, v interface{}) string {
+	tmpl, err := template.New("meow").Parse(tmplStr)
+	require.NoError(t, err)
+
+	s := &strings.Builder{}
+	err = tmpl.Execute(s, v)
+	require.NoError(t, err)
+
+	return s.String()
+}
+
+func TestGarbageCollection_Start(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := testGarbageCollection
+	requestResponseJSONTmpl := `
+{
+  "garbage_collection": {
+    "uuid": "{{.UUID}}",
+    "registry_name": "{{.RegistryName}}",
+    "status": "{{.Status}}",
+    "type": "{{.Type}}",
+    "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "blobs_deleted": {{.BlobsDeleted}},
+    "freed_bytes": {{.FreedBytes}}
+  }
+}`
+	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, want)
+
+	createRequest := &StartGarbageCollectionRequest{
+		Type: GCTypeUnreferencedBlobsOnly,
+	}
+	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collection",
+		func(w http.ResponseWriter, r *http.Request) {
+			v := new(StartGarbageCollectionRequest)
+			err := json.NewDecoder(r.Body).Decode(v)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testMethod(t, r, http.MethodPost)
+			require.Equal(t, v, createRequest)
+			fmt.Fprint(w, requestResponseJSON)
+		})
+
+	got, _, err := client.Registry.StartGarbageCollection(ctx, testRegistry)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestGarbageCollection_Get(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := testGarbageCollection
+	requestResponseJSONTmpl := `
+{
+  "garbage_collection": {
+    "uuid": "{{.UUID}}",
+    "registry_name": "{{.RegistryName}}",
+    "status": "{{.Status}}",
+    "type": "{{.Type}}",
+    "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "blobs_deleted": {{.BlobsDeleted}},
+    "freed_bytes": {{.FreedBytes}}
+  }
+}`
+	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, want)
+
+	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collection",
+		func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			fmt.Fprint(w, requestResponseJSON)
+		})
+
+	got, _, err := client.Registry.GetGarbageCollection(ctx, testRegistry)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestGarbageCollection_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := []*GarbageCollection{testGarbageCollection}
+	requestResponseJSONTmpl := `
+{
+  "garbage_collections": [
+    {
+      "uuid": "{{.UUID}}",
+      "registry_name": "{{.RegistryName}}",
+      "status": "{{.Status}}",
+      "type": "{{.Type}}",
+      "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+      "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+      "blobs_deleted": {{.BlobsDeleted}},
+      "freed_bytes": {{.FreedBytes}}
+    }
+  ],
+	"links": {
+	    "pages": {
+			"next": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/garbage-collections?page=2",
+			"last": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/garbage-collections?page=2"
+		}
+	},
+	"meta": {
+	    "total": 2
+	}
+}`
+	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, testGarbageCollection)
+
+	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collections",
+		func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			testFormValues(t, r, map[string]string{"page": "1", "per_page": "1"})
+			fmt.Fprint(w, requestResponseJSON)
+		})
+
+	got, resp, err := client.Registry.ListGarbageCollections(ctx, testRegistry, &ListOptions{Page: 1, PerPage: 1})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+
+	gotRespLinks := resp.Links
+	wantRespLinks := &Links{
+		Pages: &Pages{
+			Next: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/garbage-collections?page=2", testRegistry),
+			Last: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/garbage-collections?page=2", testRegistry),
+		},
+	}
+	assert.Equal(t, wantRespLinks, gotRespLinks)
+
+	gotRespMeta := resp.Meta
+	wantRespMeta := &Meta{
+		Total: 2,
+	}
+	assert.Equal(t, wantRespMeta, gotRespMeta)
+}
+
+func TestGarbageCollection_Update(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &UpdateGarbageCollectionRequest{
+		Cancel: true,
+	}
+
+	want := testGarbageCollection
+	requestResponseJSONTmpl := `
+{
+  "garbage_collection": {
+    "uuid": "{{.UUID}}",
+    "registry_name": "{{.RegistryName}}",
+    "status": "{{.Status}}",
+    "type": "{{.Type}}",
+    "created_at": "{{.CreatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "updated_at": "{{.UpdatedAt.Format "2006-01-02T15:04:05Z07:00"}}",
+    "blobs_deleted": {{.BlobsDeleted}},
+    "freed_bytes": {{.FreedBytes}}
+  }
+}`
+	requestResponseJSON := reifyTemplateStr(t, requestResponseJSONTmpl, want)
+
+	mux.HandleFunc("/v2/registry/"+testRegistry+"/garbage-collection/"+testGCUUID,
+		func(w http.ResponseWriter, r *http.Request) {
+			v := new(UpdateGarbageCollectionRequest)
+			err := json.NewDecoder(r.Body).Decode(v)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testMethod(t, r, http.MethodPut)
+			require.Equal(t, v, updateRequest)
+			fmt.Fprint(w, requestResponseJSON)
+		})
+
+	got, _, err := client.Registry.UpdateGarbageCollection(ctx, testRegistry, testGCUUID, updateRequest)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestRegistry_GetOptions(t *testing.T) {
+	responseJSON := `
+{
+  "options": {
+    "subscription_tiers": [
+      {
+        "name": "Starter",
+        "slug": "starter",
+        "included_repositories": 1,
+        "included_storage_bytes": 524288000,
+        "allow_storage_overage": false,
+        "included_bandwidth_bytes": 524288000,
+        "monthly_price_in_cents": 0,
+        "eligible": false,
+        "eligibility_reasons": [
+          "OverStorageLimit",
+          "OverRepositoryLimit"
+        ]
+      },
+      {
+        "name": "Basic",
+        "slug": "basic",
+        "included_repositories": 5,
+        "included_storage_bytes": 5368709120,
+        "allow_storage_overage": true,
+        "included_bandwidth_bytes": 5368709120,
+        "monthly_price_in_cents": 500,
+        "eligible": false,
+        "eligibility_reasons": [
+          "OverRepositoryLimit"
+        ]
+      },
+      {
+        "name": "Professional",
+        "slug": "professional",
+        "included_repositories": 0,
+        "included_storage_bytes": 107374182400,
+        "allow_storage_overage": true,
+        "included_bandwidth_bytes": 107374182400,
+        "monthly_price_in_cents": 2000,
+        "eligible": true
+      }
+    ]
+  }
+}`
+	want := &RegistryOptions{
+		SubscriptionTiers: []*RegistrySubscriptionTier{
+			{
+				Name:                   "Starter",
+				Slug:                   "starter",
+				IncludedRepositories:   1,
+				IncludedStorageBytes:   524288000,
+				AllowStorageOverage:    false,
+				IncludedBandwidthBytes: 524288000,
+				MonthlyPriceInCents:    0,
+				Eligible:               false,
+				EligibilityReasons: []string{
+					"OverStorageLimit",
+					"OverRepositoryLimit",
+				},
+			},
+			{
+				Name:                   "Basic",
+				Slug:                   "basic",
+				IncludedRepositories:   5,
+				IncludedStorageBytes:   5368709120,
+				AllowStorageOverage:    true,
+				IncludedBandwidthBytes: 5368709120,
+				MonthlyPriceInCents:    500,
+				Eligible:               false,
+				EligibilityReasons: []string{
+					"OverRepositoryLimit",
+				},
+			},
+			{
+				Name:                   "Professional",
+				Slug:                   "professional",
+				IncludedRepositories:   0,
+				IncludedStorageBytes:   107374182400,
+				AllowStorageOverage:    true,
+				IncludedBandwidthBytes: 107374182400,
+				MonthlyPriceInCents:    2000,
+				Eligible:               true,
+			},
+		},
+	}
+
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/registry/options", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, responseJSON)
+	})
+
+	got, _, err := client.Registry.GetOptions(ctx)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestRegistry_GetSubscription(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &RegistrySubscription{
+		Tier: &RegistrySubscriptionTier{
+			Name:                   "Basic",
+			Slug:                   "basic",
+			IncludedRepositories:   5,
+			IncludedStorageBytes:   5368709120,
+			AllowStorageOverage:    true,
+			IncludedBandwidthBytes: 5368709120,
+			MonthlyPriceInCents:    500,
+		},
+		CreatedAt: testTime,
+		UpdatedAt: testTime,
+	}
+
+	getResponseJSON := `
+{
+  "subscription": {
+    "tier": {
+      "name": "Basic",
+      "slug": "basic",
+      "included_repositories": 5,
+      "included_storage_bytes": 5368709120,
+      "allow_storage_overage": true,
+      "included_bandwidth_bytes": 5368709120,
+      "monthly_price_in_cents": 500
+    },
+    "created_at": "` + testTimeString + `",
+    "updated_at": "` + testTimeString + `"
+  }
+}
+`
+
+	mux.HandleFunc("/v2/registry/subscription", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getResponseJSON)
+	})
+	got, _, err := client.Registry.GetSubscription(ctx)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestRegistry_UpdateSubscription(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &RegistrySubscriptionUpdateRequest{
+		TierSlug: "professional",
+	}
+
+	want := &RegistrySubscription{
+		Tier: &RegistrySubscriptionTier{
+			Name:                   "Professional",
+			Slug:                   "professional",
+			IncludedRepositories:   0,
+			IncludedStorageBytes:   107374182400,
+			AllowStorageOverage:    true,
+			IncludedBandwidthBytes: 107374182400,
+			MonthlyPriceInCents:    2000,
+			Eligible:               true,
+		},
+		CreatedAt: testTime,
+		UpdatedAt: testTime,
+	}
+
+	updateResponseJSON := `{
+  "subscription": {
+    "tier": {
+        "name": "Professional",
+        "slug": "professional",
+        "included_repositories": 0,
+        "included_storage_bytes": 107374182400,
+        "allow_storage_overage": true,
+        "included_bandwidth_bytes": 107374182400,
+        "monthly_price_in_cents": 2000,
+        "eligible": true
+      },
+    "created_at": "` + testTimeString + `",
+    "updated_at": "` + testTimeString + `"
+  }
+}`
+
+	mux.HandleFunc("/v2/registry/subscription",
+		func(w http.ResponseWriter, r *http.Request) {
+			v := new(RegistrySubscriptionUpdateRequest)
+			err := json.NewDecoder(r.Body).Decode(v)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testMethod(t, r, http.MethodPost)
+			require.Equal(t, v, updateRequest)
+			fmt.Fprint(w, updateResponseJSON)
+		})
+
+	got, _, err := client.Registry.UpdateSubscription(ctx, updateRequest)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
 }

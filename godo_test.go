@@ -126,8 +126,36 @@ func TestNewClient(t *testing.T) {
 }
 
 func TestNewFromToken(t *testing.T) {
-	c := NewFromToken("my-token")
+	c := NewFromToken("myToken")
 	testClientDefaults(t, c)
+}
+
+func TestNewFromToken_cleaned(t *testing.T) {
+	testTokens := []string{"myToken ", " myToken", " myToken ", "'myToken'", " 'myToken' "}
+	expected := "Bearer myToken"
+
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/foo", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	for _, tt := range testTokens {
+		t.Run(tt, func(t *testing.T) {
+			c := NewFromToken(tt)
+			req, _ := c.NewRequest(ctx, http.MethodGet, server.URL+"/foo", nil)
+			resp, err := c.Do(ctx, req, nil)
+			if err != nil {
+				t.Fatalf("Do(): %v", err)
+			}
+
+			authHeader := resp.Request.Header.Get("Authorization")
+			if authHeader != expected {
+				t.Errorf("Authorization header = %v, expected %v", authHeader, expected)
+			}
+		})
+	}
 }
 
 func TestNew(t *testing.T) {
@@ -147,7 +175,7 @@ func TestNewRequest(t *testing.T) {
 		`{"name":"l","region":"","size":"","image":0,`+
 			`"ssh_keys":null,"backups":false,"ipv6":false,`+
 			`"private_networking":false,"monitoring":false,"tags":null}`+"\n"
-	req, _ := c.NewRequest(ctx, http.MethodGet, inURL, inBody)
+	req, _ := c.NewRequest(ctx, http.MethodPost, inURL, inBody)
 
 	// test relative URL was expanded
 	if req.URL.String() != outURL {
@@ -167,6 +195,29 @@ func TestNewRequest(t *testing.T) {
 	}
 }
 
+func TestNewRequest_get(t *testing.T) {
+	c := NewClient(nil)
+
+	inURL, outURL := "/foo", defaultBaseURL+"foo"
+	req, _ := c.NewRequest(ctx, http.MethodGet, inURL, nil)
+
+	// test relative URL was expanded
+	if req.URL.String() != outURL {
+		t.Errorf("NewRequest(%v) URL = %v, expected %v", inURL, req.URL, outURL)
+	}
+
+	// test the content-type header is not set
+	if contentType := req.Header.Get("Content-Type"); contentType != "" {
+		t.Errorf("NewRequest() Content-Type = %v, expected empty string", contentType)
+	}
+
+	// test default user-agent is attached to the request
+	userAgent := req.Header.Get("User-Agent")
+	if c.UserAgent != userAgent {
+		t.Errorf("NewRequest() User-Agent = %v, expected %v", userAgent, c.UserAgent)
+	}
+}
+
 func TestNewRequest_withUserData(t *testing.T) {
 	c := NewClient(nil)
 
@@ -175,7 +226,7 @@ func TestNewRequest_withUserData(t *testing.T) {
 		`{"name":"l","region":"","size":"","image":0,`+
 			`"ssh_keys":null,"backups":false,"ipv6":false,`+
 			`"private_networking":false,"monitoring":false,"user_data":"u","tags":null}`+"\n"
-	req, _ := c.NewRequest(ctx, http.MethodGet, inURL, inBody)
+	req, _ := c.NewRequest(ctx, http.MethodPost, inURL, inBody)
 
 	// test relative URL was expanded
 	if req.URL.String() != outURL {
@@ -214,6 +265,28 @@ func TestNewRequest_withCustomUserAgent(t *testing.T) {
 	expected := fmt.Sprintf("%s %s", ua, userAgent)
 	if got := req.Header.Get("User-Agent"); got != expected {
 		t.Errorf("New() UserAgent = %s; expected %s", got, expected)
+	}
+}
+
+func TestNewRequest_withCustomHeaders(t *testing.T) {
+	expectedIdentity := "identity"
+	expectedCustom := "x_test_header"
+
+	c, err := New(nil, SetRequestHeaders(map[string]string{
+		"Accept-Encoding": expectedIdentity,
+		"X-Test-Header":   expectedCustom,
+	}))
+	if err != nil {
+		t.Fatalf("New() unexpected error: %v", err)
+	}
+
+	req, _ := c.NewRequest(ctx, http.MethodGet, "/foo", nil)
+
+	if got := req.Header.Get("Accept-Encoding"); got != expectedIdentity {
+		t.Errorf("New() Custom Accept Encoding Header = %s; expected %s", got, expectedIdentity)
+	}
+	if got := req.Header.Get("X-Test-Header"); got != expectedCustom {
+		t.Errorf("New() Custom Accept Encoding Header = %s; expected %s", got, expectedCustom)
 	}
 }
 
@@ -402,7 +475,7 @@ func TestDo_rateLimitRace(t *testing.T) {
 			req, _ := client.NewRequest(ctx, http.MethodGet, "/", nil)
 			_, err := client.Do(context.Background(), req, nil)
 			if err != nil {
-				t.Fatalf("Do(): %v", err)
+				t.Errorf("Do(): %v", err)
 			}
 			wg.Done()
 		}()

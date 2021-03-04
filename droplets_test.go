@@ -180,9 +180,8 @@ func TestDroplets_Create(t *testing.T) {
 			ID: 1,
 		},
 		Volumes: []DropletCreateVolume{
-			{Name: "hello-im-a-volume"},
 			{ID: "hello-im-another-volume"},
-			{Name: "hello-im-still-a-volume", ID: "should be ignored due to Name"},
+			{Name: "should be ignored due to Name", ID: "aaa-111-bbb-222-ccc"},
 		},
 		Tags:    []string{"one", "two"},
 		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
@@ -200,9 +199,8 @@ func TestDroplets_Create(t *testing.T) {
 			"private_networking": false,
 			"monitoring":         false,
 			"volumes": []interface{}{
-				map[string]interface{}{"name": "hello-im-a-volume"},
 				map[string]interface{}{"id": "hello-im-another-volume"},
-				map[string]interface{}{"name": "hello-im-still-a-volume"},
+				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
 			},
 			"tags":     []interface{}{"one", "two"},
 			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
