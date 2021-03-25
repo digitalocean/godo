@@ -325,7 +325,7 @@ func TestVPCs_ListMembers(t *testing.T) {
 	tests := []struct {
 		desc          string
 		expectedQuery string
-		query         interface{}
+		query         *VPCListMembersRequest
 		resp          string
 		want          []*VPCMember
 	}{
@@ -427,11 +427,7 @@ func TestVPCs_ListMembers(t *testing.T) {
 				fmt.Fprint(w, tt.resp)
 			})
 
-			var req *VPCListMembersRequest
-			if tt.query != nil {
-				req = tt.query.(*VPCListMembersRequest)
-			}
-			got, _, err := client.VPCs.ListMembers(ctx, id, req, nil)
+			got, _, err := client.VPCs.ListMembers(ctx, id, tt.query, nil)
 
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got)
