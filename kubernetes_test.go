@@ -367,6 +367,16 @@ func TestKubernetesClusters_Get(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestKubernetesCluster_ToURN(t *testing.T) {
+	cluster := &KubernetesCluster{
+		ID: "deadbeef-dead-4aa5-beef-deadbeef347d",
+	}
+	want := "do:kubernetes:deadbeef-dead-4aa5-beef-deadbeef347d"
+	got := cluster.URN()
+
+	require.Equal(t, want, got)
+}
+
 func TestKubernetesClusters_GetUser(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1034,21 +1044,21 @@ func TestKubernetesClusters_ListAssociatedResourcesForDeletion(t *testing.T) {
 	}
 	jBlob := `
 {
-	"volumes": 
+	"volumes":
 	[
 		{
 		  "id": "2241",
 		  "name":"test-volume-1"
 		}
 	],
-	"volume_snapshots": 
+	"volume_snapshots":
 	[
 		{
 		  "id":"2425",
 		  "name":"test-volume-snapshot-1"
 		}
 	],
-	"load_balancers": 
+	"load_balancers":
 	[
 		{
 		  "id":"4235",
