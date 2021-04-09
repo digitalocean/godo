@@ -161,54 +161,57 @@ func TestDatabases_Get(t *testing.T) {
 }
 
 func TestDatabases_Create(t *testing.T) {
-	setup()
-	defer teardown()
-
-	want := &Database{
-		ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:        "backend-test",
-		EngineSlug:  "pg",
-		VersionSlug: "10",
-		Connection: &DatabaseConnection{
-			URI:      "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
-			Database: "defaultdb",
-			Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
-			Port:     25060,
-			User:     "doadmin",
-			Password: "zt91mum075ofzyww",
-			SSL:      true,
-		},
-		PrivateConnection: &DatabaseConnection{
-			URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
-			Database: "defaultdb",
-			Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
-			Port:     25060,
-			User:     "doadmin",
-			Password: "zt91mum075ofzyww",
-			SSL:      true,
-		},
-		Users:             nil,
-		DBNames:           nil,
-		NumNodes:          2,
-		RegionSlug:        "nyc3",
-		Status:            "creating",
-		CreatedAt:         time.Date(2019, 2, 26, 6, 12, 39, 0, time.UTC),
-		MaintenanceWindow: nil,
-		SizeSlug:          "db-s-2vcpu-4gb",
-		Tags:              []string{"production", "staging"},
-	}
-
-	createRequest := &DatabaseCreateRequest{
-		Name:       "backend-test",
-		EngineSlug: "pg",
-		Version:    "10",
-		Region:     "nyc3",
-		SizeSlug:   "db-s-2vcpu-4gb",
-		NumNodes:   2,
-		Tags:       []string{"production", "staging"},
-	}
-
-	body := `
+	tests := []struct {
+		title         string
+		createRequest *DatabaseCreateRequest
+		want          *Database
+		body          string
+	}{
+		{
+			title: "create",
+			createRequest: &DatabaseCreateRequest{
+				Name:       "backend-test",
+				EngineSlug: "pg",
+				Version:    "10",
+				Region:     "nyc3",
+				SizeSlug:   "db-s-2vcpu-4gb",
+				NumNodes:   2,
+				Tags:       []string{"production", "staging"},
+			},
+			want: &Database{
+				ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+				Name:        "backend-test",
+				EngineSlug:  "pg",
+				VersionSlug: "10",
+				Connection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				PrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				Users:             nil,
+				DBNames:           nil,
+				NumNodes:          2,
+				RegionSlug:        "nyc3",
+				Status:            "creating",
+				CreatedAt:         time.Date(2019, 2, 26, 6, 12, 39, 0, time.UTC),
+				MaintenanceWindow: nil,
+				SizeSlug:          "db-s-2vcpu-4gb",
+				Tags:              []string{"production", "staging"},
+			},
+			body: `
 {
 	"database": {
 		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
@@ -243,23 +246,117 @@ func TestDatabases_Create(t *testing.T) {
 		"size": "db-s-2vcpu-4gb",
 		"tags": ["production", "staging"]
 	}
-}`
+}`,
+		},
+		{
+			title: "create from backup",
+			createRequest: &DatabaseCreateRequest{
+				Name:       "backend-restored",
+				EngineSlug: "pg",
+				Version:    "10",
+				Region:     "nyc3",
+				SizeSlug:   "db-s-2vcpu-4gb",
+				NumNodes:   2,
+				Tags:       []string{"production", "staging"},
+				BackupRestore: &DatabaseBackupRestore{
+					DatabaseName:    "backend-orig",
+					BackupCreatedAt: "2019-01-31T19:25:22Z",
+				},
+			},
+			want: &Database{
+				ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+				Name:        "backend-test",
+				EngineSlug:  "pg",
+				VersionSlug: "10",
+				Connection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				PrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				Users:             nil,
+				DBNames:           nil,
+				NumNodes:          2,
+				RegionSlug:        "nyc3",
+				Status:            "creating",
+				CreatedAt:         time.Date(2019, 2, 26, 6, 12, 39, 0, time.UTC),
+				MaintenanceWindow: nil,
+				SizeSlug:          "db-s-2vcpu-4gb",
+				Tags:              []string{"production", "staging"},
+			},
+			body: `
+{
+	"database": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		"name": "backend-test",
+		"engine": "pg",
+		"version": "10",
+		"connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"users": null,
+		"db_names": null,
+		"num_nodes": 2,
+		"region": "nyc3",
+		"status": "creating",
+		"created_at": "2019-02-26T06:12:39Z",
+		"maintenance_window": null,
+		"size": "db-s-2vcpu-4gb",
+		"tags": ["production", "staging"]
+	}
+}`,
+		},
+	}
 
-	mux.HandleFunc("/v2/databases", func(w http.ResponseWriter, r *http.Request) {
-		v := new(DatabaseCreateRequest)
-		err := json.NewDecoder(r.Body).Decode(v)
-		if err != nil {
-			t.Fatal(err)
-		}
+	for _, tt := range tests {
+		t.Run(tt.title, func(t *testing.T) {
+			setup()
+			defer teardown()
 
-		testMethod(t, r, http.MethodPost)
-		require.Equal(t, v, createRequest)
-		fmt.Fprint(w, body)
-	})
+			mux.HandleFunc("/v2/databases", func(w http.ResponseWriter, r *http.Request) {
+				v := new(DatabaseCreateRequest)
+				err := json.NewDecoder(r.Body).Decode(v)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-	got, _, err := client.Databases.Create(ctx, createRequest)
-	require.NoError(t, err)
-	require.Equal(t, want, got)
+				testMethod(t, r, http.MethodPost)
+				require.Equal(t, v, tt.createRequest)
+				fmt.Fprint(w, tt.body)
+			})
+
+			got, _, err := client.Databases.Create(ctx, tt.createRequest)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+		})
+	}
 }
 
 func TestDatabases_Delete(t *testing.T) {
@@ -1350,7 +1447,7 @@ func TestDatabases_CreateDatabaseUserWithMySQLSettings(t *testing.T) {
 			"name": "foo",
 			"mysql_settings": {
 				"auth_plugin": "%s"
-			}	
+			}
 		}
 	}`, SQLAuthPluginNative))
 	expectedUser := &DatabaseUser{
