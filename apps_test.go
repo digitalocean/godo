@@ -217,12 +217,16 @@ func TestApps_ListApp(t *testing.T) {
 	mux.HandleFunc("/v2/apps", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 
-		json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{&testApp}})
+		json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{&testApp}, Meta: &Meta{Total: 1}, Links: &Links{}})
 	})
 
-	apps, _, err := client.Apps.List(ctx, nil)
+	apps, resp, err := client.Apps.List(ctx, nil)
 	require.NoError(t, err)
 	assert.Equal(t, []*App{&testApp}, apps)
+	assert.Equal(t, 1, resp.Meta.Total)
+	currentPage, err := resp.Links.CurrentPage()
+	require.NoError(t, err)
+	assert.Equal(t, 1, currentPage)
 }
 
 func TestApps_UpdateApp(t *testing.T) {
@@ -375,12 +379,16 @@ func TestApps_ListDeployments(t *testing.T) {
 	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 
-		json.NewEncoder(w).Encode(&deploymentsRoot{Deployments: []*Deployment{&testDeployment}})
+		json.NewEncoder(w).Encode(&deploymentsRoot{Deployments: []*Deployment{&testDeployment}, Meta: &Meta{Total: 1}, Links: &Links{}})
 	})
 
-	deployments, _, err := client.Apps.ListDeployments(ctx, testApp.ID, nil)
+	deployments, resp, err := client.Apps.ListDeployments(ctx, testApp.ID, nil)
 	require.NoError(t, err)
 	assert.Equal(t, []*Deployment{&testDeployment}, deployments)
+	assert.Equal(t, 1, resp.Meta.Total)
+	currentPage, err := resp.Links.CurrentPage()
+	require.NoError(t, err)
+	assert.Equal(t, 1, currentPage)
 }
 
 func TestApps_GetLogs(t *testing.T) {
