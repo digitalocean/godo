@@ -143,6 +143,7 @@ var (
 		ActiveDeployment:        &testDeployment,
 		InProgressDeployment:    &testDeployment,
 		LastDeploymentCreatedAt: time.Unix(1595959200, 0).UTC(),
+		LastDeploymentActiveAt:  time.Unix(1595959200, 0).UTC(),
 		CreatedAt:               time.Unix(1595959200, 0).UTC(),
 		UpdatedAt:               time.Unix(1595959200, 0).UTC(),
 		Region:                  &testAppRegion,
