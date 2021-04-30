@@ -158,7 +158,7 @@ type Database struct {
 
 // DatabaseCA represents a database ca.
 type DatabaseCA struct {
-	Certificate string `json:"certificate"`
+	Certificate []byte `json:"certificate"`
 }
 
 // DatabaseConnection represents a database connection

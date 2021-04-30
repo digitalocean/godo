@@ -169,7 +169,7 @@ func TestDatabases_GetCA(t *testing.T) {
 	body := `
 {
   "ca": {
-    "certificate": "fake_ca_cert"
+    "certificate": "ZmFrZQpjYQpjZXJ0"
   }
 }
 `
@@ -183,7 +183,7 @@ func TestDatabases_GetCA(t *testing.T) {
 
 	got, _, err := client.Databases.GetCA(ctx, dbID)
 	require.NoError(t, err)
-	require.Equal(t, &DatabaseCA{Certificate: "fake_ca_cert"}, got)
+	require.Equal(t, &DatabaseCA{Certificate: []byte("fake\nca\ncert")}, got)
 }
 
 func TestDatabases_Create(t *testing.T) {
