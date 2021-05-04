@@ -356,46 +356,78 @@ func TestDo_redirectLoop(t *testing.T) {
 }
 
 func TestCheckResponse(t *testing.T) {
-	res := &http.Response{
-		Request:    &http.Request{},
-		StatusCode: http.StatusBadRequest,
-		Body: ioutil.NopCloser(strings.NewReader(`{"message":"m",
+	testHeaders := make(http.Header, 1)
+	testHeaders.Set("x-request-id", "dead-beef")
+
+	tests := []struct {
+		title    string
+		input    *http.Response
+		expected *ErrorResponse
+	}{
+		{
+			title: "default (no request_id)",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
+			},
+			expected: &ErrorResponse{
+				Message: "m",
+			},
+		},
+		{
+			title: "request_id in body",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef",
+			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
+			},
+			expected: &ErrorResponse{
+				Message:   "m",
+				RequestID: "dead-beef",
+			},
+		},
+		{
+			title: "request_id in header",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Header:     testHeaders,
+				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m",
+			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
+			},
+			expected: &ErrorResponse{
+				Message:   "m",
+				RequestID: "dead-beef",
+			},
+		},
+		// ensure that we properly handle API errors that do not contain a
+		// response body
+		{
+			title: "no body",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body:       ioutil.NopCloser(strings.NewReader("")),
+			},
+			expected: &ErrorResponse{},
+		},
 	}
-	err := CheckResponse(res).(*ErrorResponse)
 
-	if err == nil {
-		t.Fatalf("Expected error response.")
-	}
+	for _, tt := range tests {
+		t.Run(tt.title, func(t *testing.T) {
+			err := CheckResponse(tt.input).(*ErrorResponse)
+			if err == nil {
+				t.Fatalf("Expected error response.")
+			}
+			tt.expected.Response = tt.input
 
-	expected := &ErrorResponse{
-		Response: res,
-		Message:  "m",
-	}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("Error = %#v, expected %#v", err, expected)
-	}
-}
-
-// ensure that we properly handle API errors that do not contain a response
-// body
-func TestCheckResponse_noBody(t *testing.T) {
-	res := &http.Response{
-		Request:    &http.Request{},
-		StatusCode: http.StatusBadRequest,
-		Body:       ioutil.NopCloser(strings.NewReader("")),
-	}
-	err := CheckResponse(res).(*ErrorResponse)
-
-	if err == nil {
-		t.Errorf("Expected error response.")
-	}
-
-	expected := &ErrorResponse{
-		Response: res,
-	}
-	if !reflect.DeepEqual(err, expected) {
-		t.Errorf("Error = %#v, expected %#v", err, expected)
+			if !reflect.DeepEqual(err, tt.expected) {
+				t.Errorf("Error = %#v, expected %#v", err, tt.expected)
+			}
+		})
 	}
 }
 
