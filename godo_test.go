@@ -403,6 +403,22 @@ func TestCheckResponse(t *testing.T) {
 				RequestID: "dead-beef",
 			},
 		},
+		// This tests that the ID in the body takes precedence to ensure we maintain the current
+		// behavior. In practice, the IDs in the header and body should always be the same.
+		{
+			title: "request_id in both",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Header:     testHeaders,
+				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef-body",
+			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
+			},
+			expected: &ErrorResponse{
+				Message:   "m",
+				RequestID: "dead-beef-body",
+			},
+		},
 		// ensure that we properly handle API errors that do not contain a
 		// response body
 		{
