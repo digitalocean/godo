@@ -160,6 +160,32 @@ func TestDatabases_Get(t *testing.T) {
 	require.Equal(t, &db, got)
 }
 
+func TestDatabases_GetCA(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+
+	body := `
+{
+  "ca": {
+    "certificate": "ZmFrZQpjYQpjZXJ0"
+  }
+}
+`
+
+	path := fmt.Sprintf("/v2/databases/%s/ca", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetCA(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &DatabaseCA{Certificate: []byte("fake\nca\ncert")}, got)
+}
+
 func TestDatabases_Create(t *testing.T) {
 	tests := []struct {
 		title         string
