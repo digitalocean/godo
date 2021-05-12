@@ -20,7 +20,8 @@ var (
         "addresses": ["0.0.0.0/0"],
         "tags": ["frontend"],
         "droplet_ids": [123, 456],
-        "load_balancer_uids": ["lb-uid"]
+        "load_balancer_uids": ["lb-uid"],
+        "kubernetes_ids": ["doks-01", "doks-02"]
       }
     },
     {
@@ -297,6 +298,7 @@ func TestFirewalls_Create(t *testing.T) {
 					Tags:             []string{"frontend"},
 					DropletIDs:       []int{123, 456},
 					LoadBalancerUIDs: []string{"lb-uid"},
+					KubernetesIDs:    []string{"doks-01", "doks-02"},
 				},
 			},
 			{
