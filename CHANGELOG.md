@@ -1,6 +1,6 @@
 # Change Log
 
-## [v1.61.0] - 2021-5-12
+## [v1.61.0] - 2021-05-12
 
 - #452 - @caiofilipini - Add support for DOKS clusters as peers in Firewall rules
 - #448 - @andrewsomething - flip: Set omitempty for Region in FloatingIPCreateRequest.
