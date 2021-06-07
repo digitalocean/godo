@@ -246,6 +246,35 @@ func TestNewRequest_withUserData(t *testing.T) {
 	}
 }
 
+func TestNewRequest_withDropletAgent(t *testing.T) {
+	c := NewClient(nil)
+
+	boolVal := true
+	inURL, outURL := "/foo", defaultBaseURL+"foo"
+	inBody, outBody := &DropletCreateRequest{Name: "l", WithDropletAgent: &boolVal},
+		`{"name":"l","region":"","size":"","image":0,`+
+			`"ssh_keys":null,"backups":false,"ipv6":false,`+
+			`"private_networking":false,"monitoring":false,"tags":null,"with_droplet_agent":true}`+"\n"
+	req, _ := c.NewRequest(ctx, http.MethodPost, inURL, inBody)
+
+	// test relative URL was expanded
+	if req.URL.String() != outURL {
+		t.Errorf("NewRequest(%v) URL = %v, expected %v", inURL, req.URL, outURL)
+	}
+
+	// test body was JSON encoded
+	body, _ := ioutil.ReadAll(req.Body)
+	if string(body) != outBody {
+		t.Errorf("NewRequest(%v)Body = %v, expected %v", inBody, string(body), outBody)
+	}
+
+	// test default user-agent is attached to the request
+	userAgent := req.Header.Get("User-Agent")
+	if c.UserAgent != userAgent {
+		t.Errorf("NewRequest() User-Agent = %v, expected %v", userAgent, c.UserAgent)
+	}
+}
+
 func TestNewRequest_badURL(t *testing.T) {
 	c := NewClient(nil)
 	_, err := c.NewRequest(ctx, http.MethodGet, ":", nil)

@@ -255,6 +255,128 @@ func TestDroplets_Create(t *testing.T) {
 	}
 }
 
+func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	boolVal := false
+	createRequest := &DropletCreateRequest{
+		Name:   "name",
+		Region: "region",
+		Size:   "size",
+		Image: DropletCreateImage{
+			ID: 1,
+		},
+		Volumes: []DropletCreateVolume{
+			{ID: "hello-im-another-volume"},
+			{Name: "should be ignored due to Name", ID: "aaa-111-bbb-222-ccc"},
+		},
+		Tags:             []string{"one", "two"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WithDropletAgent: &boolVal,
+	}
+
+	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
+		expected := map[string]interface{}{
+			"name":               "name",
+			"region":             "region",
+			"size":               "size",
+			"image":              float64(1),
+			"ssh_keys":           nil,
+			"backups":            false,
+			"ipv6":               false,
+			"private_networking": false,
+			"monitoring":         false,
+			"volumes": []interface{}{
+				map[string]interface{}{"id": "hello-im-another-volume"},
+				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
+			},
+			"tags":               []interface{}{"one", "two"},
+			"vpc_uuid":           "880b7f98-f062-404d-b33c-458d545696f6",
+			"with_droplet_agent": false,
+		}
+		jsonBlob := `
+{
+  "droplet": {
+    "id": 1,
+    "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6"
+  },
+  "links": {
+    "actions": [
+      {
+        "id": 1,
+        "href": "http://example.com",
+        "rel": "create"
+      }
+    ]
+  }
+}
+`
+
+		var v map[string]interface{}
+		err := json.NewDecoder(r.Body).Decode(&v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("Request body\n got=%#v\nwant=%#v", v, expected)
+		}
+
+		fmt.Fprintf(w, jsonBlob)
+	})
+
+	droplet, resp, err := client.Droplets.Create(ctx, createRequest)
+	if err != nil {
+		t.Errorf("Droplets.Create returned error: %v", err)
+	}
+
+	if id := droplet.ID; id != 1 {
+		t.Errorf("expected id '%d', received '%d'", 1, id)
+	}
+
+	vpcid := "880b7f98-f062-404d-b33c-458d545696f6"
+	if id := droplet.VPCUUID; id != vpcid {
+		t.Errorf("expected VPC uuid '%s', received '%s'", vpcid, id)
+	}
+
+	if a := resp.Links.Actions[0]; a.ID != 1 {
+		t.Errorf("expected action id '%d', received '%d'", 1, a.ID)
+	}
+}
+
+func TestDroplets_WithDropletAgentJsonMarshal(t *testing.T) {
+	boolF := false
+	boolT := true
+	tests := []struct {
+		in   *DropletCreateRequest
+		want string
+	}{
+		{
+			in:   &DropletCreateRequest{Name: "foo", WithDropletAgent: &boolF},
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null,"with_droplet_agent":false}`,
+		},
+		{
+			in:   &DropletCreateRequest{Name: "foo", WithDropletAgent: &boolT},
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null,"with_droplet_agent":true}`,
+		},
+		{
+			in:   &DropletCreateRequest{Name: "foo"},
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null}`,
+		},
+	}
+
+	for _, tt := range tests {
+		got, err := json.Marshal(tt.in)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if !reflect.DeepEqual(tt.want, string(got)) {
+			t.Errorf("expected: %v, got: %v", tt.want, string(got))
+		}
+	}
+}
+
 func TestDroplets_CreateMultiple(t *testing.T) {
 	setup()
 	defer teardown()
