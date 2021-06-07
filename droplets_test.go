@@ -345,6 +345,38 @@ func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 	}
 }
 
+func TestDroplets_WithDropletAgentJsonMarshal(t *testing.T) {
+	boolF := false
+	boolT := true
+	tests := []struct {
+		in   *DropletCreateRequest
+		want string
+	}{
+		{
+			in:   &DropletCreateRequest{Name: "foo", WithDropletAgent: &boolF},
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null,"with_droplet_agent":false}`,
+		},
+		{
+			in:   &DropletCreateRequest{Name: "foo", WithDropletAgent: &boolT},
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null,"with_droplet_agent":true}`,
+		},
+		{
+			in:   &DropletCreateRequest{Name: "foo"},
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null}`,
+		},
+	}
+
+	for _, tt := range tests {
+		got, err := json.Marshal(tt.in)
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if !reflect.DeepEqual(tt.want, string(got)) {
+			t.Errorf("expected: %v, got: %v", tt.want, string(got))
+		}
+	}
+}
+
 func TestDroplets_CreateMultiple(t *testing.T) {
 	setup()
 	defer teardown()
