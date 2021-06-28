@@ -403,13 +403,14 @@ func TestApps_GetLogs(t *testing.T) {
 
 		assert.Equal(t, "RUN", r.URL.Query().Get("type"))
 		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+		assert.Equal(t, "1", r.URL.Query().Get("tail_lines"))
 		_, hasComponent := r.URL.Query()["component_name"]
 		assert.False(t, hasComponent)
 
 		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://live.logs.url"})
 	})
 
-	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "", AppLogTypeRun, true)
+	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "", AppLogTypeRun, true, 1)
 	require.NoError(t, err)
 	assert.NotEmpty(t, logs.LiveURL)
 }
@@ -425,12 +426,13 @@ func TestApps_GetLogs_component(t *testing.T) {
 
 		assert.Equal(t, "RUN", r.URL.Query().Get("type"))
 		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+		assert.Equal(t, "1", r.URL.Query().Get("tail_lines"))
 		assert.Equal(t, "service-name", r.URL.Query().Get("component_name"))
 
 		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://live.logs.url"})
 	})
 
-	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "service-name", AppLogTypeRun, true)
+	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "service-name", AppLogTypeRun, true, 1)
 	require.NoError(t, err)
 	assert.NotEmpty(t, logs.LiveURL)
 }
