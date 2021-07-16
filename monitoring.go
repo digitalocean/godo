@@ -6,8 +6,20 @@ import (
 	"net/http"
 )
 
-const monitoringBasePath = "v2/monitoring"
-const alertPolicyBasePath = monitoringBasePath + "/alerts"
+const (
+	monitoringBasePath  = "v2/monitoring"
+	alertPolicyBasePath = monitoringBasePath + "/alerts"
+
+	DropletCPUUtilizationPercent       = "v1/insights/droplet/cpu"
+	DropletMemoryUtilizationPercent    = "v1/insights/droplet/memory_utilization_percent"
+	DropletDiskUtilizationPercent      = "v1/insights/droplet/disk_utilization_percent"
+	DropletPublicOutboundBandwidthRate = "v1/insights/droplet/public_outbound_bandwidth"
+	DropletDiskReadRate                = "v1/insights/droplet/disk_read"
+	DropletDiskWriteRate               = "v1/insights/droplet/disk_write"
+	DropletOneMinuteLoadAverage        = "v1/insights/droplet/load_1"
+	DropletFiveMinuteLoadAverage       = "v1/insights/droplet/load_5"
+	DropletFifteenMinuteLoadAverage    = "v1/insights/droplet/load_15"
+)
 
 // MonitoringService is an interface for interfacing with the
 // monitoring endpoints of the DigitalOcean API

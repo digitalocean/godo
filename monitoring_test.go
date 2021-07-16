@@ -157,8 +157,8 @@ func TestAlertPolicies_List(t *testing.T) {
 	}
 
 	expectedPolicies := []AlertPolicy{
-		{UUID: "669befc9-3cbc-45fc-85f0-2c966f133730", Type: "v1/insights/droplet/cpu", Description: "description of policy", Compare: "LessThan", Value: 75, Window: "5m", Entities: []string{}, Tags: []string{"test-tag"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com"}}, Enabled: true},
-		{UUID: "777befc9-3cbc-45fc-85f0-2c966f133737", Type: "v1/insights/droplet/cpu", Description: "description of policy #2", Compare: "LessThan", Value: 90, Window: "5m", Entities: []string{}, Tags: []string{"test-tag-2"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com", "alice@example.com"}}, Enabled: false},
+		{UUID: "669befc9-3cbc-45fc-85f0-2c966f133730", Type: DropletCPUUtilizationPercent, Description: "description of policy", Compare: "LessThan", Value: 75, Window: "5m", Entities: []string{}, Tags: []string{"test-tag"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com"}}, Enabled: true},
+		{UUID: "777befc9-3cbc-45fc-85f0-2c966f133737", Type: DropletCPUUtilizationPercent, Description: "description of policy #2", Compare: "LessThan", Value: 90, Window: "5m", Entities: []string{}, Tags: []string{"test-tag-2"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com", "alice@example.com"}}, Enabled: false},
 	}
 	if !reflect.DeepEqual(policies, expectedPolicies) {
 		t.Errorf("Monitoring.ListAlertPolicies returned policies %+v, expected %+v", policies, expectedPolicies)
@@ -219,7 +219,7 @@ func TestAlertPolicy_Get(t *testing.T) {
 	if err != nil {
 		t.Errorf("Monitoring.GetAlertPolicy returned error: %v", err)
 	}
-	expected := &AlertPolicy{UUID: "669befc9-3cbc-45fc-85f0-2c966f133730", Type: "v1/insights/droplet/cpu", Description: "description of policy", Compare: "LessThan", Value: 75, Window: "5m", Entities: []string{}, Tags: []string{"test-tag"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com"}}, Enabled: true}
+	expected := &AlertPolicy{UUID: "669befc9-3cbc-45fc-85f0-2c966f133730", Type: DropletCPUUtilizationPercent, Description: "description of policy", Compare: "LessThan", Value: 75, Window: "5m", Entities: []string{}, Tags: []string{"test-tag"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com"}}, Enabled: true}
 	if !reflect.DeepEqual(policy, expected) {
 		t.Errorf("Monitoring.CreateAlertPolicy returned %+v, expected %+v", policy, expected)
 	}
@@ -230,7 +230,7 @@ func TestAlertPolicy_Create(t *testing.T) {
 	defer teardown()
 
 	createRequest := &AlertPolicyCreateRequest{
-		Type:        "v1/insights/droplet/cpu",
+		Type:        DropletCPUUtilizationPercent,
 		Description: "description of policy",
 		Compare:     "LessThan",
 		Value:       75,
@@ -268,7 +268,7 @@ func TestAlertPolicy_Create(t *testing.T) {
 		t.Errorf("Monitoring.CreateAlertPolicy returned error: %v", err)
 	}
 
-	expected := &AlertPolicy{UUID: "669befc9-3cbc-45fc-85f0-2c966f133730", Type: "v1/insights/droplet/cpu", Description: "description of policy", Compare: "LessThan", Value: 75, Window: "5m", Entities: []string{}, Tags: []string{"test-tag"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com"}}, Enabled: true}
+	expected := &AlertPolicy{UUID: "669befc9-3cbc-45fc-85f0-2c966f133730", Type: DropletCPUUtilizationPercent, Description: "description of policy", Compare: "LessThan", Value: 75, Window: "5m", Entities: []string{}, Tags: []string{"test-tag"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com"}}, Enabled: true}
 
 	if !reflect.DeepEqual(policy, expected) {
 		t.Errorf("Monitoring.CreateAlertPolicy returned %+v, expected %+v", policy, expected)
