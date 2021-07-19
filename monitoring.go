@@ -28,7 +28,7 @@ type MonitoringService interface {
 	ListAlertPolicies(context.Context, *ListOptions) ([]AlertPolicy, *Response, error)
 	GetAlertPolicy(context.Context, string) (*AlertPolicy, *Response, error)
 	CreateAlertPolicy(context.Context, *AlertPolicyCreateRequest) (*AlertPolicy, *Response, error)
-	UpdateAlertPolicy(context.Context, *AlertPolicyUpdateRequest) (*AlertPolicy, *Response, error)
+	UpdateAlertPolicy(context.Context, string, *AlertPolicyUpdateRequest) (*AlertPolicy, *Response, error)
 	DeleteAlertPolicy(context.Context, string) (*Response, error)
 }
 
@@ -179,12 +179,13 @@ func (s *MonitoringServiceOp) CreateAlertPolicy(ctx context.Context, createReque
 }
 
 // UpdateAlertPolicy updates an existing alert policy
-func (s *MonitoringServiceOp) UpdateAlertPolicy(ctx context.Context, createRequest *AlertPolicyUpdateRequest) (*AlertPolicy, *Response, error) {
-	if createRequest == nil {
-		return nil, nil, NewArgError("createRequest", "cannot be nil")
+func (s *MonitoringServiceOp) UpdateAlertPolicy(ctx context.Context, uuid string, updateRequest *AlertPolicyUpdateRequest) (*AlertPolicy, *Response, error) {
+	if updateRequest == nil {
+		return nil, nil, NewArgError("updateRequest", "cannot be nil")
 	}
 
-	req, err := s.client.NewRequest(ctx, http.MethodPost, alertPolicyBasePath, createRequest)
+	path := fmt.Sprintf("%s/%s", alertPolicyBasePath, uuid)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
 	}
