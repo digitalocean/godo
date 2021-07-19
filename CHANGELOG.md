@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.64.1] - 2021-07-19
+
+- #462 - @bsnyder788 - insights: fix alert policy update endpoint
+
 ## [v1.64.0] - 2021-07-19
 
 - #460 - @bsnyder788 - insights: add CRUD APIs for alert policies
