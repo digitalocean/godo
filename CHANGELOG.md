@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.64.0] - 2021-07-19
+
+- #460 - @bsnyder788 - insights: add CRUD APIs for alert policies
+
 ## [v1.63.0] - 2021-07-06
 
 - #458 - @ZachEddy - apps: Add tail_lines query parameter to GetLogs function
