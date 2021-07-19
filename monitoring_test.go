@@ -111,6 +111,36 @@ var (
 	}
 	`
 
+	updateAlertPolicyJSON = `
+	{
+		"policy": {
+          "uuid": "769befc9-3cbc-45fc-85f0-2c966f133730",
+		  "alerts": {
+			"email": [
+			  "bob@example.com"
+			],
+			"slack": [
+			  {
+				"channel": "#alerts-test",
+				"url": "https://hooks.slack.com/services/T1234567/AAAAAAAA/ZZZZZZ"
+			  }
+			]
+		  },
+		  "compare": "GreaterThan",
+		  "description": "description of updated policy",
+		  "enabled": true,
+		  "entities": [
+		  ],
+		  "tags": [
+			"test-tag"
+		  ],
+		  "type": "v1/insights/droplet/cpu",
+		  "value": 75,
+		  "window": "5m"
+		}
+	}
+	`
+
 	getPolicyJSON = `
 	{
 		"policy": {
@@ -286,5 +316,55 @@ func TestAlertPolicy_Delete(t *testing.T) {
 	_, err := client.Monitoring.DeleteAlertPolicy(ctx, "669befc9-3cbc-45fc-85f0-2c966f133730")
 	if err != nil {
 		t.Errorf("Monitoring.DeleteAlertPolicy returned error: %v", err)
+	}
+}
+
+func TestAlertPolicy_Update(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &AlertPolicyUpdateRequest{
+		Type:        DropletCPUUtilizationPercent,
+		Description: "description of updated policy",
+		Compare:     "GreaterThan",
+		Value:       75,
+		Window:      "5m",
+		Entities:    []string{},
+		Tags:        []string{"test-tag"},
+		Alerts: Alerts{
+			Email: []string{"bob@example.com"},
+			Slack: []SlackDetails{
+				{
+					Channel: "#alerts-test",
+					URL:     "https://hooks.slack.com/services/T1234567/AAAAAAAAA/ZZZZZZ",
+				},
+			},
+		},
+	}
+
+	mux.HandleFunc("/v2/monitoring/alerts/769befc9-3cbc-45fc-85f0-2c966f133730", func(w http.ResponseWriter, r *http.Request) {
+		v := new(AlertPolicyUpdateRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		if !reflect.DeepEqual(v, updateRequest) {
+			t.Errorf("Request body = %+v, expected %+v", v, updateRequest)
+		}
+
+		fmt.Fprintf(w, updateAlertPolicyJSON)
+	})
+
+	policy, _, err := client.Monitoring.UpdateAlertPolicy(ctx, "769befc9-3cbc-45fc-85f0-2c966f133730", updateRequest)
+	if err != nil {
+		t.Errorf("Monitoring.UpdateAlertPolicy returned error: %v", err)
+	}
+
+	expected := &AlertPolicy{UUID: "769befc9-3cbc-45fc-85f0-2c966f133730", Type: DropletCPUUtilizationPercent, Description: "description of updated policy", Compare: "GreaterThan", Value: 75, Window: "5m", Entities: []string{}, Tags: []string{"test-tag"}, Alerts: Alerts{Slack: []SlackDetails{{URL: "https://hooks.slack.com/services/T1234567/AAAAAAAA/ZZZZZZ", Channel: "#alerts-test"}}, Email: []string{"bob@example.com"}}, Enabled: true}
+
+	if !reflect.DeepEqual(policy, expected) {
+		t.Errorf("Monitoring.UpdateAlertPolicy returned %+v, expected %+v", policy, expected)
 	}
 }
