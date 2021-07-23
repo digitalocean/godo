@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.64.2] - 2021-07-23
+
+- #464 - @bsnyder788 - insights: update HTTP method for alert policy update
+
 ## [v1.64.1] - 2021-07-19
 
 - #462 - @bsnyder788 - insights: fix alert policy update endpoint
