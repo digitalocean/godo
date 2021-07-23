@@ -111,6 +111,8 @@ type Response struct {
 	Meta *Meta
 
 	// Monitoring URI
+	// Deprecated: This field is not populated. To poll for the status of a
+	// newly created Droplet, use Links.Actions[0].HREF
 	Monitor string
 
 	Rate
