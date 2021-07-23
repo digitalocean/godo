@@ -180,12 +180,15 @@ func (s *MonitoringServiceOp) CreateAlertPolicy(ctx context.Context, createReque
 
 // UpdateAlertPolicy updates an existing alert policy
 func (s *MonitoringServiceOp) UpdateAlertPolicy(ctx context.Context, uuid string, updateRequest *AlertPolicyUpdateRequest) (*AlertPolicy, *Response, error) {
+	if uuid == "" {
+		return nil, nil, NewArgError("uuid", "cannot be empty")
+	}
 	if updateRequest == nil {
 		return nil, nil, NewArgError("updateRequest", "cannot be nil")
 	}
 
 	path := fmt.Sprintf("%s/%s", alertPolicyBasePath, uuid)
-	req, err := s.client.NewRequest(ctx, http.MethodPost, path, updateRequest)
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
 	}
