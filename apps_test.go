@@ -169,6 +169,36 @@ var (
 		TierUpgradeTo:   "professional-xs",
 		TierDowngradeTo: "basic-xxxs",
 	}
+
+	testAlerts = []*AppAlert{
+		{
+			ID: "c586fc0d-e8e2-4c50-9bf6-6c0a6b2ed2a7",
+			Spec: &AppAlertSpec{
+				Rule: AppAlertSpecRule_DeploymentFailed,
+			},
+			Emails: []string{"test@example.com", "test2@example.com"},
+			SlackWebhooks: []*AppAlertSlackWebhook{
+				{
+					URL:     "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
+					Channel: "channel name",
+				},
+			},
+		},
+	}
+
+	testAlert = AppAlert{
+		ID: "c586fc0d-e8e2-4c50-9bf6-6c0a6b2ed2a7",
+		Spec: &AppAlertSpec{
+			Rule: AppAlertSpecRule_DeploymentFailed,
+		},
+		Emails: []string{"test@example.com", "test2@example.com"},
+		SlackWebhooks: []*AppAlertSlackWebhook{
+			{
+				URL:     "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX",
+				Channel: "channel name",
+			},
+		},
+	}
 )
 
 func TestApps_CreateApp(t *testing.T) {
@@ -520,4 +550,36 @@ func TestApps_GetInstanceSize(t *testing.T) {
 	instancesize, _, err := client.Apps.GetInstanceSize(ctx, testInstanceSize.Slug)
 	require.NoError(t, err)
 	assert.Equal(t, &testInstanceSize, instancesize)
+}
+
+func TestApps_ListAppAlerts(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/alerts", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&appAlertsRoot{Alerts: testAlerts})
+	})
+
+	appAlerts, _, err := client.Apps.ListAlerts(ctx, testApp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, testAlerts, appAlerts)
+}
+
+func TestApps_UpdateAppAlertDestinations(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/alerts/%s/destinations", testApp.ID, testAlert.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		json.NewEncoder(w).Encode(&appAlertRoot{Alert: &testAlert})
+	})
+
+	appAlert, _, err := client.Apps.UpdateAlertDestinations(ctx, testApp.ID, testAlert.ID, &AlertDestinationUpdateRequest{Emails: testAlert.Emails, SlackWebhooks: testAlert.SlackWebhooks})
+	require.NoError(t, err)
+	assert.Equal(t, &testAlert, appAlert)
 }
