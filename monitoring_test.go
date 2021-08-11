@@ -349,7 +349,7 @@ func TestAlertPolicy_Update(t *testing.T) {
 			t.Fatalf("decode json: %v", err)
 		}
 
-		testMethod(t, r, http.MethodPost)
+		testMethod(t, r, http.MethodPut)
 		if !reflect.DeepEqual(v, updateRequest) {
 			t.Errorf("Request body = %+v, expected %+v", v, updateRequest)
 		}
