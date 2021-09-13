@@ -957,6 +957,42 @@ func TestDropletAction_EnablePrivateNetworkingByTag(t *testing.T) {
 	}
 }
 
+func TestDropletAction_Recovery(t *testing.T) {
+	setup()
+	defer teardown()
+
+	request := &ActionRequest{
+		"type":       "set_boot_device",
+		"local_disk": false,
+	}
+
+	mux.HandleFunc("/v2/droplets/1/actions", func(w http.ResponseWriter, r *http.Request) {
+		v := new(ActionRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+
+		if !reflect.DeepEqual(v, request) {
+			t.Errorf("Request body = %+v, expected %+v", v, request)
+		}
+
+		fmt.Fprintf(w, `{"action":{"status":"in-progress"}}`)
+	})
+
+	action, _, err := client.DropletActions.Recovery(ctx, 1, true)
+	if err != nil {
+		t.Errorf("DropletActions.EnablePrivateNetworking returned error: %v", err)
+	}
+
+	expected := &Action{Status: "in-progress"}
+	if !reflect.DeepEqual(action, expected) {
+		t.Errorf("DropletActions.EnablePrivateNetworking returned %+v, expected %+v", action, expected)
+	}
+}
+
 func TestDropletActions_Get(t *testing.T) {
 	setup()
 	defer teardown()

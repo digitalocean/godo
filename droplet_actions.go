@@ -40,6 +40,7 @@ type DropletActionsService interface {
 	EnableIPv6ByTag(context.Context, string) ([]Action, *Response, error)
 	EnablePrivateNetworking(context.Context, int) (*Action, *Response, error)
 	EnablePrivateNetworkingByTag(context.Context, string) ([]Action, *Response, error)
+	Recovery(context.Context, int, bool) (*Action, *Response, error)
 	Get(context.Context, int, int) (*Action, *Response, error)
 	GetByURI(context.Context, string) (*Action, *Response, error)
 }
@@ -227,6 +228,12 @@ func (s *DropletActionsServiceOp) EnablePrivateNetworking(ctx context.Context, i
 func (s *DropletActionsServiceOp) EnablePrivateNetworkingByTag(ctx context.Context, tag string) ([]Action, *Response, error) {
 	request := &ActionRequest{"type": "enable_private_networking"}
 	return s.doActionByTag(ctx, tag, request)
+}
+
+// Recovery switches Droplet to recovery mode. Your need to PowerOff/PowerOn after it.
+func (s *DropletActionsServiceOp) Recovery(ctx context.Context, id int, enable bool) (*Action, *Response, error) {
+	request := &ActionRequest{"type": "set_boot_device", "local_disk": !enable}
+	return s.doAction(ctx, id, request)
 }
 
 func (s *DropletActionsServiceOp) doAction(ctx context.Context, id int, request *ActionRequest) (*Action, *Response, error) {
