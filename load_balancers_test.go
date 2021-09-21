@@ -218,7 +218,7 @@ var lbUpdateJSONResponse = `
         "ip":"12.34.56.78",
         "algorithm":"least_connections",
         "status":"active",
-		"size_unit":2,
+        "size_unit":2,
         "created_at":"2016-12-15T14:19:09Z",
         "forwarding_rules":[
             {
