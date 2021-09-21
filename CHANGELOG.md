@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.66.0] - 2021-09-21
+
+- #473 - @andrewsomething - Add Go 1.17.x to test matrix and drop unsupported versions.
+- #472 - @bsnyder788 - insights: add private (in/out)bound and public inbound bandwidth aler…
+- #470 - @gottwald - domains: remove invalid json struct tag option
+
 ## [v1.65.0] - 2021-08-05
 
 - #468 - @notxarb - New alerts feature for App Platform
