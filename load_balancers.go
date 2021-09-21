@@ -32,6 +32,7 @@ type LoadBalancer struct {
 	Name                   string           `json:"name,omitempty"`
 	IP                     string           `json:"ip,omitempty"`
 	SizeSlug               string           `json:"size,omitempty"`
+	SizeUnit               uint32           `json:"size_unit,omitempty"`
 	Algorithm              string           `json:"algorithm,omitempty"`
 	Status                 string           `json:"status,omitempty"`
 	Created                string           `json:"created_at,omitempty"`
@@ -65,6 +66,7 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 		Name:                   l.Name,
 		Algorithm:              l.Algorithm,
 		SizeSlug:               l.SizeSlug,
+		SizeUnit:               l.SizeUnit,
 		ForwardingRules:        append([]ForwardingRule(nil), l.ForwardingRules...),
 		DropletIDs:             append([]int(nil), l.DropletIDs...),
 		Tag:                    l.Tag,
@@ -138,6 +140,7 @@ type LoadBalancerRequest struct {
 	Algorithm              string           `json:"algorithm,omitempty"`
 	Region                 string           `json:"region,omitempty"`
 	SizeSlug               string           `json:"size,omitempty"`
+	SizeUnit               uint32           `json:"size_unit,omitempty"`
 	ForwardingRules        []ForwardingRule `json:"forwarding_rules,omitempty"`
 	HealthCheck            *HealthCheck     `json:"health_check,omitempty"`
 	StickySessions         *StickySessions  `json:"sticky_sessions,omitempty"`
