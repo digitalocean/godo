@@ -28,10 +28,12 @@ type LoadBalancersService interface {
 // LoadBalancer represents a DigitalOcean load balancer configuration.
 // Tags can only be provided upon the creation of a Load Balancer.
 type LoadBalancer struct {
-	ID                     string           `json:"id,omitempty"`
-	Name                   string           `json:"name,omitempty"`
-	IP                     string           `json:"ip,omitempty"`
-	SizeSlug               string           `json:"size,omitempty"`
+	ID   string `json:"id,omitempty"`
+	Name string `json:"name,omitempty"`
+	IP   string `json:"ip,omitempty"`
+	// SizeSlug is mutually exclusive with SizeUnit. Only one should be specified
+	SizeSlug string `json:"size,omitempty"`
+	// SizeUnit is mutually exclusive with SizeSlug. Only one should be specified
 	SizeUnit               uint32           `json:"size_unit,omitempty"`
 	Algorithm              string           `json:"algorithm,omitempty"`
 	Status                 string           `json:"status,omitempty"`
@@ -136,10 +138,12 @@ func (s StickySessions) String() string {
 
 // LoadBalancerRequest represents the configuration to be applied to an existing or a new load balancer.
 type LoadBalancerRequest struct {
-	Name                   string           `json:"name,omitempty"`
-	Algorithm              string           `json:"algorithm,omitempty"`
-	Region                 string           `json:"region,omitempty"`
-	SizeSlug               string           `json:"size,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Algorithm string `json:"algorithm,omitempty"`
+	Region    string `json:"region,omitempty"`
+	// SizeSlug is mutually exclusive with SizeUnit. Only one should be specified
+	SizeSlug string `json:"size,omitempty"`
+	// SizeUnit is mutually exclusive with SizeSlug. Only one should be specified
 	SizeUnit               uint32           `json:"size_unit,omitempty"`
 	ForwardingRules        []ForwardingRule `json:"forwarding_rules,omitempty"`
 	HealthCheck            *HealthCheck     `json:"health_check,omitempty"`
