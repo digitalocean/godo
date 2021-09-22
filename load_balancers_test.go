@@ -218,6 +218,7 @@ var lbUpdateJSONResponse = `
         "ip":"12.34.56.78",
         "algorithm":"least_connections",
         "status":"active",
+        "size_unit":2,
         "created_at":"2016-12-15T14:19:09Z",
         "forwarding_rules":[
             {
@@ -454,6 +455,7 @@ func TestLoadBalancers_Update(t *testing.T) {
 		Name:      "example-lb-01",
 		Algorithm: "least_connections",
 		Region:    "nyc1",
+		SizeUnit:  2,
 		ForwardingRules: []ForwardingRule{
 			{
 				EntryProtocol:  "http",
@@ -512,6 +514,7 @@ func TestLoadBalancers_Update(t *testing.T) {
 		IP:        "12.34.56.78",
 		Algorithm: "least_connections",
 		Status:    "active",
+		SizeUnit:  2,
 		Created:   "2016-12-15T14:19:09Z",
 		ForwardingRules: []ForwardingRule{
 			{
