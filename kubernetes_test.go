@@ -1572,7 +1572,16 @@ func TestKubernetesVersions_List(t *testing.T) {
 
 	want := &KubernetesOptions{
 		Versions: []*KubernetesVersion{
-			{Slug: "1.10.0-gen0", KubernetesVersion: "1.10.0"},
+			{
+				Slug:              "1.10.0-gen0",
+				KubernetesVersion: "1.10.0",
+				SupportedFeatures: []string{
+					"cluster-autoscaler",
+					"docr-integration",
+					"ha-control-plane",
+					"token-authentication",
+				},
+			},
 		},
 		Regions: []*KubernetesRegion{
 			{Name: "New York 3", Slug: "nyc3"},
@@ -1587,7 +1596,13 @@ func TestKubernetesVersions_List(t *testing.T) {
 		"versions": [
 			{
 				"slug": "1.10.0-gen0",
-				"kubernetes_version": "1.10.0"
+				"kubernetes_version": "1.10.0",
+				"supported_features": [
+					"cluster-autoscaler",
+					"docr-integration",
+					"ha-control-plane",
+					"token-authentication"
+				]
 			}
 		],
 		"regions": [
