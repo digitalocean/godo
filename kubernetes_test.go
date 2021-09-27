@@ -552,6 +552,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		ServiceSubnet: "10.245.0.0/16",
 		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		HA:            true,
 		SurgeUpgrade:  true,
 		NodePools: []*KubernetesNodePool{
 			{
@@ -575,6 +576,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		Tags:         want.Tags,
 		VPCUUID:      want.VPCUUID,
 		SurgeUpgrade: true,
+		HA:           true,
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			{
 				Size:      want.NodePools[0].Size,
@@ -604,6 +606,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"ha": true,
 		"surge_upgrade": true,
 		"node_pools": [
 			{
@@ -763,6 +766,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		SurgeUpgrade:  true,
+		HA:            true,
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -801,6 +805,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"ha": true,
 		"surge_upgrade": true,
 		"node_pools": [
 			{
