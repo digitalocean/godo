@@ -65,7 +65,8 @@ var lbListJSONResponse = `
             "droplet_ids":[
                 2,
                 21
-            ]
+            ],
+            "disable_lets_encrypt_dns_records": true
         }
     ],
     "links":{
@@ -145,7 +146,8 @@ var lbCreateJSONResponse = `
             21
         ],
         "redirect_http_to_https":true,
-        "vpc_uuid":"880b7f98-f062-404d-b33c-458d545696f6"
+        "vpc_uuid":"880b7f98-f062-404d-b33c-458d545696f6",
+        "disable_lets_encrypt_dns_records": true
     }
 }
 `
@@ -205,7 +207,8 @@ var lbGetJSONResponse = `
         "droplet_ids":[
             2,
             21
-        ]
+        ],
+        "disable_lets_encrypt_dns_records": false
     }
 }
 `
@@ -333,6 +336,9 @@ func TestLoadBalancers_Get(t *testing.T) {
 		DropletIDs: []int{2, 21},
 	}
 
+	disableLetsEncryptDNSRecords := false
+	expected.DisableLetsEncryptDNSRecords = &disableLetsEncryptDNSRecords
+
 	assert.Equal(t, expected, loadBalancer)
 }
 
@@ -444,6 +450,9 @@ func TestLoadBalancers_Create(t *testing.T) {
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
 	}
 
+	disableLetsEncryptDNSRecords := true
+	expected.DisableLetsEncryptDNSRecords = &disableLetsEncryptDNSRecords
+
 	assert.Equal(t, expected, loadBalancer)
 }
 
@@ -550,7 +559,8 @@ func TestLoadBalancers_Update(t *testing.T) {
 			Available: true,
 			Features:  []string{"private_networking", "backups", "ipv6", "metadata", "storage"},
 		},
-		DropletIDs: []int{2, 21},
+		DropletIDs:                   []int{2, 21},
+		DisableLetsEncryptDNSRecords: nil,
 	}
 
 	assert.Equal(t, expected, loadBalancer)
@@ -613,6 +623,8 @@ func TestLoadBalancers_List(t *testing.T) {
 			DropletIDs: []int{2, 21},
 		},
 	}
+	disableLetsEncryptDNSRecords := true
+	expectedLBs[0].DisableLetsEncryptDNSRecords = &disableLetsEncryptDNSRecords
 
 	assert.Equal(t, expectedLBs, loadBalancers)
 
