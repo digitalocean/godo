@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.69.1] - 2021-10-06
+
+- #484 - @sunny-b - k8s/godo: remove ha field from update request
+
 ## [v1.69.0] - 2021-10-04
 
 - #482 - @dikshant - godo/load-balancers: add DisableLetsEncryptDNSRecords field for LBaaS
