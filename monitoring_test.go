@@ -928,7 +928,7 @@ func TestGetDropletBandwidth(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletBandwidthMetricsRequest{
+	metricReq := &DropletBandwidthMetricsRequest{
 		DropletMetricsRequest: DropletMetricsRequest{HostID: "123",
 			Start: now.Add(-300 * time.Second),
 			End:   now,
@@ -1000,9 +1000,10 @@ func TestGetDropletTotalMemory(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{HostID: "123",
-		Start: now.Add(-300 * time.Second),
-		End:   now,
+	metricReq := &DropletMetricsRequest{
+		HostID: "123",
+		Start:  now.Add(-300 * time.Second),
+		End:    now,
 	}
 
 	mux.HandleFunc("/v2/monitoring/metrics/droplet/memory_total", func(w http.ResponseWriter, r *http.Request) {
@@ -1030,9 +1031,10 @@ func TestGetDropletFreeMemory(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{HostID: "123",
-		Start: now.Add(-300 * time.Second),
-		End:   now,
+	metricReq := &DropletMetricsRequest{
+		HostID: "123",
+		Start:  now.Add(-300 * time.Second),
+		End:    now,
 	}
 
 	mux.HandleFunc("/v2/monitoring/metrics/droplet/memory_free", func(w http.ResponseWriter, r *http.Request) {
@@ -1060,9 +1062,10 @@ func TestGetDropletAvailableMemory(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{HostID: "123",
-		Start: now.Add(-300 * time.Second),
-		End:   now,
+	metricReq := &DropletMetricsRequest{
+		HostID: "123",
+		Start:  now.Add(-300 * time.Second),
+		End:    now,
 	}
 
 	mux.HandleFunc("/v2/monitoring/metrics/droplet/memory_available", func(w http.ResponseWriter, r *http.Request) {
@@ -1090,7 +1093,7 @@ func TestGetDropletCachedMemory(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{
+	metricReq := &DropletMetricsRequest{
 		HostID: "123",
 		Start:  now.Add(-300 * time.Second),
 		End:    now,
@@ -1121,7 +1124,7 @@ func TestGetDropletFilesystemFree(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{
+	metricReq := &DropletMetricsRequest{
 		HostID: "123",
 		Start:  now.Add(-300 * time.Second),
 		End:    now,
@@ -1152,7 +1155,7 @@ func TestGetDropletFilesystemSize(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{
+	metricReq := &DropletMetricsRequest{
 		HostID: "123",
 		Start:  now.Add(-300 * time.Second),
 		End:    now,
@@ -1183,7 +1186,7 @@ func TestGetDropletLoad1(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{
+	metricReq := &DropletMetricsRequest{
 		HostID: "123",
 		Start:  now.Add(-300 * time.Second),
 		End:    now,
@@ -1214,7 +1217,7 @@ func TestGetDropletLoad5(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{
+	metricReq := &DropletMetricsRequest{
 		HostID: "123",
 		Start:  now.Add(-300 * time.Second),
 		End:    now,
@@ -1245,7 +1248,7 @@ func TestGetDropletLoad15(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{
+	metricReq := &DropletMetricsRequest{
 		HostID: "123",
 		Start:  now.Add(-300 * time.Second),
 		End:    now,
@@ -1276,7 +1279,7 @@ func TestGetDropletCPU(t *testing.T) {
 	setup()
 	defer teardown()
 	now := time.Now()
-	metricReq := DropletMetricsRequest{
+	metricReq := &DropletMetricsRequest{
 		HostID: "123",
 		Start:  now.Add(-300 * time.Second),
 		End:    now,

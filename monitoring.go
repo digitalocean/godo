@@ -38,17 +38,17 @@ type MonitoringService interface {
 	UpdateAlertPolicy(context.Context, string, *AlertPolicyUpdateRequest) (*AlertPolicy, *Response, error)
 	DeleteAlertPolicy(context.Context, string) (*Response, error)
 
-	GetDropletBandwidth(ctx context.Context, args DropletBandwidthMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletAvailableMemory(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletCPU(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletFilesystemFree(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletFilesystemSize(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletLoad1(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletLoad5(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletLoad15(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletCachedMemory(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletFreeMemory(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
-	GetDropletTotalMemory(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletBandwidth(context.Context, *DropletBandwidthMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletAvailableMemory(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletCPU(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletFilesystemFree(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletFilesystemSize(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletLoad1(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletLoad5(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletLoad15(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletCachedMemory(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletFreeMemory(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
+	GetDropletTotalMemory(context.Context, *DropletMetricsRequest) (*MetricsResponse, *Response, error)
 }
 
 // MonitoringServiceOp handles communication with monitoring related methods of the
@@ -131,7 +131,7 @@ type alertPolicyRoot struct {
 	AlertPolicy *AlertPolicy `json:"policy,omitempty"`
 }
 
-// DropletMetricsRequest  holds the information needed to retrieve Droplet various metrics.
+// DropletMetricsRequest holds the information needed to retrieve Droplet various metrics.
 type DropletMetricsRequest struct {
 	HostID string
 	Start  time.Time
@@ -265,7 +265,7 @@ func (s *MonitoringServiceOp) DeleteAlertPolicy(ctx context.Context, uuid string
 }
 
 // GetDropletBandwidth retrieves Droplet bandwidth metrics.
-func (s *MonitoringServiceOp) GetDropletBandwidth(ctx context.Context, args DropletBandwidthMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletBandwidth(ctx context.Context, args *DropletBandwidthMetricsRequest) (*MetricsResponse, *Response, error) {
 	path := dropletMetricsBasePath + "/bandwidth"
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -287,56 +287,56 @@ func (s *MonitoringServiceOp) GetDropletBandwidth(ctx context.Context, args Drop
 }
 
 // GetDropletCPU retrieves Droplet CPU metrics.
-func (s *MonitoringServiceOp) GetDropletCPU(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletCPU(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/cpu", args)
 }
 
 // GetDropletFilesystemFree retrieves Droplet filesystem free metrics.
-func (s *MonitoringServiceOp) GetDropletFilesystemFree(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletFilesystemFree(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/filesystem_free", args)
 }
 
 // GetDropletFilesystemSize retrieves Droplet filesystem size metrics.
-func (s *MonitoringServiceOp) GetDropletFilesystemSize(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletFilesystemSize(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/filesystem_size", args)
 }
 
 // GetDropletLoad1 retrieves Droplet load 1 metrics.
-func (s *MonitoringServiceOp) GetDropletLoad1(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletLoad1(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/load_1", args)
 }
 
 // GetDropletLoad5 retrieves Droplet load 5 metrics.
-func (s *MonitoringServiceOp) GetDropletLoad5(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletLoad5(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/load_5", args)
 }
 
 // GetDropletLoad15 retrieves Droplet load 15 metrics.
-func (s *MonitoringServiceOp) GetDropletLoad15(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletLoad15(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/load_15", args)
 }
 
 // GetDropletCachedMemory retrieves Droplet cached memory metrics.
-func (s *MonitoringServiceOp) GetDropletCachedMemory(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletCachedMemory(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/memory_cached", args)
 }
 
 // GetDropletFreeMemory retrieves Droplet free memory metrics.
-func (s *MonitoringServiceOp) GetDropletFreeMemory(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletFreeMemory(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/memory_free", args)
 }
 
 // GetDropletTotalMemory retrieves Droplet total memory metrics.
-func (s *MonitoringServiceOp) GetDropletTotalMemory(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletTotalMemory(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/memory_total", args)
 }
 
 // GetDropletAvailableMemory retrieves Droplet available memory metrics.
-func (s *MonitoringServiceOp) GetDropletAvailableMemory(ctx context.Context, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) GetDropletAvailableMemory(ctx context.Context, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	return s.getDropletMetrics(ctx, "/memory_available", args)
 }
 
-func (s *MonitoringServiceOp) getDropletMetrics(ctx context.Context, path string, args DropletMetricsRequest) (*MetricsResponse, *Response, error) {
+func (s *MonitoringServiceOp) getDropletMetrics(ctx context.Context, path string, args *DropletMetricsRequest) (*MetricsResponse, *Response, error) {
 	fullPath := dropletMetricsBasePath + path
 	req, err := s.client.NewRequest(ctx, http.MethodGet, fullPath, nil)
 	if err != nil {
