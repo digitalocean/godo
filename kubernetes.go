@@ -407,7 +407,7 @@ type KubernetesNode struct {
 	ID        string                `json:"id,omitempty"`
 	Name      string                `json:"name,omitempty"`
 	Status    *KubernetesNodeStatus `json:"status,omitempty"`
-	DropletID string                `json:"droplet_id,omitempty"`
+	DropletID int                `json:"droplet_id,omitempty"`
 
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`

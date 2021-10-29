@@ -1,1 +1,5 @@
+#IDE
+.idea
+
+#Go Folder
 vendor/

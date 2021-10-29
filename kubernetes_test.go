@@ -43,7 +43,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 							ID:        "",
 							Name:      "",
 							Status:    &KubernetesNodeStatus{},
-							DropletID: "droplet-1",
+							DropletID: 11111,
 							CreatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 							UpdatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 						},
@@ -51,7 +51,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 							ID:        "",
 							Name:      "",
 							Status:    &KubernetesNodeStatus{},
-							DropletID: "droplet-2",
+							DropletID: 11112,
 							CreatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 							UpdatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 						},
@@ -87,7 +87,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 							ID:        "deadbeef-dead-beef-dead-deadbeefb4b1",
 							Name:      "worker-393",
 							Status:    &KubernetesNodeStatus{State: "running"},
-							DropletID: "droplet-3",
+							DropletID: 11113,
 							CreatedAt: time.Date(2018, 6, 15, 7, 10, 23, 0, time.UTC),
 							UpdatedAt: time.Date(2018, 6, 15, 7, 11, 26, 0, time.UTC),
 						},
@@ -95,7 +95,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 							ID:        "deadbeef-dead-beef-dead-deadbeefb4b2",
 							Name:      "worker-394",
 							Status:    &KubernetesNodeStatus{State: "running"},
-							DropletID: "droplet-4",
+							DropletID: 11114,
 							CreatedAt: time.Date(2018, 6, 15, 7, 10, 23, 0, time.UTC),
 							UpdatedAt: time.Date(2018, 6, 15, 7, 11, 26, 0, time.UTC),
 						},
@@ -138,7 +138,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 							"status": {
 								"state": ""
 							},
-							"droplet_id": "droplet-1",
+							"droplet_id": 11111,
 							"created_at": "2018-06-21T08:44:38Z",
 							"updated_at": "2018-06-21T08:44:38Z"
 						},
@@ -148,7 +148,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 							"status": {
 								"state": ""
 							},
-							"droplet_id": "droplet-2",
+							"droplet_id": 11112,
 							"created_at": "2018-06-21T08:44:38Z",
 							"updated_at": "2018-06-21T08:44:38Z"
 						}
@@ -189,7 +189,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 							"status": {
 								"state": "running"
 							},
-							"droplet_id": "droplet-3",
+							"droplet_id": 11113,
 							"created_at": "2018-06-15T07:10:23Z",
 							"updated_at": "2018-06-15T07:11:26Z"
 						},
@@ -199,7 +199,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 							"status": {
 								"state": "running"
 							},
-							"droplet_id": "droplet-4",
+							"droplet_id": 11114,
 							"created_at": "2018-06-15T07:10:23Z",
 							"updated_at": "2018-06-15T07:11:26Z"
 						}
@@ -277,7 +277,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 						ID:        "deadbeef-dead-beef-dead-deadbeefb4b1",
 						Name:      "worker-393",
 						Status:    &KubernetesNodeStatus{State: "running"},
-						DropletID: "droplet-1",
+						DropletID: 11111,
 						CreatedAt: time.Date(2018, 6, 15, 7, 10, 23, 0, time.UTC),
 						UpdatedAt: time.Date(2018, 6, 15, 7, 11, 26, 0, time.UTC),
 					},
@@ -285,7 +285,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 						ID:        "deadbeef-dead-beef-dead-deadbeefb4b2",
 						Name:      "worker-394",
 						Status:    &KubernetesNodeStatus{State: "running"},
-						DropletID: "droplet-2",
+						DropletID: 11112,
 						CreatedAt: time.Date(2018, 6, 15, 7, 10, 23, 0, time.UTC),
 						UpdatedAt: time.Date(2018, 6, 15, 7, 11, 26, 0, time.UTC),
 					},
@@ -332,7 +332,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 						"status": {
 							"state": "running"
 						},
-						"droplet_id": "droplet-1",
+						"droplet_id": 11111,
 						"created_at": "2018-06-15T07:10:23Z",
 						"updated_at": "2018-06-15T07:11:26Z"
 					},
@@ -342,7 +342,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 						"status": {
 							"state": "running"
 						},
-						"droplet_id": "droplet-2",
+						"droplet_id": 11112,
 						"created_at": "2018-06-15T07:10:23Z",
 						"updated_at": "2018-06-15T07:11:26Z"
 					}

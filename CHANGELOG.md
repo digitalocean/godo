@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.69.2] - 2021-10-30
+
+- #447 - @dhiemaz - godo/kubernetes: change droplet-id to int as per API document (https://developers.digitalocean.com/documentation/v2/#retrieve-an-existing-droplet-by-id)
+
 ## [v1.69.1] - 2021-10-06
 
 - #484 - @sunny-b - k8s/godo: remove ha field from update request
