@@ -3,6 +3,7 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 
@@ -291,9 +292,7 @@ func TestLoadBalancers_Get(t *testing.T) {
 	})
 
 	loadBalancer, _, err := client.LoadBalancers.Get(ctx, loadBalancerID)
-	if err != nil {
-		t.Errorf("LoadBalancers.Get returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &LoadBalancer{
 		ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
@@ -395,9 +394,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 	})
 
 	loadBalancer, _, err := client.LoadBalancers.Create(ctx, createRequest)
-	if err != nil {
-		t.Errorf("LoadBalancers.Create returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &LoadBalancer{
 		ID:        "8268a81c-fcf5-423e-a337-bbfe95817f23",
@@ -513,9 +510,7 @@ func TestLoadBalancers_Update(t *testing.T) {
 	})
 
 	loadBalancer, _, err := client.LoadBalancers.Update(ctx, loadBalancerID, updateRequest)
-	if err != nil {
-		t.Errorf("LoadBalancers.Update returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &LoadBalancer{
 		ID:        "8268a81c-fcf5-423e-a337-bbfe95817f23",
@@ -578,9 +573,7 @@ func TestLoadBalancers_List(t *testing.T) {
 
 	loadBalancers, resp, err := client.LoadBalancers.List(ctx, nil)
 
-	if err != nil {
-		t.Errorf("LoadBalancers.List returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expectedLBs := []LoadBalancer{
 		{
@@ -646,9 +639,7 @@ func TestLoadBalancers_List_Pagination(t *testing.T) {
 	opts := &ListOptions{Page: 2}
 	_, resp, err := client.LoadBalancers.List(ctx, opts)
 
-	if err != nil {
-		t.Errorf("LoadBalancers.List returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	assert.Equal(t, "http://localhost:3001/v2/load_balancers?page=2&per_page=1", resp.Links.Pages.Next)
 	assert.Equal(t, "http://localhost:3001/v2/load_balancers?page=3&per_page=1", resp.Links.Pages.Last)
@@ -667,9 +658,7 @@ func TestLoadBalancers_Delete(t *testing.T) {
 
 	_, err := client.LoadBalancers.Delete(ctx, lbID)
 
-	if err != nil {
-		t.Errorf("LoadBalancers.Delete returned error: %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestLoadBalancers_AddDroplets(t *testing.T) {
@@ -697,9 +686,7 @@ func TestLoadBalancers_AddDroplets(t *testing.T) {
 
 	_, err := client.LoadBalancers.AddDroplets(ctx, lbID, dropletIdsRequest.IDs...)
 
-	if err != nil {
-		t.Errorf("LoadBalancers.AddDroplets returned error: %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestLoadBalancers_RemoveDroplets(t *testing.T) {
@@ -727,9 +714,7 @@ func TestLoadBalancers_RemoveDroplets(t *testing.T) {
 
 	_, err := client.LoadBalancers.RemoveDroplets(ctx, lbID, dropletIdsRequest.IDs...)
 
-	if err != nil {
-		t.Errorf("LoadBalancers.RemoveDroplets returned error: %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestLoadBalancers_AddForwardingRules(t *testing.T) {
@@ -771,9 +756,7 @@ func TestLoadBalancers_AddForwardingRules(t *testing.T) {
 
 	_, err := client.LoadBalancers.AddForwardingRules(ctx, lbID, frr.Rules...)
 
-	if err != nil {
-		t.Errorf("LoadBalancers.AddForwardingRules returned error: %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestLoadBalancers_RemoveForwardingRules(t *testing.T) {
@@ -814,9 +797,7 @@ func TestLoadBalancers_RemoveForwardingRules(t *testing.T) {
 
 	_, err := client.LoadBalancers.RemoveForwardingRules(ctx, lbID, frr.Rules...)
 
-	if err != nil {
-		t.Errorf("LoadBalancers.RemoveForwardingRules returned error: %v", err)
-	}
+	assert.NoError(t, err)
 }
 
 func TestLoadBalancers_AsRequest(t *testing.T) {

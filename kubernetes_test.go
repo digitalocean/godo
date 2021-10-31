@@ -1878,13 +1878,9 @@ func TestWeekday_UnmarshalJSON(t *testing.T) {
 			var got KubernetesMaintenancePolicyDay
 			err := json.Unmarshal([]byte(ts.json), &got)
 			valid := err == nil
-			if valid != ts.valid {
-				t.Errorf("valid unmarshal case\n\tgot: %+v\n\twant : %+v", valid, ts.valid)
-			}
-
-			if valid && got != ts.day {
-				t.Errorf("\ninput: %s\ngot : %+v\nwant  : %+v\n",
-					ts.day, got, ts.day)
+			assert.Equal(t, ts.valid, valid)
+			if valid {
+				assert.Equal(t, ts.day, got)
 			}
 		})
 	}
@@ -1895,13 +1891,9 @@ func TestWeekday_MarshalJSON(t *testing.T) {
 		t.Run(ts.name, func(t *testing.T) {
 			out, err := json.Marshal(ts.day)
 			valid := err == nil
-			if valid != ts.valid {
-				t.Errorf("valid marshal case\n\tgot: %+v\n\twant : %+v", valid, ts.valid)
-			}
-
-			if valid && ts.json != string(out) {
-				t.Errorf("\ninput: %s\ngot : %+v\nwant  : %+v\n",
-					ts.day, string(out), ts.json)
+			assert.Equal(t, ts.valid, valid)
+			if valid {
+				assert.Equal(t, ts.json, string(out))
 			}
 		})
 	}
