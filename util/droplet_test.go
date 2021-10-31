@@ -21,7 +21,7 @@ func ExampleWaitForActive() {
 	// create your droplet and retrieve the create action uri
 	uri := "https://api.digitalocean.com/v2/actions/xxxxxxxx"
 
-	// block until until the action is complete
+	// block until the action is complete
 	err := WaitForActive(ctx, client, uri)
 	if err != nil {
 		panic(err)
