@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var certJSONResponse = `
@@ -75,9 +76,7 @@ func TestCertificates_Get(t *testing.T) {
 	})
 
 	certificate, _, err := client.Certificates.Get(ctx, cID)
-	if err != nil {
-		t.Errorf("Certificates.Get returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &Certificate{
 		ID:              "892071a0-bb95-49bc-8021-3afd67a210bf",
@@ -105,9 +104,7 @@ func TestCertificates_List(t *testing.T) {
 
 	certificates, resp, err := client.Certificates.List(ctx, nil)
 
-	if err != nil {
-		t.Errorf("Certificates.List returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expectedCertificates := []Certificate{
 		{
@@ -230,10 +227,8 @@ func TestCertificates_Create(t *testing.T) {
 			})
 
 			certificate, _, err := client.Certificates.Create(ctx, test.createRequest)
-			if err != nil {
-				t.Errorf("Certificates.Create returned error: %v", err)
-			}
 
+			require.NoError(t, err)
 			assert.Equal(t, test.expectedCertificate, certificate)
 		})
 	}
@@ -252,7 +247,5 @@ func TestCertificates_Delete(t *testing.T) {
 
 	_, err := client.Certificates.Delete(ctx, cID)
 
-	if err != nil {
-		t.Errorf("Certificates.Delete returned error: %v", err)
-	}
+	assert.NoError(t, err)
 }

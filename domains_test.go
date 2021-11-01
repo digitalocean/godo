@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strconv"
 	"testing"
 
@@ -34,19 +33,13 @@ func TestDomains_ListDomains(t *testing.T) {
 	})
 
 	domains, resp, err := client.Domains.List(ctx, nil)
-	if err != nil {
-		t.Errorf("Domains.List returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expectedDomains := []Domain{{Name: "foo.com"}, {Name: "bar.com"}}
-	if !reflect.DeepEqual(domains, expectedDomains) {
-		t.Errorf("Domains.List returned domains %+v, expected %+v", domains, expectedDomains)
-	}
+	assert.Equal(t, expectedDomains, domains)
 
 	expectedMeta := &Meta{Total: 2}
-	if !reflect.DeepEqual(resp.Meta, expectedMeta) {
-		t.Errorf("Domains.List returned meta %+v, expected %+v", resp.Meta, expectedMeta)
-	}
+	assert.Equal(t, expectedMeta, resp.Meta)
 }
 
 func TestDomains_ListDomainsMultiplePages(t *testing.T) {
@@ -110,14 +103,10 @@ func TestDomains_GetDomain(t *testing.T) {
 	})
 
 	domains, _, err := client.Domains.Get(ctx, "example.com")
-	if err != nil {
-		t.Errorf("domain.Get returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &Domain{Name: "example.com"}
-	if !reflect.DeepEqual(domains, expected) {
-		t.Errorf("domains.Get returned %+v, expected %+v", domains, expected)
-	}
+	assert.Equal(t, expected, domains)
 }
 
 func TestDomains_Create(t *testing.T) {
@@ -137,22 +126,16 @@ func TestDomains_Create(t *testing.T) {
 		}
 
 		testMethod(t, r, http.MethodPost)
-		if !reflect.DeepEqual(v, createRequest) {
-			t.Errorf("Request body = %+v, expected %+v", v, createRequest)
-		}
+		assert.Equal(t, createRequest, v)
 
 		fmt.Fprint(w, `{"domain":{"name":"example.com"}}`)
 	})
 
 	domain, _, err := client.Domains.Create(ctx, createRequest)
-	if err != nil {
-		t.Errorf("Domains.Create returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &Domain{Name: "example.com"}
-	if !reflect.DeepEqual(domain, expected) {
-		t.Errorf("Domains.Create returned %+v, expected %+v", domain, expected)
-	}
+	assert.Equal(t, expected, domain)
 }
 
 func TestDomains_Destroy(t *testing.T) {
@@ -164,9 +147,8 @@ func TestDomains_Destroy(t *testing.T) {
 	})
 
 	_, err := client.Domains.Delete(ctx, "example.com")
-	if err != nil {
-		t.Errorf("Domains.Delete returned error: %v", err)
-	}
+
+	assert.NoError(t, err)
 }
 
 func TestDomains_AllRecordsForDomainName(t *testing.T) {
@@ -179,14 +161,10 @@ func TestDomains_AllRecordsForDomainName(t *testing.T) {
 	})
 
 	records, _, err := client.Domains.Records(ctx, "example.com", nil)
-	if err != nil {
-		t.Errorf("Domains.List returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := []DomainRecord{{ID: 1}, {ID: 2}}
-	if !reflect.DeepEqual(records, expected) {
-		t.Errorf("Domains.Records returned %+v, expected %+v", records, expected)
-	}
+	assert.Equal(t, expected, records)
 }
 
 func TestDomains_AllRecordsForDomainName_PerPage(t *testing.T) {
@@ -204,14 +182,10 @@ func TestDomains_AllRecordsForDomainName_PerPage(t *testing.T) {
 
 	dro := &ListOptions{PerPage: 2}
 	records, _, err := client.Domains.Records(ctx, "example.com", dro)
-	if err != nil {
-		t.Errorf("Domains.List returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := []DomainRecord{{ID: 1}, {ID: 2}}
-	if !reflect.DeepEqual(records, expected) {
-		t.Errorf("Domains.Records returned %+v, expected %+v", records, expected)
-	}
+	assert.Equal(t, expected, records)
 }
 
 func TestDomains_RecordsByType(t *testing.T) {
@@ -256,9 +230,7 @@ func TestDomains_RecordsByType(t *testing.T) {
 				assert.Equal(t, tt.expectedErr, err)
 			} else {
 				expected := []DomainRecord{{ID: 1}, {ID: 2}}
-				if !reflect.DeepEqual(records, expected) {
-					t.Errorf("Domains.RecordsByType returned %+v, expected %+v", records, expected)
-				}
+				assert.Equal(t, expected, records)
 			}
 		})
 	}
@@ -306,9 +278,7 @@ func TestDomains_RecordsByName(t *testing.T) {
 				assert.Equal(t, tt.expectedErr, err)
 			} else {
 				expected := []DomainRecord{{ID: 1}, {ID: 2}}
-				if !reflect.DeepEqual(records, expected) {
-					t.Errorf("Domains.RecordsByName returned %+v, expected %+v", records, expected)
-				}
+				assert.Equal(t, expected, records)
 			}
 		})
 	}
@@ -366,9 +336,7 @@ func TestDomains_RecordsByTypeAndName(t *testing.T) {
 				assert.Equal(t, tt.expectedErr, err)
 			} else {
 				expected := []DomainRecord{{ID: 1}, {ID: 2}}
-				if !reflect.DeepEqual(records, expected) {
-					t.Errorf("Domains.RecordsByTypeAndName returned %+v, expected %+v", records, expected)
-				}
+				assert.Equal(t, expected, records)
 			}
 		})
 	}
@@ -384,14 +352,10 @@ func TestDomains_GetRecordforDomainName(t *testing.T) {
 	})
 
 	record, _, err := client.Domains.Record(ctx, "example.com", 1)
-	if err != nil {
-		t.Errorf("Domains.GetRecord returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &DomainRecord{ID: 1}
-	if !reflect.DeepEqual(record, expected) {
-		t.Errorf("Domains.GetRecord returned %+v, expected %+v", record, expected)
-	}
+	assert.Equal(t, expected, record)
 }
 
 func TestDomains_DeleteRecordForDomainName(t *testing.T) {
@@ -403,9 +367,8 @@ func TestDomains_DeleteRecordForDomainName(t *testing.T) {
 	})
 
 	_, err := client.Domains.DeleteRecord(ctx, "example.com", 1)
-	if err != nil {
-		t.Errorf("Domains.RecordDelete returned error: %v", err)
-	}
+
+	assert.NoError(t, err)
 }
 
 func TestDomains_CreateRecordForDomainName(t *testing.T) {
@@ -429,27 +392,19 @@ func TestDomains_CreateRecordForDomainName(t *testing.T) {
 			v := new(DomainRecordEditRequest)
 			err := json.NewDecoder(r.Body).Decode(v)
 
-			if err != nil {
-				t.Fatalf("decode json: %v", err)
-			}
+			require.NoError(t, err)
 
 			testMethod(t, r, http.MethodPost)
-			if !reflect.DeepEqual(v, createRequest) {
-				t.Errorf("Request body = %+v, expected %+v", v, createRequest)
-			}
+			assert.Equal(t, createRequest, v)
 
 			fmt.Fprintf(w, `{"domain_record": {"id":1}}`)
 		})
 
 	record, _, err := client.Domains.CreateRecord(ctx, "example.com", createRequest)
-	if err != nil {
-		t.Errorf("Domains.CreateRecord returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &DomainRecord{ID: 1}
-	if !reflect.DeepEqual(record, expected) {
-		t.Errorf("Domains.CreateRecord returned %+v, expected %+v", record, expected)
-	}
+	assert.Equal(t, expected, record)
 }
 
 func TestDomains_EditRecordForDomainName(t *testing.T) {
@@ -476,22 +431,16 @@ func TestDomains_EditRecordForDomainName(t *testing.T) {
 		}
 
 		testMethod(t, r, http.MethodPut)
-		if !reflect.DeepEqual(v, editRequest) {
-			t.Errorf("Request body = %+v, expected %+v", v, editRequest)
-		}
+		assert.Equal(t, editRequest, v)
 
 		fmt.Fprintf(w, `{"domain_record": {"id":1, "type": "CNAME", "name": "example"}}`)
 	})
 
 	record, _, err := client.Domains.EditRecord(ctx, "example.com", 1, editRequest)
-	if err != nil {
-		t.Errorf("Domains.EditRecord returned error: %v", err)
-	}
+	require.NoError(t, err)
 
 	expected := &DomainRecord{ID: 1, Type: "CNAME", Name: "example"}
-	if !reflect.DeepEqual(record, expected) {
-		t.Errorf("Domains.EditRecord returned %+v, expected %+v", record, expected)
-	}
+	assert.Equal(t, expected, record)
 }
 
 func TestDomainRecord_String(t *testing.T) {
@@ -510,9 +459,7 @@ func TestDomainRecord_String(t *testing.T) {
 
 	stringified := record.String()
 	expected := `godo.DomainRecord{ID:1, Type:"CNAME", Name:"example", Data:"@", Priority:10, Port:10, TTL:1800, Weight:10, Flags:1, Tag:"test"}`
-	if expected != stringified {
-		t.Errorf("DomainRecord.String returned %+v, expected %+v", stringified, expected)
-	}
+	assert.Equal(t, expected, stringified)
 }
 
 func TestDomainRecordEditRequest_String(t *testing.T) {
@@ -530,7 +477,5 @@ func TestDomainRecordEditRequest_String(t *testing.T) {
 
 	stringified := record.String()
 	expected := `godo.DomainRecordEditRequest{Type:"CNAME", Name:"example", Data:"@", Priority:10, Port:10, TTL:1800, Weight:10, Flags:1, Tag:"test"}`
-	if expected != stringified {
-		t.Errorf("DomainRecordEditRequest.String returned %+v, expected %+v", stringified, expected)
-	}
+	assert.Equal(t, expected, stringified)
 }
