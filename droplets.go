@@ -26,6 +26,7 @@ type DropletsService interface {
 	Kernels(context.Context, int, *ListOptions) ([]Kernel, *Response, error)
 	Snapshots(context.Context, int, *ListOptions) ([]Image, *Response, error)
 	Backups(context.Context, int, *ListOptions) ([]Image, *Response, error)
+	InitiateAction(context.Context, int, *DropletActionRequest) (*Action, *Response, error)
 	Actions(context.Context, int, *ListOptions) ([]Action, *Response, error)
 	Neighbors(context.Context, int) ([]Droplet, *Response, error)
 }
@@ -214,6 +215,20 @@ func (d DropletCreateSSHKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.ID)
 }
 
+// DropletActionRequest holds the request paramaters used for initiating a droplet action
+// see https://docs.digitalocean.com/reference/api/api-reference/#operation/post_droplet_action for
+// details on what parameters are required for each action type
+type DropletActionRequest struct {
+	// Type of action, see list at https://docs.digitalocean.com/reference/api/api-reference/#operation/post_droplet_action
+	Type string `json:"type"`
+	// Size is used for the resize action type only
+	Size string `json:"size,omitempty"`
+	// Disk is used for the resize action type only
+	Disk bool `json:"disk,omitempty"`
+	// Image is used for the rebuild action only
+	Image string `json:""`
+}
+
 // DropletCreateRequest represents a request to create a Droplet.
 type DropletCreateRequest struct {
 	Name              string                `json:"name"`
@@ -247,6 +262,10 @@ type DropletMultiCreateRequest struct {
 	Tags              []string              `json:"tags"`
 	VPCUUID           string                `json:"vpc_uuid,omitempty"`
 	WithDropletAgent  *bool                 `json:"with_droplet_agent,omitempty"`
+}
+
+func (d DropletActionRequest) String() string {
+	return Stringify(d)
 }
 
 func (d DropletCreateRequest) String() string {
@@ -464,6 +483,33 @@ func (s *DropletsServiceOp) Kernels(ctx context.Context, dropletID int, opt *Lis
 	}
 
 	return root.Kernels, resp, err
+}
+
+// InitiateAction makes a request to initiate an action for a droplet.
+// More info on actions can be found here: https://docs.digitalocean.com/reference/api/api-reference/#operation/post_droplet_action
+func (s *DropletsServiceOp) InitiateAction(ctx context.Context, dropletID int, actionRequest *DropletActionRequest) (*Action, *Response, error) {
+	if dropletID < 1 {
+		return nil, nil, NewArgError("dropletID", "cannot be less than 1")
+	}
+
+	if actionRequest == nil {
+		return nil, nil, NewArgError("actionRequest", "cannot be nil")
+	}
+
+	path := fmt.Sprintf("%s/%d/actions", dropletBasePath, dropletID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, actionRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(actionRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Event, resp, nil
 }
 
 // Actions lists the actions for a Droplet.

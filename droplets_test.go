@@ -611,6 +611,32 @@ func TestDroplets_Backups(t *testing.T) {
 	}
 }
 
+func TestDroplets_InitiateAction(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345/actions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"action": {"id": 12345,"status": "completed","type": "resize"}}`)
+	})
+
+	req := &DropletActionRequest{
+		Type: "resize",
+		Size: "s-1vcpu-1gb",
+		Disk: true,
+	}
+
+	action, _, err := client.Droplets.InitiateAction(ctx, 12345, req)
+	if err != nil {
+		t.Errorf("Droplet.InitiateAction returned error: %v", err)
+	}
+
+	expected := &Action{ID: 12345, Status: "completed", Type: "resize"}
+	if !reflect.DeepEqual(action, expected) {
+		t.Errorf("Droplets.InitiateAction\n got=%#v\nwant=%#v", action, expected)
+	}
+}
+
 func TestDroplets_Actions(t *testing.T) {
 	setup()
 	defer teardown()
