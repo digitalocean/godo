@@ -229,13 +229,10 @@ const (
 // AppLogDestinationSpec struct for AppLogDestinationSpec
 type AppLogDestinationSpec struct {
 	// Name of the log destination.
-	Name        string                           `json:"name,omitempty"`
-	Papertrail  *AppLogDestinationSpecPapertrail `json:"papertrail,omitempty"`
-	Datadog     *AppLogDestinationSpecDataDog    `json:"datadog,omitempty"`
-	Logtail     *AppLogDestinationSpecLogtail    `json:"logtail,omitempty"`
-	Endpoint    string                           `json:"endpoint,omitempty"`
-	TlsInsecure bool                             `json:"tls_insecure,omitempty"`
-	Headers     []*AppLogDestinationSpecHeader   `json:"headers,omitempty"`
+	Name       string                           `json:"name,omitempty"`
+	Papertrail *AppLogDestinationSpecPapertrail `json:"papertrail,omitempty"`
+	Datadog    *AppLogDestinationSpecDataDog    `json:"datadog,omitempty"`
+	Logtail    *AppLogDestinationSpecLogtail    `json:"logtail,omitempty"`
 }
 
 // AppLogDestinationSpecDataDog DataDog configuration.
@@ -244,14 +241,6 @@ type AppLogDestinationSpecDataDog struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	// Datadog API key.
 	ApiKey string `json:"api_key"`
-}
-
-// AppLogDestinationSpecHeader struct for AppLogDestinationSpecHeader
-type AppLogDestinationSpecHeader struct {
-	// The name
-	Key string `json:"key"`
-	// The header value.
-	Value string `json:"value,omitempty"`
 }
 
 // AppLogDestinationSpecLogtail Logtail configuration.
