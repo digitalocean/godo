@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.71.0] - 2021-11-09
+
+- #498 - @bojand - apps: update spec to include log destinations
+
 ## [v1.70.0] - 2021-11-01
 
 - #491 - @andrewsomething - Add support for retrieving Droplet monitoring metrics.
