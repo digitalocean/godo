@@ -259,7 +259,7 @@ type AppLogDestinationSpecPapertrail struct {
 type AppRouteSpec struct {
 	// An HTTP path prefix. Paths must start with / and must be unique across all components within an app.
 	Path string `json:"path,omitempty"`
-	// An Optional flag to preserve the path that is forwarded to the backend service. By default, the HTTP request path will be trimmed from the left when forwarded to the component. By default a component with path=/api, will have requests to \"/api/list\" trimmed to \"/list\"; if this value is true the path will remain \"/api/list\".
+	//  Boolean. An optional flag to preserve the path that is forwarded to the backend service. By default, the HTTP request path will be trimmed from the left when forwarded to the component. For example, a component with `path=/api` will have requests to `/api/list` trimmed to `/list`. If this value is `true`, the path will remain `/api/list`.
 	PreservePathPrefix bool `json:"preserve_path_prefix,omitempty"`
 }
 
