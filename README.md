@@ -122,7 +122,7 @@ Some endpoints offer token based pagination. For example, to fetch all Registry 
 
 ```go
 func ListRepositoriesV2(ctx context.Context, client *godo.Client, registryName string) ([]*godo.RepositoryV2, error) {
-    // create a list to hold our droplets
+    // create a list to hold our registries
     list := []*godo.RepositoryV2{}
 
     // create options. initially, these will be blank
@@ -133,7 +133,7 @@ func ListRepositoriesV2(ctx context.Context, client *godo.Client, registryName s
             return nil, err
         }
 
-        // append the current page's droplets to our list
+        // append the current page's registries to our list
         list = append(list, repositories...)
 
         // if we are at the last page, break out the for loop
