@@ -352,13 +352,6 @@ func (svc *RegistryServiceOp) ListRepositoriesV2(ctx context.Context, registry s
 		return nil, resp, err
 	}
 
-	if l := root.Links; l != nil {
-		resp.Links = l
-	}
-	if m := root.Meta; m != nil {
-		resp.Meta = m
-	}
-
 	return root.Repositories, resp, nil
 }
 
@@ -421,13 +414,6 @@ func (svc *RegistryServiceOp) ListRepositoryManifests(ctx context.Context, regis
 	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
-	}
-
-	if l := root.Links; l != nil {
-		resp.Links = l
-	}
-	if m := root.Meta; m != nil {
-		resp.Meta = m
 	}
 
 	return root.Manifests, resp, nil
