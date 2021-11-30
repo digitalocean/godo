@@ -64,7 +64,7 @@ func (p *Pages) nextPageToken() (string, error) {
 	if p == nil || p.Next == "" {
 		return "", nil
 	}
-	token, err := pageTokenForURL(p.Next)
+	token, err := pageTokenFromURL(p.Next)
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +75,7 @@ func (p *Pages) prevPageToken() (string, error) {
 	if p == nil || p.Prev == "" {
 		return "", nil
 	}
-	token, err := pageTokenForURL(p.Prev)
+	token, err := pageTokenFromURL(p.Prev)
 	if err != nil {
 		return "", err
 	}
@@ -109,7 +109,7 @@ func pageForURL(urlText string) (int, error) {
 	return page, nil
 }
 
-func pageTokenForURL(urlText string) (string, error) {
+func pageTokenFromURL(urlText string) (string, error) {
 	u, err := url.ParseRequestURI(urlText)
 	if err != nil {
 		return "", err
