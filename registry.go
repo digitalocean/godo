@@ -352,6 +352,9 @@ func (svc *RegistryServiceOp) ListRepositoriesV2(ctx context.Context, registry s
 		return nil, resp, err
 	}
 
+	resp.Links = root.Links
+	resp.Meta = root.Meta
+
 	return root.Repositories, resp, nil
 }
 
@@ -415,6 +418,9 @@ func (svc *RegistryServiceOp) ListRepositoryManifests(ctx context.Context, regis
 	if err != nil {
 		return nil, resp, err
 	}
+
+	resp.Links = root.Links
+	resp.Meta = root.Meta
 
 	return root.Manifests, resp, nil
 }
