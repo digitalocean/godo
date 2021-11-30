@@ -611,6 +611,32 @@ func checkCurrentPage(t *testing.T, resp *Response, expectedPage int) {
 	}
 }
 
+func checkNextPageToken(t *testing.T, resp *Response, expectedNextPageToken string) {
+	t.Helper()
+	links := resp.Links
+	pageToken, err := links.NextPageToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if pageToken != expectedNextPageToken {
+		t.Fatalf("expected next page token to be '%s', was '%s'", expectedNextPageToken, pageToken)
+	}
+}
+
+func checkPreviousPageToken(t *testing.T, resp *Response, expectedPreviousPageToken string) {
+	t.Helper()
+	links := resp.Links
+	pageToken, err := links.PrevPageToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if pageToken != expectedPreviousPageToken {
+		t.Fatalf("expected previous page token to be '%s', was '%s'", expectedPreviousPageToken, pageToken)
+	}
+}
+
 func TestDo_completion_callback(t *testing.T) {
 	setup()
 	defer teardown()
