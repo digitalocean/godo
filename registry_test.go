@@ -265,6 +265,109 @@ func TestRepository_List(t *testing.T) {
 	assert.Equal(t, wantRespMeta, gotRespMeta)
 }
 
+func TestRepository_ListV2(t *testing.T) {
+	setup()
+	defer teardown()
+
+	wantRepositories := []*RepositoryV2{
+		{
+			RegistryName:  testRegistry,
+			Name:          testRepository,
+			TagCount:      2,
+			ManifestCount: 1,
+			LatestManifest: &RepositoryManifest{
+				Digest:              "sha256:abc",
+				RegistryName:        testRegistry,
+				Repository:          testRepository,
+				CompressedSizeBytes: testCompressedSize,
+				SizeBytes:           testSize,
+				UpdatedAt:           testTime,
+				Tags:                []string{"v1", "v2"},
+				Blobs: []*Blob{
+					{
+						Digest:              "sha256:blob1",
+						CompressedSizeBytes: 100,
+					},
+					{
+						Digest:              "sha256:blob2",
+						CompressedSizeBytes: 200,
+					},
+				},
+			},
+		},
+	}
+	baseLinkPage := fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositoriesV2", testRegistry)
+	getResponseJSON := `{
+	"repositories": [
+		{
+			"registry_name": "` + testRegistry + `",
+			"name": "` + testRepository + `",
+			"tag_count": 2,
+			"manifest_count": 1,
+			"latest_manifest": {
+				"digest": "sha256:abc",
+				"registry_name": "` + testRegistry + `",
+				"repository": "` + testRepository + `",
+				"compressed_size_bytes": ` + fmt.Sprintf("%d", testCompressedSize) + `,
+				"size_bytes": ` + fmt.Sprintf("%d", testSize) + `,
+				"updated_at": "` + testTimeString + `",
+				"tags": [
+					"v1",
+					"v2"
+				],
+				"blobs": [
+					{
+						"digest": "sha256:blob1",
+						"compressed_size_bytes": 100
+					},
+					{
+						"digest": "sha256:blob2",
+						"compressed_size_bytes": 200
+					}
+				]
+			}
+		}
+	],
+	"links": {
+	    "pages": {
+			"first":    "` + baseLinkPage + `?page=1&page_size=1",
+			"prev":     "` + baseLinkPage + `?page=2&page_size=1&page_token=aaa",
+			"next":     "` + baseLinkPage + `?page=4&page_size=1&page_token=ccc",
+			"last":     "` + baseLinkPage + `?page=5&page_size=1"
+		}
+	},
+	"meta": {
+	    "total": 5
+	}
+}`
+
+	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositoriesV2", testRegistry), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, map[string]string{"page": "3", "per_page": "1", "page_token": "bbb"})
+		fmt.Fprint(w, getResponseJSON)
+	})
+	got, response, err := client.Registry.ListRepositoriesV2(ctx, testRegistry, &TokenListOptions{Page: 3, PerPage: 1, Token: "bbb"})
+	require.NoError(t, err)
+	require.Equal(t, wantRepositories, got)
+
+	gotRespLinks := response.Links
+	wantRespLinks := &Links{
+		Pages: &Pages{
+			First: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositoriesV2?page=1&page_size=1", testRegistry),
+			Prev:  fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositoriesV2?page=2&page_size=1&page_token=aaa", testRegistry),
+			Next:  fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositoriesV2?page=4&page_size=1&page_token=ccc", testRegistry),
+			Last:  fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositoriesV2?page=5&page_size=1", testRegistry),
+		},
+	}
+	assert.Equal(t, wantRespLinks, gotRespLinks)
+
+	gotRespMeta := response.Meta
+	wantRespMeta := &Meta{
+		Total: 5,
+	}
+	assert.Equal(t, wantRespMeta, gotRespMeta)
+}
+
 func TestRepository_ListTags(t *testing.T) {
 	setup()
 	defer teardown()
@@ -338,6 +441,94 @@ func TestRegistry_DeleteTag(t *testing.T) {
 
 	_, err := client.Registry.DeleteTag(ctx, testRegistry, testRepository, testTag)
 	require.NoError(t, err)
+}
+
+func TestRegistry_ListManifests(t *testing.T) {
+	setup()
+	defer teardown()
+
+	wantTags := []*RepositoryManifest{
+		{
+			RegistryName:        testRegistry,
+			Repository:          testRepository,
+			Digest:              testDigest,
+			CompressedSizeBytes: testCompressedSize,
+			SizeBytes:           testSize,
+			UpdatedAt:           testTime,
+			Tags:                []string{"latest", "v1", "v2"},
+			Blobs: []*Blob{
+				{
+					Digest:              "sha256:blob1",
+					CompressedSizeBytes: 998,
+				},
+				{
+					Digest:              "sha256:blob2",
+					CompressedSizeBytes: 1,
+				},
+			},
+		},
+	}
+	getResponseJSON := `{
+	"manifests": [
+		{
+			"registry_name": "` + testRegistry + `",
+			"repository": "` + testRepository + `",
+			"digest": "` + testDigest + `",
+			"compressed_size_bytes": ` + fmt.Sprintf("%d", testCompressedSize) + `,
+			"size_bytes": ` + fmt.Sprintf("%d", testSize) + `,
+			"updated_at": "` + testTimeString + `",
+			"tags": [ "latest", "v1", "v2" ],
+			"blobs": [
+				{
+					"digest": "sha256:blob1",
+					"compressed_size_bytes": 998
+				}, 
+				{
+
+					"digest": "sha256:blob2",
+					"compressed_size_bytes": 1
+				}
+			]
+		}
+	],
+	"links": {
+	    "pages": {
+			"first": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/repositories/` + testEncodedRepository + `/digests?page=1&page_size=1",
+			"prev": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/repositories/` + testEncodedRepository + `/digests?page=2&page_size=1",
+			"next": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/repositories/` + testEncodedRepository + `/digests?page=4&page_size=1",
+			"last": "https://api.digitalocean.com/v2/registry/` + testRegistry + `/repositories/` + testEncodedRepository + `/digests?page=5&page_size=1"
+		}
+	},
+	"meta": {
+	    "total": 5
+	}
+}`
+
+	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/digests", testRegistry, testRepository), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, map[string]string{"page": "3", "per_page": "1"})
+		fmt.Fprint(w, getResponseJSON)
+	})
+	got, response, err := client.Registry.ListRepositoryManifests(ctx, testRegistry, testRepository, &ListOptions{Page: 3, PerPage: 1})
+	require.NoError(t, err)
+	require.Equal(t, wantTags, got)
+
+	gotRespLinks := response.Links
+	wantRespLinks := &Links{
+		Pages: &Pages{
+			First: fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositories/%s/digests?page=1&page_size=1", testRegistry, testEncodedRepository),
+			Prev:  fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositories/%s/digests?page=2&page_size=1", testRegistry, testEncodedRepository),
+			Next:  fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositories/%s/digests?page=4&page_size=1", testRegistry, testEncodedRepository),
+			Last:  fmt.Sprintf("https://api.digitalocean.com/v2/registry/%s/repositories/%s/digests?page=5&page_size=1", testRegistry, testEncodedRepository),
+		},
+	}
+	assert.Equal(t, wantRespLinks, gotRespLinks)
+
+	gotRespMeta := response.Meta
+	wantRespMeta := &Meta{
+		Total: 5,
+	}
+	assert.Equal(t, wantRespMeta, gotRespMeta)
 }
 
 func TestRegistry_DeleteManifest(t *testing.T) {
