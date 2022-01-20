@@ -75,6 +75,13 @@ var (
 			DBName:      "app",
 			DBUser:      "appuser",
 		}},
+		Functions: []*AppFunctionsSpec{{
+			Name: "functions-name",
+			GitHub: &GitHubSourceSpec{
+				Repo:   "git@githost.com/owner/functions.git",
+				Branch: "branch",
+			},
+		}},
 		Domains: []*AppDomainSpec{
 			{
 				Domain: "example.com",
@@ -110,6 +117,10 @@ var (
 		Jobs: []*DeploymentJob{{
 			Name:             "job-name",
 			SourceCommitHash: "job-hash",
+		}},
+		Functions: []*DeploymentFunctions{{
+			Name:             "functions-name",
+			SourceCommitHash: "functions-hash",
 		}},
 		CreatedAt:          time.Unix(1595959200, 0).UTC(),
 		UpdatedAt:          time.Unix(1595959200, 0).UTC(),
