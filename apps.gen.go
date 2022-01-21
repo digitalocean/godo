@@ -185,7 +185,7 @@ type AppDomainSpec struct {
 	Zone        string `json:"zone,omitempty"`
 	Certificate string `json:"certificate,omitempty"`
 	// Optional. The minimum version of TLS a client application can use to access resources for the domain.  Must be one of the following values wrapped within quotations: `\"1.0\"`, `\"1.1\"`, `\"1.2\"`, or `\"1.3\"`.
-	MinimumTlsVersion string `json:"minimum_tls_version,omitempty"`
+	MinimumTLSVersion string `json:"minimum_tls_version,omitempty"`
 }
 
 // AppDomainSpecType the model 'AppDomainSpecType'
@@ -268,7 +268,7 @@ type AppLogDestinationSpec struct {
 	Datadog     *AppLogDestinationSpecDataDog    `json:"datadog,omitempty"`
 	Logtail     *AppLogDestinationSpecLogtail    `json:"logtail,omitempty"`
 	Endpoint    string                           `json:"endpoint,omitempty"`
-	TlsInsecure bool                             `json:"tls_insecure,omitempty"`
+	TLSInsecure bool                             `json:"tls_insecure,omitempty"`
 	Headers     []*AppLogDestinationSpecHeader   `json:"headers,omitempty"`
 }
 
