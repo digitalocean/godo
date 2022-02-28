@@ -3,11 +3,11 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var lbListJSONResponse = `
@@ -453,6 +453,125 @@ func TestLoadBalancers_Create(t *testing.T) {
 	assert.Equal(t, expected, loadBalancer)
 }
 
+func TestLoadBalancers_CreateValidateSucceeds(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &LoadBalancerRequest{
+		Name:      "example-lb-01",
+		Algorithm: "round_robin",
+		Region:    "nyc1",
+		ForwardingRules: []ForwardingRule{
+			{
+				EntryProtocol:  "https",
+				EntryPort:      443,
+				TargetProtocol: "http",
+				TargetPort:     80,
+				CertificateID:  "a-b-c",
+			},
+		},
+		HealthCheck: &HealthCheck{
+			Protocol:               "http",
+			Port:                   80,
+			Path:                   "/index.html",
+			CheckIntervalSeconds:   10,
+			ResponseTimeoutSeconds: 5,
+			UnhealthyThreshold:     3,
+			HealthyThreshold:       5,
+		},
+		StickySessions: &StickySessions{
+			Type:             "cookies",
+			CookieName:       "DO-LB",
+			CookieTtlSeconds: 5,
+		},
+		Tag:                 "my-tag",
+		Tags:                []string{"my-tag"},
+		DropletIDs:          []int{2, 21},
+		RedirectHttpToHttps: true,
+		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
+		ValidateOnly:        true,
+	}
+
+	path := "/v2/load_balancers"
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		v := new(LoadBalancerRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w.WriteHeader(http.StatusAccepted)
+
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, createRequest, v)
+
+		fmt.Fprint(w, lbCreateJSONResponse)
+	})
+
+	loadBalancer, resp, err := client.LoadBalancers.Create(ctx, createRequest)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	assert.Nil(t, nil, loadBalancer)
+}
+
+func TestLoadBalancers_CreateValidateFails(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &LoadBalancerRequest{
+		Name:      "example-lb-01",
+		Algorithm: "round_robin",
+		Region:    "nyc1",
+		ForwardingRules: []ForwardingRule{
+			{
+				EntryProtocol:  "https",
+				EntryPort:      443,
+				TargetProtocol: "http",
+				TargetPort:     80,
+				CertificateID:  "a-b-c",
+			},
+		},
+		HealthCheck: &HealthCheck{
+			Protocol:               "http",
+			Port:                   80,
+			Path:                   "/index.html",
+			CheckIntervalSeconds:   10,
+			ResponseTimeoutSeconds: 5,
+			UnhealthyThreshold:     3,
+			HealthyThreshold:       5,
+		},
+		StickySessions: &StickySessions{
+			Type:             "cookies",
+			CookieName:       "DO-LB",
+			CookieTtlSeconds: 5,
+		},
+		Tag:                 "my-tag",
+		Tags:                []string{"my-tag"},
+		DropletIDs:          []int{2, 21},
+		RedirectHttpToHttps: true,
+		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
+		ValidateOnly:        true,
+	}
+
+	path := "/v2/load_balancers"
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		v := new(LoadBalancerRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, createRequest, v)
+	})
+
+	loadBalancer, resp, err := client.LoadBalancers.Create(ctx, createRequest)
+	require.Error(t, err)
+	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+	assert.Nil(t, nil, loadBalancer)
+}
+
 func TestLoadBalancers_Update(t *testing.T) {
 	setup()
 	defer teardown()
@@ -830,6 +949,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
+		ValidateOnly:           true,
 	}
 	lb.DropletIDs = make([]int, 1, 2)
 	lb.DropletIDs[0] = 12345
@@ -871,6 +991,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
+		ValidateOnly:           true,
 	}
 
 	r := lb.AsRequest()
