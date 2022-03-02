@@ -15,6 +15,7 @@ import (
 
 const (
 	testRegistry          = "test-registry"
+	testRegion            = "r1"
 	testRepository        = "test/repository"
 	testEncodedRepository = "test%2Frepository"
 	testTag               = "test-tag"
@@ -52,11 +53,13 @@ func TestRegistry_Create(t *testing.T) {
 		StorageUsageBytes:          0,
 		StorageUsageBytesUpdatedAt: testTime,
 		CreatedAt:                  testTime,
+		Region:                     testRegion,
 	}
 
 	createRequest := &RegistryCreateRequest{
 		Name:                 want.Name,
 		SubscriptionTierSlug: "basic",
+		Region:               testRegion,
 	}
 
 	createResponseJSON := `
@@ -65,7 +68,8 @@ func TestRegistry_Create(t *testing.T) {
 		"name": "` + testRegistry + `",
 		"storage_usage_bytes": 0,
         "storage_usage_bytes_updated_at": "` + testTimeString + `",
-        "created_at": "` + testTimeString + `"
+        "created_at": "` + testTimeString + `",
+		"region": "` + testRegion + `"
 	},
     "subscription": {
       "tier": {
@@ -108,6 +112,7 @@ func TestRegistry_Get(t *testing.T) {
 		StorageUsageBytes:          0,
 		StorageUsageBytesUpdatedAt: testTime,
 		CreatedAt:                  testTime,
+		Region:                     testRegion,
 	}
 
 	getResponseJSON := `
@@ -116,7 +121,8 @@ func TestRegistry_Get(t *testing.T) {
 		"name": "` + testRegistry + `",
 		"storage_usage_bytes": 0,
         "storage_usage_bytes_updated_at": "` + testTimeString + `",
-        "created_at": "` + testTimeString + `"
+        "created_at": "` + testTimeString + `",
+		"region": "` + testRegion + `"
 	}
 }`
 
@@ -730,6 +736,10 @@ func TestRegistry_GetOptions(t *testing.T) {
 	responseJSON := `
 {
   "options": {
+	"available_regions": [
+		"r1",
+		"r2"
+	],
     "subscription_tiers": [
       {
         "name": "Starter",
@@ -772,6 +782,10 @@ func TestRegistry_GetOptions(t *testing.T) {
   }
 }`
 	want := &RegistryOptions{
+		AvailableRegions: []string{
+			"r1",
+			"r2",
+		},
 		SubscriptionTiers: []*RegistrySubscriptionTier{
 			{
 				Name:                   "Starter",
