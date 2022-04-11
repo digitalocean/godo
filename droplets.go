@@ -232,6 +232,7 @@ type DropletCreateRequest struct {
 	WithDropletAgent        *bool                 `json:"with_droplet_agent,omitempty"`
 	DisablePublicNetworking bool                  `json:"disable_public_networking,omitempty"`
 	WithFloatingIPAddress   bool                  `json:"with_floating_ip_address,omitempty"`
+	FloatingIPAddress       string                `json:"floating_ip_address,omitempty"`
 }
 
 // DropletMultiCreateRequest is a request to create multiple Droplets.
