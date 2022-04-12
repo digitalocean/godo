@@ -392,9 +392,8 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 			{ID: "hello-im-another-volume"},
 			{Name: "should be ignored due to Name", ID: "aaa-111-bbb-222-ccc"},
 		},
-		Tags:                    []string{"one", "two"},
-		VPCUUID:                 "880b7f98-f062-404d-b33c-458d545696f6",
-		DisablePublicNetworking: true,
+		Tags:    []string{"one", "two"},
+		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
@@ -412,9 +411,8 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 				map[string]interface{}{"id": "hello-im-another-volume"},
 				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
 			},
-			"tags":                      []interface{}{"one", "two"},
-			"vpc_uuid":                  "880b7f98-f062-404d-b33c-458d545696f6",
-			"disable_public_networking": true,
+			"tags":     []interface{}{"one", "two"},
+			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
 		}
 		jsonBlob := `
 {
@@ -454,38 +452,6 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 
 	if id := droplet.ID; id != 1 {
 		t.Errorf("expected id '%d', received '%d'", 1, id)
-	}
-}
-
-func TestDroplet_PrivateNetworkingJsonMarshal(t *testing.T) {
-	tests := []struct {
-		in   *DropletCreateRequest
-		want string
-	}{
-		{
-			in:   &DropletCreateRequest{Name: "foo"},
-			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null}`,
-		},
-		{
-			in:   &DropletCreateRequest{Name: "foo", DisablePublicNetworking: false},
-			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null}`,
-		},
-		{
-			in:   &DropletCreateRequest{Name: "foo", DisablePublicNetworking: true},
-			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null,"disable_public_networking":true}`,
-		},
-	}
-
-	for _, tt := range tests {
-		got, err := json.Marshal(tt.in)
-
-		if err != nil {
-			t.Fatalf("error: %v", err)
-		}
-
-		if !reflect.DeepEqual(tt.want, string(got)) {
-			t.Errorf("\nexpected: %v\n,    got: %v", tt.want, string(got))
-		}
 	}
 }
 
