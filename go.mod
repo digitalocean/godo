@@ -1,14 +1,21 @@
 module github.com/digitalocean/godo
 
-go 1.16
+go 1.18
 
 require (
-	github.com/golang/protobuf v1.3.5 // indirect
-	github.com/google/go-querystring v1.0.0
+	github.com/google/go-querystring v1.1.0
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/net v0.0.0-20210520170846-37e1c6afe023 // indirect
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	google.golang.org/appengine v1.6.5 // indirect
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/protobuf v1.28.0 // indirect
+	gopkg.in/yaml.v2 v2.2.2 // indirect
 )
 
 replace github.com/stretchr/objx => github.com/stretchr/objx v0.2.0
