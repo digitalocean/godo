@@ -1,5 +1,12 @@
 # Change Log
 
+## [v1.79.0] - 2022-04-29
+
+- #530 - @anitgandhi - monitoring: alerts for Load Balancers TLS conns/s utilization
+- #529 - @ChiefMateStarbuck - Test against Go 1.18
+- #528 - @senorprogrammer - Remove DisablePublicNetworking option from the Create path
+- #527 - @senorprogrammer - Remove the WithFloatingIPAddress create option
+
 ## [v1.78.0] - 2022-03-31
 
 - #522 - @jcodybaker - app platform: add support for features field
