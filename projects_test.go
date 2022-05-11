@@ -335,6 +335,13 @@ func TestProjects_ListResources(t *testing.T) {
 				Self: "http://example.com/v2/floating_ips/1.2.3.4",
 			},
 		},
+		{
+			URN:        "do:reservedip:1.2.3.4",
+			AssignedAt: "2018-09-27 00:00:00",
+			Links: &ProjectResourceLinks{
+				Self: "http://example.com/v2/reserved_ips/1.2.3.4",
+			},
+		},
 	}
 
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
@@ -378,6 +385,13 @@ func TestProjects_ListResourcesWithMultiplePages(t *testing.T) {
 				"links": {
 					"self": "http://example.com/v2/floating_ips/1.2.3.4"
 				}
+			},
+			{
+				"urn": "do:reservedip:1.2.3.4",
+				"assigned_at": "2018-09-27 00:00:00",
+				"links": {
+					"self": "http://example.com/v2/reserved_ips/1.2.3.4"
+				}
 			}
 		],
 		"links": {
@@ -420,6 +434,13 @@ func TestProjects_ListResourcesWithPageNumber(t *testing.T) {
 				"links": {
 					"self": "http://example.com/v2/floating_ips/1.2.3.4"
 				}
+			},
+			{
+				"urn": "do:reservedip:1.2.3.4",
+				"assigned_at": "2018-09-27 00:00:00",
+				"links": {
+					"self": "http://example.com/v2/reserved_ips/1.2.3.4"
+				}
 			}
 		],
 		"links": {
@@ -452,6 +473,7 @@ func TestProjects_AssignFleetResourcesWithTypes(t *testing.T) {
 	assignableResources := []interface{}{
 		&Droplet{ID: 1234},
 		&FloatingIP{IP: "1.2.3.4"},
+		&ReservedIP{IP: "1.2.3.4"},
 	}
 
 	mockResp := `
@@ -470,6 +492,13 @@ func TestProjects_AssignFleetResourcesWithTypes(t *testing.T) {
 				"links": {
 					"self": "http://example.com/v2/floating_ips/1.2.3.4"
 				}
+			},
+			{
+				"urn": "do:reservedip:1.2.3.4",
+				"assigned_at": "2018-09-27 00:00:00",
+				"links": {
+					"self": "http://example.com/v2/reserved_ips/1.2.3.4"
+				}
 			}
 		]
 	}`
@@ -482,7 +511,7 @@ func TestProjects_AssignFleetResourcesWithTypes(t *testing.T) {
 		}
 
 		req := strings.TrimSuffix(string(reqBytes), "\n")
-		expectedReq := `{"resources":["do:droplet:1234","do:floatingip:1.2.3.4"]}`
+		expectedReq := `{"resources":["do:droplet:1234","do:floatingip:1.2.3.4","do:reservedip:1.2.3.4"]}`
 		if req != expectedReq {
 			t.Errorf("projects assign req didn't match up:\n expected %+v\n got %+v\n", expectedReq, req)
 		}
@@ -503,6 +532,7 @@ func TestProjects_AssignFleetResourcesWithStrings(t *testing.T) {
 	assignableResources := []interface{}{
 		"do:droplet:1234",
 		"do:floatingip:1.2.3.4",
+		"do:reservedip:1.2.3.4",
 	}
 
 	mockResp := `
@@ -521,6 +551,13 @@ func TestProjects_AssignFleetResourcesWithStrings(t *testing.T) {
 				"links": {
 					"self": "http://example.com/v2/floating_ips/1.2.3.4"
 				}
+			},
+			{
+				"urn": "do:reservedip:1.2.3.4",
+				"assigned_at": "2018-09-27 00:00:00",
+				"links": {
+					"self": "http://example.com/v2/reserved_ips/1.2.3.4"
+				}
 			}
 		]
 	}`
@@ -533,7 +570,7 @@ func TestProjects_AssignFleetResourcesWithStrings(t *testing.T) {
 		}
 
 		req := strings.TrimSuffix(string(reqBytes), "\n")
-		expectedReq := `{"resources":["do:droplet:1234","do:floatingip:1.2.3.4"]}`
+		expectedReq := `{"resources":["do:droplet:1234","do:floatingip:1.2.3.4","do:reservedip:1.2.3.4"]}`
 		if req != expectedReq {
 			t.Errorf("projects assign req didn't match up:\n expected %+v\n got %+v\n", expectedReq, req)
 		}
@@ -554,6 +591,7 @@ func TestProjects_AssignFleetResourcesWithStringsAndTypes(t *testing.T) {
 	assignableResources := []interface{}{
 		"do:droplet:1234",
 		&FloatingIP{IP: "1.2.3.4"},
+		&ReservedIP{IP: "1.2.3.4"},
 	}
 
 	mockResp := `
@@ -572,6 +610,13 @@ func TestProjects_AssignFleetResourcesWithStringsAndTypes(t *testing.T) {
 				"links": {
 					"self": "http://example.com/v2/floating_ips/1.2.3.4"
 				}
+			},
+			{
+				"urn": "do:reservedip:1.2.3.4",
+				"assigned_at": "2018-09-27 00:00:00",
+				"links": {
+					"self": "http://example.com/v2/reserved_ips/1.2.3.4"
+				}
 			}
 		]
 	}`
@@ -584,7 +629,7 @@ func TestProjects_AssignFleetResourcesWithStringsAndTypes(t *testing.T) {
 		}
 
 		req := strings.TrimSuffix(string(reqBytes), "\n")
-		expectedReq := `{"resources":["do:droplet:1234","do:floatingip:1.2.3.4"]}`
+		expectedReq := `{"resources":["do:droplet:1234","do:floatingip:1.2.3.4","do:reservedip:1.2.3.4"]}`
 		if req != expectedReq {
 			t.Errorf("projects assign req didn't match up:\n expected %+v\n got %+v\n", expectedReq, req)
 		}
