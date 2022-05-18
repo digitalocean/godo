@@ -135,7 +135,7 @@ const (
 	AppAlertSpecRule_FunctionsErrorRatePerMinute AppAlertSpecRule = "FUNCTIONS_ERROR_RATE_PER_MINUTE"
 	AppAlertSpecRule_FunctionsAverageWaitTimeMs  AppAlertSpecRule = "FUNCTIONS_AVERAGE_WAIT_TIME_MS"
 	AppAlertSpecRule_FunctionsErrorCount         AppAlertSpecRule = "FUNCTIONS_ERROR_COUNT"
-	AppAlertSpecRule_FunctionsGbRatePerSecond    AppAlertSpecRule = "FUNCTIONS_GB_RATE_PER_SECOND"
+	AppAlertSpecRule_FunctionsGBRatePerSecond    AppAlertSpecRule = "FUNCTIONS_GB_RATE_PER_SECOND"
 )
 
 // AppAlertSpecWindow the model 'AppAlertSpecWindow'
