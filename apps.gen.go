@@ -77,23 +77,23 @@ type AppAlertSlackWebhook struct {
 
 // App An application's configuration and status.
 type App struct {
-	ID                      string          `json:"id,omitempty"`
-	OwnerUUID               string          `json:"owner_uuid,omitempty"`
-	Spec                    *AppSpec        `json:"spec"`
-	LastDeploymentActiveAt  time.Time       `json:"last_deployment_active_at,omitempty"`
-	DefaultIngress          string          `json:"default_ingress,omitempty"`
-	CreatedAt               time.Time       `json:"created_at,omitempty"`
-	UpdatedAt               time.Time       `json:"updated_at,omitempty"`
-	ActiveDeployment        *Deployment     `json:"active_deployment,omitempty"`
-	InProgressDeployment    *Deployment     `json:"in_progress_deployment,omitempty"`
-	LastDeploymentCreatedAt time.Time       `json:"last_deployment_created_at,omitempty"`
-	LiveURL                 string          `json:"live_url,omitempty"`
-	Region                  *AppRegion      `json:"region,omitempty"`
-	TierSlug                string          `json:"tier_slug,omitempty"`
-	LiveURLBase             string          `json:"live_url_base,omitempty"`
-	LiveDomain              string          `json:"live_domain,omitempty"`
-	Domains                 []*AppDomain    `json:"domains,omitempty"`
-	PinnedDeployment        *Deployment     `json:"pinned_deployment,omitempty"`
+	ID                      string       `json:"id,omitempty"`
+	OwnerUUID               string       `json:"owner_uuid,omitempty"`
+	Spec                    *AppSpec     `json:"spec"`
+	LastDeploymentActiveAt  time.Time    `json:"last_deployment_active_at,omitempty"`
+	DefaultIngress          string       `json:"default_ingress,omitempty"`
+	CreatedAt               time.Time    `json:"created_at,omitempty"`
+	UpdatedAt               time.Time    `json:"updated_at,omitempty"`
+	ActiveDeployment        *Deployment  `json:"active_deployment,omitempty"`
+	InProgressDeployment    *Deployment  `json:"in_progress_deployment,omitempty"`
+	LastDeploymentCreatedAt time.Time    `json:"last_deployment_created_at,omitempty"`
+	LiveURL                 string       `json:"live_url,omitempty"`
+	Region                  *AppRegion   `json:"region,omitempty"`
+	TierSlug                string       `json:"tier_slug,omitempty"`
+	LiveURLBase             string       `json:"live_url_base,omitempty"`
+	LiveDomain              string       `json:"live_domain,omitempty"`
+	Domains                 []*AppDomain `json:"domains,omitempty"`
+	PinnedDeployment        *Deployment  `json:"pinned_deployment,omitempty"`
 }
 
 // AppAlertSpec Configuration of an alert for the app or a individual component.
