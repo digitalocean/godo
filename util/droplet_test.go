@@ -2,28 +2,38 @@ package util
 
 import (
 	"context"
-
-	"golang.org/x/oauth2"
+	"fmt"
+	"log"
 
 	"github.com/digitalocean/godo"
 )
 
 func ExampleWaitForActive() {
-	// build client
-	pat := "mytoken"
-	token := &oauth2.Token{AccessToken: pat}
-	t := oauth2.StaticTokenSource(token)
+	// Create a godo client.
+	client := godo.NewFromToken("dop_v1_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 
-	ctx := context.TODO()
-	oauthClient := oauth2.NewClient(ctx, t)
-	client := godo.NewClient(oauthClient)
-
-	// create your droplet and retrieve the create action uri
-	uri := "https://api.digitalocean.com/v2/actions/xxxxxxxx"
-
-	// block until the action is complete
-	err := WaitForActive(ctx, client, uri)
+	// Create a Droplet.
+	droplet, resp, err := client.Droplets.Create(context.Background(), &godo.DropletCreateRequest{
+		Name:   "test-droplet",
+		Region: "nyc3",
+		Size:   "s-1vcpu-1gb",
+		Image: godo.DropletCreateImage{
+			Slug: "ubuntu-20-04-x64",
+		},
+	})
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to create droplet: %v\n", err)
 	}
+
+	// Find the Droplet create action, then wait for it to complete.
+	for _, action := range resp.Links.Actions {
+		if action.Rel == "create" {
+			// Block until the action is complete.
+			if err := WaitForActive(context.Background(), client, action.HREF); err != nil {
+				log.Fatalf("error waiting for droplet to become active: %v\n", err)
+			}
+		}
+	}
+
+	fmt.Println(droplet.Name)
 }
