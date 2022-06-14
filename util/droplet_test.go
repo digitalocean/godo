@@ -9,7 +9,7 @@ import (
 )
 
 func ExampleWaitForActive() {
-	// Create a godo client.)
+	// Create a godo client.
 	client := godo.NewFromToken("dop_v1_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 
 	// Create a Droplet.
