@@ -58,6 +58,7 @@ var db = Database{
 	SizeSlug:           "db-s-2vcpu-4gb",
 	PrivateNetworkUUID: "da4e0206-d019-41d7-b51f-deadbeefbb8f",
 	Tags:               []string{"production", "staging"},
+	ProjectID:          "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2",
 }
 
 var dbJSON = `
@@ -106,7 +107,8 @@ var dbJSON = `
 	},
 	"size": "db-s-2vcpu-4gb",
 	"private_network_uuid": "da4e0206-d019-41d7-b51f-deadbeefbb8f",
-	"tags": ["production", "staging"]
+	"tags": ["production", "staging"],
+	"project_id": "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2"
 }
 `
 
@@ -203,6 +205,7 @@ func TestDatabases_Create(t *testing.T) {
 				SizeSlug:   "db-s-2vcpu-4gb",
 				NumNodes:   2,
 				Tags:       []string{"production", "staging"},
+				ProjectID:  "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
 			},
 			want: &Database{
 				ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
@@ -236,6 +239,7 @@ func TestDatabases_Create(t *testing.T) {
 				MaintenanceWindow: nil,
 				SizeSlug:          "db-s-2vcpu-4gb",
 				Tags:              []string{"production", "staging"},
+				ProjectID:         "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
 			},
 			body: `
 {
@@ -270,7 +274,8 @@ func TestDatabases_Create(t *testing.T) {
 		"created_at": "2019-02-26T06:12:39Z",
 		"maintenance_window": null,
 		"size": "db-s-2vcpu-4gb",
-		"tags": ["production", "staging"]
+		"tags": ["production", "staging"],
+        "project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8"
 	}
 }`,
 		},
