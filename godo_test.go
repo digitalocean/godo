@@ -90,6 +90,8 @@ func testClientServices(t *testing.T, c *Client) {
 		"Sizes",
 		"FloatingIPs",
 		"FloatingIPActions",
+		"ReservedIPs",
+		"ReservedIPActions",
 		"Tags",
 	}
 

@@ -144,10 +144,10 @@ func TestFloatingIPsActions_ListPageByNumber(t *testing.T) {
 		"actions":[{"status":"in-progress"}],
 		"links":{
 			"pages":{
-				"next":"http://example.com/v2/regions/?page=3",
-				"prev":"http://example.com/v2/regions/?page=1",
-				"last":"http://example.com/v2/regions/?page=3",
-				"first":"http://example.com/v2/regions/?page=1"
+				"next":"http://example.com/v2/floating_ips/?page=3",
+				"prev":"http://example.com/v2/floating_ips/?page=1",
+				"last":"http://example.com/v2/floating_ips/?page=3",
+				"first":"http://example.com/v2/floating_ips/?page=1"
 			}
 		}
 	}`
