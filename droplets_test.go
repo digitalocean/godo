@@ -84,6 +84,45 @@ func TestDroplets_ListDropletsByTag(t *testing.T) {
 	}
 }
 
+func TestDroplets_ListDropletsByName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
+		name := "testing"
+		if r.URL.Query().Get("name") != name {
+			t.Errorf("Droplets.ListByName request did not contain the 'name=%s' query parameter", name)
+		}
+
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+			"droplets": [
+				{
+					"id": 1,
+					"name": "testing"
+				},
+				{
+					"id": 2,
+					"name": "testing"
+				}
+			],
+			"meta": {
+				"total": 2
+			}
+		}`)
+	})
+
+	droplets, _, err := client.Droplets.ListByName(ctx, "testing", nil)
+	if err != nil {
+		t.Errorf("Droplets.ListByTag returned error: %v", err)
+	}
+
+	expected := []Droplet{{ID: 1, Name: "testing"}, {ID: 2, Name: "testing"}}
+	if !reflect.DeepEqual(droplets, expected) {
+		t.Errorf("Droplets.ListByTag returned droplets %+v, expected %+v", droplets, expected)
+	}
+}
+
 func TestDroplets_ListDropletsMultiplePages(t *testing.T) {
 	setup()
 	defer teardown()
