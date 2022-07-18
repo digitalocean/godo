@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -1573,4 +1574,266 @@ func TestDatabases_GetDatabaseUserWithMySQLSettings(t *testing.T) {
 	user, _, err := client.Databases.GetUser(ctx, dbID, userID)
 	require.NoError(t, err)
 	require.Equal(t, expectedUser, user)
+}
+
+func TestDatabases_GetConfigPostgres(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		postgresConfigJSON = `{
+  "config": {
+    "autovacuum_naptime": 60,
+    "autovacuum_vacuum_threshold": 50,
+    "autovacuum_analyze_threshold": 50,
+    "autovacuum_vacuum_scale_factor": 0.2,
+    "autovacuum_analyze_scale_factor": 0.2,
+    "autovacuum_vacuum_cost_delay": 20,
+    "autovacuum_vacuum_cost_limit": -1,
+    "bgwriter_flush_after": 512,
+    "bgwriter_lru_maxpages": 100,
+    "bgwriter_lru_multiplier": 2,
+    "idle_in_transaction_session_timeout": 0,
+    "jit": true,
+    "log_autovacuum_min_duration": -1,
+    "log_min_duration_statement": -1,
+    "max_prepared_transactions": 0,
+    "max_parallel_workers": 8,
+    "max_parallel_workers_per_gather": 2,
+    "temp_file_limit": -1,
+    "wal_sender_timeout": 60000,
+    "backup_hour": 18,
+    "backup_minute": 26
+  }
+}`
+
+		postgresConfig = PostgreSQLConfig{
+			AutovacuumNaptime:               intPtr(60),
+			AutovacuumVacuumThreshold:       intPtr(50),
+			AutovacuumAnalyzeThreshold:      intPtr(50),
+			AutovacuumVacuumScaleFactor:     float32Ptr(0.2),
+			AutovacuumAnalyzeScaleFactor:    float32Ptr(0.2),
+			AutovacuumVacuumCostDelay:       intPtr(20),
+			AutovacuumVacuumCostLimit:       intPtr(-1),
+			BGWriterFlushAfter:              intPtr(512),
+			BGWriterLRUMaxpages:             intPtr(100),
+			BGWriterLRUMultiplier:           float32Ptr(2),
+			IdleInTransactionSessionTimeout: intPtr(0),
+			JIT:                             boolPtr(true),
+			LogAutovacuumMinDuration:        intPtr(-1),
+			LogMinDurationStatement:         intPtr(-1),
+			MaxPreparedTransactions:         intPtr(0),
+			MaxParallelWorkers:              intPtr(8),
+			MaxParallelWorkersPerGather:     intPtr(2),
+			TempFileLimit:                   intPtr(-1),
+			WalSenderTimeout:                intPtr(60000),
+			BackupHour:                      intPtr(18),
+			BackupMinute:                    intPtr(26),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, postgresConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetPostgreSQLConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &postgresConfig, got)
+}
+
+func TestDatabases_UpdateConfigPostgres(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID           = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path           = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		postgresConfig = &PostgreSQLConfig{
+			AutovacuumNaptime:          intPtr(75),
+			AutovacuumVacuumThreshold:  intPtr(45),
+			AutovacuumAnalyzeThreshold: intPtr(45),
+			MaxPreparedTransactions:    intPtr(0),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databasePostgreSQLConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, postgresConfig)
+		assert.Equal(t, 0, *b.Config.MaxPreparedTransactions, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.MaxParallelWorkers, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdatePostgreSQLConfig(ctx, dbID, postgresConfig)
+	require.NoError(t, err)
+}
+
+func TestDatabases_GetConfigRedis(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		redisConfigJSON = `{
+  "config": {
+    "redis_maxmemory_policy": "allkeys-lru",
+    "redis_lfu_log_factor": 10,
+    "redis_lfu_decay_time": 1,
+    "redis_ssl": true,
+    "redis_timeout": 300,
+    "redis_notify_keyspace_events": "",
+    "redis_persistence": "off",
+    "redis_acl_channels_default": "allchannels"
+  }
+}`
+
+		redisConfig = RedisConfig{
+			RedisMaxmemoryPolicy:      strPtr("allkeys-lru"),
+			RedisLFULogFactor:         intPtr(10),
+			RedisLFUDecayTime:         intPtr(1),
+			RedisSSL:                  boolPtr(true),
+			RedisTimeout:              intPtr(300),
+			RedisNotifyKeyspaceEvents: strPtr(""),
+			RedisPersistence:          strPtr("off"),
+			RedisACLChannelsDefault:   strPtr("allchannels"),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, redisConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetRedisConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &redisConfig, got)
+}
+
+func TestDatabases_UpdateConfigRedis(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path        = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		redisConfig = &RedisConfig{
+			RedisMaxmemoryPolicy:      strPtr("allkeys-lru"),
+			RedisLFULogFactor:         intPtr(10),
+			RedisNotifyKeyspaceEvents: strPtr(""),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseRedisConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, redisConfig)
+		assert.Equal(t, "", *b.Config.RedisNotifyKeyspaceEvents, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.RedisPersistence, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateRedisConfig(ctx, dbID, redisConfig)
+	require.NoError(t, err)
+}
+
+func TestDatabases_GetConfigMySQL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		mySQLConfigJSON = `{
+  "config": {
+    "sql_mode": "ANSI,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,STRICT_ALL_TABLES",
+    "sql_require_primary_key": true,
+    "innodb_ft_min_token_size": 3,
+    "innodb_ft_server_stopword_table": "",
+    "innodb_print_all_deadlocks": false,
+    "innodb_rollback_on_timeout": false,
+    "slow_query_log": false,
+    "long_query_time": 10,
+    "backup_hour": 21,
+    "backup_minute": 59
+  }
+}`
+
+		mySQLConfig = MySQLConfig{
+			SQLMode:                     strPtr("ANSI,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,STRICT_ALL_TABLES"),
+			SQLRequirePrimaryKey:        boolPtr(true),
+			InnodbFtMinTokenSize:        intPtr(3),
+			InnodbFtServerStopwordTable: strPtr(""),
+			InnodbPrintAllDeadlocks:     boolPtr(false),
+			InnodbRollbackOnTimeout:     boolPtr(false),
+			SlowQueryLog:                boolPtr(false),
+			LongQueryTime:               float32Ptr(10),
+			BackupHour:                  intPtr(21),
+			BackupMinute:                intPtr(59),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, mySQLConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetMySQLConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &mySQLConfig, got)
+}
+
+func TestDatabases_UpdateConfigMySQL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path        = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		mySQLConfig = &MySQLConfig{
+			SQLRequirePrimaryKey:        boolPtr(true),
+			InnodbFtMinTokenSize:        intPtr(3),
+			InnodbFtServerStopwordTable: strPtr(""),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseMySQLConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, mySQLConfig)
+		assert.Equal(t, "", *b.Config.InnodbFtServerStopwordTable, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.InnodbPrintAllDeadlocks, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateMySQLConfig(ctx, dbID, mySQLConfig)
+	require.NoError(t, err)
 }
