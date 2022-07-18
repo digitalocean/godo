@@ -81,6 +81,16 @@ const (
 	EvictionPolicyVolatileTTL    = "volatile_ttl"
 )
 
+// evictionPolicyMap is used to normalize the eviction policy string in requests
+// to the advanced Redis configuration endpoint from the consts used with SetEvictionPolicy.
+var evictionPolicyMap = map[string]string{
+	EvictionPolicyAllKeysLRU:     "allkeys-lru",
+	EvictionPolicyAllKeysRandom:  "allkeys-random",
+	EvictionPolicyVolatileLRU:    "volatile-lru",
+	EvictionPolicyVolatileRandom: "volatile-random",
+	EvictionPolicyVolatileTTL:    "volatile-ttl",
+}
+
 // The DatabasesService provides access to the DigitalOcean managed database
 // suite of products through the public API. Customers can create new database
 // clusters, migrate them  between regions, create replicas and interact with
@@ -1068,6 +1078,17 @@ func (svc *DatabasesServiceOp) GetRedisConfig(ctx context.Context, databaseID st
 // UpdateRedisConfig updates the config for a Redis database cluster.
 func (svc *DatabasesServiceOp) UpdateRedisConfig(ctx context.Context, databaseID string, config *RedisConfig) (*Response, error) {
 	path := fmt.Sprintf(databaseConfigPath, databaseID)
+
+	// We provide consts for use with SetEvictionPolicy method. Unfortunately, those are
+	// in a different format than what can be used for RedisConfig.RedisMaxmemoryPolicy.
+	// So we attempt to normalize them here to use dashes as separators if provided in
+	// the old format (underscores). Other values are passed through untouched.
+	if config.RedisMaxmemoryPolicy != nil {
+		if policy, ok := evictionPolicyMap[*config.RedisMaxmemoryPolicy]; ok {
+			config.RedisMaxmemoryPolicy = &policy
+		}
+	}
+
 	root := &databaseRedisConfigRoot{
 		Config: config,
 	}

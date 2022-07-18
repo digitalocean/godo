@@ -1757,6 +1757,55 @@ func TestDatabases_UpdateConfigRedis(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_UpdateConfigRedisNormalizeEvictionPolicy(t *testing.T) {
+	type test struct {
+		input string
+		want  string
+	}
+
+	tests := []test{
+		{input: EvictionPolicyAllKeysLRU, want: "allkeys-lru"},
+		{input: EvictionPolicyAllKeysRandom, want: "allkeys-random"},
+		{input: EvictionPolicyVolatileLRU, want: "volatile-lru"},
+		{input: EvictionPolicyVolatileRandom, want: "volatile-random"},
+		{input: EvictionPolicyVolatileTTL, want: "volatile-ttl"},
+		{input: "allkeys-lru", want: "allkeys-lru"},
+		{input: "allkeys-random", want: "allkeys-random"},
+		{input: "volatile-lru", want: "volatile-lru"},
+		{input: "volatile-random", want: "volatile-random"},
+		{input: "volatile-ttl", want: "volatile-ttl"},
+		{input: "some_unknown_value", want: "some_unknown_value"},
+	}
+
+	for _, tt := range tests {
+		setup()
+		defer teardown()
+
+		var (
+			dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
+			path        = fmt.Sprintf("/v2/databases/%s/config", dbID)
+			redisConfig = &RedisConfig{
+				RedisMaxmemoryPolicy: strPtr(tt.input),
+			}
+		)
+
+		mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodPatch)
+
+			var b databaseRedisConfigRoot
+			decoder := json.NewDecoder(r.Body)
+			err := decoder.Decode(&b)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, *b.Config.RedisMaxmemoryPolicy)
+
+			w.WriteHeader(http.StatusNoContent)
+		})
+
+		_, err := client.Databases.UpdateRedisConfig(ctx, dbID, redisConfig)
+		require.NoError(t, err)
+	}
+}
+
 func TestDatabases_GetConfigMySQL(t *testing.T) {
 	setup()
 	defer teardown()
