@@ -594,3 +594,39 @@ func TestApps_UpdateAppAlertDestinations(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, &testAlert, appAlert)
 }
+
+func TestApps_Detect(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	gitSource := &GitSourceSpec{
+		RepoCloneURL: "https://github.com/digitalocean/sample-nodejs.git",
+		Branch:       "main",
+	}
+	component := &DetectResponseComponent{
+		Strategy: DetectResponseType_Buildpack,
+		EnvVars: []*AppVariableDefinition{{
+			Key:   "k",
+			Value: "v",
+		}},
+	}
+
+	mux.HandleFunc("/v2/apps/detect", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var req DetectRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		require.NoError(t, err)
+		assert.Equal(t, gitSource, req.Git)
+		json.NewEncoder(w).Encode(&DetectResponse{
+			Components: []*DetectResponseComponent{component},
+		})
+	})
+
+	res, _, err := client.Apps.Detect(ctx, &DetectRequest{
+		Git: gitSource,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, component, res.Components[0])
+}

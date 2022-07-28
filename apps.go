@@ -48,6 +48,8 @@ type AppsService interface {
 
 	ListAlerts(ctx context.Context, appID string) ([]*AppAlert, *Response, error)
 	UpdateAlertDestinations(ctx context.Context, appID, alertID string, update *AlertDestinationUpdateRequest) (*AppAlert, *Response, error)
+
+	Detect(ctx context.Context, detect *DetectRequest) (*DetectResponse, *Response, error)
 }
 
 // AppLogs represent app logs.
@@ -418,4 +420,20 @@ func (s *AppsServiceOp) UpdateAlertDestinations(ctx context.Context, appID, aler
 		return nil, resp, err
 	}
 	return root.Alert, resp, nil
+}
+
+// Detect an app.
+func (s *AppsServiceOp) Detect(ctx context.Context, detect *DetectRequest) (*DetectResponse, *Response, error) {
+	path := fmt.Sprintf("%s/detect", appsBasePath)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, detect)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	res := &DetectResponse{}
+	resp, err := s.client.Do(ctx, req, res)
+	if err != nil {
+		return nil, resp, err
+	}
+	return res, resp, nil
 }
