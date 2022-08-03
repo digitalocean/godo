@@ -630,3 +630,13 @@ func TestApps_Detect(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, component, res.Components[0])
 }
+
+func TestApps_ToURN(t *testing.T) {
+	app := &App{
+		ID: "deadbeef-dead-4aa5-beef-deadbeef347d",
+	}
+	want := "do:app:deadbeef-dead-4aa5-beef-deadbeef347d"
+	got := app.URN()
+
+	require.Equal(t, want, got)
+}
