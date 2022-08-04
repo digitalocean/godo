@@ -127,6 +127,11 @@ type AppsServiceOp struct {
 	client *Client
 }
 
+// URN returns a URN identifier for the app
+func (a App) URN() string {
+	return ToURN("app", a.ID)
+}
+
 // Create an app.
 func (s *AppsServiceOp) Create(ctx context.Context, create *AppCreateRequest) (*App, *Response, error) {
 	path := appsBasePath
