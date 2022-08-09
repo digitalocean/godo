@@ -1466,6 +1466,37 @@ func TestDatabases_UpdateFirewallRules(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetDatabaseOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	path := "/v2/databases/options"
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+	})
+
+	options, _, err := client.Databases.ListDBOptions(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, options)
+	require.NotNil(t, options.MongoDBOptions)
+	require.NotNil(t, options.PostgresSQLOptions)
+	require.NotNil(t, options.RedisOptions)
+	require.NotNil(t, options.MySQLOptions)
+	require.Greater(t, len(options.MongoDBOptions.Regions), 0)
+	require.Greater(t, len(options.PostgresSQLOptions.Regions), 0)
+	require.Greater(t, len(options.RedisOptions.Regions), 0)
+	require.Greater(t, len(options.MySQLOptions.Regions), 0)
+	require.Greater(t, len(options.MongoDBOptions.Versions), 0)
+	require.Greater(t, len(options.PostgresSQLOptions.Versions), 0)
+	require.Greater(t, len(options.RedisOptions.Versions), 0)
+	require.Greater(t, len(options.MySQLOptions.Versions), 0)
+	require.Greater(t, len(options.MongoDBOptions.Layouts), 0)
+	require.Greater(t, len(options.PostgresSQLOptions.Layouts), 0)
+	require.Greater(t, len(options.RedisOptions.Layouts), 0)
+	require.Greater(t, len(options.MySQLOptions.Layouts), 0)
+}
+
 func TestDatabases_CreateDatabaseUserWithMySQLSettings(t *testing.T) {
 	setup()
 	defer teardown()
