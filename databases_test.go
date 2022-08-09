@@ -1472,8 +1472,131 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 
 	path := "/v2/databases/options"
 
+	body := ` {
+		"options": {
+			"mongodb": {
+				"regions": [
+					"ams3",
+					"blr1"
+				],
+				"versions": [
+					"4.4",
+					"5.0"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"db-s-1vcpu-1gb",
+							"db-s-1vcpu-2gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"so1_5-4vcpu-32gb",
+							"so1_5-32vcpu-256gb"
+						]
+					}
+				]
+			},
+			"mysql": {
+				"regions": [
+					"ams3",
+					"sgp1",
+					"tor1"
+				],
+				"versions": [
+					"8"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"db-s-1vcpu-1gb",
+							"db-s-1vcpu-2gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"so1_5-32vcpu-256gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"so1_5-32vcpu-256gb"
+						]
+					}
+				]
+			},
+			"pg": {
+				"regions": [
+					"ams3",
+					"blr1"
+				],
+				"versions": [
+					"13",
+					"14"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"db-s-1vcpu-1gb",
+							"db-s-1vcpu-2gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"db-s-2vcpu-4gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"db-s-2vcpu-4gb"
+						]
+					}
+				]
+			},
+			"redis": {
+				"regions": [
+					"ams3",
+					"tor1"
+				],
+				"versions": [
+					"6"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"m-32vcpu-256gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"db-s-2vcpu-4gb",
+							"m-32vcpu-256gb"
+						]
+					}
+				]
+			}
+		}
+	} `
+
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
 	})
 
 	options, _, err := client.Databases.ListDBOptions(ctx)
