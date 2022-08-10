@@ -1466,6 +1466,160 @@ func TestDatabases_UpdateFirewallRules(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetDatabaseOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	path := "/v2/databases/options"
+
+	body := ` {
+		"options": {
+			"mongodb": {
+				"regions": [
+					"ams3",
+					"blr1"
+				],
+				"versions": [
+					"4.4",
+					"5.0"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"db-s-1vcpu-1gb",
+							"db-s-1vcpu-2gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"so1_5-4vcpu-32gb",
+							"so1_5-32vcpu-256gb"
+						]
+					}
+				]
+			},
+			"mysql": {
+				"regions": [
+					"ams3",
+					"sgp1",
+					"tor1"
+				],
+				"versions": [
+					"8"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"db-s-1vcpu-1gb",
+							"db-s-1vcpu-2gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"so1_5-32vcpu-256gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"so1_5-32vcpu-256gb"
+						]
+					}
+				]
+			},
+			"pg": {
+				"regions": [
+					"ams3",
+					"blr1"
+				],
+				"versions": [
+					"13",
+					"14"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"db-s-1vcpu-1gb",
+							"db-s-1vcpu-2gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"db-s-2vcpu-4gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"db-s-2vcpu-4gb"
+						]
+					}
+				]
+			},
+			"redis": {
+				"regions": [
+					"ams3",
+					"tor1"
+				],
+				"versions": [
+					"6"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"m-32vcpu-256gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"db-s-2vcpu-4gb",
+							"m-32vcpu-256gb"
+						]
+					}
+				]
+			}
+		}
+	} `
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	options, _, err := client.Databases.ListOptions(ctx)
+	require.NoError(t, err)
+	require.NotNil(t, options)
+	require.NotNil(t, options.MongoDBOptions)
+	require.NotNil(t, options.PostgresSQLOptions)
+	require.NotNil(t, options.RedisOptions)
+	require.NotNil(t, options.MySQLOptions)
+	require.Greater(t, len(options.MongoDBOptions.Regions), 0)
+	require.Greater(t, len(options.PostgresSQLOptions.Regions), 0)
+	require.Greater(t, len(options.RedisOptions.Regions), 0)
+	require.Greater(t, len(options.MySQLOptions.Regions), 0)
+	require.Greater(t, len(options.MongoDBOptions.Versions), 0)
+	require.Greater(t, len(options.PostgresSQLOptions.Versions), 0)
+	require.Greater(t, len(options.RedisOptions.Versions), 0)
+	require.Greater(t, len(options.MySQLOptions.Versions), 0)
+	require.Greater(t, len(options.MongoDBOptions.Layouts), 0)
+	require.Greater(t, len(options.PostgresSQLOptions.Layouts), 0)
+	require.Greater(t, len(options.RedisOptions.Layouts), 0)
+	require.Greater(t, len(options.MySQLOptions.Layouts), 0)
+}
+
 func TestDatabases_CreateDatabaseUserWithMySQLSettings(t *testing.T) {
 	setup()
 	defer teardown()
