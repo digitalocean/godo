@@ -1599,7 +1599,7 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 		fmt.Fprint(w, body)
 	})
 
-	options, _, err := client.Databases.ListDBOptions(ctx)
+	options, _, err := client.Databases.ListOptions(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, options)
 	require.NotNil(t, options.MongoDBOptions)
