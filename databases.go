@@ -140,7 +140,7 @@ type DatabasesService interface {
 	UpdatePostgreSQLConfig(context.Context, string, *PostgreSQLConfig) (*Response, error)
 	UpdateRedisConfig(context.Context, string, *RedisConfig) (*Response, error)
 	UpdateMySQLConfig(context.Context, string, *MySQLConfig) (*Response, error)
-	ListDBOptions(todo context.Context) (*DatabaseOptions, *Response, error)
+	ListOptions(todo context.Context) (*DatabaseOptions, *Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -1163,8 +1163,8 @@ func (svc *DatabasesServiceOp) UpdateMySQLConfig(ctx context.Context, databaseID
 	return resp, nil
 }
 
-// ListDBOptions gets the database options available.
-func (svc *DatabasesServiceOp) ListDBOptions(ctx context.Context) (*DatabaseOptions, *Response, error) {
+// ListOptions gets the database options available.
+func (svc *DatabasesServiceOp) ListOptions(ctx context.Context) (*DatabaseOptions, *Response, error) {
 	root := new(databaseOptionsRoot)
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, databaseOptionsPath, nil)
 	if err != nil {
