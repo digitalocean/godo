@@ -1,6 +1,6 @@
 # Change Log
 
-## Unreleased
+## [v1.83.0] - 2022-08-10
 
 - #546 - @DWizGuy58 - Add support for database options
 
