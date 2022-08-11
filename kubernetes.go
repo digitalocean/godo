@@ -87,7 +87,7 @@ type KubernetesClusterUpdateRequest struct {
 	Tags              []string                     `json:"tags,omitempty"`
 	MaintenancePolicy *KubernetesMaintenancePolicy `json:"maintenance_policy,omitempty"`
 	AutoUpgrade       *bool                        `json:"auto_upgrade,omitempty"`
-	SurgeUpgrade      bool                         `json:"surge_upgrade,omitempty"`
+	SurgeUpgrade      *bool                        `json:"surge_upgrade,omitempty"`
 }
 
 // KubernetesClusterDeleteSelectiveRequest represents a delete selective request to delete a cluster and it's associated resources.
@@ -126,7 +126,7 @@ type KubernetesNodePoolCreateRequest struct {
 	Tags      []string          `json:"tags,omitempty"`
 	Labels    map[string]string `json:"labels,omitempty"`
 	Taints    []Taint           `json:"taints,omitempty"`
-	AutoScale bool              `json:"auto_scale,omitempty"`
+	AutoScale *bool             `json:"auto_scale,omitempty"`
 	MinNodes  int               `json:"min_nodes,omitempty"`
 	MaxNodes  int               `json:"max_nodes,omitempty"`
 }
