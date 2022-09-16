@@ -1068,6 +1068,7 @@ func TestDatabases_GetReplica(t *testing.T) {
 	createdAt := time.Date(2019, 01, 01, 0, 0, 0, 0, time.UTC)
 
 	want := &DatabaseReplica{
+		ID:        "326f188b-5dd1-45fc-9584-62ad553107cd",
 		Name:      "pool",
 		Region:    "nyc1",
 		Status:    "online",
@@ -1097,6 +1098,7 @@ func TestDatabases_GetReplica(t *testing.T) {
 	body := `
 {
   "replica": {
+    "id": "326f188b-5dd1-45fc-9584-62ad553107cd",
     "name": "pool",
     "region": "nyc1",
     "status": "online",
