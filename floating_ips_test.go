@@ -14,7 +14,11 @@ func TestFloatingIPs_ListFloatingIPs(t *testing.T) {
 
 	mux.HandleFunc("/v2/floating_ips", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"floating_ips": [{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1"},{"region":{"slug":"nyc3"},"droplet":{"id":2},"ip":"192.168.0.2"}],"meta":{"total":2}}`)
+		fmt.Fprint(w, `{"floating_ips": [
+			{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1","project_id":"46d8977a-35cd-11ed-909f-43c99bbf6032", "locked":false},
+			{"region":{"slug":"nyc3"},"droplet":{"id":2},"ip":"192.168.0.2","project_id":"46d8977a-35cd-11ed-909f-43c99bbf6032", "locked":false}],
+			"meta":{"total":2}
+		}`)
 	})
 
 	floatingIPs, resp, err := client.FloatingIPs.List(ctx, nil)
@@ -23,8 +27,8 @@ func TestFloatingIPs_ListFloatingIPs(t *testing.T) {
 	}
 
 	expectedFloatingIPs := []FloatingIP{
-		{Region: &Region{Slug: "nyc3"}, Droplet: &Droplet{ID: 1}, IP: "192.168.0.1"},
-		{Region: &Region{Slug: "nyc3"}, Droplet: &Droplet{ID: 2}, IP: "192.168.0.2"},
+		{Region: &Region{Slug: "nyc3"}, Droplet: &Droplet{ID: 1}, IP: "192.168.0.1", Locked: false, ProjectID: "46d8977a-35cd-11ed-909f-43c99bbf6032"},
+		{Region: &Region{Slug: "nyc3"}, Droplet: &Droplet{ID: 2}, IP: "192.168.0.2", Locked: false, ProjectID: "46d8977a-35cd-11ed-909f-43c99bbf6032"},
 	}
 	if !reflect.DeepEqual(floatingIPs, expectedFloatingIPs) {
 		t.Errorf("FloatingIPs.List returned floating IPs %+v, expected %+v", floatingIPs, expectedFloatingIPs)
@@ -44,7 +48,11 @@ func TestFloatingIPs_ListFloatingIPsMultiplePages(t *testing.T) {
 
 	mux.HandleFunc("/v2/floating_ips", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"floating_ips": [{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1"},{"region":{"slug":"nyc3"},"droplet":{"id":2},"ip":"192.168.0.2"}], "links":{"pages":{"next":"http://example.com/v2/floating_ips/?page=2"}}}`)
+		fmt.Fprint(w, `{"floating_ips": [
+			{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1","project_id":"46d8977a-35cd-11ed-909f-43c99bbf6032", "locked":false},
+			{"region":{"slug":"nyc3"},"droplet":{"id":2},"ip":"192.168.0.2","project_id":"46d8977a-35cd-11ed-909f-43c99bbf6032", "locked":false}],
+			"links":{"pages":{"next":"http://example.com/v2/floating_ips/?page=2"}}}
+		`)
 	})
 
 	_, resp, err := client.FloatingIPs.List(ctx, nil)
@@ -61,7 +69,9 @@ func TestFloatingIPs_RetrievePageByNumber(t *testing.T) {
 
 	jBlob := `
 	{
-		"floating_ips": [{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1"},{"region":{"slug":"nyc3"},"droplet":{"id":2},"ip":"192.168.0.2"}],
+		"floating_ips": [
+			{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1","project_id":"46d8977a-35cd-11ed-909f-43c99bbf6032", "locked":false},
+			{"region":{"slug":"nyc3"},"droplet":{"id":2},"ip":"192.168.0.2","project_id":"46d8977a-35cd-11ed-909f-43c99bbf6032", "locked":false}],
 		"links":{
 			"pages":{
 				"next":"http://example.com/v2/floating_ips/?page=3",
@@ -92,7 +102,7 @@ func TestFloatingIPs_Get(t *testing.T) {
 
 	mux.HandleFunc("/v2/floating_ips/192.168.0.1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"floating_ip":{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1"}}`)
+		fmt.Fprint(w, `{"floating_ip":{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1","project_id":"46d8977a-35cd-11ed-909f-43c99bbf6032", "locked":false}}`)
 	})
 
 	floatingIP, _, err := client.FloatingIPs.Get(ctx, "192.168.0.1")
@@ -100,7 +110,7 @@ func TestFloatingIPs_Get(t *testing.T) {
 		t.Errorf("domain.Get returned error: %v", err)
 	}
 
-	expected := &FloatingIP{Region: &Region{Slug: "nyc3"}, Droplet: &Droplet{ID: 1}, IP: "192.168.0.1"}
+	expected := &FloatingIP{Region: &Region{Slug: "nyc3"}, Droplet: &Droplet{ID: 1}, IP: "192.168.0.1", Locked: false, ProjectID: "46d8977a-35cd-11ed-909f-43c99bbf6032"}
 	if !reflect.DeepEqual(floatingIP, expected) {
 		t.Errorf("FloatingIPs.Get returned %+v, expected %+v", floatingIP, expected)
 	}
@@ -113,6 +123,7 @@ func TestFloatingIPs_Create(t *testing.T) {
 	createRequest := &FloatingIPCreateRequest{
 		Region:    "nyc3",
 		DropletID: 1,
+		ProjectID: "46d8977a-35cd-11ed-909f-43c99bbf6032",
 	}
 
 	mux.HandleFunc("/v2/floating_ips", func(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +138,7 @@ func TestFloatingIPs_Create(t *testing.T) {
 			t.Errorf("Request body = %+v, expected %+v", v, createRequest)
 		}
 
-		fmt.Fprint(w, `{"floating_ip":{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1"}}`)
+		fmt.Fprint(w, `{"floating_ip":{"region":{"slug":"nyc3"},"droplet":{"id":1},"ip":"192.168.0.1","project_id":"46d8977a-35cd-11ed-909f-43c99bbf6032", "locked":false}}`)
 	})
 
 	floatingIP, _, err := client.FloatingIPs.Create(ctx, createRequest)
@@ -135,7 +146,7 @@ func TestFloatingIPs_Create(t *testing.T) {
 		t.Errorf("FloatingIPs.Create returned error: %v", err)
 	}
 
-	expected := &FloatingIP{Region: &Region{Slug: "nyc3"}, Droplet: &Droplet{ID: 1}, IP: "192.168.0.1"}
+	expected := &FloatingIP{Region: &Region{Slug: "nyc3"}, Droplet: &Droplet{ID: 1}, IP: "192.168.0.1", Locked: false, ProjectID: "46d8977a-35cd-11ed-909f-43c99bbf6032"}
 	if !reflect.DeepEqual(floatingIP, expected) {
 		t.Errorf("FloatingIPs.Create returned %+v, expected %+v", floatingIP, expected)
 	}
