@@ -61,7 +61,7 @@ type floatingIPRoot struct {
 type FloatingIPCreateRequest struct {
 	Region    string `json:"region,omitempty"`
 	DropletID int    `json:"droplet_id,omitempty"`
-	ProjectID string `json:"project_id"`
+	ProjectID string `json:"project_id,omitempty"`
 }
 
 // List all floating IPs.
