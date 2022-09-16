@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.84.0] - 2022-08-16
+
+- #552 - @andrewsomething - reserved IPs: Expose project_id and locked attributes.
+- #549 - @rpmoore - adding the replica id to the database replica model
+
 ## [v1.83.0] - 2022-08-10
 
 - #546 - @DWizGuy58 - Add support for database options
