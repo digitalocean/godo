@@ -640,3 +640,82 @@ func TestApps_ToURN(t *testing.T) {
 
 	require.Equal(t, want, got)
 }
+
+func TestApps_Interfaces(t *testing.T) {
+	t.Run("AppComponentSpec", func(t *testing.T) {
+		for _, impl := range []interface{}{
+			&AppServiceSpec{},
+			&AppWorkerSpec{},
+			&AppJobSpec{},
+			&AppStaticSiteSpec{},
+			&AppDatabaseSpec{},
+			&AppFunctionsSpec{},
+		} {
+			if _, ok := impl.(AppComponentSpec); !ok {
+				t.Fatalf("%T should match interface", impl)
+			}
+		}
+	})
+
+	t.Run("AppBuildableComponentSpec", func(t *testing.T) {
+		for _, impl := range []interface{}{
+			&AppServiceSpec{},
+			&AppWorkerSpec{},
+			&AppJobSpec{},
+			&AppStaticSiteSpec{},
+		} {
+			if _, ok := impl.(AppBuildableComponentSpec); !ok {
+				t.Fatalf("%T should match interface", impl)
+			}
+		}
+	})
+
+	t.Run("AppContainerComponentSpec", func(t *testing.T) {
+		for _, impl := range []interface{}{
+			&AppServiceSpec{},
+			&AppWorkerSpec{},
+			&AppJobSpec{},
+		} {
+			if _, ok := impl.(AppContainerComponentSpec); !ok {
+				t.Fatalf("%T should match interface", impl)
+			}
+		}
+	})
+
+	t.Run("AppRoutableComponentSpec", func(t *testing.T) {
+		for _, impl := range []interface{}{
+			&AppServiceSpec{},
+			&AppStaticSiteSpec{},
+			&AppFunctionsSpec{},
+		} {
+			if _, ok := impl.(AppRoutableComponentSpec); !ok {
+				t.Fatalf("%T should match interface", impl)
+			}
+		}
+	})
+
+	t.Run("SourceSpec", func(t *testing.T) {
+		for _, impl := range []interface{}{
+			&GitSourceSpec{},
+			&GitHubSourceSpec{},
+			&GitLabSourceSpec{},
+			&ImageSourceSpec{},
+		} {
+			if _, ok := impl.(SourceSpec); !ok {
+				t.Fatalf("%T should match interface", impl)
+			}
+		}
+	})
+
+	t.Run("VCSSourceSpec", func(t *testing.T) {
+		for _, impl := range []interface{}{
+			&GitSourceSpec{},
+			&GitHubSourceSpec{},
+			&GitLabSourceSpec{},
+		} {
+			if _, ok := impl.(VCSSourceSpec); !ok {
+				t.Fatalf("%T should match interface", impl)
+			}
+		}
+	})
+}
