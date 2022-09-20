@@ -498,7 +498,7 @@ type AppComponentSpec interface {
 	GetType() AppComponentType
 }
 
-// AppBuildableComponentSpec is a component that needs to be built.
+// AppBuildableComponentSpec is a component that is buildable from source.
 type AppBuildableComponentSpec interface {
 	AppComponentSpec
 
@@ -620,6 +620,13 @@ func (s *AppSpec) ForEachAppComponentSpec(fn func(component AppComponentSpec) er
 }
 
 // ForEachAppSpecComponent loops over each component spec that matches the provided interface type.
+// The type constraint is intentionally set to `any` to allow use of arbitrary interfaces to match the desired component types.
+//
+// Examples:
+//   - interface constraint
+//     godo.ForEachAppSpecComponent(spec, func(component godo.AppBuildableComponentSpec) error { ... })
+//   - struct type constraint
+//     godo.ForEachAppSpecComponent(spec, func(component *godo.AppStaticSiteSpec) error { ... })
 func ForEachAppSpecComponent[T any](s *AppSpec, fn func(component T) error) error {
 	return s.ForEachAppComponentSpec(func(component AppComponentSpec) error {
 		if c, ok := component.(T); ok {
@@ -632,7 +639,12 @@ func ForEachAppSpecComponent[T any](s *AppSpec, fn func(component T) error) erro
 }
 
 // GetAppSpecComponent returns an app spec component by type and name.
-// The ComponentSpec type can be used for no restriction on component type.
+//
+// Examples:
+//   - interface constraint
+//     godo.GetAppSpecComponent[godo.AppBuildableComponentSpec](spec, "component-name")
+//   - struct type constraint
+//     godo.GetAppSpecComponent[*godo.AppServiceSpec](spec, "component-name")
 func GetAppSpecComponent[T interface {
 	GetName() string
 }](s *AppSpec, name string) (T, error) {

@@ -719,3 +719,101 @@ func TestApps_Interfaces(t *testing.T) {
 		}
 	})
 }
+
+func TestForEachAppSpecComponent(t *testing.T) {
+	spec := &AppSpec{
+		Services: []*AppServiceSpec{
+			{Name: "service-1"},
+			{Name: "service-2"},
+		},
+		Workers: []*AppWorkerSpec{
+			{Name: "worker-1"},
+			{Name: "worker-2"},
+		},
+		Databases: []*AppDatabaseSpec{
+			{Name: "database-1"},
+			{Name: "database-2"},
+		},
+		StaticSites: []*AppStaticSiteSpec{
+			{Name: "site-1"},
+			{Name: "site-2"},
+		},
+	}
+
+	t.Run("interface", func(t *testing.T) {
+		var components []string
+		_ = ForEachAppSpecComponent(spec, func(component AppBuildableComponentSpec) error {
+			components = append(components, component.GetName())
+			return nil
+		})
+		require.ElementsMatch(t, components, []string{
+			"service-1",
+			"service-2",
+			"worker-1",
+			"worker-2",
+			"site-1",
+			"site-2",
+		})
+	})
+
+	t.Run("struct type", func(t *testing.T) {
+		var components []string
+		_ = ForEachAppSpecComponent(spec, func(component *AppStaticSiteSpec) error {
+			components = append(components, component.GetName())
+			return nil
+		})
+		require.ElementsMatch(t, components, []string{
+			"site-1",
+			"site-2",
+		})
+	})
+}
+
+func TestGetAppSpecComponent(t *testing.T) {
+	spec := &AppSpec{
+		Services: []*AppServiceSpec{
+			{Name: "service-1"},
+			{Name: "service-2"},
+		},
+		Workers: []*AppWorkerSpec{
+			{Name: "worker-1"},
+			{Name: "worker-2"},
+		},
+		Databases: []*AppDatabaseSpec{
+			{Name: "database-1"},
+			{Name: "database-2"},
+		},
+		StaticSites: []*AppStaticSiteSpec{
+			{Name: "site-1"},
+			{Name: "site-2"},
+		},
+	}
+
+	t.Run("interface", func(t *testing.T) {
+		site, err := GetAppSpecComponent[AppBuildableComponentSpec](spec, "site-1")
+		require.NoError(t, err)
+		require.Equal(t, &AppStaticSiteSpec{Name: "site-1"}, site)
+
+		svc, err := GetAppSpecComponent[AppBuildableComponentSpec](spec, "service-2")
+		require.NoError(t, err)
+		require.Equal(t, &AppServiceSpec{Name: "service-2"}, svc)
+
+		db, err := GetAppSpecComponent[AppBuildableComponentSpec](spec, "db-123123")
+		require.EqualError(t, err, "component db-123123 not found")
+		require.Nil(t, db)
+	})
+
+	t.Run("struct type", func(t *testing.T) {
+		db, err := GetAppSpecComponent[*AppDatabaseSpec](spec, "database-1")
+		require.NoError(t, err)
+		require.Equal(t, &AppDatabaseSpec{Name: "database-1"}, db)
+
+		svc, err := GetAppSpecComponent[*AppServiceSpec](spec, "service-2")
+		require.NoError(t, err)
+		require.Equal(t, &AppServiceSpec{Name: "service-2"}, svc)
+
+		db, err = GetAppSpecComponent[*AppDatabaseSpec](spec, "404")
+		require.EqualError(t, err, "component 404 not found")
+		require.Nil(t, db)
+	})
+}
