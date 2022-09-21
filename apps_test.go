@@ -658,38 +658,96 @@ func TestApps_Interfaces(t *testing.T) {
 	})
 
 	t.Run("AppBuildableComponentSpec", func(t *testing.T) {
-		for _, impl := range []interface{}{
-			&AppServiceSpec{},
-			&AppWorkerSpec{},
-			&AppJobSpec{},
-			&AppStaticSiteSpec{},
+		for impl, wantMatch := range map[any]bool{
+			&AppServiceSpec{}:    true,
+			&AppWorkerSpec{}:     true,
+			&AppJobSpec{}:        true,
+			&AppStaticSiteSpec{}: true,
+			&AppFunctionsSpec{}:  true,
+
+			&AppDatabaseSpec{}: false,
 		} {
-			if _, ok := impl.(AppBuildableComponentSpec); !ok {
+			_, ok := impl.(AppBuildableComponentSpec)
+			if wantMatch && !ok {
 				t.Fatalf("%T should match interface", impl)
+			} else if !wantMatch && ok {
+				t.Fatalf("%T should NOT match interface", impl)
+			}
+		}
+	})
+
+	t.Run("AppDockerBuildableComponentSpec", func(t *testing.T) {
+		for impl, wantMatch := range map[any]bool{
+			&AppServiceSpec{}:    true,
+			&AppWorkerSpec{}:     true,
+			&AppJobSpec{}:        true,
+			&AppStaticSiteSpec{}: true,
+
+			&AppFunctionsSpec{}: false,
+			&AppDatabaseSpec{}:  false,
+		} {
+			_, ok := impl.(AppDockerBuildableComponentSpec)
+			if wantMatch && !ok {
+				t.Fatalf("%T should match interface", impl)
+			} else if !wantMatch && ok {
+				t.Fatalf("%T should NOT match interface", impl)
+			}
+		}
+	})
+
+	t.Run("AppCNBBuildableComponentSpec", func(t *testing.T) {
+		for impl, wantMatch := range map[any]bool{
+			&AppServiceSpec{}:    true,
+			&AppWorkerSpec{}:     true,
+			&AppJobSpec{}:        true,
+			&AppStaticSiteSpec{}: true,
+
+			&AppFunctionsSpec{}: false,
+			&AppDatabaseSpec{}:  false,
+		} {
+			_, ok := impl.(AppCNBBuildableComponentSpec)
+			if wantMatch && !ok {
+				t.Fatalf("%T should match interface", impl)
+			} else if !wantMatch && ok {
+				t.Fatalf("%T should NOT match interface", impl)
 			}
 		}
 	})
 
 	t.Run("AppContainerComponentSpec", func(t *testing.T) {
-		for _, impl := range []interface{}{
-			&AppServiceSpec{},
-			&AppWorkerSpec{},
-			&AppJobSpec{},
+		for impl, wantMatch := range map[any]bool{
+			&AppServiceSpec{}: true,
+			&AppWorkerSpec{}:  true,
+			&AppJobSpec{}:     true,
+
+			&AppStaticSiteSpec{}: false,
+			&AppFunctionsSpec{}:  false,
+			&AppDatabaseSpec{}:   false,
 		} {
-			if _, ok := impl.(AppContainerComponentSpec); !ok {
+			_, ok := impl.(AppContainerComponentSpec)
+			if wantMatch && !ok {
 				t.Fatalf("%T should match interface", impl)
+			} else if !wantMatch && ok {
+				t.Fatalf("%T should NOT match interface", impl)
 			}
 		}
 	})
 
 	t.Run("AppRoutableComponentSpec", func(t *testing.T) {
-		for _, impl := range []interface{}{
-			&AppServiceSpec{},
-			&AppStaticSiteSpec{},
-			&AppFunctionsSpec{},
+		for impl, wantMatch := range map[any]bool{
+			&AppServiceSpec{}:    true,
+			&AppStaticSiteSpec{}: true,
+			&AppFunctionsSpec{}:  true,
+
+			&AppWorkerSpec{}:   false,
+			&AppJobSpec{}:      false,
+			&AppDatabaseSpec{}: false,
 		} {
-			if _, ok := impl.(AppRoutableComponentSpec); !ok {
+			_, ok := impl.(AppRoutableComponentSpec)
+			if wantMatch && !ok {
 				t.Fatalf("%T should match interface", impl)
+			} else if !wantMatch && ok {
+				t.Fatalf("%T should NOT match interface", impl)
 			}
 		}
 	})
@@ -715,6 +773,20 @@ func TestApps_Interfaces(t *testing.T) {
 		} {
 			if _, ok := impl.(VCSSourceSpec); !ok {
 				t.Fatalf("%T should match interface", impl)
+			}
+		}
+		for impl, wantMatch := range map[any]bool{
+			&GitSourceSpec{}:    true,
+			&GitHubSourceSpec{}: true,
+			&GitLabSourceSpec{}: true,
+
+			&ImageSourceSpec{}: false,
+		} {
+			_, ok := impl.(VCSSourceSpec)
+			if wantMatch && !ok {
+				t.Fatalf("%T should match interface", impl)
+			} else if !wantMatch && ok {
+				t.Fatalf("%T should NOT match interface", impl)
 			}
 		}
 	})

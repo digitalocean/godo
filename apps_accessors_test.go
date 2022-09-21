@@ -776,13 +776,6 @@ func TestAppJobSpec_GetDockerfilePath(tt *testing.T) {
 	a.GetDockerfilePath()
 }
 
-func TestAppJobSpec_GetEnvironmentSlug(tt *testing.T) {
-	a := &AppJobSpec{}
-	a.GetEnvironmentSlug()
-	a = nil
-	a.GetEnvironmentSlug()
-}
-
 func TestAppJobSpec_GetEnvs(tt *testing.T) {
 	a := &AppJobSpec{}
 	a.GetEnvs()
@@ -1154,13 +1147,6 @@ func TestAppServiceSpec_GetDockerfilePath(tt *testing.T) {
 	a.GetDockerfilePath()
 }
 
-func TestAppServiceSpec_GetEnvironmentSlug(tt *testing.T) {
-	a := &AppServiceSpec{}
-	a.GetEnvironmentSlug()
-	a = nil
-	a.GetEnvironmentSlug()
-}
-
 func TestAppServiceSpec_GetEnvs(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetEnvs()
@@ -1441,13 +1427,6 @@ func TestAppStaticSiteSpec_GetDockerfilePath(tt *testing.T) {
 	a.GetDockerfilePath()
 }
 
-func TestAppStaticSiteSpec_GetEnvironmentSlug(tt *testing.T) {
-	a := &AppStaticSiteSpec{}
-	a.GetEnvironmentSlug()
-	a = nil
-	a.GetEnvironmentSlug()
-}
-
 func TestAppStaticSiteSpec_GetEnvs(tt *testing.T) {
 	a := &AppStaticSiteSpec{}
 	a.GetEnvs()
@@ -1614,13 +1593,6 @@ func TestAppWorkerSpec_GetDockerfilePath(tt *testing.T) {
 	a.GetDockerfilePath()
 	a = nil
 	a.GetDockerfilePath()
-}
-
-func TestAppWorkerSpec_GetEnvironmentSlug(tt *testing.T) {
-	a := &AppWorkerSpec{}
-	a.GetEnvironmentSlug()
-	a = nil
-	a.GetEnvironmentSlug()
 }
 
 func TestAppWorkerSpec_GetEnvs(tt *testing.T) {
@@ -2300,13 +2272,6 @@ func TestDetectResponseComponent_GetDockerfiles(tt *testing.T) {
 	d.GetDockerfiles()
 	d = nil
 	d.GetDockerfiles()
-}
-
-func TestDetectResponseComponent_GetEnvironmentSlug(tt *testing.T) {
-	d := &DetectResponseComponent{}
-	d.GetEnvironmentSlug()
-	d = nil
-	d.GetEnvironmentSlug()
 }
 
 func TestDetectResponseComponent_GetEnvVars(tt *testing.T) {
