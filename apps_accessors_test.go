@@ -1854,6 +1854,13 @@ func TestDeploymentCauseDetails_GetDigitalOceanUserAction(tt *testing.T) {
 	d.GetDigitalOceanUserAction()
 }
 
+func TestDeploymentCauseDetails_GetDOCRPush(tt *testing.T) {
+	d := &DeploymentCauseDetails{}
+	d.GetDOCRPush()
+	d = nil
+	d.GetDOCRPush()
+}
+
 func TestDeploymentCauseDetails_GetGitPush(tt *testing.T) {
 	d := &DeploymentCauseDetails{}
 	d.GetGitPush()
@@ -1908,6 +1915,34 @@ func TestDeploymentCauseDetailsDigitalOceanUserAction_GetUser(tt *testing.T) {
 	d.GetUser()
 	d = nil
 	d.GetUser()
+}
+
+func TestDeploymentCauseDetailsDOCRPush_GetImageDigest(tt *testing.T) {
+	d := &DeploymentCauseDetailsDOCRPush{}
+	d.GetImageDigest()
+	d = nil
+	d.GetImageDigest()
+}
+
+func TestDeploymentCauseDetailsDOCRPush_GetRegistry(tt *testing.T) {
+	d := &DeploymentCauseDetailsDOCRPush{}
+	d.GetRegistry()
+	d = nil
+	d.GetRegistry()
+}
+
+func TestDeploymentCauseDetailsDOCRPush_GetRepository(tt *testing.T) {
+	d := &DeploymentCauseDetailsDOCRPush{}
+	d.GetRepository()
+	d = nil
+	d.GetRepository()
+}
+
+func TestDeploymentCauseDetailsDOCRPush_GetTag(tt *testing.T) {
+	d := &DeploymentCauseDetailsDOCRPush{}
+	d.GetTag()
+	d = nil
+	d.GetTag()
 }
 
 func TestDeploymentCauseDetailsGitPush_GetCommitAuthor(tt *testing.T) {
@@ -2442,6 +2477,13 @@ func TestGitSourceSpec_GetRepoCloneURL(tt *testing.T) {
 	g.GetRepoCloneURL()
 }
 
+func TestImageSourceSpec_GetDeployOnPush(tt *testing.T) {
+	i := &ImageSourceSpec{}
+	i.GetDeployOnPush()
+	i = nil
+	i.GetDeployOnPush()
+}
+
 func TestImageSourceSpec_GetRegistry(tt *testing.T) {
 	i := &ImageSourceSpec{}
 	i.GetRegistry()
@@ -2468,6 +2510,13 @@ func TestImageSourceSpec_GetTag(tt *testing.T) {
 	i.GetTag()
 	i = nil
 	i.GetTag()
+}
+
+func TestImageSourceSpecDeployOnPush_GetEnabled(tt *testing.T) {
+	i := &ImageSourceSpecDeployOnPush{}
+	i.GetEnabled()
+	i = nil
+	i.GetEnabled()
 }
 
 func TestUpgradeBuildpackRequest_GetAppID(tt *testing.T) {
