@@ -13,6 +13,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"golang.org/x/time/rate"
 )
 
 var (
@@ -764,6 +766,19 @@ func TestCustomBaseURL(t *testing.T) {
 	expected := baseURL
 	if got := c.BaseURL.String(); got != expected {
 		t.Errorf("New() BaseURL = %s; expected %s", got, expected)
+	}
+}
+
+func TestSetStaticRateLimit(t *testing.T) {
+	rps := float64(5)
+	c, err := New(nil, SetStaticRateLimit(rps))
+	if err != nil {
+		t.Fatalf("New() unexpected error: %v", err)
+	}
+
+	expected := rate.NewLimiter(rate.Limit(rps), 1)
+	if got := c.rateLimiter; *got != *expected {
+		t.Errorf("rateLimiter = %+v; expected %+v", got, expected)
 	}
 }
 
