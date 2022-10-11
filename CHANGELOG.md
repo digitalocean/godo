@@ -3,6 +3,7 @@
 ## [v1.86.0] - 2022-09-23
 
 - #561 - @jonfriesen - apps: add docr image deploy on push
+- #562 - @DWizGuy58 - add public monitoring alert policies for dbaas
 
 ## [v1.85.0] - 2022-09-21
 
