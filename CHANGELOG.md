@@ -1,8 +1,10 @@
 # Change Log
 
-## Unreleased
+## [v1.87.0] - 2022-10-12
 
-- #564 - @DWizGuy58 - add public monitoring alert policies for dbaas
+- #564 - @DWizGuy58 - Add public monitoring alert policies for dbaas
+- #565 - @dylanrhysscott - CON-5657 (Re-)expose public HA enablement flags in godo
+- #563 - @andrewsomething - Add option to configure a rate.Limiter for the client.
 
 ## [v1.86.0] - 2022-09-23
 
