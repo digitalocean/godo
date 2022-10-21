@@ -172,3 +172,8 @@ For details on all the functionality in this library, see the [GoDoc](http://god
 ## Contributing
 
 We love pull requests! Please see the [contribution guidelines](CONTRIBUTING.md).
+
+ ## Thanks to all contributors ❤
+ <a href="https://github.com/digitalocean/godo/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=digitalocean/godo" />
+</a>
