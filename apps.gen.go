@@ -94,6 +94,8 @@ type App struct {
 	Domains                 []*AppDomain    `json:"domains,omitempty"`
 	PinnedDeployment        *Deployment     `json:"pinned_deployment,omitempty"`
 	BuildConfig             *AppBuildConfig `json:"build_config,omitempty"`
+	// The UUID of the fleet (a.k.a project) for the app. This will be empty if there is a fleet lookup failure.
+	FleetUUID string `json:"fleet_uuid,omitempty"`
 }
 
 // AppAlertSpec Configuration of an alert for the app or a individual component.
@@ -157,7 +159,7 @@ type AppBuildConfig struct {
 
 // AppBuildConfigCNBVersioning struct for AppBuildConfigCNBVersioning
 type AppBuildConfigCNBVersioning struct {
-	// List of versioned buildpacks used for the application.  Buildpacks are only versioned based on the major semver version, therefore exact versions will not be available at the app build config.
+	// List of versioned buildpacks used for the application.  Buildpacks are only versioned based on the major semver version, threfore exact versions will not be available at the app build config.
 	Buildpacks []*Buildpack `json:"buildpacks,omitempty"`
 }
 
@@ -563,6 +565,8 @@ type AppCORSPolicy struct {
 // AppCreateRequest struct for AppCreateRequest
 type AppCreateRequest struct {
 	Spec *AppSpec `json:"spec"`
+	// Optional. The UUID of the project the app should be assigned.
+	ProjectID string `json:"project_id,omitempty"`
 }
 
 // DeployTemplate struct for DeployTemplate

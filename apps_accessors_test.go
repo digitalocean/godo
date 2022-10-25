@@ -356,6 +356,13 @@ func TestAppCORSPolicy_GetMaxAge(tt *testing.T) {
 	a.GetMaxAge()
 }
 
+func TestAppCreateRequest_GetProjectID(tt *testing.T) {
+	a := &AppCreateRequest{}
+	a.GetProjectID()
+	a = nil
+	a.GetProjectID()
+}
+
 func TestAppCreateRequest_GetSpec(tt *testing.T) {
 	a := &AppCreateRequest{}
 	a.GetSpec()
