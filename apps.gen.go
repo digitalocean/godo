@@ -1011,18 +1011,6 @@ type AppTier struct {
 	BuildSeconds         string `json:"build_seconds,omitempty"`
 }
 
-// UpgradeBuildpackRequest struct for UpgradeBuildpackRequest
-type UpgradeBuildpackRequest struct {
-	// The ID of the app to upgrade buildpack versions for.
-	AppID string `json:"app_id,omitempty"`
-	// The ID of the buildpack to upgrade.
-	BuildpackID string `json:"buildpack_id,omitempty"`
-	// The Major Version to upgrade the buildpack to. If omitted, the latest available major version will be used.
-	MajorVersion int32 `json:"major_version,omitempty"`
-	// Whether or not to trigger a deployment for the app after upgrading the buildpack.
-	TriggerDeployment bool `json:"trigger_deployment,omitempty"`
-}
-
 // UpgradeBuildpackResponse struct for UpgradeBuildpackResponse
 type UpgradeBuildpackResponse struct {
 	// The components that were affected by the upgrade.
