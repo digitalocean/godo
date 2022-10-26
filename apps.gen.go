@@ -94,8 +94,10 @@ type App struct {
 	Domains                 []*AppDomain    `json:"domains,omitempty"`
 	PinnedDeployment        *Deployment     `json:"pinned_deployment,omitempty"`
 	BuildConfig             *AppBuildConfig `json:"build_config,omitempty"`
-	// The UUID of the fleet (a.k.a project) for the app. This will be empty if there is a fleet lookup failure.
+	// The id of the project for the app. This will be empty if there is a fleet (project) lookup failure. Deprecated in favor of project_id.
 	FleetUUID string `json:"fleet_uuid,omitempty"`
+	// The id of the project for the app. This will be empty if there is a fleet (project) lookup failure.
+	ProjectID string `json:"project_id,omitempty"`
 }
 
 // AppAlertSpec Configuration of an alert for the app or a individual component.

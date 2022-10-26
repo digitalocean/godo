@@ -111,6 +111,13 @@ func TestApp_GetPinnedDeployment(tt *testing.T) {
 	a.GetPinnedDeployment()
 }
 
+func TestApp_GetProjectID(tt *testing.T) {
+	a := &App{}
+	a.GetProjectID()
+	a = nil
+	a.GetProjectID()
+}
+
 func TestApp_GetRegion(tt *testing.T) {
 	a := &App{}
 	a.GetRegion()
