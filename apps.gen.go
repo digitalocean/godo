@@ -159,7 +159,7 @@ type AppBuildConfig struct {
 
 // AppBuildConfigCNBVersioning struct for AppBuildConfigCNBVersioning
 type AppBuildConfigCNBVersioning struct {
-	// List of versioned buildpacks used for the application.  Buildpacks are only versioned based on the major semver version, threfore exact versions will not be available at the app build config.
+	// List of versioned buildpacks used for the application.  Buildpacks are only versioned based on the major semver version, therefore exact versions will not be available at the app build config.
 	Buildpacks []*Buildpack `json:"buildpacks,omitempty"`
 }
 
