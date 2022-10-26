@@ -46,14 +46,6 @@ func (a *App) GetDomains() []*AppDomain {
 	return a.Domains
 }
 
-// GetFleetUUID returns the FleetUUID field.
-func (a *App) GetFleetUUID() string {
-	if a == nil {
-		return ""
-	}
-	return a.FleetUUID
-}
-
 // GetID returns the ID field.
 func (a *App) GetID() string {
 	if a == nil {
