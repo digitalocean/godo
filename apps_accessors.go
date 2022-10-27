@@ -118,6 +118,14 @@ func (a *App) GetPinnedDeployment() *Deployment {
 	return a.PinnedDeployment
 }
 
+// GetProjectID returns the ProjectID field.
+func (a *App) GetProjectID() string {
+	if a == nil {
+		return ""
+	}
+	return a.ProjectID
+}
+
 // GetRegion returns the Region field.
 func (a *App) GetRegion() *AppRegion {
 	if a == nil {
@@ -396,6 +404,14 @@ func (a *AppCORSPolicy) GetMaxAge() string {
 		return ""
 	}
 	return a.MaxAge
+}
+
+// GetProjectID returns the ProjectID field.
+func (a *AppCreateRequest) GetProjectID() string {
+	if a == nil {
+		return ""
+	}
+	return a.ProjectID
 }
 
 // GetSpec returns the Spec field.

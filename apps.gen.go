@@ -94,6 +94,8 @@ type App struct {
 	Domains                 []*AppDomain    `json:"domains,omitempty"`
 	PinnedDeployment        *Deployment     `json:"pinned_deployment,omitempty"`
 	BuildConfig             *AppBuildConfig `json:"build_config,omitempty"`
+	// The id of the project for the app. This will be empty if there is a lookup failure.
+	ProjectID string `json:"project_id,omitempty"`
 }
 
 // AppAlertSpec Configuration of an alert for the app or a individual component.
@@ -563,6 +565,8 @@ type AppCORSPolicy struct {
 // AppCreateRequest struct for AppCreateRequest
 type AppCreateRequest struct {
 	Spec *AppSpec `json:"spec"`
+	// Optional. The UUID of the project the app should be assigned.
+	ProjectID string `json:"project_id,omitempty"`
 }
 
 // DeployTemplate struct for DeployTemplate

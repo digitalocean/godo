@@ -111,6 +111,13 @@ func TestApp_GetPinnedDeployment(tt *testing.T) {
 	a.GetPinnedDeployment()
 }
 
+func TestApp_GetProjectID(tt *testing.T) {
+	a := &App{}
+	a.GetProjectID()
+	a = nil
+	a.GetProjectID()
+}
+
 func TestApp_GetRegion(tt *testing.T) {
 	a := &App{}
 	a.GetRegion()
@@ -354,6 +361,13 @@ func TestAppCORSPolicy_GetMaxAge(tt *testing.T) {
 	a.GetMaxAge()
 	a = nil
 	a.GetMaxAge()
+}
+
+func TestAppCreateRequest_GetProjectID(tt *testing.T) {
+	a := &AppCreateRequest{}
+	a.GetProjectID()
+	a = nil
+	a.GetProjectID()
 }
 
 func TestAppCreateRequest_GetSpec(tt *testing.T) {
