@@ -1,5 +1,12 @@
 # Change Log
 
+## [v1.88.0] - 2022-10-28
+
+- #573 - @kamaln7 - apps: add ListBuildpacks, UpgradeBuildpack
+- #572 - @ghostlandr - Apps: add project id as a parameter to CreateApp and to the App struct
+- #570 - @kraai - Fix copy-and-paste error in comment
+- #568 - @StephenVarela - LBAAS-2321 Add project_id to load balancers structs
+
 ## [v1.87.0] - 2022-10-12
 
 - #564 - @DWizGuy58 - Add public monitoring alert policies for dbaas
