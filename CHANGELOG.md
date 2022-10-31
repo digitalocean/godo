@@ -1,6 +1,6 @@
 # Change Log
 
-## [v1.88.0] - 2022-10-28
+## [v1.88.0] - 2022-10-31
 
 - #573 - @kamaln7 - apps: add ListBuildpacks, UpgradeBuildpack
 - #572 - @ghostlandr - Apps: add project id as a parameter to CreateApp and to the App struct
