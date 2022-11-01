@@ -299,7 +299,7 @@ func TestApps_ListApp(t *testing.T) {
 			json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{{ProjectID: "something"}}, Meta: &Meta{Total: 1}, Links: &Links{}})
 		})
 
-		apps, resp, err := client.Apps.List(ctx, nil)
+		apps, resp, err := client.Apps.List(ctx, &AppsListOptions{WithProjects: true})
 		require.NoError(t, err)
 		assert.Equal(t, "something", apps[0].ProjectID)
 		assert.Equal(t, 1, resp.Meta.Total)
