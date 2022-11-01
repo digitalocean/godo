@@ -28,7 +28,7 @@ const (
 type AppsService interface {
 	Create(ctx context.Context, create *AppCreateRequest) (*App, *Response, error)
 	Get(ctx context.Context, appID string) (*App, *Response, error)
-	List(ctx context.Context, opts *AppsListOptions) ([]*App, *Response, error)
+	List(ctx context.Context, opts *ListOptions) ([]*App, *Response, error)
 	Update(ctx context.Context, appID string, update *AppUpdateRequest) (*App, *Response, error)
 	Delete(ctx context.Context, appID string) (*Response, error)
 	Propose(ctx context.Context, propose *AppProposeRequest) (*AppProposeResponse, *Response, error)
@@ -181,16 +181,8 @@ func (s *AppsServiceOp) Get(ctx context.Context, appID string) (*App, *Response,
 	return root.App, resp, nil
 }
 
-// AppsListOptions extends ListOptions to add ListApps specific parameters
-type AppsListOptions struct {
-	ListOptions
-
-	// Whether the app responses should include populated project_id fields. The field will be empty if false or if omitted.
-	WithProjects bool `url:"with_projects,omitempty"`
-}
-
 // List apps.
-func (s *AppsServiceOp) List(ctx context.Context, opts *AppsListOptions) ([]*App, *Response, error) {
+func (s *AppsServiceOp) List(ctx context.Context, opts *ListOptions) ([]*App, *Response, error) {
 	path := appsBasePath
 	path, err := addOptions(path, opts)
 	if err != nil {
