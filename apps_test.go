@@ -266,24 +266,47 @@ func TestApps_GetApp(t *testing.T) {
 }
 
 func TestApps_ListApp(t *testing.T) {
-	setup()
-	defer teardown()
+	t.Run("WithProjects false/not passed in", func(t *testing.T) {
+		setup()
+		defer teardown()
 
-	ctx := context.Background()
+		ctx := context.Background()
 
-	mux.HandleFunc("/v2/apps", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
+		mux.HandleFunc("/v2/apps", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
 
-		json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{&testApp}, Meta: &Meta{Total: 1}, Links: &Links{}})
+			json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{&testApp}, Meta: &Meta{Total: 1}, Links: &Links{}})
+		})
+
+		apps, resp, err := client.Apps.List(ctx, nil)
+		require.NoError(t, err)
+		assert.Equal(t, []*App{&testApp}, apps)
+		assert.Equal(t, 1, resp.Meta.Total)
+		currentPage, err := resp.Links.CurrentPage()
+		require.NoError(t, err)
+		assert.Equal(t, 1, currentPage)
 	})
 
-	apps, resp, err := client.Apps.List(ctx, nil)
-	require.NoError(t, err)
-	assert.Equal(t, []*App{&testApp}, apps)
-	assert.Equal(t, 1, resp.Meta.Total)
-	currentPage, err := resp.Links.CurrentPage()
-	require.NoError(t, err)
-	assert.Equal(t, 1, currentPage)
+	t.Run("WithProjects true", func(t *testing.T) {
+		setup()
+		defer teardown()
+
+		ctx := context.Background()
+
+		mux.HandleFunc("/v2/apps", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+
+			json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{{ProjectID: "something"}}, Meta: &Meta{Total: 1}, Links: &Links{}})
+		})
+
+		apps, resp, err := client.Apps.List(ctx, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "something", apps[0].ProjectID)
+		assert.Equal(t, 1, resp.Meta.Total)
+		currentPage, err := resp.Links.CurrentPage()
+		require.NoError(t, err)
+		assert.Equal(t, 1, currentPage)
+	})
 }
 
 func TestApps_UpdateApp(t *testing.T) {
