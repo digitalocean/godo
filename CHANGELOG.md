@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.89.0] - 2022-11-02
+
+- #575 - @ghostlandr - apps: add option to get projects data from Apps List endpoint
+
 ## [v1.88.0] - 2022-10-31
 
 - #573 - @kamaln7 - apps: add ListBuildpacks, UpgradeBuildpack
