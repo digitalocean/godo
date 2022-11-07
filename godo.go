@@ -81,6 +81,7 @@ type Client struct {
 	VPCs              VPCsService
 	OneClick          OneClickService
 	Monitoring        MonitoringService
+	Functions         FunctionsService
 
 	// Optional function called after every successful request made to the DO APIs
 	onRequestCompleted RequestCompletionCallback
@@ -248,7 +249,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.VPCs = &VPCsServiceOp{client: c}
 	c.OneClick = &OneClickServiceOp{client: c}
 	c.Monitoring = &MonitoringServiceOp{client: c}
-
+	c.Functions = &FunctionsServiceOp{client: c}
 	c.headers = make(map[string]string)
 
 	return c
