@@ -42,7 +42,7 @@ func TestFunctions_ListNamespaces(t *testing.T) {
 		}`)
 	})
 
-	namespaces, _, err := client.Functions.Namespaces(ctx)
+	namespaces, _, err := client.Functions.ListNamespaces(ctx)
 	require.NoError(t, err)
 
 	expectedNamespaces := []FunctionsNamespace{
@@ -90,7 +90,7 @@ func TestFunctions_GetNamespace(t *testing.T) {
 		}`)
 	})
 
-	namespace, _, err := client.Functions.Namespace(ctx, "123-abc")
+	namespace, _, err := client.Functions.GetNamespace(ctx, "123-abc")
 	require.NoError(t, err)
 
 	expectedNamespace := &FunctionsNamespace{
@@ -126,7 +126,7 @@ func TestFunctions_CreateNamespace(t *testing.T) {
 		}`)
 	})
 
-	opts := FunctionsNamespaceCreateOptions{Label: "my-namespace-1", Region: "nyc1"}
+	opts := FunctionsNamespaceCreateRequest{Label: "my-namespace-1", Region: "nyc1"}
 	namespace, _, err := client.Functions.CreateNamespace(ctx, &opts)
 	require.NoError(t, err)
 

@@ -13,9 +13,9 @@ const (
 )
 
 type FunctionsService interface {
-	Namespaces(context.Context) ([]FunctionsNamespace, *Response, error)
-	Namespace(context.Context, string) (*FunctionsNamespace, *Response, error)
-	CreateNamespace(context.Context, *FunctionsNamespaceCreateOptions) (*FunctionsNamespace, *Response, error)
+	ListNamespaces(context.Context) ([]FunctionsNamespace, *Response, error)
+	GetNamespace(context.Context, string) (*FunctionsNamespace, *Response, error)
+	CreateNamespace(context.Context, *FunctionsNamespaceCreateRequest) (*FunctionsNamespace, *Response, error)
 	DeleteNamespace(context.Context, string) (*Response, error)
 }
 
@@ -44,13 +44,13 @@ type FunctionsNamespace struct {
 	Key       string    `json:"key,omitempty"`
 }
 
-type FunctionsNamespaceCreateOptions struct {
+type FunctionsNamespaceCreateRequest struct {
 	Label  string `json:"label"`
 	Region string `json:"region"`
 }
 
 // Gets a list of namespaces
-func (s *FunctionsServiceOp) Namespaces(ctx context.Context) ([]FunctionsNamespace, *Response, error) {
+func (s *FunctionsServiceOp) ListNamespaces(ctx context.Context) ([]FunctionsNamespace, *Response, error) {
 	req, err := s.client.NewRequest(ctx, http.MethodGet, functionsBasePath, nil)
 	if err != nil {
 		return nil, nil, err
@@ -64,7 +64,7 @@ func (s *FunctionsServiceOp) Namespaces(ctx context.Context) ([]FunctionsNamespa
 }
 
 // Gets a single namespace
-func (s *FunctionsServiceOp) Namespace(ctx context.Context, namespace string) (*FunctionsNamespace, *Response, error) {
+func (s *FunctionsServiceOp) GetNamespace(ctx context.Context, namespace string) (*FunctionsNamespace, *Response, error) {
 	path := fmt.Sprintf(functionsNamespacePath, namespace)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -80,7 +80,7 @@ func (s *FunctionsServiceOp) Namespace(ctx context.Context, namespace string) (*
 }
 
 // Creates a namespace
-func (s *FunctionsServiceOp) CreateNamespace(ctx context.Context, opts *FunctionsNamespaceCreateOptions) (*FunctionsNamespace, *Response, error) {
+func (s *FunctionsServiceOp) CreateNamespace(ctx context.Context, opts *FunctionsNamespaceCreateRequest) (*FunctionsNamespace, *Response, error) {
 	req, err := s.client.NewRequest(ctx, http.MethodPost, functionsBasePath, opts)
 	if err != nil {
 		return nil, nil, err
