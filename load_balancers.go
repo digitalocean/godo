@@ -10,6 +10,7 @@ const loadBalancersBasePath = "/v2/load_balancers"
 const forwardingRulesPath = "forwarding_rules"
 
 const dropletsPath = "droplets"
+const defaultHttpIdleTimeout = 60
 
 // LoadBalancersService is an interface for managing load balancers with the DigitalOcean API.
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/Load-Balancers
@@ -52,6 +53,7 @@ type LoadBalancer struct {
 	DisableLetsEncryptDNSRecords *bool            `json:"disable_lets_encrypt_dns_records,omitempty"`
 	ValidateOnly                 bool             `json:"validate_only,omitempty"`
 	ProjectID                    string           `json:"project_id,omitempty"`
+	HTTPIdleTimeoutSeconds       *uint64          `json:"http_idle_timeout_seconds,omitempty"`
 }
 
 // String creates a human-readable description of a LoadBalancer.
@@ -83,6 +85,7 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 		DisableLetsEncryptDNSRecords: l.DisableLetsEncryptDNSRecords,
 		ValidateOnly:                 l.ValidateOnly,
 		ProjectID:                    l.ProjectID,
+		HTTPIdleTimeoutSeconds:       l.HTTPIdleTimeoutSeconds,
 	}
 
 	if l.DisableLetsEncryptDNSRecords != nil {
@@ -99,6 +102,11 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 	}
 	if l.Region != nil {
 		r.Region = l.Region.Slug
+	}
+
+	if l.HTTPIdleTimeoutSeconds == nil {
+		defaultTimeout := uint64(defaultHttpIdleTimeout)
+		r.HTTPIdleTimeoutSeconds = &defaultTimeout
 	}
 	return &r
 }
@@ -168,6 +176,7 @@ type LoadBalancerRequest struct {
 	DisableLetsEncryptDNSRecords *bool            `json:"disable_lets_encrypt_dns_records,omitempty"`
 	ValidateOnly                 bool             `json:"validate_only,omitempty"`
 	ProjectID                    string           `json:"project_id,omitempty"`
+	HTTPIdleTimeoutSeconds       *uint64          `json:"http_idle_timeout_seconds,omitempty"`
 }
 
 // String creates a human-readable description of a LoadBalancerRequest.
