@@ -505,8 +505,15 @@ func (r Rate) String() string {
 	return Stringify(r)
 }
 
+// PtrTo returns a pointer to the provided input.
+func PtrTo[T any](v T) *T {
+	return &v
+}
+
 // String is a helper routine that allocates a new string value
 // to store v and returns a pointer to it.
+//
+// Deprecated: Use PtrTo instead.
 func String(v string) *string {
 	p := new(string)
 	*p = v
@@ -516,6 +523,8 @@ func String(v string) *string {
 // Int is a helper routine that allocates a new int32 value
 // to store v and returns a pointer to it, but unlike Int32
 // its argument value is an int.
+//
+// Deprecated: Use PtrTo instead.
 func Int(v int) *int {
 	p := new(int)
 	*p = v
@@ -524,6 +533,8 @@ func Int(v int) *int {
 
 // Bool is a helper routine that allocates a new bool value
 // to store v and returns a pointer to it.
+//
+// Deprecated: Use PtrTo instead.
 func Bool(v bool) *bool {
 	p := new(bool)
 	*p = v

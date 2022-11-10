@@ -1768,27 +1768,27 @@ func TestDatabases_GetConfigPostgres(t *testing.T) {
 }`
 
 		postgresConfig = PostgreSQLConfig{
-			AutovacuumNaptime:               intPtr(60),
-			AutovacuumVacuumThreshold:       intPtr(50),
-			AutovacuumAnalyzeThreshold:      intPtr(50),
-			AutovacuumVacuumScaleFactor:     float32Ptr(0.2),
-			AutovacuumAnalyzeScaleFactor:    float32Ptr(0.2),
-			AutovacuumVacuumCostDelay:       intPtr(20),
-			AutovacuumVacuumCostLimit:       intPtr(-1),
-			BGWriterFlushAfter:              intPtr(512),
-			BGWriterLRUMaxpages:             intPtr(100),
-			BGWriterLRUMultiplier:           float32Ptr(2),
-			IdleInTransactionSessionTimeout: intPtr(0),
-			JIT:                             boolPtr(true),
-			LogAutovacuumMinDuration:        intPtr(-1),
-			LogMinDurationStatement:         intPtr(-1),
-			MaxPreparedTransactions:         intPtr(0),
-			MaxParallelWorkers:              intPtr(8),
-			MaxParallelWorkersPerGather:     intPtr(2),
-			TempFileLimit:                   intPtr(-1),
-			WalSenderTimeout:                intPtr(60000),
-			BackupHour:                      intPtr(18),
-			BackupMinute:                    intPtr(26),
+			AutovacuumNaptime:               PtrTo(60),
+			AutovacuumVacuumThreshold:       PtrTo(50),
+			AutovacuumAnalyzeThreshold:      PtrTo(50),
+			AutovacuumVacuumScaleFactor:     PtrTo(float32(0.2)),
+			AutovacuumAnalyzeScaleFactor:    PtrTo(float32(0.2)),
+			AutovacuumVacuumCostDelay:       PtrTo(20),
+			AutovacuumVacuumCostLimit:       PtrTo(-1),
+			BGWriterFlushAfter:              PtrTo(512),
+			BGWriterLRUMaxpages:             PtrTo(100),
+			BGWriterLRUMultiplier:           PtrTo(float32(2)),
+			IdleInTransactionSessionTimeout: PtrTo(0),
+			JIT:                             PtrTo(true),
+			LogAutovacuumMinDuration:        PtrTo(-1),
+			LogMinDurationStatement:         PtrTo(-1),
+			MaxPreparedTransactions:         PtrTo(0),
+			MaxParallelWorkers:              PtrTo(8),
+			MaxParallelWorkersPerGather:     PtrTo(2),
+			TempFileLimit:                   PtrTo(-1),
+			WalSenderTimeout:                PtrTo(60000),
+			BackupHour:                      PtrTo(18),
+			BackupMinute:                    PtrTo(26),
 		}
 	)
 
@@ -1810,10 +1810,10 @@ func TestDatabases_UpdateConfigPostgres(t *testing.T) {
 		dbID           = "deadbeef-dead-4aa5-beef-deadbeef347d"
 		path           = fmt.Sprintf("/v2/databases/%s/config", dbID)
 		postgresConfig = &PostgreSQLConfig{
-			AutovacuumNaptime:          intPtr(75),
-			AutovacuumVacuumThreshold:  intPtr(45),
-			AutovacuumAnalyzeThreshold: intPtr(45),
-			MaxPreparedTransactions:    intPtr(0),
+			AutovacuumNaptime:          PtrTo(75),
+			AutovacuumVacuumThreshold:  PtrTo(45),
+			AutovacuumAnalyzeThreshold: PtrTo(45),
+			MaxPreparedTransactions:    PtrTo(0),
 		}
 	)
 
@@ -1859,14 +1859,14 @@ func TestDatabases_GetConfigRedis(t *testing.T) {
 }`
 
 		redisConfig = RedisConfig{
-			RedisMaxmemoryPolicy:      strPtr("allkeys-lru"),
-			RedisLFULogFactor:         intPtr(10),
-			RedisLFUDecayTime:         intPtr(1),
-			RedisSSL:                  boolPtr(true),
-			RedisTimeout:              intPtr(300),
-			RedisNotifyKeyspaceEvents: strPtr(""),
-			RedisPersistence:          strPtr("off"),
-			RedisACLChannelsDefault:   strPtr("allchannels"),
+			RedisMaxmemoryPolicy:      PtrTo("allkeys-lru"),
+			RedisLFULogFactor:         PtrTo(10),
+			RedisLFUDecayTime:         PtrTo(1),
+			RedisSSL:                  PtrTo(true),
+			RedisTimeout:              PtrTo(300),
+			RedisNotifyKeyspaceEvents: PtrTo(""),
+			RedisPersistence:          PtrTo("off"),
+			RedisACLChannelsDefault:   PtrTo("allchannels"),
 		}
 	)
 
@@ -1888,9 +1888,9 @@ func TestDatabases_UpdateConfigRedis(t *testing.T) {
 		dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
 		path        = fmt.Sprintf("/v2/databases/%s/config", dbID)
 		redisConfig = &RedisConfig{
-			RedisMaxmemoryPolicy:      strPtr("allkeys-lru"),
-			RedisLFULogFactor:         intPtr(10),
-			RedisNotifyKeyspaceEvents: strPtr(""),
+			RedisMaxmemoryPolicy:      PtrTo("allkeys-lru"),
+			RedisLFULogFactor:         PtrTo(10),
+			RedisNotifyKeyspaceEvents: PtrTo(""),
 		}
 	)
 
@@ -1941,7 +1941,7 @@ func TestDatabases_UpdateConfigRedisNormalizeEvictionPolicy(t *testing.T) {
 			dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
 			path        = fmt.Sprintf("/v2/databases/%s/config", dbID)
 			redisConfig = &RedisConfig{
-				RedisMaxmemoryPolicy: strPtr(tt.input),
+				RedisMaxmemoryPolicy: PtrTo(tt.input),
 			}
 		)
 
@@ -1987,16 +1987,16 @@ func TestDatabases_GetConfigMySQL(t *testing.T) {
 }`
 
 		mySQLConfig = MySQLConfig{
-			SQLMode:                     strPtr("ANSI,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,STRICT_ALL_TABLES"),
-			SQLRequirePrimaryKey:        boolPtr(true),
-			InnodbFtMinTokenSize:        intPtr(3),
-			InnodbFtServerStopwordTable: strPtr(""),
-			InnodbPrintAllDeadlocks:     boolPtr(false),
-			InnodbRollbackOnTimeout:     boolPtr(false),
-			SlowQueryLog:                boolPtr(false),
-			LongQueryTime:               float32Ptr(10),
-			BackupHour:                  intPtr(21),
-			BackupMinute:                intPtr(59),
+			SQLMode:                     PtrTo("ANSI,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION,NO_ZERO_DATE,NO_ZERO_IN_DATE,STRICT_ALL_TABLES"),
+			SQLRequirePrimaryKey:        PtrTo(true),
+			InnodbFtMinTokenSize:        PtrTo(3),
+			InnodbFtServerStopwordTable: PtrTo(""),
+			InnodbPrintAllDeadlocks:     PtrTo(false),
+			InnodbRollbackOnTimeout:     PtrTo(false),
+			SlowQueryLog:                PtrTo(false),
+			LongQueryTime:               PtrTo(float32(10)),
+			BackupHour:                  PtrTo(21),
+			BackupMinute:                PtrTo(59),
 		}
 	)
 
@@ -2018,9 +2018,9 @@ func TestDatabases_UpdateConfigMySQL(t *testing.T) {
 		dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
 		path        = fmt.Sprintf("/v2/databases/%s/config", dbID)
 		mySQLConfig = &MySQLConfig{
-			SQLRequirePrimaryKey:        boolPtr(true),
-			InnodbFtMinTokenSize:        intPtr(3),
-			InnodbFtServerStopwordTable: strPtr(""),
+			SQLRequirePrimaryKey:        PtrTo(true),
+			InnodbFtMinTokenSize:        PtrTo(3),
+			InnodbFtServerStopwordTable: PtrTo(""),
 		}
 	)
 
