@@ -942,6 +942,7 @@ func TestLoadBalancers_RemoveForwardingRules(t *testing.T) {
 }
 
 func TestLoadBalancers_AsRequest(t *testing.T) {
+	lbIdleTimeout := uint64(60)
 	lb := &LoadBalancer{
 		ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
 		Name:      "test-loadbalancer",
@@ -973,7 +974,9 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		ValidateOnly:           true,
+		HTTPIdleTimeoutSeconds: &lbIdleTimeout,
 	}
+
 	lb.DropletIDs = make([]int, 1, 2)
 	lb.DropletIDs[0] = 12345
 	lb.ForwardingRules = make([]ForwardingRule, 1, 2)
@@ -984,7 +987,6 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		TargetPort:     80,
 	}
 
-	expectedIdleTimeout := uint64(60)
 	want := &LoadBalancerRequest{
 		Name:      "test-loadbalancer",
 		Algorithm: "least_connections",
@@ -1016,7 +1018,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
-		HTTPIdleTimeoutSeconds: &expectedIdleTimeout,
+		HTTPIdleTimeoutSeconds: &lbIdleTimeout,
 		ValidateOnly:           true,
 	}
 
