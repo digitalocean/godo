@@ -167,13 +167,13 @@ func TestRegistry_DockerCredentials(t *testing.T) {
 		},
 		{
 			name:                  "read-only + custom expiry",
-			params:                &RegistryDockerCredentialsRequest{ExpirySeconds: intPtr(60 * 60)},
+			params:                &RegistryDockerCredentialsRequest{ExpirySeconds: PtrTo(60 * 60)},
 			expectedReadWrite:     "false",
 			expectedExpirySeconds: "3600",
 		},
 		{
 			name:                  "read/write + custom expiry",
-			params:                &RegistryDockerCredentialsRequest{ReadWrite: true, ExpirySeconds: intPtr(60 * 60)},
+			params:                &RegistryDockerCredentialsRequest{ReadWrite: true, ExpirySeconds: PtrTo(60 * 60)},
 			expectedReadWrite:     "true",
 			expectedExpirySeconds: "3600",
 		},
@@ -488,7 +488,7 @@ func TestRegistry_ListManifests(t *testing.T) {
 				{
 					"digest": "sha256:blob1",
 					"compressed_size_bytes": 998
-				}, 
+				},
 				{
 
 					"digest": "sha256:blob2",

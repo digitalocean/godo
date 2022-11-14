@@ -46,8 +46,8 @@ func TestBillingHistory_List(t *testing.T) {
 		{
 			Description: "Invoice for May 2018",
 			Amount:      "12.34",
-			InvoiceID:   String("123"),
-			InvoiceUUID: String("example-uuid"),
+			InvoiceID:   PtrTo("123"),
+			InvoiceUUID: PtrTo("example-uuid"),
 			Date:        time.Date(2018, 6, 1, 8, 44, 38, 0, time.UTC),
 			Type:        "Invoice",
 		},
