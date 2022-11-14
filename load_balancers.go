@@ -10,7 +10,6 @@ const loadBalancersBasePath = "/v2/load_balancers"
 const forwardingRulesPath = "forwarding_rules"
 
 const dropletsPath = "droplets"
-const defaultHttpIdleTimeout = 60
 
 // LoadBalancersService is an interface for managing load balancers with the DigitalOcean API.
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/Load-Balancers
@@ -104,10 +103,6 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 		r.Region = l.Region.Slug
 	}
 
-	if l.HTTPIdleTimeoutSeconds == nil {
-		defaultTimeout := uint64(defaultHttpIdleTimeout)
-		r.HTTPIdleTimeoutSeconds = &defaultTimeout
-	}
 	return &r
 }
 
