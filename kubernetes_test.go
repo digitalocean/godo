@@ -492,7 +492,7 @@ func TestKubernetesClusters_GetCredentials_WithExpirySeconds(t *testing.T) {
 		fmt.Fprint(w, jBlob)
 	})
 	got, _, err := kubeSvc.GetCredentials(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterCredentialsGetRequest{
-		ExpirySeconds: intPtr(60 * 60),
+		ExpirySeconds: PtrTo(60 * 60),
 	})
 	require.NoError(t, err)
 	require.Equal(t, want, got)
@@ -880,7 +880,7 @@ func TestKubernetesClusters_Update_FalseAutoUpgrade(t *testing.T) {
 		},
 	}
 	updateRequest := &KubernetesClusterUpdateRequest{
-		AutoUpgrade: boolPtr(false),
+		AutoUpgrade: PtrTo(false),
 	}
 
 	jBlob := `
@@ -1330,7 +1330,7 @@ func TestKubernetesClusters_UpdateNodePool(t *testing.T) {
 	}
 	updateRequest := &KubernetesNodePoolUpdateRequest{
 		Name:  "a better name",
-		Count: intPtr(4),
+		Count: PtrTo(4),
 		Tags:  []string{"tag-1", "tag-2"},
 	}
 
@@ -1384,7 +1384,7 @@ func TestKubernetesClusters_UpdateNodePool_ZeroCount(t *testing.T) {
 		MaxNodes:  0,
 	}
 	updateRequest := &KubernetesNodePoolUpdateRequest{
-		Count: intPtr(0),
+		Count: PtrTo(0),
 	}
 
 	jBlob := `
@@ -1439,9 +1439,9 @@ func TestKubernetesClusters_UpdateNodePool_AutoScale(t *testing.T) {
 		MaxNodes:  10,
 	}
 	updateRequest := &KubernetesNodePoolUpdateRequest{
-		AutoScale: boolPtr(true),
-		MinNodes:  intPtr(0),
-		MaxNodes:  intPtr(10),
+		AutoScale: PtrTo(true),
+		MinNodes:  PtrTo(0),
+		MaxNodes:  PtrTo(10),
 	}
 
 	jBlob := `

@@ -174,7 +174,7 @@ func TestVPCs_Update(t *testing.T) {
 			req: &VPCUpdateRequest{
 				Name:        "my-new-vpc",
 				Description: "vpc description",
-				Default:     boolPtr(false),
+				Default:     PtrTo(false),
 			},
 			mockResponse: `
 			{
@@ -192,7 +192,7 @@ func TestVPCs_Update(t *testing.T) {
 			req: &VPCUpdateRequest{
 				Name:        "my-new-vpc",
 				Description: "vpc description",
-				Default:     boolPtr(true),
+				Default:     PtrTo(true),
 			},
 			mockResponse: `
 			{
