@@ -159,7 +159,7 @@ func (s *FunctionsServiceOp) DeleteNamespace(ctx context.Context, namespace stri
 	return resp, nil
 }
 
-// Gets a list of triggers
+// ListTriggers gets a list of triggers
 func (s *FunctionsServiceOp) ListTriggers(ctx context.Context, namespace string) ([]FunctionsTrigger, *Response, error) {
 	path := fmt.Sprintf(functionsTriggerBasePath, namespace)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -174,7 +174,7 @@ func (s *FunctionsServiceOp) ListTriggers(ctx context.Context, namespace string)
 	return root.Triggers, resp, nil
 }
 
-// Gets a single trigger
+// GetTrigger gets a single trigger
 func (s *FunctionsServiceOp) GetTrigger(ctx context.Context, namespace string, trigger string) (*FunctionsTrigger, *Response, error) {
 	path := fmt.Sprintf(functionsTriggerBasePath+"/%s", namespace, trigger)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -189,7 +189,7 @@ func (s *FunctionsServiceOp) GetTrigger(ctx context.Context, namespace string, t
 	return root.Trigger, resp, nil
 }
 
-// Creates a trigger
+// CreateTrigger creates a trigger
 func (s *FunctionsServiceOp) CreateTrigger(ctx context.Context, namespace string, opts *FunctionsTriggerCreateRequest) (*FunctionsTrigger, *Response, error) {
 	path := fmt.Sprintf(functionsTriggerBasePath, namespace)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, opts)
@@ -204,7 +204,7 @@ func (s *FunctionsServiceOp) CreateTrigger(ctx context.Context, namespace string
 	return root.Trigger, resp, nil
 }
 
-// Update a trigger
+// UpdateTrigger updates a trigger
 func (s *FunctionsServiceOp) UpdateTrigger(ctx context.Context, namespace string, trigger string, opts *FunctionsTriggerUpdateRequest) (*FunctionsTrigger, *Response, error) {
 	path := fmt.Sprintf(functionsTriggerBasePath+"/%s", namespace, trigger)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, opts)
@@ -220,7 +220,7 @@ func (s *FunctionsServiceOp) UpdateTrigger(ctx context.Context, namespace string
 	return root.Trigger, resp, nil
 }
 
-// Delete a trigger
+// DeleteTrigger deletes a trigger
 func (s *FunctionsServiceOp) DeleteTrigger(ctx context.Context, namespace string, trigger string) (*Response, error) {
 	path := fmt.Sprintf(functionsTriggerBasePath+"/%s", namespace, trigger)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
