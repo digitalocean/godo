@@ -95,7 +95,7 @@ type FunctionsTriggerCreateRequest struct {
 }
 
 type FunctionsTriggerUpdateRequest struct {
-	IsEnabled        bool                     `json:"is_enabled"`
+	IsEnabled        *bool                    `json:"is_enabled,omitempty"`
 	ScheduledDetails *TriggerScheduledDetails `json:"scheduled_details,omitempty"`
 }
 

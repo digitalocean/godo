@@ -388,8 +388,9 @@ func TestFunctions_UpdateTrigger(t *testing.T) {
 	}`)
 	})
 
+	isEnabled := false
 	opts := FunctionsTriggerUpdateRequest{
-		IsEnabled: false,
+		IsEnabled: &isEnabled,
 	}
 
 	trigger, _, err := client.Functions.UpdateTrigger(ctx, "123-456", "my-trigger", &opts)
