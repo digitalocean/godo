@@ -69,7 +69,11 @@ var lbListJSONResponse = `
             ],
             "disable_lets_encrypt_dns_records": true,
             "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
-            "http_idle_timeout_seconds": 60
+            "http_idle_timeout_seconds": 60,
+            "firewall": {
+                "deny": ["cidr:1.2.0.0/16"],
+                "allow": ["ip:1.2.3.4"]
+            }
         }
     ],
     "links":{
@@ -152,7 +156,11 @@ var lbCreateJSONResponse = `
         "vpc_uuid":"880b7f98-f062-404d-b33c-458d545696f6",
         "disable_lets_encrypt_dns_records": true,
         "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
-        "http_idle_timeout_seconds": 60
+        "http_idle_timeout_seconds": 60,
+        "firewall": {
+            "deny": ["cidr:1.2.0.0/16"],
+            "allow": ["ip:1.2.3.4"]
+        }
     }
 }
 `
@@ -215,7 +223,11 @@ var lbGetJSONResponse = `
         ],
         "disable_lets_encrypt_dns_records": false,
         "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
-        "http_idle_timeout_seconds": 60
+        "http_idle_timeout_seconds": 60,
+        "firewall": {
+            "deny": ["cidr:1.2.0.0/16"],
+            "allow": ["ip:1.2.3.4"]
+        }
     }
 }
 `
@@ -282,7 +294,11 @@ var lbUpdateJSONResponse = `
             21
         ],
         "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
-        "http_idle_timeout_seconds": 60
+        "http_idle_timeout_seconds": 60,
+        "firewall": {
+            "deny": ["cidr:1.3.0.0/16"],
+            "allow": ["ip:1.2.3.5"]
+        }
     }
 }
 `
@@ -344,6 +360,10 @@ func TestLoadBalancers_Get(t *testing.T) {
 		DropletIDs:             []int{2, 21},
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		HTTPIdleTimeoutSeconds: &expectedTimeout,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.4"},
+			Deny:  []string{"cidr:1.2.0.0/16"},
+		},
 	}
 
 	disableLetsEncryptDNSRecords := false
@@ -389,6 +409,10 @@ func TestLoadBalancers_Create(t *testing.T) {
 		RedirectHttpToHttps: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
 		ProjectID:           "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.4"},
+			Deny:  []string{"cidr:1.2.0.0/16"},
+		},
 	}
 
 	path := "/v2/load_balancers"
@@ -460,6 +484,10 @@ func TestLoadBalancers_Create(t *testing.T) {
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		HTTPIdleTimeoutSeconds: &expectedTimeout,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.4"},
+			Deny:  []string{"cidr:1.2.0.0/16"},
+		},
 	}
 
 	disableLetsEncryptDNSRecords := true
@@ -625,6 +653,10 @@ func TestLoadBalancers_Update(t *testing.T) {
 		},
 		DropletIDs: []int{2, 21},
 		ProjectID:  "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.5"},
+			Deny:  []string{"cidr:1.3.0.0/16"},
+		},
 	}
 
 	path := "/v2/load_balancers"
@@ -694,6 +726,10 @@ func TestLoadBalancers_Update(t *testing.T) {
 		DisableLetsEncryptDNSRecords: nil,
 		ProjectID:                    "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		HTTPIdleTimeoutSeconds:       &expectedTimeout,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.5"},
+			Deny:  []string{"cidr:1.3.0.0/16"},
+		},
 	}
 
 	assert.Equal(t, expected, loadBalancer)
@@ -755,6 +791,10 @@ func TestLoadBalancers_List(t *testing.T) {
 			DropletIDs:             []int{2, 21},
 			ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 			HTTPIdleTimeoutSeconds: &expectedTimeout,
+			Firewall: &LBFirewall{
+				Allow: []string{"ip:1.2.3.4"},
+				Deny:  []string{"cidr:1.2.0.0/16"},
+			},
 		},
 	}
 	disableLetsEncryptDNSRecords := true
@@ -975,6 +1015,10 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		ValidateOnly:           true,
 		HTTPIdleTimeoutSeconds: &lbIdleTimeout,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.5"},
+			Deny:  []string{"cidr:1.3.0.0/16"},
+		},
 	}
 
 	lb.DropletIDs = make([]int, 1, 2)
@@ -1020,6 +1064,10 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		HTTPIdleTimeoutSeconds: &lbIdleTimeout,
 		ValidateOnly:           true,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.5"},
+			Deny:  []string{"cidr:1.3.0.0/16"},
+		},
 	}
 
 	r := lb.AsRequest()

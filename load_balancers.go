@@ -53,6 +53,7 @@ type LoadBalancer struct {
 	ValidateOnly                 bool             `json:"validate_only,omitempty"`
 	ProjectID                    string           `json:"project_id,omitempty"`
 	HTTPIdleTimeoutSeconds       *uint64          `json:"http_idle_timeout_seconds,omitempty"`
+	Firewall                     *LBFirewall      `json:"firewall,omitempty"`
 }
 
 // String creates a human-readable description of a LoadBalancer.
@@ -103,6 +104,11 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 		r.Region = l.Region.Slug
 	}
 
+	if l.Firewall != nil {
+		r.Firewall = &LBFirewall{}
+		*r.Firewall = *l.Firewall
+	}
+
 	return &r
 }
 
@@ -149,6 +155,17 @@ func (s StickySessions) String() string {
 	return Stringify(s)
 }
 
+// LBFirewall holds the allow and deny rules for a loadbalancer's firewall
+type LBFirewall struct {
+	Allow []string `json:"allow,omitempty"`
+	Deny  []string `json:"deny,omitempty"`
+}
+
+// String creates a human-readable description of a StickySessions instance.
+func (f LBFirewall) String() string {
+	return Stringify(f)
+}
+
 // LoadBalancerRequest represents the configuration to be applied to an existing or a new load balancer.
 type LoadBalancerRequest struct {
 	Name      string `json:"name,omitempty"`
@@ -172,6 +189,7 @@ type LoadBalancerRequest struct {
 	ValidateOnly                 bool             `json:"validate_only,omitempty"`
 	ProjectID                    string           `json:"project_id,omitempty"`
 	HTTPIdleTimeoutSeconds       *uint64          `json:"http_idle_timeout_seconds,omitempty"`
+	Firewall                     *LBFirewall      `json:"firewall,omitempty"`
 }
 
 // String creates a human-readable description of a LoadBalancerRequest.
