@@ -3,6 +3,7 @@ package godo
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 )
 
@@ -156,10 +157,19 @@ func (s StickySessions) String() string {
 }
 
 // LBFirewall holds the allow and deny rules for a loadbalancer's firewall
+// currently allow and deny rules support cidrs and ips
+// please use the helper methods (IPSourceFirewall/CIDRSourceFirewall) to format the allow/deny rules
 type LBFirewall struct {
 	Allow []string `json:"allow,omitempty"`
 	Deny  []string `json:"deny,omitempty"`
 }
+
+// IPSourceFirewall takes an IP (net.IP) and returns a formatted ip source firewall rule
+func IPSourceFirewall(ip net.IP) string { return fmt.Sprintf("ip:%s", ip.String()) }
+
+// CIDRSourceFirewall takes a CIDR notation IP address and prefix length string
+// like "192.0.2.0/24" and returns a formatted cidr source firewall rule
+func CIDRSourceFirewall(cidr string) string { return fmt.Sprintf("cidr:%s", cidr) }
 
 // String creates a human-readable description of a StickySessions instance.
 func (f LBFirewall) String() string {
