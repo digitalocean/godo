@@ -3,7 +3,6 @@ package godo
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/http"
 )
 
@@ -164,8 +163,8 @@ type LBFirewall struct {
 	Deny  []string `json:"deny,omitempty"`
 }
 
-// IPSourceFirewall takes an IP (net.IP) and returns a formatted ip source firewall rule
-func IPSourceFirewall(ip net.IP) string { return fmt.Sprintf("ip:%s", ip.String()) }
+// IPSourceFirewall takes an IP (string) and returns a formatted ip source firewall rule
+func IPSourceFirewall(ip string) string { return fmt.Sprintf("ip:%s", ip) }
 
 // CIDRSourceFirewall takes a CIDR notation IP address and prefix length string
 // like "192.0.2.0/24" and returns a formatted cidr source firewall rule
