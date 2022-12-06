@@ -105,8 +105,7 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 	}
 
 	if l.Firewall != nil {
-		r.Firewall = &LBFirewall{}
-		*r.Firewall = *l.Firewall
+		r.Firewall = l.Firewall.deepCopy()
 	}
 
 	return &r
@@ -161,6 +160,13 @@ func (s StickySessions) String() string {
 type LBFirewall struct {
 	Allow []string `json:"allow,omitempty"`
 	Deny  []string `json:"deny,omitempty"`
+}
+
+func (lbf *LBFirewall) deepCopy() *LBFirewall {
+	return &LBFirewall{
+		Allow: append([]string(nil), lbf.Allow...),
+		Deny:  append([]string(nil), lbf.Deny...),
+	}
 }
 
 // IPSourceFirewall takes an IP (string) and returns a formatted ip source firewall rule
