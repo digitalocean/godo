@@ -2,6 +2,7 @@
 
 ## [v1.92.0] - 2022-12-08
 
+- #589 - @wez470 - load-balancers: Minor doc fixup
 - #585 - @StephenVarela - Add firewall support for load balancers
 - #587 - @StephenVarela - Support new http alerts for load balancers
 - #586 - @andrewsomething - godo.go: Sort service lists.
