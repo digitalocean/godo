@@ -155,7 +155,7 @@ func (s StickySessions) String() string {
 }
 
 // LBFirewall holds the allow and deny rules for a loadbalancer's firewall.
-// Currently allow and deny rules support cidrs and ips.
+// Currently, allow and deny rules support cidrs and ips.
 // Please use the helper methods (IPSourceFirewall/CIDRSourceFirewall) to format the allow/deny rules.
 type LBFirewall struct {
 	Allow []string `json:"allow,omitempty"`
@@ -176,7 +176,7 @@ func IPSourceFirewall(ip string) string { return fmt.Sprintf("ip:%s", ip) }
 // like "192.0.2.0/24" and returns a formatted cidr source firewall rule
 func CIDRSourceFirewall(cidr string) string { return fmt.Sprintf("cidr:%s", cidr) }
 
-// String creates a human-readable description of a StickySessions instance.
+// String creates a human-readable description of an LBFirewall instance.
 func (f LBFirewall) String() string {
 	return Stringify(f)
 }
