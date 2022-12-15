@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.93.0] - 2022-12-15
+
+- #591 - @andrewsomething - tokens: Add initial support for new API.
+
 ## [v1.92.0] - 2022-12-08
 
 - #589 - @wez470 - load-balancers: Minor doc fixup
