@@ -10,19 +10,19 @@ import (
 const uptimeChecksBasePath = "/v2/uptime/checks"
 
 // UptimeChecksService is an interface for creating and managing Uptime checks with the DigitalOcean API.
-// See: https://docs.digitalocean.com/reference/api/api-reference/#tag/Projects
+// See: https://docs.digitalocean.com/reference/api/api-reference/#tag/Uptime
 type UptimeChecksService interface {
 	List(context.Context, *ListOptions) ([]UptimeCheck, *Response, error)
 	Get(context.Context, string) (*UptimeCheck, *Response, error)
-	GetState(context.Context, string) (*UptimeCheck, *Response, error)
+	GetUptimeCheckState(context.Context, string) (*UptimeCheckState, *Response, error)
 	Create(context.Context, *CreateUptimeCheckRequest) (*UptimeCheck, *Response, error)
 	Update(context.Context, string, *UpdateUptimeCheckRequest) (*UptimeCheck, *Response, error)
 	Delete(context.Context, string) (*Response, error)
-	GetAlert(context.Context, string, string) (*Alert, *Response, error)
-	ListAlerts(context.Context, *ListOptions, string) ([]Alert, *Response, error)
-	CreateAlert(context.Context, *CreateAlertRequest, string) (*Alert, *Response, error)
-	UpdateAlert(context.Context, string, string, *UpdateAlertRequest) (*Alert, *Response, error)
-	DeleteAlert(context.Context, string, string) (*Response, error)
+	GetUptimeAlert(context.Context, string, string) (*UptimeAlert, *Response, error)
+	ListUptimeAlerts(context.Context, string, *ListOptions) ([]UptimeAlert, *Response, error)
+	CreateUptimeAlert(context.Context, string, *CreateUptimeAlertRequest) (*UptimeAlert, *Response, error)
+	UpdateUptimeAlert(context.Context, string, string, *UpdateUptimeAlertRequest) (*UptimeAlert, *Response, error)
+	DeleteUptimeAlert(context.Context, string, string) (*Response, error)
 }
 
 // UptimeChecksServiceOp handles communication with Uptime Check methods of the DigitalOcean API.
@@ -40,29 +40,9 @@ type UptimeCheck struct {
 	Enabled bool     `json:"enabled"`
 }
 
-// Alert represents a DigitalOcean Alert configuration.
-type Alert struct {
+// UptimeAlert represents a DigitalOcean Uptime Alert configuration.
+type UptimeAlert struct {
 	ID            string         `json:"id"`
-	Name          string         `json:"name"`
-	Type          string         `json:"type"`
-	Threshold     int            `json:"threshold"`
-	Comparison    string         `json:"comparison"`
-	Notifications *Notifications `json:"notifications"`
-	Period        string         `json:"period"`
-}
-
-// CreateUptimeAlertRequest represents the request to create a new alert.
-type CreateAlertRequest struct {
-	Name          string         `json:"name"`
-	Type          string         `json:"type"`
-	Threshold     int            `json:"threshold"`
-	Comparison    string         `json:"comparison"`
-	Notifications *Notifications `json:"notifications"`
-	Period        string         `json:"period"`
-}
-
-// UpdateUptimeAlertRequest represents the request to create a new alert.
-type UpdateAlertRequest struct {
 	Name          string         `json:"name"`
 	Type          string         `json:"type"`
 	Threshold     int            `json:"threshold"`
@@ -73,14 +53,33 @@ type UpdateAlertRequest struct {
 
 // Notifications represents a DigitalOcean Notifications configuration.
 type Notifications struct {
-	Email []string `json:"email"`
-	Slack []Slack  `json:"slack"`
+	Email []string       `json:"email"`
+	Slack []SlackDetails `json:"slack"`
 }
 
-// Slack represents a DigitalOcean Slack configuration.
-type Slack struct {
-	Channel string `json:"channel"`
-	URL     string `json:"url"`
+// UptimeCheckState represents a DigitalOcean Uptime Check's state configuration.
+type UptimeCheckState struct {
+	Regions        UptimeRegions        `json:"regions"`
+	PreviousOutage UptimePreviousOutage `json:"previous_outage"`
+}
+
+type UptimeRegions struct {
+	USEast UptimeRegion `json:"us_east"`
+	USWest UptimeRegion `json:"us_west"`
+}
+
+type UptimeRegion struct {
+	Status                    string  `json:"status"`
+	StatusChangedAt           string  `json:"status_changed_at"`
+	ThirtyDayUptimePercentage float32 `json:"thirty_day_uptime_percentage"`
+}
+
+// UptimePreviousOutage represents a DigitalOcean Uptime Check's previous outage configuration.
+type UptimePreviousOutage struct {
+	Region          string `json:"region"`
+	StartedAt       string `json:"started_at"`
+	EndedAt         string `json:"ended_at"`
+	DurationSeconds int    `json:"duration_seconds"`
 }
 
 // CreateUptimeCheckRequest represents the request to create a new uptime check.
@@ -101,24 +100,48 @@ type UpdateUptimeCheckRequest struct {
 	Enabled bool     `json:"enabled"`
 }
 
+// CreateUptimeUptimeAlertRequest represents the request to create a new Uptime Alert.
+type CreateUptimeAlertRequest struct {
+	Name          string         `json:"name"`
+	Type          string         `json:"type"`
+	Threshold     int            `json:"threshold"`
+	Comparison    string         `json:"comparison"`
+	Notifications *Notifications `json:"notifications"`
+	Period        string         `json:"period"`
+}
+
+// UpdateUptimeAlertRequest represents the request to create a new alert.
+type UpdateUptimeAlertRequest struct {
+	Name          string         `json:"name"`
+	Type          string         `json:"type"`
+	Threshold     int            `json:"threshold"`
+	Comparison    string         `json:"comparison"`
+	Notifications *Notifications `json:"notifications"`
+	Period        string         `json:"period"`
+}
+
 type uptimeChecksRoot struct {
 	UptimeChecks []UptimeCheck `json:"checks"`
 	Links        *Links        `json:"links"`
 	Meta         *Meta         `json:"meta"`
 }
 
-type alertsRoot struct {
-	Alerts []Alert `json:"alerts"`
-	Links  *Links  `json:"links"`
-	Meta   *Meta   `json:"meta"`
+type uptimeCheckStateRoot struct {
+	UptimeCheckState UptimeCheckState `json:"state"`
+}
+
+type uptimeAlertsRoot struct {
+	UptimeAlerts []UptimeAlert `json:"alerts"`
+	Links        *Links        `json:"links"`
+	Meta         *Meta         `json:"meta"`
 }
 
 type uptimeCheckRoot struct {
 	UptimeCheck *UptimeCheck `json:"check"`
 }
 
-type alertRoot struct {
-	Alert *Alert `json:"alert"`
+type uptimeAlertRoot struct {
+	UptimeAlert *UptimeAlert `json:"alert"`
 }
 
 var _ UptimeChecksService = &UptimeChecksServiceOp{}
@@ -150,8 +173,8 @@ func (p *UptimeChecksServiceOp) List(ctx context.Context, opts *ListOptions) ([]
 	return root.UptimeChecks, resp, err
 }
 
-// GetState of uptime check.
-func (p *UptimeChecksServiceOp) GetState(ctx context.Context, uptimeCheckID string) (*UptimeCheck, *Response, error) {
+// GetUptimeCheckState of uptime check.
+func (p *UptimeChecksServiceOp) GetUptimeCheckState(ctx context.Context, uptimeCheckID string) (*UptimeCheckState, *Response, error) {
 	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/state")
 
 	req, err := p.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -159,13 +182,13 @@ func (p *UptimeChecksServiceOp) GetState(ctx context.Context, uptimeCheckID stri
 		return nil, nil, err
 	}
 
-	root := new(uptimeCheckRoot)
+	root := new(uptimeCheckStateRoot)
 	resp, err := p.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return root.UptimeCheck, resp, err
+	return &root.UptimeCheckState, resp, err
 }
 
 // Get retrieves a single uptime check by its ID.
@@ -233,7 +256,7 @@ func (p *UptimeChecksServiceOp) Delete(ctx context.Context, uptimeCheckID string
 // alerts
 
 // List alerts for a check.
-func (p *UptimeChecksServiceOp) ListAlerts(ctx context.Context, opts *ListOptions, uptimeCheckID string) ([]Alert, *Response, error) {
+func (p *UptimeChecksServiceOp) ListUptimeAlerts(ctx context.Context, uptimeCheckID string, opts *ListOptions) ([]UptimeAlert, *Response, error) {
 	fullPath := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts")
 	path, err := addOptions(fullPath, opts)
 	if err != nil {
@@ -245,7 +268,7 @@ func (p *UptimeChecksServiceOp) ListAlerts(ctx context.Context, opts *ListOption
 		return nil, nil, err
 	}
 
-	root := new(alertsRoot)
+	root := new(uptimeAlertsRoot)
 	resp, err := p.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -257,28 +280,28 @@ func (p *UptimeChecksServiceOp) ListAlerts(ctx context.Context, opts *ListOption
 		resp.Meta = m
 	}
 
-	return root.Alerts, resp, err
+	return root.UptimeAlerts, resp, err
 }
 
 // Create a new uptime check alert.
-func (p *UptimeChecksServiceOp) CreateAlert(ctx context.Context, cr *CreateAlertRequest, uptimeCheckID string) (*Alert, *Response, error) {
+func (p *UptimeChecksServiceOp) CreateUptimeAlert(ctx context.Context, uptimeCheckID string, cr *CreateUptimeAlertRequest) (*UptimeAlert, *Response, error) {
 	fullPath := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts")
 	req, err := p.client.NewRequest(ctx, http.MethodPost, fullPath, cr)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	root := new(alertRoot)
+	root := new(uptimeAlertRoot)
 	resp, err := p.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return root.Alert, resp, err
+	return root.UptimeAlert, resp, err
 }
 
-// Get retrieves a single uptime check alert by its ID.
-func (p *UptimeChecksServiceOp) GetAlert(ctx context.Context, uptimeCheckID string, alertID string) (*Alert, *Response, error) {
+// GetUptimeAlert retrieves a single uptime check alert by its ID.
+func (p *UptimeChecksServiceOp) GetUptimeAlert(ctx context.Context, uptimeCheckID string, alertID string) (*UptimeAlert, *Response, error) {
 	path := fmt.Sprintf("v2/uptime/checks/%s/alerts/%s", uptimeCheckID, alertID)
 
 	req, err := p.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -286,34 +309,34 @@ func (p *UptimeChecksServiceOp) GetAlert(ctx context.Context, uptimeCheckID stri
 		return nil, nil, err
 	}
 
-	root := new(alertRoot)
+	root := new(uptimeAlertRoot)
 	resp, err := p.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return root.Alert, resp, err
+	return root.UptimeAlert, resp, err
 }
 
-// Update an uptime check's alert.
-func (p *UptimeChecksServiceOp) UpdateAlert(ctx context.Context, uptimeCheckID string, alertID string, ur *UpdateAlertRequest) (*Alert, *Response, error) {
+// UpdateUptimeAlert an uptime check's alert.
+func (p *UptimeChecksServiceOp) UpdateUptimeAlert(ctx context.Context, uptimeCheckID string, alertID string, ur *UpdateUptimeAlertRequest) (*UptimeAlert, *Response, error) {
 	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts/", alertID)
 	req, err := p.client.NewRequest(ctx, http.MethodPut, path, ur)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	root := new(alertRoot)
+	root := new(uptimeAlertRoot)
 	resp, err := p.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return root.Alert, resp, err
+	return root.UptimeAlert, resp, err
 }
 
 // Delete an existing uptime check's alert.
-func (p *UptimeChecksServiceOp) DeleteAlert(ctx context.Context, uptimeCheckID string, alertID string) (*Response, error) {
+func (p *UptimeChecksServiceOp) DeleteUptimeAlert(ctx context.Context, uptimeCheckID string, alertID string) (*Response, error) {
 	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts/", alertID)
 	req, err := p.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
