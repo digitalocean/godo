@@ -9,7 +9,7 @@ import (
 
 const uptimeChecksBasePath = "/v2/uptime/checks"
 
-// UptimeService is an interface for creating and managing Uptime checks with the DigitalOcean API.
+// UptimeChecksService is an interface for creating and managing Uptime checks with the DigitalOcean API.
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/Projects
 type UptimeChecksService interface {
 	List(context.Context, *ListOptions) ([]UptimeCheck, *Response, error)
@@ -40,7 +40,7 @@ type UptimeCheck struct {
 	Enabled bool     `json:"enabled"`
 }
 
-// Alert represents a DigitalOcean UptimeCheck configuration.
+// Alert represents a DigitalOcean Alert configuration.
 type Alert struct {
 	ID            string         `json:"id"`
 	Name          string         `json:"name"`
