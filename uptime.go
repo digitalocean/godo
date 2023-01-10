@@ -14,15 +14,15 @@ const uptimeChecksBasePath = "/v2/uptime/checks"
 type UptimeChecksService interface {
 	List(context.Context, *ListOptions) ([]UptimeCheck, *Response, error)
 	Get(context.Context, string) (*UptimeCheck, *Response, error)
-	GetUptimeCheckState(context.Context, string) (*UptimeCheckState, *Response, error)
+	GetState(context.Context, string) (*UptimeCheckState, *Response, error)
 	Create(context.Context, *CreateUptimeCheckRequest) (*UptimeCheck, *Response, error)
 	Update(context.Context, string, *UpdateUptimeCheckRequest) (*UptimeCheck, *Response, error)
 	Delete(context.Context, string) (*Response, error)
-	GetUptimeAlert(context.Context, string, string) (*UptimeAlert, *Response, error)
-	ListUptimeAlerts(context.Context, string, *ListOptions) ([]UptimeAlert, *Response, error)
-	CreateUptimeAlert(context.Context, string, *CreateUptimeAlertRequest) (*UptimeAlert, *Response, error)
-	UpdateUptimeAlert(context.Context, string, string, *UpdateUptimeAlertRequest) (*UptimeAlert, *Response, error)
-	DeleteUptimeAlert(context.Context, string, string) (*Response, error)
+	GetAlert(context.Context, string, string) (*UptimeAlert, *Response, error)
+	ListAlerts(context.Context, string, *ListOptions) ([]UptimeAlert, *Response, error)
+	CreateAlert(context.Context, string, *CreateUptimeAlertRequest) (*UptimeAlert, *Response, error)
+	UpdateAlert(context.Context, string, string, *UpdateUptimeAlertRequest) (*UptimeAlert, *Response, error)
+	DeleteAlert(context.Context, string, string) (*Response, error)
 }
 
 // UptimeChecksServiceOp handles communication with Uptime Check methods of the DigitalOcean API.
@@ -59,13 +59,8 @@ type Notifications struct {
 
 // UptimeCheckState represents a DigitalOcean Uptime Check's state configuration.
 type UptimeCheckState struct {
-	Regions        UptimeRegions        `json:"regions"`
-	PreviousOutage UptimePreviousOutage `json:"previous_outage"`
-}
-
-type UptimeRegions struct {
-	USEast UptimeRegion `json:"us_east"`
-	USWest UptimeRegion `json:"us_west"`
+	Regions        map[string]UptimeRegion `json:"regions"`
+	PreviousOutage UptimePreviousOutage    `json:"previous_outage"`
 }
 
 type UptimeRegion struct {
@@ -173,8 +168,8 @@ func (p *UptimeChecksServiceOp) List(ctx context.Context, opts *ListOptions) ([]
 	return root.UptimeChecks, resp, err
 }
 
-// GetUptimeCheckState of uptime check.
-func (p *UptimeChecksServiceOp) GetUptimeCheckState(ctx context.Context, uptimeCheckID string) (*UptimeCheckState, *Response, error) {
+// GetState of uptime check.
+func (p *UptimeChecksServiceOp) GetState(ctx context.Context, uptimeCheckID string) (*UptimeCheckState, *Response, error) {
 	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/state")
 
 	req, err := p.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -255,8 +250,8 @@ func (p *UptimeChecksServiceOp) Delete(ctx context.Context, uptimeCheckID string
 
 // alerts
 
-// List alerts for a check.
-func (p *UptimeChecksServiceOp) ListUptimeAlerts(ctx context.Context, uptimeCheckID string, opts *ListOptions) ([]UptimeAlert, *Response, error) {
+// ListAlerts lists alerts for a check.
+func (p *UptimeChecksServiceOp) ListAlerts(ctx context.Context, uptimeCheckID string, opts *ListOptions) ([]UptimeAlert, *Response, error) {
 	fullPath := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts")
 	path, err := addOptions(fullPath, opts)
 	if err != nil {
@@ -283,8 +278,8 @@ func (p *UptimeChecksServiceOp) ListUptimeAlerts(ctx context.Context, uptimeChec
 	return root.UptimeAlerts, resp, err
 }
 
-// Create a new uptime check alert.
-func (p *UptimeChecksServiceOp) CreateUptimeAlert(ctx context.Context, uptimeCheckID string, cr *CreateUptimeAlertRequest) (*UptimeAlert, *Response, error) {
+// CreateAlert creates a new check alert.
+func (p *UptimeChecksServiceOp) CreateAlert(ctx context.Context, uptimeCheckID string, cr *CreateUptimeAlertRequest) (*UptimeAlert, *Response, error) {
 	fullPath := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts")
 	req, err := p.client.NewRequest(ctx, http.MethodPost, fullPath, cr)
 	if err != nil {
@@ -300,8 +295,8 @@ func (p *UptimeChecksServiceOp) CreateUptimeAlert(ctx context.Context, uptimeChe
 	return root.UptimeAlert, resp, err
 }
 
-// GetUptimeAlert retrieves a single uptime check alert by its ID.
-func (p *UptimeChecksServiceOp) GetUptimeAlert(ctx context.Context, uptimeCheckID string, alertID string) (*UptimeAlert, *Response, error) {
+// GetAlert retrieves a single uptime check alert by its ID.
+func (p *UptimeChecksServiceOp) GetAlert(ctx context.Context, uptimeCheckID string, alertID string) (*UptimeAlert, *Response, error) {
 	path := fmt.Sprintf("v2/uptime/checks/%s/alerts/%s", uptimeCheckID, alertID)
 
 	req, err := p.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -318,8 +313,8 @@ func (p *UptimeChecksServiceOp) GetUptimeAlert(ctx context.Context, uptimeCheckI
 	return root.UptimeAlert, resp, err
 }
 
-// UpdateUptimeAlert an uptime check's alert.
-func (p *UptimeChecksServiceOp) UpdateUptimeAlert(ctx context.Context, uptimeCheckID string, alertID string, ur *UpdateUptimeAlertRequest) (*UptimeAlert, *Response, error) {
+// UpdateAlert updates an check's alert.
+func (p *UptimeChecksServiceOp) UpdateAlert(ctx context.Context, uptimeCheckID string, alertID string, ur *UpdateUptimeAlertRequest) (*UptimeAlert, *Response, error) {
 	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts/", alertID)
 	req, err := p.client.NewRequest(ctx, http.MethodPut, path, ur)
 	if err != nil {
@@ -335,8 +330,8 @@ func (p *UptimeChecksServiceOp) UpdateUptimeAlert(ctx context.Context, uptimeChe
 	return root.UptimeAlert, resp, err
 }
 
-// Delete an existing uptime check's alert.
-func (p *UptimeChecksServiceOp) DeleteUptimeAlert(ctx context.Context, uptimeCheckID string, alertID string) (*Response, error) {
+// DeleteAlert deletes an existing check's alert.
+func (p *UptimeChecksServiceOp) DeleteAlert(ctx context.Context, uptimeCheckID string, alertID string) (*Response, error) {
 	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts/", alertID)
 	req, err := p.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
