@@ -2042,3 +2042,25 @@ func TestDatabases_UpdateConfigMySQL(t *testing.T) {
 	_, err := client.Databases.UpdateMySQLConfig(ctx, dbID, mySQLConfig)
 	require.NoError(t, err)
 }
+
+func TestDatabases_UpgradeMajorVersion(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID           = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path           = fmt.Sprintf("/v2/databases/%s/upgrade", dbID)
+		upgradeVersion = "14"
+	)
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		var b majorVersionUpgradeRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+		assert.Equal(t, b.Version, upgradeVersion)
+		w.WriteHeader(http.StatusNoContent)
+	})
+	_, err := client.Databases.UpgradeMajorVersion(ctx, dbID, upgradeVersion)
+	require.NoError(t, err)
+}
