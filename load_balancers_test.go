@@ -67,7 +67,13 @@ var lbListJSONResponse = `
                 2,
                 21
             ],
-            "disable_lets_encrypt_dns_records": true
+            "disable_lets_encrypt_dns_records": true,
+            "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
+            "http_idle_timeout_seconds": 60,
+            "firewall": {
+                "deny": ["cidr:1.2.0.0/16"],
+                "allow": ["ip:1.2.3.4"]
+            }
         }
     ],
     "links":{
@@ -148,7 +154,13 @@ var lbCreateJSONResponse = `
         ],
         "redirect_http_to_https":true,
         "vpc_uuid":"880b7f98-f062-404d-b33c-458d545696f6",
-        "disable_lets_encrypt_dns_records": true
+        "disable_lets_encrypt_dns_records": true,
+        "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
+        "http_idle_timeout_seconds": 60,
+        "firewall": {
+            "deny": ["cidr:1.2.0.0/16"],
+            "allow": ["ip:1.2.3.4"]
+        }
     }
 }
 `
@@ -209,7 +221,13 @@ var lbGetJSONResponse = `
             2,
             21
         ],
-        "disable_lets_encrypt_dns_records": false
+        "disable_lets_encrypt_dns_records": false,
+        "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
+        "http_idle_timeout_seconds": 60,
+        "firewall": {
+            "deny": ["cidr:1.2.0.0/16"],
+            "allow": ["ip:1.2.3.4"]
+        }
     }
 }
 `
@@ -274,7 +292,13 @@ var lbUpdateJSONResponse = `
         "droplet_ids":[
             2,
             21
-        ]
+        ],
+        "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
+        "http_idle_timeout_seconds": 60,
+        "firewall": {
+            "deny": ["cidr:1.3.0.0/16"],
+            "allow": ["ip:1.2.3.5"]
+        }
     }
 }
 `
@@ -293,6 +317,7 @@ func TestLoadBalancers_Get(t *testing.T) {
 
 	loadBalancer, _, err := client.LoadBalancers.Get(ctx, loadBalancerID)
 	require.NoError(t, err)
+	expectedTimeout := uint64(60)
 
 	expected := &LoadBalancer{
 		ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
@@ -332,7 +357,13 @@ func TestLoadBalancers_Get(t *testing.T) {
 			Available: true,
 			Features:  []string{"private_networking", "backups", "ipv6", "metadata", "storage"},
 		},
-		DropletIDs: []int{2, 21},
+		DropletIDs:             []int{2, 21},
+		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		HTTPIdleTimeoutSeconds: &expectedTimeout,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.4"},
+			Deny:  []string{"cidr:1.2.0.0/16"},
+		},
 	}
 
 	disableLetsEncryptDNSRecords := false
@@ -377,6 +408,11 @@ func TestLoadBalancers_Create(t *testing.T) {
 		DropletIDs:          []int{2, 21},
 		RedirectHttpToHttps: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
+		ProjectID:           "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.4"},
+			Deny:  []string{"cidr:1.2.0.0/16"},
+		},
 	}
 
 	path := "/v2/load_balancers"
@@ -396,6 +432,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 	loadBalancer, _, err := client.LoadBalancers.Create(ctx, createRequest)
 	require.NoError(t, err)
 
+	expectedTimeout := uint64(60)
 	expected := &LoadBalancer{
 		ID:        "8268a81c-fcf5-423e-a337-bbfe95817f23",
 		Name:      "example-lb-01",
@@ -441,10 +478,16 @@ func TestLoadBalancers_Create(t *testing.T) {
 			Available: true,
 			Features:  []string{"private_networking", "backups", "ipv6", "metadata", "storage"},
 		},
-		Tags:                []string{"my-tag"},
-		DropletIDs:          []int{2, 21},
-		RedirectHttpToHttps: true,
-		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
+		Tags:                   []string{"my-tag"},
+		DropletIDs:             []int{2, 21},
+		RedirectHttpToHttps:    true,
+		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
+		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		HTTPIdleTimeoutSeconds: &expectedTimeout,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.4"},
+			Deny:  []string{"cidr:1.2.0.0/16"},
+		},
 	}
 
 	disableLetsEncryptDNSRecords := true
@@ -609,6 +652,11 @@ func TestLoadBalancers_Update(t *testing.T) {
 			Type: "none",
 		},
 		DropletIDs: []int{2, 21},
+		ProjectID:  "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.5"},
+			Deny:  []string{"cidr:1.3.0.0/16"},
+		},
 	}
 
 	path := "/v2/load_balancers"
@@ -631,6 +679,7 @@ func TestLoadBalancers_Update(t *testing.T) {
 	loadBalancer, _, err := client.LoadBalancers.Update(ctx, loadBalancerID, updateRequest)
 	require.NoError(t, err)
 
+	expectedTimeout := uint64(60)
 	expected := &LoadBalancer{
 		ID:        "8268a81c-fcf5-423e-a337-bbfe95817f23",
 		Name:      "example-lb-01",
@@ -675,6 +724,12 @@ func TestLoadBalancers_Update(t *testing.T) {
 		},
 		DropletIDs:                   []int{2, 21},
 		DisableLetsEncryptDNSRecords: nil,
+		ProjectID:                    "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		HTTPIdleTimeoutSeconds:       &expectedTimeout,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.5"},
+			Deny:  []string{"cidr:1.3.0.0/16"},
+		},
 	}
 
 	assert.Equal(t, expected, loadBalancer)
@@ -694,6 +749,7 @@ func TestLoadBalancers_List(t *testing.T) {
 
 	require.NoError(t, err)
 
+	expectedTimeout := uint64(60)
 	expectedLBs := []LoadBalancer{
 		{
 			ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
@@ -732,7 +788,13 @@ func TestLoadBalancers_List(t *testing.T) {
 				Available: true,
 				Features:  []string{"private_networking", "backups", "ipv6", "metadata", "storage"},
 			},
-			DropletIDs: []int{2, 21},
+			DropletIDs:             []int{2, 21},
+			ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
+			HTTPIdleTimeoutSeconds: &expectedTimeout,
+			Firewall: &LBFirewall{
+				Allow: []string{"ip:1.2.3.4"},
+				Deny:  []string{"cidr:1.2.0.0/16"},
+			},
 		},
 	}
 	disableLetsEncryptDNSRecords := true
@@ -920,6 +982,7 @@ func TestLoadBalancers_RemoveForwardingRules(t *testing.T) {
 }
 
 func TestLoadBalancers_AsRequest(t *testing.T) {
+	lbIdleTimeout := uint64(60)
 	lb := &LoadBalancer{
 		ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
 		Name:      "test-loadbalancer",
@@ -949,8 +1012,15 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
+		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		ValidateOnly:           true,
+		HTTPIdleTimeoutSeconds: &lbIdleTimeout,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.5"},
+			Deny:  []string{"cidr:1.3.0.0/16"},
+		},
 	}
+
 	lb.DropletIDs = make([]int, 1, 2)
 	lb.DropletIDs[0] = 12345
 	lb.ForwardingRules = make([]ForwardingRule, 1, 2)
@@ -991,7 +1061,13 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
+		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		HTTPIdleTimeoutSeconds: &lbIdleTimeout,
 		ValidateOnly:           true,
+		Firewall: &LBFirewall{
+			Allow: []string{"ip:1.2.3.5"},
+			Deny:  []string{"cidr:1.3.0.0/16"},
+		},
 	}
 
 	r := lb.AsRequest()

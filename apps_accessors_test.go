@@ -111,6 +111,13 @@ func TestApp_GetPinnedDeployment(tt *testing.T) {
 	a.GetPinnedDeployment()
 }
 
+func TestApp_GetProjectID(tt *testing.T) {
+	a := &App{}
+	a.GetProjectID()
+	a = nil
+	a.GetProjectID()
+}
+
 func TestApp_GetRegion(tt *testing.T) {
 	a := &App{}
 	a.GetRegion()
@@ -354,6 +361,13 @@ func TestAppCORSPolicy_GetMaxAge(tt *testing.T) {
 	a.GetMaxAge()
 	a = nil
 	a.GetMaxAge()
+}
+
+func TestAppCreateRequest_GetProjectID(tt *testing.T) {
+	a := &AppCreateRequest{}
+	a.GetProjectID()
+	a = nil
+	a.GetProjectID()
 }
 
 func TestAppCreateRequest_GetSpec(tt *testing.T) {
@@ -2517,34 +2531,6 @@ func TestImageSourceSpecDeployOnPush_GetEnabled(tt *testing.T) {
 	i.GetEnabled()
 	i = nil
 	i.GetEnabled()
-}
-
-func TestUpgradeBuildpackRequest_GetAppID(tt *testing.T) {
-	u := &UpgradeBuildpackRequest{}
-	u.GetAppID()
-	u = nil
-	u.GetAppID()
-}
-
-func TestUpgradeBuildpackRequest_GetBuildpackID(tt *testing.T) {
-	u := &UpgradeBuildpackRequest{}
-	u.GetBuildpackID()
-	u = nil
-	u.GetBuildpackID()
-}
-
-func TestUpgradeBuildpackRequest_GetMajorVersion(tt *testing.T) {
-	u := &UpgradeBuildpackRequest{}
-	u.GetMajorVersion()
-	u = nil
-	u.GetMajorVersion()
-}
-
-func TestUpgradeBuildpackRequest_GetTriggerDeployment(tt *testing.T) {
-	u := &UpgradeBuildpackRequest{}
-	u.GetTriggerDeployment()
-	u = nil
-	u.GetTriggerDeployment()
 }
 
 func TestUpgradeBuildpackResponse_GetAffectedComponents(tt *testing.T) {

@@ -788,19 +788,3 @@ func TestCustomBaseURL_badURL(t *testing.T) {
 
 	testURLParseError(t, err)
 }
-
-func intPtr(val int) *int {
-	return &val
-}
-
-func boolPtr(val bool) *bool {
-	return &val
-}
-
-func float32Ptr(val float32) *float32 {
-	return &val
-}
-
-func strPtr(val string) *string {
-	return &val
-}

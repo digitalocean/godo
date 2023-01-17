@@ -210,6 +210,21 @@ var (
 			},
 		},
 	}
+
+	testBuildpacks = []*Buildpack{
+		{
+			ID:           "digitalocean/node",
+			Name:         "Node.js",
+			Version:      "1.2.3",
+			MajorVersion: 1,
+		},
+		{
+			ID:           "digitalocean/php",
+			Name:         "PHP",
+			Version:      "0.3.5",
+			MajorVersion: 0,
+		},
+	}
 )
 
 func TestApps_CreateApp(t *testing.T) {
@@ -251,24 +266,47 @@ func TestApps_GetApp(t *testing.T) {
 }
 
 func TestApps_ListApp(t *testing.T) {
-	setup()
-	defer teardown()
+	t.Run("WithProjects false/not passed in", func(t *testing.T) {
+		setup()
+		defer teardown()
 
-	ctx := context.Background()
+		ctx := context.Background()
 
-	mux.HandleFunc("/v2/apps", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
+		mux.HandleFunc("/v2/apps", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
 
-		json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{&testApp}, Meta: &Meta{Total: 1}, Links: &Links{}})
+			json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{&testApp}, Meta: &Meta{Total: 1}, Links: &Links{}})
+		})
+
+		apps, resp, err := client.Apps.List(ctx, nil)
+		require.NoError(t, err)
+		assert.Equal(t, []*App{&testApp}, apps)
+		assert.Equal(t, 1, resp.Meta.Total)
+		currentPage, err := resp.Links.CurrentPage()
+		require.NoError(t, err)
+		assert.Equal(t, 1, currentPage)
 	})
 
-	apps, resp, err := client.Apps.List(ctx, nil)
-	require.NoError(t, err)
-	assert.Equal(t, []*App{&testApp}, apps)
-	assert.Equal(t, 1, resp.Meta.Total)
-	currentPage, err := resp.Links.CurrentPage()
-	require.NoError(t, err)
-	assert.Equal(t, 1, currentPage)
+	t.Run("WithProjects true", func(t *testing.T) {
+		setup()
+		defer teardown()
+
+		ctx := context.Background()
+
+		mux.HandleFunc("/v2/apps", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+
+			json.NewEncoder(w).Encode(&appsRoot{Apps: []*App{{ProjectID: "something"}}, Meta: &Meta{Total: 1}, Links: &Links{}})
+		})
+
+		apps, resp, err := client.Apps.List(ctx, &ListOptions{WithProjects: true})
+		require.NoError(t, err)
+		assert.Equal(t, "something", apps[0].ProjectID)
+		assert.Equal(t, 1, resp.Meta.Total)
+		currentPage, err := resp.Links.CurrentPage()
+		require.NoError(t, err)
+		assert.Equal(t, 1, currentPage)
+	})
 }
 
 func TestApps_UpdateApp(t *testing.T) {
@@ -629,6 +667,55 @@ func TestApps_Detect(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, component, res.Components[0])
+}
+
+func TestApps_ListBuildpacks(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc("/v2/apps/buildpacks", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&buildpacksRoot{Buildpacks: testBuildpacks})
+	})
+
+	bps, _, err := client.Apps.ListBuildpacks(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, testBuildpacks, bps)
+}
+
+func TestApps_UpgradeBuildpack(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	response := &UpgradeBuildpackResponse{
+		AffectedComponents: []string{"api", "frontend"},
+		Deployment:         &testDeployment,
+	}
+	opts := UpgradeBuildpackOptions{
+		BuildpackID:       "digitalocean/node",
+		MajorVersion:      3,
+		TriggerDeployment: true,
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/upgrade_buildpack", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		var gotOpts UpgradeBuildpackOptions
+		err := json.NewDecoder(r.Body).Decode(&gotOpts)
+		require.NoError(t, err)
+		assert.Equal(t, opts, gotOpts)
+
+		json.NewEncoder(w).Encode(response)
+	})
+
+	gotResponse, _, err := client.Apps.UpgradeBuildpack(ctx, testApp.ID, opts)
+	require.NoError(t, err)
+	assert.Equal(t, response, gotResponse)
 }
 
 func TestApps_ToURN(t *testing.T) {
