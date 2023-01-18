@@ -916,6 +916,19 @@ func (svc *DatabasesServiceOp) DeletePool(ctx context.Context, databaseID, name 
 // UpdatePool will update an existing database connection pool
 func (svc *DatabasesServiceOp) UpdatePool(ctx context.Context, databaseID, name string, updatePool *DatabaseUpdatePoolRequest) (*Response, error) {
 	path := fmt.Sprintf(databasePoolPath, databaseID, name)
+
+	if updatePool.Mode == "" {
+		return nil, NewArgError("mode", "cannot be empty")
+	}
+
+	if updatePool.Database == "" {
+		return nil, NewArgError("database", "cannot be empty")
+	}
+
+	if updatePool.Size == 0 {
+		return nil, NewArgError("size", "must be greater than 0")
+	}
+
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updatePool)
 	if err != nil {
 		return nil, err
