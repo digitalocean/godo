@@ -926,7 +926,7 @@ func (svc *DatabasesServiceOp) UpdatePool(ctx context.Context, databaseID, name 
 	}
 
 	if updatePool.Size < 1 {
-		return nil, NewArgError("size", "must be greater than 0")
+		return nil, NewArgError("size", "cannot be less than 1")
 	}
 
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updatePool)
