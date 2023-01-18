@@ -925,7 +925,7 @@ func (svc *DatabasesServiceOp) UpdatePool(ctx context.Context, databaseID, name 
 		return nil, NewArgError("database", "cannot be empty")
 	}
 
-	if updatePool.Size == 0 {
+	if updatePool.Size < 1 {
 		return nil, NewArgError("size", "must be greater than 0")
 	}
 
