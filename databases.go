@@ -302,7 +302,7 @@ type DatabaseCreatePoolRequest struct {
 
 // DatabaseUpdatePoolRequest is used to update a database connection pool
 type DatabaseUpdatePoolRequest struct {
-	User     string `json:"user"`
+	User     string `json:"user,omitempty"`
 	Size     int    `json:"size"`
 	Database string `json:"db"`
 	Mode     string `json:"mode"`
