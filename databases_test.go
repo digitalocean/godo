@@ -1059,6 +1059,27 @@ func TestDatabases_DeletePool(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_UpdatePool(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/pools/pool", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+	})
+
+	_, err := client.Databases.UpdatePool(ctx, dbID, "pool", &DatabaseUpdatePoolRequest{
+		User:     "user",
+		Size:     12,
+		Database: "db",
+		Mode:     "transaction",
+	})
+	require.NoError(t, err)
+}
+
 func TestDatabases_GetReplica(t *testing.T) {
 	setup()
 	defer teardown()
