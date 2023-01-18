@@ -124,6 +124,7 @@ type DatabasesService interface {
 	CreatePool(context.Context, string, *DatabaseCreatePoolRequest) (*DatabasePool, *Response, error)
 	GetPool(context.Context, string, string) (*DatabasePool, *Response, error)
 	DeletePool(context.Context, string, string) (*Response, error)
+	UpdatePool(context.Context, string, string, *DatabaseUpdatePoolRequest) (*Response, error)
 	GetReplica(context.Context, string, string) (*DatabaseReplica, *Response, error)
 	ListReplicas(context.Context, string, *ListOptions) ([]DatabaseReplica, *Response, error)
 	CreateReplica(context.Context, string, *DatabaseCreateReplicaRequest) (*DatabaseReplica, *Response, error)
@@ -294,6 +295,14 @@ type DatabasePool struct {
 type DatabaseCreatePoolRequest struct {
 	User     string `json:"user"`
 	Name     string `json:"name"`
+	Size     int    `json:"size"`
+	Database string `json:"db"`
+	Mode     string `json:"mode"`
+}
+
+// DatabaseUpdatePoolRequest is used to update a database connection pool
+type DatabaseUpdatePoolRequest struct {
+	User     string `json:"user"`
 	Size     int    `json:"size"`
 	Database string `json:"db"`
 	Mode     string `json:"mode"`
@@ -894,6 +903,20 @@ func (svc *DatabasesServiceOp) CreatePool(ctx context.Context, databaseID string
 func (svc *DatabasesServiceOp) DeletePool(ctx context.Context, databaseID, name string) (*Response, error) {
 	path := fmt.Sprintf(databasePoolPath, databaseID, name)
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// UpdatePool will update an existing database connection pool
+func (svc *DatabasesServiceOp) UpdatePool(ctx context.Context, databaseID, name string, updatePool *DatabaseUpdatePoolRequest) (*Response, error) {
+	path := fmt.Sprintf(databasePoolPath, databaseID, name)
+	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updatePool)
 	if err != nil {
 		return nil, err
 	}
