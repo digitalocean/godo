@@ -917,6 +917,10 @@ func (svc *DatabasesServiceOp) DeletePool(ctx context.Context, databaseID, name 
 func (svc *DatabasesServiceOp) UpdatePool(ctx context.Context, databaseID, name string, updatePool *DatabaseUpdatePoolRequest) (*Response, error) {
 	path := fmt.Sprintf(databasePoolPath, databaseID, name)
 
+	if updatePool == nil {
+		return nil, NewArgError("updatePool", "cannot be nil")
+	}
+
 	if updatePool.Mode == "" {
 		return nil, NewArgError("mode", "cannot be empty")
 	}
