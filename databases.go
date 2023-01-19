@@ -143,7 +143,7 @@ type DatabasesService interface {
 	UpdateRedisConfig(context.Context, string, *RedisConfig) (*Response, error)
 	UpdateMySQLConfig(context.Context, string, *MySQLConfig) (*Response, error)
 	ListOptions(todo context.Context) (*DatabaseOptions, *Response, error)
-	UpgradeMajorVersion(context.Context, string, string) (*Response, error)
+	UpgradeMajorVersion(context.Context, string, *UpgradeVersionRequest) (*Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -532,7 +532,7 @@ type evictionPolicyRoot struct {
 	EvictionPolicy string `json:"eviction_policy"`
 }
 
-type majorVersionUpgradeRoot struct {
+type UpgradeVersionRequest struct {
 	Version string `json:"version"`
 }
 
@@ -1227,10 +1227,9 @@ func (svc *DatabasesServiceOp) ListOptions(ctx context.Context) (*DatabaseOption
 }
 
 // UpgradeMajorVersion upgrades the major version of a cluster.
-func (svc *DatabasesServiceOp) UpgradeMajorVersion(ctx context.Context, databaseID string, version string) (*Response, error) {
+func (svc *DatabasesServiceOp) UpgradeMajorVersion(ctx context.Context, databaseID string, upgradeReq *UpgradeVersionRequest) (*Response, error) {
 	path := fmt.Sprintf(databaseUpgradeMajorVersionPath, databaseID)
-	root := &majorVersionUpgradeRoot{Version: version}
-	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, root)
+	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, upgradeReq)
 	if err != nil {
 		return nil, err
 	}
