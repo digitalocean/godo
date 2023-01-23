@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.94.0] - 2022-12-15
+
+- #596 - @DMW2151 - DBAAS-3906: Include updatePool for DB Clusters
+- #593 - @danaelhe - Add Uptime Checks and Alerts Support
+
 ## [v1.93.0] - 2022-12-15
 
 - #591 - @andrewsomething - tokens: Add initial support for new API.
