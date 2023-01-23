@@ -9,27 +9,28 @@ import (
 )
 
 const (
-	databaseBasePath           = "/v2/databases"
-	databaseSinglePath         = databaseBasePath + "/%s"
-	databaseCAPath             = databaseBasePath + "/%s/ca"
-	databaseConfigPath         = databaseBasePath + "/%s/config"
-	databaseResizePath         = databaseBasePath + "/%s/resize"
-	databaseMigratePath        = databaseBasePath + "/%s/migrate"
-	databaseMaintenancePath    = databaseBasePath + "/%s/maintenance"
-	databaseBackupsPath        = databaseBasePath + "/%s/backups"
-	databaseUsersPath          = databaseBasePath + "/%s/users"
-	databaseUserPath           = databaseBasePath + "/%s/users/%s"
-	databaseResetUserAuthPath  = databaseUserPath + "/reset_auth"
-	databaseDBPath             = databaseBasePath + "/%s/dbs/%s"
-	databaseDBsPath            = databaseBasePath + "/%s/dbs"
-	databasePoolPath           = databaseBasePath + "/%s/pools/%s"
-	databasePoolsPath          = databaseBasePath + "/%s/pools"
-	databaseReplicaPath        = databaseBasePath + "/%s/replicas/%s"
-	databaseReplicasPath       = databaseBasePath + "/%s/replicas"
-	databaseEvictionPolicyPath = databaseBasePath + "/%s/eviction_policy"
-	databaseSQLModePath        = databaseBasePath + "/%s/sql_mode"
-	databaseFirewallRulesPath  = databaseBasePath + "/%s/firewall"
-	databaseOptionsPath        = databaseBasePath + "/options"
+	databaseBasePath                = "/v2/databases"
+	databaseSinglePath              = databaseBasePath + "/%s"
+	databaseCAPath                  = databaseBasePath + "/%s/ca"
+	databaseConfigPath              = databaseBasePath + "/%s/config"
+	databaseResizePath              = databaseBasePath + "/%s/resize"
+	databaseMigratePath             = databaseBasePath + "/%s/migrate"
+	databaseMaintenancePath         = databaseBasePath + "/%s/maintenance"
+	databaseBackupsPath             = databaseBasePath + "/%s/backups"
+	databaseUsersPath               = databaseBasePath + "/%s/users"
+	databaseUserPath                = databaseBasePath + "/%s/users/%s"
+	databaseResetUserAuthPath       = databaseUserPath + "/reset_auth"
+	databaseDBPath                  = databaseBasePath + "/%s/dbs/%s"
+	databaseDBsPath                 = databaseBasePath + "/%s/dbs"
+	databasePoolPath                = databaseBasePath + "/%s/pools/%s"
+	databasePoolsPath               = databaseBasePath + "/%s/pools"
+	databaseReplicaPath             = databaseBasePath + "/%s/replicas/%s"
+	databaseReplicasPath            = databaseBasePath + "/%s/replicas"
+	databaseEvictionPolicyPath      = databaseBasePath + "/%s/eviction_policy"
+	databaseSQLModePath             = databaseBasePath + "/%s/sql_mode"
+	databaseFirewallRulesPath       = databaseBasePath + "/%s/firewall"
+	databaseOptionsPath             = databaseBasePath + "/options"
+	databaseUpgradeMajorVersionPath = databaseBasePath + "/%s/upgrade"
 )
 
 // SQL Mode constants allow for MySQL-specific SQL flavor configuration.
@@ -142,6 +143,7 @@ type DatabasesService interface {
 	UpdateRedisConfig(context.Context, string, *RedisConfig) (*Response, error)
 	UpdateMySQLConfig(context.Context, string, *MySQLConfig) (*Response, error)
 	ListOptions(todo context.Context) (*DatabaseOptions, *Response, error)
+	UpgradeMajorVersion(context.Context, string, *UpgradeVersionRequest) (*Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -528,6 +530,10 @@ type databaseReplicasRoot struct {
 
 type evictionPolicyRoot struct {
 	EvictionPolicy string `json:"eviction_policy"`
+}
+
+type UpgradeVersionRequest struct {
+	Version string `json:"version"`
 }
 
 type sqlModeRoot struct {
@@ -1218,4 +1224,20 @@ func (svc *DatabasesServiceOp) ListOptions(ctx context.Context) (*DatabaseOption
 	}
 
 	return root.Options, resp, nil
+}
+
+// UpgradeMajorVersion upgrades the major version of a cluster.
+func (svc *DatabasesServiceOp) UpgradeMajorVersion(ctx context.Context, databaseID string, upgradeReq *UpgradeVersionRequest) (*Response, error) {
+	path := fmt.Sprintf(databaseUpgradeMajorVersionPath, databaseID)
+	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, upgradeReq)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := svc.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, nil
 }
