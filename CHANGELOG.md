@@ -2,7 +2,7 @@
 
 ## [v1.96.0] - 2023-01-31
 
-- #597 - @markpaulson - Add PromoteReplicaToPrimary to godo
+- #599 - @markpaulson - Add PromoteReplicaToPrimary to godo
 
 ## [v1.95.0] - 2023-01-23
 
