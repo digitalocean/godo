@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.96.0] - 2023-01-31
+
+- #597 - @markpaulson - Add PromoteReplicaToPrimary to godo
+
 ## [v1.95.0] - 2023-01-23
 
 - #595 - @dweinshenker - Add UpgradeMajorVersion to godo
