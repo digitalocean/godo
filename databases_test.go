@@ -1321,6 +1321,22 @@ func TestDatabases_CreateReplica(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestDatabases_PromoteReplicaToPrimary(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/replicas/replica/promote", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+	})
+
+	_, err := client.Databases.PromoteReplicaToPrimary(ctx, dbID, "replica")
+	require.NoError(t, err)
+}
+
 func TestDatabases_DeleteReplica(t *testing.T) {
 	setup()
 	defer teardown()
