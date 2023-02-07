@@ -104,6 +104,13 @@ func TestApp_GetOwnerUUID(tt *testing.T) {
 	a.GetOwnerUUID()
 }
 
+func TestApp_GetPendingDeployment(tt *testing.T) {
+	a := &App{}
+	a.GetPendingDeployment()
+	a = nil
+	a.GetPendingDeployment()
+}
+
 func TestApp_GetPinnedDeployment(tt *testing.T) {
 	a := &App{}
 	a.GetPinnedDeployment()
@@ -1847,6 +1854,13 @@ func TestDeployment_GetTierSlug(tt *testing.T) {
 	d.GetTierSlug()
 }
 
+func TestDeployment_GetTiming(tt *testing.T) {
+	d := &Deployment{}
+	d.GetTiming()
+	d = nil
+	d.GetTiming()
+}
+
 func TestDeployment_GetUpdatedAt(tt *testing.T) {
 	d := &Deployment{}
 	d.GetUpdatedAt()
@@ -2202,6 +2216,62 @@ func TestDeploymentStaticSite_GetSourceCommitHash(tt *testing.T) {
 	d.GetSourceCommitHash()
 	d = nil
 	d.GetSourceCommitHash()
+}
+
+func TestDeploymentTiming_GetBuildBillable(tt *testing.T) {
+	d := &DeploymentTiming{}
+	d.GetBuildBillable()
+	d = nil
+	d.GetBuildBillable()
+}
+
+func TestDeploymentTiming_GetBuildTotal(tt *testing.T) {
+	d := &DeploymentTiming{}
+	d.GetBuildTotal()
+	d = nil
+	d.GetBuildTotal()
+}
+
+func TestDeploymentTiming_GetComponents(tt *testing.T) {
+	d := &DeploymentTiming{}
+	d.GetComponents()
+	d = nil
+	d.GetComponents()
+}
+
+func TestDeploymentTiming_GetDatabaseProvision(tt *testing.T) {
+	d := &DeploymentTiming{}
+	d.GetDatabaseProvision()
+	d = nil
+	d.GetDatabaseProvision()
+}
+
+func TestDeploymentTiming_GetDeploying(tt *testing.T) {
+	d := &DeploymentTiming{}
+	d.GetDeploying()
+	d = nil
+	d.GetDeploying()
+}
+
+func TestDeploymentTiming_GetPending(tt *testing.T) {
+	d := &DeploymentTiming{}
+	d.GetPending()
+	d = nil
+	d.GetPending()
+}
+
+func TestDeploymentTimingComponent_GetBuildBillable(tt *testing.T) {
+	d := &DeploymentTimingComponent{}
+	d.GetBuildBillable()
+	d = nil
+	d.GetBuildBillable()
+}
+
+func TestDeploymentTimingComponent_GetName(tt *testing.T) {
+	d := &DeploymentTimingComponent{}
+	d.GetName()
+	d = nil
+	d.GetName()
 }
 
 func TestDeploymentWorker_GetBuildpacks(tt *testing.T) {
