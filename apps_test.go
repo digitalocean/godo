@@ -494,6 +494,29 @@ func TestApps_GetLogs(t *testing.T) {
 	assert.NotEmpty(t, logs.LiveURL)
 }
 
+func TestApps_GetLogs_ActiveDeployment(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/logs", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		assert.Equal(t, "RUN", r.URL.Query().Get("type"))
+		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+		assert.Equal(t, "1", r.URL.Query().Get("tail_lines"))
+		_, hasComponent := r.URL.Query()["component_name"]
+		assert.False(t, hasComponent)
+
+		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://live.logs.url"})
+	})
+
+	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, "", "", AppLogTypeRun, true, 1)
+	require.NoError(t, err)
+	assert.NotEmpty(t, logs.LiveURL)
+}
+
 func TestApps_GetLogs_component(t *testing.T) {
 	setup()
 	defer teardown()
