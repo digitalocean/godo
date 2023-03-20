@@ -543,17 +543,16 @@ func TestLoadBalancers_CreateValidateSucceeds(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		w.WriteHeader(http.StatusAccepted)
+		w.WriteHeader(http.StatusNoContent)
 
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, createRequest, v)
-
-		fmt.Fprint(w, lbCreateJSONResponse)
 	})
 
 	loadBalancer, resp, err := client.LoadBalancers.Create(ctx, createRequest)
 	require.NoError(t, err)
-	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+	assert.NotNil(t, resp)
 	assert.Nil(t, nil, loadBalancer)
 }
 
