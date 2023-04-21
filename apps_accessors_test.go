@@ -328,6 +328,13 @@ func TestAppBuildConfigCNBVersioning_GetBuildpacks(tt *testing.T) {
 	a.GetBuildpacks()
 }
 
+func TestAppBuildConfigCNBVersioning_GetStackID(tt *testing.T) {
+	a := &AppBuildConfigCNBVersioning{}
+	a.GetStackID()
+	a = nil
+	a.GetStackID()
+}
+
 func TestAppCORSPolicy_GetAllowCredentials(tt *testing.T) {
 	a := &AppCORSPolicy{}
 	a.GetAllowCredentials()
@@ -706,6 +713,111 @@ func TestAppIngressSpec_GetLoadBalancerSize(tt *testing.T) {
 	a.GetLoadBalancerSize()
 }
 
+func TestAppIngressSpec_GetRules(tt *testing.T) {
+	a := &AppIngressSpec{}
+	a.GetRules()
+	a = nil
+	a.GetRules()
+}
+
+func TestAppIngressSpecRule_GetComponent(tt *testing.T) {
+	a := &AppIngressSpecRule{}
+	a.GetComponent()
+	a = nil
+	a.GetComponent()
+}
+
+func TestAppIngressSpecRule_GetCORS(tt *testing.T) {
+	a := &AppIngressSpecRule{}
+	a.GetCORS()
+	a = nil
+	a.GetCORS()
+}
+
+func TestAppIngressSpecRule_GetMatch(tt *testing.T) {
+	a := &AppIngressSpecRule{}
+	a.GetMatch()
+	a = nil
+	a.GetMatch()
+}
+
+func TestAppIngressSpecRule_GetRedirect(tt *testing.T) {
+	a := &AppIngressSpecRule{}
+	a.GetRedirect()
+	a = nil
+	a.GetRedirect()
+}
+
+func TestAppIngressSpecRuleMatch_GetPath(tt *testing.T) {
+	a := &AppIngressSpecRuleMatch{}
+	a.GetPath()
+	a = nil
+	a.GetPath()
+}
+
+func TestAppIngressSpecRuleRoutingComponent_GetName(tt *testing.T) {
+	a := &AppIngressSpecRuleRoutingComponent{}
+	a.GetName()
+	a = nil
+	a.GetName()
+}
+
+func TestAppIngressSpecRuleRoutingComponent_GetPreservePathPrefix(tt *testing.T) {
+	a := &AppIngressSpecRuleRoutingComponent{}
+	a.GetPreservePathPrefix()
+	a = nil
+	a.GetPreservePathPrefix()
+}
+
+func TestAppIngressSpecRuleRoutingComponent_GetRewrite(tt *testing.T) {
+	a := &AppIngressSpecRuleRoutingComponent{}
+	a.GetRewrite()
+	a = nil
+	a.GetRewrite()
+}
+
+func TestAppIngressSpecRuleRoutingRedirect_GetAuthority(tt *testing.T) {
+	a := &AppIngressSpecRuleRoutingRedirect{}
+	a.GetAuthority()
+	a = nil
+	a.GetAuthority()
+}
+
+func TestAppIngressSpecRuleRoutingRedirect_GetPort(tt *testing.T) {
+	a := &AppIngressSpecRuleRoutingRedirect{}
+	a.GetPort()
+	a = nil
+	a.GetPort()
+}
+
+func TestAppIngressSpecRuleRoutingRedirect_GetRedirectCode(tt *testing.T) {
+	a := &AppIngressSpecRuleRoutingRedirect{}
+	a.GetRedirectCode()
+	a = nil
+	a.GetRedirectCode()
+}
+
+func TestAppIngressSpecRuleRoutingRedirect_GetScheme(tt *testing.T) {
+	a := &AppIngressSpecRuleRoutingRedirect{}
+	a.GetScheme()
+	a = nil
+	a.GetScheme()
+}
+
+func TestAppIngressSpecRuleRoutingRedirect_GetUri(tt *testing.T) {
+	a := &AppIngressSpecRuleRoutingRedirect{}
+	a.GetUri()
+	a = nil
+	a.GetUri()
+}
+
+func TestAppIngressSpecRuleStringMatch_GetPrefix(tt *testing.T) {
+	a := &AppIngressSpecRuleStringMatch{}
+	a.GetPrefix()
+	a = nil
+	a.GetPrefix()
+}
+
 func TestAppInstanceSize_GetCPUs(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetCPUs()
@@ -795,6 +907,13 @@ func TestAppJobSpec_GetDockerfilePath(tt *testing.T) {
 	a.GetDockerfilePath()
 	a = nil
 	a.GetDockerfilePath()
+}
+
+func TestAppJobSpec_GetEnvironmentSlug(tt *testing.T) {
+	a := &AppJobSpec{}
+	a.GetEnvironmentSlug()
+	a = nil
+	a.GetEnvironmentSlug()
 }
 
 func TestAppJobSpec_GetEnvs(tt *testing.T) {
@@ -1168,6 +1287,13 @@ func TestAppServiceSpec_GetDockerfilePath(tt *testing.T) {
 	a.GetDockerfilePath()
 }
 
+func TestAppServiceSpec_GetEnvironmentSlug(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetEnvironmentSlug()
+	a = nil
+	a.GetEnvironmentSlug()
+}
+
 func TestAppServiceSpec_GetEnvs(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetEnvs()
@@ -1448,6 +1574,13 @@ func TestAppStaticSiteSpec_GetDockerfilePath(tt *testing.T) {
 	a.GetDockerfilePath()
 }
 
+func TestAppStaticSiteSpec_GetEnvironmentSlug(tt *testing.T) {
+	a := &AppStaticSiteSpec{}
+	a.GetEnvironmentSlug()
+	a = nil
+	a.GetEnvironmentSlug()
+}
+
 func TestAppStaticSiteSpec_GetEnvs(tt *testing.T) {
 	a := &AppStaticSiteSpec{}
 	a.GetEnvs()
@@ -1614,6 +1747,13 @@ func TestAppWorkerSpec_GetDockerfilePath(tt *testing.T) {
 	a.GetDockerfilePath()
 	a = nil
 	a.GetDockerfilePath()
+}
+
+func TestAppWorkerSpec_GetEnvironmentSlug(tt *testing.T) {
+	a := &AppWorkerSpec{}
+	a.GetEnvironmentSlug()
+	a = nil
+	a.GetEnvironmentSlug()
 }
 
 func TestAppWorkerSpec_GetEnvs(tt *testing.T) {
@@ -2393,6 +2533,13 @@ func TestDetectResponseComponent_GetDockerfiles(tt *testing.T) {
 	d.GetDockerfiles()
 }
 
+func TestDetectResponseComponent_GetEnvironmentSlug(tt *testing.T) {
+	d := &DetectResponseComponent{}
+	d.GetEnvironmentSlug()
+	d = nil
+	d.GetEnvironmentSlug()
+}
+
 func TestDetectResponseComponent_GetEnvVars(tt *testing.T) {
 	d := &DetectResponseComponent{}
 	d.GetEnvVars()
@@ -2601,6 +2748,13 @@ func TestImageSourceSpecDeployOnPush_GetEnabled(tt *testing.T) {
 	i.GetEnabled()
 	i = nil
 	i.GetEnabled()
+}
+
+func TestListBuildpacksResponse_GetBuildpacks(tt *testing.T) {
+	l := &ListBuildpacksResponse{}
+	l.GetBuildpacks()
+	l = nil
+	l.GetBuildpacks()
 }
 
 func TestUpgradeBuildpackResponse_GetAffectedComponents(tt *testing.T) {
