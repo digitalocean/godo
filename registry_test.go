@@ -942,3 +942,26 @@ func TestRegistry_UpdateSubscription(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
+
+func TestRegistry_ValidateName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	validateNameRequest := &RegistryValidateNameRequest{
+		Name: testRegistry,
+	}
+
+	mux.HandleFunc("/v2/registry/validate-name", func(w http.ResponseWriter, r *http.Request) {
+		v := new(RegistryValidateNameRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, v, validateNameRequest)
+	})
+
+	_, err := client.Registry.ValidateName(ctx, validateNameRequest)
+	require.NoError(t, err)
+}
