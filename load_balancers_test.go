@@ -378,6 +378,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 
 	createRequest := &LoadBalancerRequest{
 		Name:      "example-lb-01",
+		Type:      LoadBalancerTypeRegional,
 		Algorithm: "round_robin",
 		Region:    "nyc1",
 		ForwardingRules: []ForwardingRule{
