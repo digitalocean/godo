@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/google/go-querystring/query"
+	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/oauth2"
 	"golang.org/x/time/rate"
 )
@@ -92,6 +93,12 @@ type Client struct {
 
 	// Optional rate limiter to ensure QoS.
 	rateLimiter *rate.Limiter
+
+	// Optional retry values. Setting the retry max value enables automatically retrying requests
+	// that fail with 429 or 500-level response codes using the go-retryablehttp client
+	retryMax     int
+	retryWaitMin float64 // Minimum time to wait
+	retryWaitMax float64 // Maximum time to wait
 }
 
 // RequestCompletionCallback defines the type of the request callback function
@@ -271,6 +278,16 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 		}
 	}
 
+	// if retryMax is set it will use the retryablehttp client.
+	if c.retryMax > 0 {
+		retryableClient := retryablehttp.NewClient()
+		retryableClient.RetryMax = c.retryMax
+		retryableClient.RetryWaitMin = time.Duration(c.retryWaitMin * float64(time.Second))
+		retryableClient.RetryWaitMax = time.Duration(c.retryWaitMin * float64(time.Second))
+
+		c.client = retryableClient.StandardClient()
+	}
+
 	return c, nil
 }
 
@@ -311,6 +328,30 @@ func SetRequestHeaders(headers map[string]string) ClientOpt {
 func SetStaticRateLimit(rps float64) ClientOpt {
 	return func(c *Client) error {
 		c.rateLimiter = rate.NewLimiter(rate.Limit(rps), 1)
+		return nil
+	}
+}
+
+// SetRetryMax sets an optional client-side....
+func SetRetryMax(retryMax int) ClientOpt {
+	return func(c *Client) error {
+		c.retryMax = retryMax
+		return nil
+	}
+}
+
+// SetRetryWaitMax sets an optional client-side....
+func SetRetryWaitMax(retryWaitMax float64) ClientOpt {
+	return func(c *Client) error {
+		c.retryWaitMax = retryWaitMax
+		return nil
+	}
+}
+
+// SetRetryWaitMin sets an optional client-side....
+func SetRetryWaitMin(retryWaitMin float64) ClientOpt {
+	return func(c *Client) error {
+		c.retryWaitMin = retryWaitMin
 		return nil
 	}
 }
