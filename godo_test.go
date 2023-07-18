@@ -534,7 +534,6 @@ func TestDo_rateLimit(t *testing.T) {
 	if client.Rate != client.GetRate() {
 		t.Errorf("Client rate is not the same as client.GetRate()")
 	}
-
 }
 
 func TestDo_rateLimitRace(t *testing.T) {
