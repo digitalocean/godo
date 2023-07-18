@@ -353,7 +353,8 @@ func SetStaticRateLimit(rps float64) ClientOpt {
 	}
 }
 
-// WithRetryAndBackoffs sets an
+// WithRetryAndBackoffs sets retry values. Setting the RetryConfig.RetryMax value enables automatically retrying requests
+// that fail with 429 or 500-level response codes using the go-retryablehttp client
 func WithRetryAndBackoffs(retryConfig RetryConfig) ClientOpt {
 	return func(c *Client) error {
 		c.RetryConfig.RetryMax = retryConfig.RetryMax
