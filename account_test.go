@@ -21,6 +21,7 @@ func TestAccountGet(t *testing.T) {
 			"reserved_ip_limit": 25,
 			"volume_limit": 22,
 			"email": "sammy@digitalocean.com",
+			"name": "Sammy the Shark",
 			"uuid": "b6fr89dbf6d9156cace5f3c78dc9851d957381ef",
 			"email_verified": true
 			}
@@ -34,8 +35,16 @@ func TestAccountGet(t *testing.T) {
 		t.Errorf("Account.Get returned error: %v", err)
 	}
 
-	expected := &Account{DropletLimit: 25, FloatingIPLimit: 25, ReservedIPLimit: 25, Email: "sammy@digitalocean.com",
-		UUID: "b6fr89dbf6d9156cace5f3c78dc9851d957381ef", EmailVerified: true, VolumeLimit: 22}
+	expected := &Account{
+		DropletLimit:    25,
+		FloatingIPLimit: 25,
+		ReservedIPLimit: 25,
+		Email:           "sammy@digitalocean.com",
+		Name:            "Sammy the Shark",
+		UUID:            "b6fr89dbf6d9156cace5f3c78dc9851d957381ef",
+		EmailVerified:   true,
+		VolumeLimit:     22,
+	}
 	if !reflect.DeepEqual(acct, expected) {
 		t.Errorf("Account.Get returned %+v, expected %+v", acct, expected)
 	}
@@ -48,6 +57,7 @@ func TestAccountString(t *testing.T) {
 		ReservedIPLimit: 25,
 		VolumeLimit:     22,
 		Email:           "sammy@digitalocean.com",
+		Name:            "Sammy the Shark",
 		UUID:            "b6fr89dbf6d9156cace5f3c78dc9851d957381ef",
 		EmailVerified:   true,
 		Status:          "active",
@@ -55,7 +65,7 @@ func TestAccountString(t *testing.T) {
 	}
 
 	stringified := acct.String()
-	expected := `godo.Account{DropletLimit:25, FloatingIPLimit:25, ReservedIPLimit:25, VolumeLimit:22, Email:"sammy@digitalocean.com", UUID:"b6fr89dbf6d9156cace5f3c78dc9851d957381ef", EmailVerified:true, Status:"active", StatusMessage:"message"}`
+	expected := `godo.Account{DropletLimit:25, FloatingIPLimit:25, ReservedIPLimit:25, VolumeLimit:22, Email:"sammy@digitalocean.com", Name:"Sammy the Shark", UUID:"b6fr89dbf6d9156cace5f3c78dc9851d957381ef", EmailVerified:true, Status:"active", StatusMessage:"message"}`
 	if expected != stringified {
 		t.Errorf("\n     got %+v\nexpected %+v", stringified, expected)
 	}
@@ -75,6 +85,7 @@ func TestAccountGetWithTeam(t *testing.T) {
 			"floating_ip_limit": 25,
 			"volume_limit": 22,
 			"email": "sammy@digitalocean.com",
+			"name": "Sammy the Shark",
 			"uuid": "b6fr89dbf6d9156cace5f3c78dc9851d957381ef",
 			"email_verified": true,
 			"team": {
@@ -96,6 +107,7 @@ func TestAccountGetWithTeam(t *testing.T) {
 		DropletLimit:    25,
 		FloatingIPLimit: 25,
 		Email:           "sammy@digitalocean.com",
+		Name:            "Sammy the Shark",
 		UUID:            "b6fr89dbf6d9156cace5f3c78dc9851d957381ef",
 		EmailVerified:   true,
 		VolumeLimit:     22,
@@ -116,6 +128,7 @@ func TestAccountStringWithTeam(t *testing.T) {
 		ReservedIPLimit: 25,
 		VolumeLimit:     22,
 		Email:           "sammy@digitalocean.com",
+		Name:            "Sammy the Shark",
 		UUID:            "b6fr89dbf6d9156cace5f3c78dc9851d957381ef",
 		EmailVerified:   true,
 		Status:          "active",
@@ -127,7 +140,7 @@ func TestAccountStringWithTeam(t *testing.T) {
 	}
 
 	stringified := acct.String()
-	expected := `godo.Account{DropletLimit:25, FloatingIPLimit:25, ReservedIPLimit:25, VolumeLimit:22, Email:"sammy@digitalocean.com", UUID:"b6fr89dbf6d9156cace5f3c78dc9851d957381ef", EmailVerified:true, Status:"active", StatusMessage:"message", Team:godo.TeamInfo{Name:"My Team", UUID:"b6fr89dbf6d9156cace5f3c78dc9851d957381ef"}}`
+	expected := `godo.Account{DropletLimit:25, FloatingIPLimit:25, ReservedIPLimit:25, VolumeLimit:22, Email:"sammy@digitalocean.com", Name:"Sammy the Shark", UUID:"b6fr89dbf6d9156cace5f3c78dc9851d957381ef", EmailVerified:true, Status:"active", StatusMessage:"message", Team:godo.TeamInfo{Name:"My Team", UUID:"b6fr89dbf6d9156cace5f3c78dc9851d957381ef"}}`
 	if expected != stringified {
 		t.Errorf("\n     got %+v\nexpected %+v", stringified, expected)
 	}
