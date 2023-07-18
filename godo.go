@@ -94,11 +94,17 @@ type Client struct {
 	// Optional rate limiter to ensure QoS.
 	rateLimiter *rate.Limiter
 
-	// Optional retry values. Setting the retry max value enables automatically retrying requests
+	// Optional retry values. Setting the RetryConfig.RetryMax value enables automatically retrying requests
 	// that fail with 429 or 500-level response codes using the go-retryablehttp client
-	retryMax     int
-	retryWaitMin float64 // Minimum time to wait
-	retryWaitMax float64 // Maximum time to wait
+	RetryConfig RetryConfig
+}
+
+// RetryConfig sets the values used for enabling retries and backoffs for
+// requests that fail with 429 or 500-level response codes using the go-retryablehttp client.
+type RetryConfig struct {
+	RetryMax     int
+	RetryWaitMin float64 // Minimum time to wait
+	RetryWaitMax float64 // Maximum time to wait
 }
 
 // RequestCompletionCallback defines the type of the request callback function
@@ -279,13 +285,25 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 	}
 
 	// if retryMax is set it will use the retryablehttp client.
-	if c.retryMax > 0 {
+	if c.RetryConfig.RetryMax > 0 {
 		retryableClient := retryablehttp.NewClient()
-		retryableClient.RetryMax = c.retryMax
-		retryableClient.RetryWaitMin = time.Duration(c.retryWaitMin * float64(time.Second))
-		retryableClient.RetryWaitMax = time.Duration(c.retryWaitMin * float64(time.Second))
+		retryableClient.RetryMax = c.RetryConfig.RetryMax
+		retryableClient.RetryWaitMin = time.Duration(c.RetryConfig.RetryWaitMin * float64(time.Second))
+		retryableClient.RetryWaitMax = time.Duration(c.RetryConfig.RetryWaitMin * float64(time.Second))
 
+		// if timeout is set, it is maintained before overwriting client with StandardClient()
+		retryableClient.HTTPClient.Timeout = c.client.Timeout
+
+		var source *oauth2.Transport
+		if _, ok := c.client.Transport.(*oauth2.Transport); ok {
+			source = c.client.Transport.(*oauth2.Transport)
+		}
 		c.client = retryableClient.StandardClient()
+		c.client.Transport = &oauth2.Transport{
+			Base:   c.client.Transport,
+			Source: source.Source,
+		}
+
 	}
 
 	return c, nil
@@ -332,26 +350,12 @@ func SetStaticRateLimit(rps float64) ClientOpt {
 	}
 }
 
-// SetRetryMax sets an optional client-side....
-func SetRetryMax(retryMax int) ClientOpt {
+// WithRetryAndBackoffs sets an
+func WithRetryAndBackoffs(retryConfig RetryConfig) ClientOpt {
 	return func(c *Client) error {
-		c.retryMax = retryMax
-		return nil
-	}
-}
-
-// SetRetryWaitMax sets an optional client-side....
-func SetRetryWaitMax(retryWaitMax float64) ClientOpt {
-	return func(c *Client) error {
-		c.retryWaitMax = retryWaitMax
-		return nil
-	}
-}
-
-// SetRetryWaitMin sets an optional client-side....
-func SetRetryWaitMin(retryWaitMin float64) ClientOpt {
-	return func(c *Client) error {
-		c.retryWaitMin = retryWaitMin
+		c.RetryConfig.RetryMax = retryConfig.RetryMax
+		c.RetryConfig.RetryWaitMax = retryConfig.RetryWaitMax
+		c.RetryConfig.RetryWaitMin = retryConfig.RetryWaitMin
 		return nil
 	}
 }

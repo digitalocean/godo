@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/oauth2"
 	"golang.org/x/time/rate"
 )
 
@@ -604,11 +605,10 @@ func TestDo_rateLimit_errorResponse(t *testing.T) {
 	}
 }
 
-// TestRetryableClient_DefaultRetryPolicy tests the retryablehttp client's default retry policy.
-func TestRetryableClient_DefaultRetryPolicy(t *testing.T) {
+// TestWithRetryAndBackoffs tests the retryablehttp client's default retry policy.
+func TestWithRetryAndBackoffs(t *testing.T) {
 	// Mock server which always responds 500.
-	mux = http.NewServeMux()
-	server = httptest.NewServer(mux)
+	setup()
 	defer teardown()
 
 	url, _ := url.Parse(server.URL)
@@ -616,8 +616,19 @@ func TestRetryableClient_DefaultRetryPolicy(t *testing.T) {
 		w.WriteHeader(500)
 	})
 
+	tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: "new_token",
+	})
+
+	oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
+	retryConfig := RetryConfig{
+		RetryMax:     3,
+		RetryWaitMin: 3.0,
+		RetryWaitMax: 6.0,
+	}
+
 	// Create the client. Use short retry windows so we fail faster.
-	client, err := New(nil, SetRetryMax(2), SetRetryWaitMax(6.0), SetRetryWaitMin(6.0))
+	client, err := New(oauth_client, WithRetryAndBackoffs(retryConfig))
 	client.BaseURL = url
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -629,8 +640,7 @@ func TestRetryableClient_DefaultRetryPolicy(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	expectingErr := "giving up after 3 attempt(s)"
-
+	expectingErr := "giving up after 4 attempt(s)"
 	// Send the request.
 	_, err = client.Do(context.Background(), req, nil)
 	if err == nil || !strings.HasSuffix(err.Error(), expectingErr) {
@@ -816,48 +826,6 @@ func TestSetStaticRateLimit(t *testing.T) {
 	if got := c.rateLimiter; *got != *expected {
 		t.Errorf("rateLimiter = %+v; expected %+v", got, expected)
 	}
-}
-
-func TestSetRetryMax(t *testing.T) {
-	retryMax := 5
-	c, err := New(nil, SetRetryMax(retryMax))
-	if err != nil {
-		t.Fatalf("New() unexpected error: %v", err)
-	}
-
-	expected := retryMax
-	if got := c.retryMax; got != expected {
-		t.Errorf("retryMax = %+v; expected %+v", got, expected)
-	}
-
-}
-
-func TestSetRetryWaitMax(t *testing.T) {
-	retryWaitMax := 1.0
-	c, err := New(nil, SetRetryWaitMax(retryWaitMax))
-	if err != nil {
-		t.Fatalf("New() unexpected error: %v", err)
-	}
-
-	expected := retryWaitMax
-	if got := c.retryWaitMax; got != expected {
-		t.Errorf("retryWaitMax = %+v; expected %+v", got, expected)
-	}
-
-}
-
-func TestSetRetryWaitMin(t *testing.T) {
-	retryWaitMin := 1.0
-	c, err := New(nil, SetRetryWaitMin(retryWaitMin))
-	if err != nil {
-		t.Fatalf("New() unexpected error: %v", err)
-	}
-
-	expected := retryWaitMin
-	if got := c.retryWaitMin; got != expected {
-		t.Errorf("retryWaitMin = %+v; expected %+v", got, expected)
-	}
-
 }
 
 func TestCustomBaseURL_badURL(t *testing.T) {
