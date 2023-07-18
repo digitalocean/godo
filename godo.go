@@ -101,6 +101,9 @@ type Client struct {
 
 // RetryConfig sets the values used for enabling retries and backoffs for
 // requests that fail with 429 or 500-level response codes using the go-retryablehttp client.
+// RetryConfig.RetryMax must be configured to enable this behavior.
+// Note: Opting to use the go-retryablehttp client will overwrite any custom HTTP client passed into New().
+// Only the custom HTTP client's custom transport and timeout will be maintained.
 type RetryConfig struct {
 	RetryMax     int
 	RetryWaitMin float64 // Minimum time to wait
