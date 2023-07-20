@@ -1,6 +1,6 @@
 # Change Log
 
-## [v2.0.0] - 2023-07-20
+## [v1.100.0] - 2023-07-20
 
 - #618 - @asaha - load balancers: introduce new type field
 - #620 - @andrewsomething - account: add name field.
