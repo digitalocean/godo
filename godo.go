@@ -30,6 +30,7 @@ const (
 	headerRateLimit     = "RateLimit-Limit"
 	headerRateRemaining = "RateLimit-Remaining"
 	headerRateReset     = "RateLimit-Reset"
+	headerRetryAfter    = "Retry-After"
 )
 
 // Client manages communication with DigitalOcean V2 API.
@@ -181,6 +182,9 @@ type Rate struct {
 
 	// The time at which the current rate limit will reset.
 	Reset Timestamp `json:"reset"`
+
+	// The number of seconds the client is expected to wait before making a follow-up HTTP request
+	RetryAfter int `json:"retry-after"`
 }
 
 func addOptions(s string, opt interface{}) (string, error) {
@@ -440,6 +444,9 @@ func (r *Response) populateRate() {
 		if v, _ := strconv.ParseInt(reset, 10, 64); v != 0 {
 			r.Rate.Reset = Timestamp{time.Unix(v, 0)}
 		}
+	}
+	if retryAfter := r.Header.Get(headerRetryAfter); retryAfter != "" {
+		r.Rate.RetryAfter, _ = strconv.Atoi(retryAfter)
 	}
 }
 
