@@ -627,10 +627,16 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 	})
 
 	oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
+	var waitMax *float64 = new(float64)
+	var waitMin *float64 = new(float64)
+
+	*waitMax = 6.0
+	*waitMin = 3.0
+
 	retryConfig := RetryConfig{
 		RetryMax:     3,
-		RetryWaitMin: 3.0,
-		RetryWaitMax: 6.0,
+		RetryWaitMin: waitMin,
+		RetryWaitMax: waitMax,
 	}
 
 	// Create the client. Use short retry windows so we fail faster.

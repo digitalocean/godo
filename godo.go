@@ -102,13 +102,14 @@ type Client struct {
 
 // RetryConfig sets the values used for enabling retries and backoffs for
 // requests that fail with 429 or 500-level response codes using the go-retryablehttp client.
-// RetryConfig.RetryMax must be configured to enable this behavior.
+// RetryConfig.RetryMax must be configured to enable this behavior. RetryConfig.RetryWaitMin and
+// RetryConfig.RetryWaitMax are optional, with the default values being 1.0 and 30.0, respectively.
 // Note: Opting to use the go-retryablehttp client will overwrite any custom HTTP client passed into New().
 // Only the custom HTTP client's custom transport and timeout will be maintained.
 type RetryConfig struct {
 	RetryMax     int
-	RetryWaitMin float64 // Minimum time to wait
-	RetryWaitMax float64 // Maximum time to wait
+	RetryWaitMin *float64 // Minimum time to wait
+	RetryWaitMax *float64 // Maximum time to wait
 }
 
 // RequestCompletionCallback defines the type of the request callback function
@@ -295,8 +296,13 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 	if c.RetryConfig.RetryMax > 0 {
 		retryableClient := retryablehttp.NewClient()
 		retryableClient.RetryMax = c.RetryConfig.RetryMax
-		retryableClient.RetryWaitMin = time.Duration(c.RetryConfig.RetryWaitMin * float64(time.Second))
-		retryableClient.RetryWaitMax = time.Duration(c.RetryConfig.RetryWaitMin * float64(time.Second))
+
+		if c.RetryConfig.RetryWaitMin != nil {
+			retryableClient.RetryWaitMin = time.Duration(*c.RetryConfig.RetryWaitMin * float64(time.Second))
+		}
+		if c.RetryConfig.RetryWaitMax != nil {
+			retryableClient.RetryWaitMax = time.Duration(*c.RetryConfig.RetryWaitMax * float64(time.Second))
+		}
 
 		// if timeout is set, it is maintained before overwriting client with StandardClient()
 		retryableClient.HTTPClient.Timeout = c.client.Timeout
