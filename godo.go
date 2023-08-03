@@ -30,7 +30,6 @@ const (
 	headerRateLimit     = "RateLimit-Limit"
 	headerRateRemaining = "RateLimit-Remaining"
 	headerRateReset     = "RateLimit-Reset"
-	headerRetryAfter    = "Retry-After"
 )
 
 // Client manages communication with DigitalOcean V2 API.
@@ -104,6 +103,13 @@ type Client struct {
 // requests that fail with 429 or 500-level response codes using the go-retryablehttp client.
 // RetryConfig.RetryMax must be configured to enable this behavior. RetryConfig.RetryWaitMin and
 // RetryConfig.RetryWaitMax are optional, with the default values being 1.0 and 30.0, respectively.
+//
+// You can use
+//
+//	godo.PtrTo(1.0)
+//
+// to explicitly set the RetryWaitMin and RetryWaitMax values.
+//
 // Note: Opting to use the go-retryablehttp client will overwrite any custom HTTP client passed into New().
 // Only the custom HTTP client's custom transport and timeout will be maintained.
 type RetryConfig struct {
@@ -183,9 +189,6 @@ type Rate struct {
 
 	// The time at which the current rate limit will reset.
 	Reset Timestamp `json:"reset"`
-
-	// The number of seconds the client is expected to wait before making a follow-up HTTP request
-	RetryAfter int `json:"retry-after"`
 }
 
 func addOptions(s string, opt interface{}) (string, error) {
@@ -450,9 +453,6 @@ func (r *Response) populateRate() {
 		if v, _ := strconv.ParseInt(reset, 10, 64); v != 0 {
 			r.Rate.Reset = Timestamp{time.Unix(v, 0)}
 		}
-	}
-	if retryAfter := r.Header.Get(headerRetryAfter); retryAfter != "" {
-		r.Rate.RetryAfter, _ = strconv.Atoi(retryAfter)
 	}
 }
 

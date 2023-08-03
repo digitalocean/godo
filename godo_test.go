@@ -498,7 +498,6 @@ func TestDo_rateLimit(t *testing.T) {
 		w.Header().Add(headerRateLimit, "60")
 		w.Header().Add(headerRateRemaining, "59")
 		w.Header().Add(headerRateReset, "1372700873")
-		w.Header().Add(headerRetryAfter, "23")
 	})
 
 	var expected int
@@ -508,9 +507,6 @@ func TestDo_rateLimit(t *testing.T) {
 	}
 	if expected = 0; client.Rate.Remaining != expected {
 		t.Errorf("Client rate remaining = %v, got %v", client.Rate.Remaining, expected)
-	}
-	if expected = 0; client.Rate.RetryAfter != expected {
-		t.Errorf("Client rate retry-after = %v, got %v", client.Rate.RetryAfter, expected)
 	}
 	if !client.Rate.Reset.IsZero() {
 		t.Errorf("Client rate reset not initialized to zero value")
@@ -530,9 +526,6 @@ func TestDo_rateLimit(t *testing.T) {
 	}
 	if expected = 59; client.Rate.Remaining != expected {
 		t.Errorf("Client rate remaining = %v, expected %v", client.Rate.Remaining, expected)
-	}
-	if expected = 23; client.Rate.RetryAfter != expected {
-		t.Errorf("Client rate retry-after = %v, expected %v", client.Rate.RetryAfter, expected)
 	}
 	reset := time.Date(2013, 7, 1, 17, 47, 53, 0, time.UTC)
 	if client.Rate.Reset.UTC() != reset {
@@ -627,11 +620,9 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 	})
 
 	oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
-	var waitMax *float64 = new(float64)
-	var waitMin *float64 = new(float64)
 
-	*waitMax = 6.0
-	*waitMin = 3.0
+	waitMax := PtrTo(6.0)
+	waitMin := PtrTo(3.0)
 
 	retryConfig := RetryConfig{
 		RetryMax:     3,
