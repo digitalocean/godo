@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"golang.org/x/oauth2"
 	"golang.org/x/time/rate"
 )
 
@@ -601,6 +602,54 @@ func TestDo_rateLimit_errorResponse(t *testing.T) {
 	if client.Rate.Reset.UTC() != reset {
 		t.Errorf("Client rate reset = %v, expected %v", client.Rate.Reset, reset)
 	}
+}
+
+// TestWithRetryAndBackoffs tests the retryablehttp client's default retry policy.
+func TestWithRetryAndBackoffs(t *testing.T) {
+	// Mock server which always responds 500.
+	setup()
+	defer teardown()
+
+	url, _ := url.Parse(server.URL)
+	mux.HandleFunc("/foo", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(500)
+	})
+
+	tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: "new_token",
+	})
+
+	oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
+
+	waitMax := PtrTo(6.0)
+	waitMin := PtrTo(3.0)
+
+	retryConfig := RetryConfig{
+		RetryMax:     3,
+		RetryWaitMin: waitMin,
+		RetryWaitMax: waitMax,
+	}
+
+	// Create the client. Use short retry windows so we fail faster.
+	client, err := New(oauth_client, WithRetryAndBackoffs(retryConfig))
+	client.BaseURL = url
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Create the request
+	req, err := client.NewRequest(ctx, http.MethodGet, "/foo", nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	expectingErr := "giving up after 4 attempt(s)"
+	// Send the request.
+	_, err = client.Do(context.Background(), req, nil)
+	if err == nil || !strings.HasSuffix(err.Error(), expectingErr) {
+		t.Fatalf("expected giving up error, got: %#v", err)
+	}
+
 }
 
 func checkCurrentPage(t *testing.T, resp *Response, expectedPage int) {
