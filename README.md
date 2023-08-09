@@ -175,7 +175,6 @@ retryConfig := RetryConfig{
     RetryWaitMax: waitMax,
 }
 
-// Create the client. Use short retry windows so we fail faster.
 client, err := New(oauth_client, WithRetryAndBackoffs(retryConfig))
 ```
 
