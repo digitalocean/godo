@@ -166,16 +166,16 @@ tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
 
 oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
 
-waitMax := PtrTo(6.0)
-waitMin := PtrTo(3.0)
+waitMax := godo.PtrTo(6.0)
+waitMin := godo.PtrTo(3.0)
 
-retryConfig := RetryConfig{
+retryConfig := godo.RetryConfig{
     RetryMax:     3,
     RetryWaitMin: waitMin,
     RetryWaitMax: waitMax,
 }
 
-client, err := New(oauth_client, WithRetryAndBackoffs(retryConfig))
+client, err := godo.New(oauth_client, godo.WithRetryAndBackoffs(retryConfig))
 ```
 
 Please refer to the [RetryConfig Godo documentation](https://pkg.go.dev/github.com/digitalocean/godo#RetryConfig) for more information.
