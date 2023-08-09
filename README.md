@@ -155,6 +155,32 @@ func ListRepositoriesV2(ctx context.Context, client *godo.Client, registryName s
 }
 ```
 
+### Automatic Retries and Exponential Backoff
+
+The Godo client can be configured to use automatic retries and exponentional backoff for requests that fail with 429 or 500-level response codes via the [go-retryablehttp](https://github.com/hashicorp/go-retryablehttp) package. To configure the Godo client to enable usage of the go-retryablehttp, the `RetryConfig.RetryMax` must be set to enable this behavior:
+
+```
+tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
+    AccessToken: "new_token",
+})
+
+oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
+
+waitMax := PtrTo(6.0)
+waitMin := PtrTo(3.0)
+
+retryConfig := RetryConfig{
+    RetryMax:     3,
+    RetryWaitMin: waitMin,
+    RetryWaitMax: waitMax,
+}
+
+// Create the client. Use short retry windows so we fail faster.
+client, err := New(oauth_client, WithRetryAndBackoffs(retryConfig))
+```
+
+Please refer to the [RetryConfig Godo documentation](https://pkg.go.dev/github.com/digitalocean/godo#RetryConfig) for more information.
+
 ## Versioning
 
 Each version of the client is tagged and the version is updated accordingly.
