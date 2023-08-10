@@ -114,8 +114,9 @@ type Client struct {
 // Only the custom HTTP client's custom transport and timeout will be maintained.
 type RetryConfig struct {
 	RetryMax     int
-	RetryWaitMin *float64 // Minimum time to wait
-	RetryWaitMax *float64 // Maximum time to wait
+	RetryWaitMin *float64    // Minimum time to wait
+	RetryWaitMax *float64    // Maximum time to wait
+	Logger       interface{} // Customer logger instance. Must implement either go-retryablehttp.Logger or go-retryablehttp.LeveledLogger
 }
 
 // RequestCompletionCallback defines the type of the request callback function
@@ -307,6 +308,9 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 			retryableClient.RetryWaitMax = time.Duration(*c.RetryConfig.RetryWaitMax * float64(time.Second))
 		}
 
+		// By default this is nil and does not log.
+		retryableClient.Logger = c.RetryConfig.Logger
+
 		// if timeout is set, it is maintained before overwriting client with StandardClient()
 		retryableClient.HTTPClient.Timeout = c.HTTPClient.Timeout
 
@@ -373,6 +377,7 @@ func WithRetryAndBackoffs(retryConfig RetryConfig) ClientOpt {
 		c.RetryConfig.RetryMax = retryConfig.RetryMax
 		c.RetryConfig.RetryWaitMax = retryConfig.RetryWaitMax
 		c.RetryConfig.RetryWaitMin = retryConfig.RetryWaitMin
+		c.RetryConfig.Logger = retryConfig.Logger
 		return nil
 	}
 }
