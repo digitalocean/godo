@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
@@ -27,6 +28,67 @@ var (
 
 	server *httptest.Server
 )
+
+type internalRoundTripper func(*http.Request) (*http.Response, error)
+
+func (rt internalRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return rt(req)
+}
+
+func ExampleMiddleware() {
+	mfn := func(rt http.RoundTripper) http.RoundTripper {
+		return internalRoundTripper(func(req *http.Request) (resp *http.Response, err error) {
+			defer func() {
+				if err == nil {
+					o, err := httputil.DumpResponse(resp, true)
+					if err != nil {
+						panic(err)
+					}
+					fmt.Println(string(o))
+				}
+			}()
+			return rt.RoundTrip(req)
+		})
+	}
+
+	client, err := New(
+		oauth2.NewClient(oauth2.NoContext, oauth2.StaticTokenSource(&oauth2.Token{
+			AccessToken: os.Getenv("DIGITALOCEAN_TOKEN"),
+		})),
+		WithRetryAndBackoffs(RetryConfig{
+			RetryMax: 5,
+		}),
+		WithMiddleware(mfn),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	acct, _, err := client.Account.Get(context.Background())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(acct.Name)
+	// Output:
+	// HTTP/2.0 200 OK
+	// Cf-Cache-Status: DYNAMIC
+	// Cf-Ray: 7f4a5efd2bb336b3-YYZ
+	// Content-Type: application/json; charset=utf-8
+	// Date: Thu, 10 Aug 2023 18:41:06 GMT
+	// Ratelimit-Limit: 5000
+	// Ratelimit-Remaining: 4999
+	// Ratelimit-Reset: 1691696466
+	// Server: cloudflare
+	// Set-Cookie: <redacted>
+	// X-Gateway: Edge-Gateway
+	// X-Request-Id: d9e8c3f6-5568-4e06-a36f-481632c9bdba
+	// X-Response-From: service
+	// X-Runtime: 0.020738
+	//
+	// {"account":{"droplet_limit":25,"floating_ip_limit":0,"reserved_ip_limit":0,"volume_limit":1,"email":"<redacted>","name":"Ben Tranter","uuid":"<redacted>","email_verified":true,"status":"active","status_message":"","team":{"uuid":"<redacted>","name":"My Team"}}}
+	//
+	// Ben Tranter
+}
 
 func setup() {
 	mux = http.NewServeMux()

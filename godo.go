@@ -97,7 +97,12 @@ type Client struct {
 	// Optional retry values. Setting the RetryConfig.RetryMax value enables automatically retrying requests
 	// that fail with 429 or 500-level response codes using the go-retryablehttp client
 	RetryConfig RetryConfig
+
+	// Additional http.RoundTrippers to set on the http.Client.
+	middleware []Middleware
 }
+
+type Middleware func(http.RoundTripper) http.RoundTripper
 
 // RetryConfig sets the values used for enabling retries and backoffs for
 // requests that fail with 429 or 500-level response codes using the go-retryablehttp client.
@@ -322,7 +327,22 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 
 	}
 
+	// Chain any provided http.RoundTrippers on the transport.
+	if len(c.middleware) > 0 {
+		c.client.Transport = chainRoundTrippers(c.client.Transport, c.middleware...)
+	}
+
 	return c, nil
+}
+
+func chainRoundTrippers(base http.RoundTripper, middlewares ...Middleware) http.RoundTripper {
+	if base == nil {
+		panic("base http roundtripper cannot be nil")
+	}
+	for _, m := range middlewares {
+		base = m(base)
+	}
+	return base
 }
 
 // SetBaseURL is a client option for setting the base URL.
@@ -373,6 +393,14 @@ func WithRetryAndBackoffs(retryConfig RetryConfig) ClientOpt {
 		c.RetryConfig.RetryMax = retryConfig.RetryMax
 		c.RetryConfig.RetryWaitMax = retryConfig.RetryWaitMax
 		c.RetryConfig.RetryWaitMin = retryConfig.RetryWaitMin
+		return nil
+	}
+}
+
+// WithMiddleware sets additional http.RoundTrippers on the http.Client.
+func WithMiddleware(middlewares ...Middleware) ClientOpt {
+	return func(c *Client) error {
+		c.middleware = middlewares
 		return nil
 	}
 }
