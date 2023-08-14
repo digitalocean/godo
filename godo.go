@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	libraryVersion = "1.101.0"
+	libraryVersion = "1.102.0"
 	defaultBaseURL = "https://api.digitalocean.com/"
 	userAgent      = "godo/" + libraryVersion
 	mediaType      = "application/json"
@@ -111,7 +111,7 @@ type Client struct {
 // to explicitly set the RetryWaitMin and RetryWaitMax values.
 //
 // Note: Opting to use the go-retryablehttp client will overwrite any custom HTTP client passed into New().
-// Only the custom HTTP client's custom transport and timeout will be maintained.
+// Only the oauth2.TokenSource and Timeout will be maintained.
 type RetryConfig struct {
 	RetryMax     int
 	RetryWaitMin *float64    // Minimum time to wait
