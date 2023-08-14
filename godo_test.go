@@ -1,9 +1,11 @@
 package godo
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
@@ -650,6 +652,53 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 		t.Fatalf("expected giving up error, got: %#v", err)
 	}
 
+}
+
+func TestWithRetryAndBackoffsLogger(t *testing.T) {
+	// Mock server which always responds 500.
+	setup()
+	defer teardown()
+
+	url, _ := url.Parse(server.URL)
+	mux.HandleFunc("/foo", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	})
+
+	tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: "new_token",
+	})
+
+	oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
+
+	var buf bytes.Buffer
+	retryConfig := RetryConfig{
+		RetryMax: 3,
+		Logger:   log.New(&buf, "", 0),
+	}
+
+	// Create the client. Use short retry windows so we fail faster.
+	client, err := New(oauth_client, WithRetryAndBackoffs(retryConfig))
+	client.BaseURL = url
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// Create the request
+	req, err := client.NewRequest(ctx, http.MethodGet, "/foo", nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	_, err = client.Do(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	got := buf.String()
+	expected := fmt.Sprintf("[DEBUG] GET %s/foo\n", url)
+	if expected != got {
+		t.Fatalf("expected: %s; got: %s", expected, got)
+	}
 }
 
 func checkCurrentPage(t *testing.T, resp *Response, expectedPage int) {
