@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -178,6 +178,9 @@ type ErrorResponse struct {
 
 	// RequestID returned from the API, useful to contact support.
 	RequestID string `json:"request_id"`
+
+	// Attempts is the number of times the request was attempted when retries are enabled.
+	Attempts int
 }
 
 // Rate contains the rate limit for the current client.
@@ -310,6 +313,8 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 
 		// By default this is nil and does not log.
 		retryableClient.Logger = c.RetryConfig.Logger
+
+		retryableClient.ErrorHandler = retryableErrorHandler
 
 		// if timeout is set, it is maintained before overwriting client with StandardClient()
 		retryableClient.HTTPClient.Timeout = c.HTTPClient.Timeout
@@ -474,28 +479,21 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Res
 
 	resp, err := DoRequestWithClient(ctx, c.HTTPClient, req)
 	if err != nil {
+		// If we received a *url.Error from retryablehttp's `Do` method
+		// that already wraps a *godo.ErrorResponse, unwrap it to
+		// prevent a double nested error.
+		if urlErr, ok := err.(*url.Error); ok {
+			if _, ok := urlErr.Err.(*ErrorResponse); ok {
+				return nil, errors.Unwrap(err)
+			}
+		}
 		return nil, err
 	}
 	if c.onRequestCompleted != nil {
 		c.onRequestCompleted(req, resp)
 	}
 
-	defer func() {
-		// Ensure the response body is fully read and closed
-		// before we reconnect, so that we reuse the same TCPConnection.
-		// Close the previous response's body. But read at least some of
-		// the body so if it's small the underlying TCP connection will be
-		// re-used. No need to check for errors: if it fails, the Transport
-		// won't reuse it anyway.
-		const maxBodySlurpSize = 2 << 10
-		if resp.ContentLength == -1 || resp.ContentLength <= maxBodySlurpSize {
-			io.CopyN(ioutil.Discard, resp.Body, maxBodySlurpSize)
-		}
-
-		if rerr := resp.Body.Close(); err == nil {
-			err = rerr
-		}
-	}()
+	defer drainBody(resp)
 
 	response := newResponse(resp)
 	c.ratemtx.Lock()
@@ -524,6 +522,21 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Res
 	return response, err
 }
 
+// Ensure the response body is fully read and closed
+// before we reconnect, so that we reuse the same TCPConnection.
+// Close the previous response's body. But read at least some of
+// the body so if it's small the underlying TCP connection will be
+// re-used. No need to check for errors: if it fails, the Transport
+// won't reuse it anyway.
+func drainBody(resp *http.Response) {
+	const maxBodySlurpSize = 2 << 10
+	if resp.ContentLength == -1 || resp.ContentLength <= maxBodySlurpSize {
+		io.CopyN(io.Discard, resp.Body, maxBodySlurpSize)
+	}
+
+	resp.Body.Close()
+}
+
 // DoRequest submits an HTTP request.
 func DoRequest(ctx context.Context, req *http.Request) (*http.Response, error) {
 	return DoRequestWithClient(ctx, http.DefaultClient, req)
@@ -539,12 +552,17 @@ func DoRequestWithClient(
 }
 
 func (r *ErrorResponse) Error() string {
-	if r.RequestID != "" {
-		return fmt.Sprintf("%v %v: %d (request %q) %v",
-			r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.RequestID, r.Message)
+	var attempted string
+	if r.Attempts > 0 {
+		attempted = fmt.Sprintf("; giving up after %d attempt(s)", r.Attempts)
 	}
-	return fmt.Sprintf("%v %v: %d %v",
-		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message)
+
+	if r.RequestID != "" {
+		return fmt.Sprintf("%v %v: %d (request %q) %v%s",
+			r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.RequestID, r.Message, attempted)
+	}
+	return fmt.Sprintf("%v %v: %d %v%s",
+		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message, attempted)
 }
 
 // CheckResponse checks the API response for errors, and returns them if present. A response is considered an
@@ -557,7 +575,7 @@ func CheckResponse(r *http.Response) error {
 	}
 
 	errorResponse := &ErrorResponse{Response: r}
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	if err == nil && len(data) > 0 {
 		err := json.Unmarshal(data, errorResponse)
 		if err != nil {
@@ -570,6 +588,26 @@ func CheckResponse(r *http.Response) error {
 	}
 
 	return errorResponse
+}
+
+// retryableErrorHandler implements a retryablehttp.ErrorHandler to provide
+// errors that are consistent with a godo.ErrorResponse.
+func retryableErrorHandler(resp *http.Response, err error, numTries int) (*http.Response, error) {
+	// When a custom retryablehttp.ErrorHandler is provided, it is the responsibility
+	// of the handler to close the response body.
+	defer drainBody(resp)
+
+	if err == nil {
+		err = CheckResponse(resp)
+		if _, ok := err.(*ErrorResponse); ok {
+			err.(*ErrorResponse).Attempts = numTries
+		}
+
+		return nil, err
+	}
+
+	return nil, fmt.Errorf("%s %s giving up after %d attempt(s): %w",
+		resp.Request.Method, resp.Request.URL, numTries, err)
 }
 
 func (r Rate) String() string {

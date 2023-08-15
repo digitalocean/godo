@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -387,6 +388,7 @@ func TestDo_redirectLoop(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error to be returned.")
 	}
+
 	if err, ok := err.(*url.Error); !ok {
 		t.Errorf("Expected a URL error; got %#v.", err)
 	}
@@ -406,7 +408,7 @@ func TestCheckResponse(t *testing.T) {
 			input: &http.Response{
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
-				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m",
+				Body: io.NopCloser(strings.NewReader(`{"message":"m",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
 			},
 			expected: &ErrorResponse{
@@ -418,7 +420,7 @@ func TestCheckResponse(t *testing.T) {
 			input: &http.Response{
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
-				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef",
+				Body: io.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
 			},
 			expected: &ErrorResponse{
@@ -432,7 +434,7 @@ func TestCheckResponse(t *testing.T) {
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
 				Header:     testHeaders,
-				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m",
+				Body: io.NopCloser(strings.NewReader(`{"message":"m",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
 			},
 			expected: &ErrorResponse{
@@ -448,7 +450,7 @@ func TestCheckResponse(t *testing.T) {
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
 				Header:     testHeaders,
-				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef-body",
+				Body: io.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef-body",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
 			},
 			expected: &ErrorResponse{
@@ -463,7 +465,7 @@ func TestCheckResponse(t *testing.T) {
 			input: &http.Response{
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
-				Body:       ioutil.NopCloser(strings.NewReader("")),
+				Body:       io.NopCloser(strings.NewReader("")),
 			},
 			expected: &ErrorResponse{},
 		},
@@ -477,6 +479,118 @@ func TestCheckResponse(t *testing.T) {
 			}
 			tt.expected.Response = tt.input
 
+			if !reflect.DeepEqual(err, tt.expected) {
+				t.Errorf("Error = %#v, expected %#v", err, tt.expected)
+			}
+		})
+	}
+}
+
+func TestRetryableErrorHandler(t *testing.T) {
+	testHeaders := make(http.Header, 1)
+	testHeaders.Set("x-request-id", "dead-beef")
+
+	tests := []struct {
+		title    string
+		input    *http.Response
+		count    int
+		expected *ErrorResponse
+	}{
+		{
+			title: "default (no request_id)",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body: io.NopCloser(
+					strings.NewReader(`{"id": "bad_request", "message":"broken"}`)),
+			},
+			expected: &ErrorResponse{
+				Message: "broken",
+			},
+		},
+		{
+			title: "request_id in body",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body: io.NopCloser(
+					strings.NewReader(`{"id": "bad_request", "message":"broken", "request_id": "dead-beef"}`)),
+			},
+			expected: &ErrorResponse{
+				Message:   "broken",
+				RequestID: "dead-beef",
+			},
+		},
+		{
+			title: "request_id in header",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Header:     testHeaders,
+				Body: io.NopCloser(
+					strings.NewReader(`{"id": "bad_request", "message":"broken"}`)),
+			},
+			expected: &ErrorResponse{
+				Message:   "broken",
+				RequestID: "dead-beef",
+			},
+		},
+		// This tests that the ID in the body takes precedence to ensure we maintain the current
+		// behavior. In practice, the IDs in the header and body should always be the same.
+		{
+			title: "request_id in both",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Header:     testHeaders,
+				Body: io.NopCloser(
+					strings.NewReader(`{"id": "bad_request", "message":"broken", "request_id": "dead-beef-body"}`)),
+			},
+			expected: &ErrorResponse{
+				Message:   "broken",
+				RequestID: "dead-beef-body",
+			},
+		},
+		// ensure that we properly handle API errors that do not contain a
+		// response body
+		{
+			title: "no body",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body:       io.NopCloser(strings.NewReader("")),
+			},
+			expected: &ErrorResponse{},
+		},
+		{
+			title: "with retries",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusBadRequest,
+				Body: io.NopCloser(
+					strings.NewReader(`{"id": "bad_request", "message":"broken", "request_id": "dead-beef"}`)),
+			},
+			count: 5,
+			expected: &ErrorResponse{
+				Message:   "broken",
+				RequestID: "dead-beef",
+				Attempts:  5,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.title, func(t *testing.T) {
+			_, err := retryableErrorHandler(tt.input, nil, tt.count)
+			if err == nil {
+				t.Fatalf("Expected error response.")
+			}
+
+			if _, ok := err.(*ErrorResponse); !ok {
+				t.Fatalf("Expected a godo.ErrorResponse error response; go: %s", reflect.TypeOf(err))
+			}
+
+			tt.expected.Response = tt.input
 			if !reflect.DeepEqual(err, tt.expected) {
 				t.Errorf("Error = %#v, expected %#v", err, tt.expected)
 			}
@@ -615,6 +729,7 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 	url, _ := url.Parse(server.URL)
 	mux.HandleFunc("/foo", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
+		w.Write([]byte(`{"id": "bad_request", "message": "broken"}`))
 	})
 
 	tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
@@ -645,11 +760,10 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	expectingErr := "giving up after 4 attempt(s)"
-	// Send the request.
+	expectingErr := fmt.Sprintf("GET %s/foo: 500 broken; giving up after 4 attempt(s)", url)
 	_, err = client.Do(context.Background(), req, nil)
-	if err == nil || !strings.HasSuffix(err.Error(), expectingErr) {
-		t.Fatalf("expected giving up error, got: %#v", err)
+	if err == nil || (err.Error() != expectingErr) {
+		t.Fatalf("expected giving up error, got: %s", err.Error())
 	}
 
 }
