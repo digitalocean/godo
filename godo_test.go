@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -191,7 +191,7 @@ func TestNewRequest(t *testing.T) {
 	}
 
 	// test body was JSON encoded
-	body, _ := ioutil.ReadAll(req.Body)
+	body, _ := io.ReadAll(req.Body)
 	if string(body) != outBody {
 		t.Errorf("NewRequest(%v)Body = %v, expected %v", inBody, string(body), outBody)
 	}
@@ -242,7 +242,7 @@ func TestNewRequest_withUserData(t *testing.T) {
 	}
 
 	// test body was JSON encoded
-	body, _ := ioutil.ReadAll(req.Body)
+	body, _ := io.ReadAll(req.Body)
 	if string(body) != outBody {
 		t.Errorf("NewRequest(%v)Body = %v, expected %v", inBody, string(body), outBody)
 	}
@@ -271,7 +271,7 @@ func TestNewRequest_withDropletAgent(t *testing.T) {
 	}
 
 	// test body was JSON encoded
-	body, _ := ioutil.ReadAll(req.Body)
+	body, _ := io.ReadAll(req.Body)
 	if string(body) != outBody {
 		t.Errorf("NewRequest(%v)Body = %v, expected %v", inBody, string(body), outBody)
 	}
@@ -406,7 +406,7 @@ func TestCheckResponse(t *testing.T) {
 			input: &http.Response{
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
-				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m",
+				Body: io.NopCloser(strings.NewReader(`{"message":"m",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
 			},
 			expected: &ErrorResponse{
@@ -418,7 +418,7 @@ func TestCheckResponse(t *testing.T) {
 			input: &http.Response{
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
-				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef",
+				Body: io.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
 			},
 			expected: &ErrorResponse{
@@ -432,7 +432,7 @@ func TestCheckResponse(t *testing.T) {
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
 				Header:     testHeaders,
-				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m",
+				Body: io.NopCloser(strings.NewReader(`{"message":"m",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
 			},
 			expected: &ErrorResponse{
@@ -448,7 +448,7 @@ func TestCheckResponse(t *testing.T) {
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
 				Header:     testHeaders,
-				Body: ioutil.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef-body",
+				Body: io.NopCloser(strings.NewReader(`{"message":"m", "request_id": "dead-beef-body",
 			"errors": [{"resource": "r", "field": "f", "code": "c"}]}`)),
 			},
 			expected: &ErrorResponse{
@@ -463,7 +463,7 @@ func TestCheckResponse(t *testing.T) {
 			input: &http.Response{
 				Request:    &http.Request{},
 				StatusCode: http.StatusBadRequest,
-				Body:       ioutil.NopCloser(strings.NewReader("")),
+				Body:       io.NopCloser(strings.NewReader("")),
 			},
 			expected: &ErrorResponse{},
 		},
@@ -614,14 +614,15 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 
 	url, _ := url.Parse(server.URL)
 	mux.HandleFunc("/foo", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"id": "bad_request", "message": "broken"}`))
 	})
 
 	tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: "new_token",
 	})
 
-	oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
+	oauthClient := oauth2.NewClient(oauth2.NoContext, tokenSrc)
 
 	waitMax := PtrTo(6.0)
 	waitMin := PtrTo(3.0)
@@ -633,7 +634,7 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 	}
 
 	// Create the client. Use short retry windows so we fail faster.
-	client, err := New(oauth_client, WithRetryAndBackoffs(retryConfig))
+	client, err := New(oauthClient, WithRetryAndBackoffs(retryConfig))
 	client.BaseURL = url
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -645,13 +646,12 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 		t.Fatalf("err: %v", err)
 	}
 
-	expectingErr := "giving up after 4 attempt(s)"
+	expectingErr := fmt.Sprintf("GET %s/foo: 500 broken; giving up after 4 attempt(s)", url)
 	// Send the request.
 	_, err = client.Do(context.Background(), req, nil)
-	if err == nil || !strings.HasSuffix(err.Error(), expectingErr) {
+	if err == nil || (err.Error() != expectingErr) {
 		t.Fatalf("expected giving up error, got: %#v", err)
 	}
-
 }
 
 func TestWithRetryAndBackoffsLogger(t *testing.T) {
@@ -698,6 +698,70 @@ func TestWithRetryAndBackoffsLogger(t *testing.T) {
 	expected := fmt.Sprintf("[DEBUG] GET %s/foo\n", url)
 	if expected != got {
 		t.Fatalf("expected: %s; got: %s", expected, got)
+	}
+}
+
+func TestWithRetryAndBackoffsForResourceMethods(t *testing.T) {
+	// Mock server which always responds 500.
+	setup()
+	defer teardown()
+
+	url, _ := url.Parse(server.URL)
+	mux.HandleFunc("/v2/account", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add(headerRateLimit, "500")
+		w.Header().Add(headerRateRemaining, "42")
+		w.Header().Add(headerRateReset, "1372700873")
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"id": "bad_request", "message": "broken"}`))
+	})
+
+	tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
+		AccessToken: "new_token",
+	})
+
+	oauthClient := oauth2.NewClient(context.TODO(), tokenSrc)
+
+	waitMax := PtrTo(6.0)
+	waitMin := PtrTo(3.0)
+
+	retryConfig := RetryConfig{
+		RetryMax:     3,
+		RetryWaitMin: waitMin,
+		RetryWaitMax: waitMax,
+	}
+
+	// Create the client. Use short retry windows so we fail faster.
+	client, err := New(oauthClient, WithRetryAndBackoffs(retryConfig))
+	client.BaseURL = url
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	expectingErr := fmt.Sprintf("GET %s/v2/account: 500 broken; giving up after 4 attempt(s)", url)
+	_, resp, err := client.Account.Get(context.Background())
+	if err == nil || (err.Error() != expectingErr) {
+		t.Fatalf("expected giving up error, got: %s", err.Error())
+	}
+	if _, ok := err.(*ErrorResponse); !ok {
+		t.Fatalf("expected error to be *godo.ErrorResponse, got: %#v", err)
+	}
+
+	// Ensure that the *Response is properly populated
+	if resp == nil {
+		t.Fatal("expected non-nil *godo.Response")
+	}
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("expected %d, got: %d", http.StatusInternalServerError, resp.StatusCode)
+	}
+	if expected := 500; resp.Rate.Limit != expected {
+		t.Errorf("expected rate limit to be populate: got: %v, expected: %v", resp.Rate.Limit, expected)
+	}
+	if expected := 42; resp.Rate.Remaining != expected {
+		t.Errorf("expected rate limit remaining to be populate: got: %v, expected: %v", resp.Rate.Remaining, expected)
+	}
+	reset := time.Date(2013, 7, 1, 17, 47, 53, 0, time.UTC)
+	if client.Rate.Reset.UTC() != reset {
+		t.Errorf("expected rate limit reset to be populate: got: %v, expected: %v", resp.Rate.Reset, reset)
 	}
 }
 
