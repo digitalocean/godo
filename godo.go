@@ -178,6 +178,9 @@ type ErrorResponse struct {
 
 	// RequestID returned from the API, useful to contact support.
 	RequestID string `json:"request_id"`
+
+	// Attempts is the number of times the request was attempted when retries are enabled.
+	Attempts int
 }
 
 // Rate contains the rate limit for the current client.
@@ -313,6 +316,16 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 
 		// if timeout is set, it is maintained before overwriting client with StandardClient()
 		retryableClient.HTTPClient.Timeout = c.HTTPClient.Timeout
+
+		retryableClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
+			if resp != nil {
+				resp.Header.Add("X-Godo-Retry-Attepts", strconv.Itoa(numTries))
+
+				return resp, err
+			}
+
+			return resp, err
+		}
 
 		var source *oauth2.Transport
 		if _, ok := c.HTTPClient.Transport.(*oauth2.Transport); ok {
@@ -539,12 +552,17 @@ func DoRequestWithClient(
 }
 
 func (r *ErrorResponse) Error() string {
-	if r.RequestID != "" {
-		return fmt.Sprintf("%v %v: %d (request %q) %v",
-			r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.RequestID, r.Message)
+	var attempted string
+	if r.Attempts > 0 {
+		attempted = fmt.Sprintf("; giving up after %d attempt(s)", r.Attempts)
 	}
-	return fmt.Sprintf("%v %v: %d %v",
-		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message)
+
+	if r.RequestID != "" {
+		return fmt.Sprintf("%v %v: %d (request %q) %v%s",
+			r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.RequestID, r.Message, attempted)
+	}
+	return fmt.Sprintf("%v %v: %d %v%s",
+		r.Response.Request.Method, r.Response.Request.URL, r.Response.StatusCode, r.Message, attempted)
 }
 
 // CheckResponse checks the API response for errors, and returns them if present. A response is considered an
@@ -567,6 +585,11 @@ func CheckResponse(r *http.Response) error {
 
 	if errorResponse.RequestID == "" {
 		errorResponse.RequestID = r.Header.Get("x-request-id")
+	}
+
+	attempts, strconvErr := strconv.Atoi(r.Header.Get("X-Godo-Retry-Attepts"))
+	if strconvErr == nil {
+		errorResponse.Attempts = attempts
 	}
 
 	return errorResponse
