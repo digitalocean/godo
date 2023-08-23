@@ -28,7 +28,7 @@ func TestProjects_List(t *testing.T) {
 	mux.HandleFunc("/v2/projects", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(expectedProjects)
-		fmt.Fprint(w, fmt.Sprintf(`{"projects":%s, "meta": {"total": 2}}`, string(resp)))
+		fmt.Fprintf(w, `{"projects":%s, "meta": {"total": 2}}`, string(resp))
 	})
 
 	projects, resp, err := client.Projects.List(ctx, nil)
@@ -133,7 +133,7 @@ func TestProjects_GetDefault(t *testing.T) {
 	mux.HandleFunc("/v2/projects/default", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(project)
-		fmt.Fprint(w, fmt.Sprintf(`{"project":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"project":%s}`, string(resp))
 	})
 
 	resp, _, err := client.Projects.GetDefault(ctx)
@@ -158,7 +158,7 @@ func TestProjects_GetWithUUID(t *testing.T) {
 	mux.HandleFunc("/v2/projects/project-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(project)
-		fmt.Fprint(w, fmt.Sprintf(`{"project":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"project":%s}`, string(resp))
 	})
 
 	resp, _, err := client.Projects.Get(ctx, "project-1")
@@ -347,7 +347,7 @@ func TestProjects_ListResources(t *testing.T) {
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(expectedResources)
-		fmt.Fprint(w, fmt.Sprintf(`{"resources":%s, "meta": {"total": 2}}`, string(resp)))
+		fmt.Fprintf(w, `{"resources":%s, "meta": {"total": 2}}`, string(resp))
 	})
 
 	resources, resp, err := client.Projects.ListResources(ctx, "project-1", nil)
