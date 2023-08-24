@@ -1832,7 +1832,7 @@ func TestDatabases_CreateDatabaseUserWithKafkaSettings(t *testing.T) {
 	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
 
 	writeTopicACL := []*KafkaACL{
-		&KafkaACL{
+		{
 			ID:         "1",
 			Topic:      "bar",
 			Permission: "write",
@@ -1883,7 +1883,7 @@ func TestDatabases_ListDatabaseUsersWithKafkaSettings(t *testing.T) {
 	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
 
 	writeTopicACL := []*KafkaACL{
-		&KafkaACL{
+		{
 			ID:         "1",
 			Topic:      "bar",
 			Permission: "write",
@@ -1936,7 +1936,7 @@ func TestDatabases_GetDatabaseUserWithKafkaSettings(t *testing.T) {
 	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
 
 	writeTopicACL := []*KafkaACL{
-		&KafkaACL{
+		{
 			ID:         "1",
 			Topic:      "bar",
 			Permission: "write",
@@ -2479,7 +2479,7 @@ func TestDatabases_ListTopics(t *testing.T) {
 	)
 
 	want := []DatabaseTopic{
-		DatabaseTopic{
+		{
 			Name:              "events",
 			PartitionCount:    &numPartitions,
 			ReplicationFactor: &replicationFactor,
@@ -2487,7 +2487,7 @@ func TestDatabases_ListTopics(t *testing.T) {
 				RetentionMS: &retentionMS,
 			},
 		},
-		DatabaseTopic{
+		{
 			Name:              "events_ii",
 			PartitionCount:    &numPartitions,
 			ReplicationFactor: &replicationFactor,
