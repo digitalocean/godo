@@ -31,6 +31,10 @@ const (
 	headerRateReset             = "RateLimit-Reset"
 	headerRequestID             = "x-request-id"
 	internalHeaderRetryAttempts = "X-Godo-Retry-Attempts"
+
+	defaultRetryMax     = 4
+	defaultRetryWaitMax = 30
+	defaultRetryWaitMin = 1
 )
 
 // Client manages communication with DigitalOcean V2 API.
@@ -223,13 +227,68 @@ func addOptions(s string, opt interface{}) (string, error) {
 	return origURL.String(), nil
 }
 
+func configureRetryableClient(c *Client, httpClient *http.Client) *http.Client {
+	retryableClient := retryablehttp.NewClient()
+
+	if c == nil {
+		retryableClient.RetryMax = defaultRetryMax
+		retryableClient.RetryWaitMin = time.Duration(defaultRetryWaitMin * float64(time.Second))
+		retryableClient.RetryWaitMax = time.Duration(defaultRetryWaitMax * float64(time.Second))
+	} else {
+		retryableClient.RetryMax = c.RetryConfig.RetryMax
+
+		if c.RetryConfig.RetryWaitMin != nil {
+			retryableClient.RetryWaitMin = time.Duration(*c.RetryConfig.RetryWaitMin * float64(time.Second))
+		}
+		if c.RetryConfig.RetryWaitMax != nil {
+			retryableClient.RetryWaitMax = time.Duration(*c.RetryConfig.RetryWaitMax * float64(time.Second))
+		}
+
+		// By default this is nil and does not log.
+		retryableClient.Logger = c.RetryConfig.Logger
+
+		// if timeout is set, it is maintained before overwriting client with StandardClient()
+		retryableClient.HTTPClient.Timeout = c.HTTPClient.Timeout
+	}
+
+	// This custom ErrorHandler is required to provide errors that are consistent
+	// with a *godo.ErrorResponse and a non-nil *godo.Response while providing
+	// insight into retries using an internal header.
+	retryableClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
+		if resp != nil {
+			resp.Header.Add(internalHeaderRetryAttempts, strconv.Itoa(numTries))
+
+			return resp, err
+		}
+
+		return resp, err
+	}
+
+	var source *oauth2.Transport
+	if _, ok := httpClient.Transport.(*oauth2.Transport); ok {
+		source = httpClient.Transport.(*oauth2.Transport)
+	}
+
+	httpClient = retryableClient.StandardClient()
+	httpClient.Transport = &oauth2.Transport{
+		Base:   httpClient.Transport,
+		Source: source.Source,
+	}
+	return httpClient
+
+}
+
 // NewFromToken returns a new DigitalOcean API client with the given API
 // token.
 func NewFromToken(token string) *Client {
 	cleanToken := strings.Trim(strings.TrimSpace(token), "'")
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cleanToken})
-	return NewClient(oauth2.NewClient(ctx, ts))
+
+	oauthClient := oauth2.NewClient(ctx, ts)
+
+	httpClient := configureRetryableClient(nil, oauthClient)
+	return NewClient(httpClient)
 }
 
 // NewClient returns a new DigitalOcean API client, using the given
@@ -302,45 +361,7 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 
 	// if retryMax is set it will use the retryablehttp client.
 	if c.RetryConfig.RetryMax > 0 {
-		retryableClient := retryablehttp.NewClient()
-		retryableClient.RetryMax = c.RetryConfig.RetryMax
-
-		if c.RetryConfig.RetryWaitMin != nil {
-			retryableClient.RetryWaitMin = time.Duration(*c.RetryConfig.RetryWaitMin * float64(time.Second))
-		}
-		if c.RetryConfig.RetryWaitMax != nil {
-			retryableClient.RetryWaitMax = time.Duration(*c.RetryConfig.RetryWaitMax * float64(time.Second))
-		}
-
-		// By default this is nil and does not log.
-		retryableClient.Logger = c.RetryConfig.Logger
-
-		// if timeout is set, it is maintained before overwriting client with StandardClient()
-		retryableClient.HTTPClient.Timeout = c.HTTPClient.Timeout
-
-		// This custom ErrorHandler is required to provide errors that are consistent
-		// with a *godo.ErrorResponse and a non-nil *godo.Response while providing
-		// insight into retries using an internal header.
-		retryableClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
-			if resp != nil {
-				resp.Header.Add(internalHeaderRetryAttempts, strconv.Itoa(numTries))
-
-				return resp, err
-			}
-
-			return resp, err
-		}
-
-		var source *oauth2.Transport
-		if _, ok := c.HTTPClient.Transport.(*oauth2.Transport); ok {
-			source = c.HTTPClient.Transport.(*oauth2.Transport)
-		}
-		c.HTTPClient = retryableClient.StandardClient()
-		c.HTTPClient.Transport = &oauth2.Transport{
-			Base:   c.HTTPClient.Transport,
-			Source: source.Source,
-		}
-
+		c.HTTPClient = configureRetryableClient(c, c.HTTPClient)
 	}
 
 	return c, nil
