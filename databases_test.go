@@ -701,7 +701,7 @@ func TestDatabases_ResetUserAuth(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestDatabases_ResetUserKafka(t *testing.T) {
+func TestDatabases_ResetUserAuthKafka(t *testing.T) {
 	setup()
 	defer teardown()
 	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"

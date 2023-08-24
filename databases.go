@@ -299,7 +299,7 @@ type DatabaseTopic struct {
 	Config            *TopicConfig `json:"config,omitempty"`
 }
 
-// TopicConfig ...
+// TopicConfig represents all configurable options for a Kafka topic
 type TopicConfig struct {
 	CleanupPolicy                   string   `json:"cleanup_policy,omitempty"`
 	CompressionType                 string   `json:"compression_type,omitempty"`
@@ -622,12 +622,10 @@ type databaseOptionsRoot struct {
 	Options *DatabaseOptions `json:"options"`
 }
 
-// databaseTopicRoot
 type databaseTopicRoot struct {
 	Topic *DatabaseTopic `json:"topic"`
 }
 
-// databaseTopicsRoot
 type databaseTopicsRoot struct {
 	Topics []DatabaseTopic `json:"topics"`
 }
@@ -1389,7 +1387,7 @@ func (svc *DatabasesServiceOp) CreateTopic(ctx context.Context, databaseID strin
 	return root.Topic, resp, nil
 }
 
-// UpdateTopic returns a single kafka topic by name
+// UpdateTopic updates a single kafka topic
 func (svc *DatabasesServiceOp) UpdateTopic(ctx context.Context, databaseID string, name string, updateTopic *DatabaseUpdateTopicRequest) (*Response, error) {
 	path := fmt.Sprintf(databaseTopicPath, databaseID, name)
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateTopic)
