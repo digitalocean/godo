@@ -281,7 +281,9 @@ func configureRetryableClient(c *Client, httpClient *http.Client) *http.Client {
 }
 
 // NewFromToken returns a new DigitalOcean API client with the given API
-// token.
+// token. Creating a new DigitalOcean API Client with NewFromToken
+// enables retries and backoffs by default for requests that fail with 429
+// or 500-level response codes using the go-retryablehttp client.
 func NewFromToken(token string) *Client {
 	cleanToken := strings.Trim(strings.TrimSpace(token), "'")
 	ctx := context.Background()
