@@ -227,6 +227,8 @@ func addOptions(s string, opt interface{}) (string, error) {
 	return origURL.String(), nil
 }
 
+// configureRetryableClient will create a retryableclient with default behavior
+// if no godo client is passed. It will then convert the retryableclient to a *http.Client.
 func configureRetryableClient(c *Client, httpClient *http.Client) *http.Client {
 	retryableClient := retryablehttp.NewClient()
 
