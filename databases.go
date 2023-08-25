@@ -214,7 +214,7 @@ type DatabaseUser struct {
 	AccessCert    string                     `json:"access_cert,omitempty"`
 	AccessKey     string                     `json:"access_key,omitempty"`
 	MySQLSettings *DatabaseMySQLUserSettings `json:"mysql_settings,omitempty"`
-	KafkaSettings *DatabaseKafkaUserSettings `json:"settings,omitempty"`
+	Settings      *DatabaseUserSettings      `json:"settings,omitempty"`
 }
 
 // KafkaACL contains Kafka specific user access control information
@@ -224,8 +224,8 @@ type KafkaACL struct {
 	Topic      string `json:"topic,omitempty"`
 }
 
-// DatabaseKafkaUserSettings contains Kafka-specific user settings
-type DatabaseKafkaUserSettings struct {
+// DatabaseUserSettings contains Kafka-specific user settings
+type DatabaseUserSettings struct {
 	ACL []*KafkaACL `json:"acl,omitempty"`
 }
 
@@ -390,13 +390,13 @@ type DatabaseUpdatePoolRequest struct {
 type DatabaseCreateUserRequest struct {
 	Name          string                     `json:"name"`
 	MySQLSettings *DatabaseMySQLUserSettings `json:"mysql_settings,omitempty"`
-	KafkaSettings *DatabaseKafkaUserSettings `json:"settings,omitempty"`
+	Settings      *DatabaseUserSettings      `json:"settings,omitempty"`
 }
 
 // DatabaseResetUserAuthRequest is used to reset a users DB auth
 type DatabaseResetUserAuthRequest struct {
 	MySQLSettings *DatabaseMySQLUserSettings `json:"mysql_settings,omitempty"`
-	KafkaSettings *DatabaseKafkaUserSettings `json:"settings,omitempty"`
+	Settings      *DatabaseUserSettings      `json:"settings,omitempty"`
 }
 
 // DatabaseCreateDBRequest is used to create a new engine-specific database within the cluster

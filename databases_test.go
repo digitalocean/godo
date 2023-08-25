@@ -727,7 +727,7 @@ func TestDatabases_ResetUserAuthKafka(t *testing.T) {
 	}
 
 	got, _, err := client.Databases.ResetUserAuth(ctx, dbID, "user", &DatabaseResetUserAuthRequest{
-		KafkaSettings: &DatabaseKafkaUserSettings{},
+		Settings: &DatabaseUserSettings{},
 	})
 
 	require.NoError(t, err)
@@ -1855,7 +1855,7 @@ func TestDatabases_CreateDatabaseUserWithKafkaSettings(t *testing.T) {
 
 	expectedUser := &DatabaseUser{
 		Name: "foo",
-		KafkaSettings: &DatabaseKafkaUserSettings{
+		Settings: &DatabaseUserSettings{
 			ACL: writeTopicACL,
 		},
 	}
@@ -1867,8 +1867,8 @@ func TestDatabases_CreateDatabaseUserWithKafkaSettings(t *testing.T) {
 	})
 
 	user, _, err := client.Databases.CreateUser(ctx, dbID, &DatabaseCreateUserRequest{
-		Name:          expectedUser.Name,
-		KafkaSettings: &DatabaseKafkaUserSettings{ACL: expectedUser.KafkaSettings.ACL},
+		Name:     expectedUser.Name,
+		Settings: &DatabaseUserSettings{ACL: expectedUser.Settings.ACL},
 	})
 	require.NoError(t, err)
 	require.Equal(t, expectedUser, user)
@@ -1909,7 +1909,7 @@ func TestDatabases_ListDatabaseUsersWithKafkaSettings(t *testing.T) {
 	expectedUsers := []DatabaseUser{
 		{
 			Name: "foo",
-			KafkaSettings: &DatabaseKafkaUserSettings{
+			Settings: &DatabaseUserSettings{
 				ACL: writeTopicACL,
 			},
 		},
@@ -1959,7 +1959,7 @@ func TestDatabases_GetDatabaseUserWithKafkaSettings(t *testing.T) {
 
 	expectedUser := &DatabaseUser{
 		Name: "foo",
-		KafkaSettings: &DatabaseKafkaUserSettings{
+		Settings: &DatabaseUserSettings{
 			ACL: writeTopicACL,
 		},
 	}
