@@ -195,13 +195,15 @@ type DatabaseCA struct {
 
 // DatabaseConnection represents a database connection
 type DatabaseConnection struct {
-	URI      string `json:"uri,omitempty"`
-	Database string `json:"database,omitempty"`
-	Host     string `json:"host,omitempty"`
-	Port     int    `json:"port,omitempty"`
-	User     string `json:"user,omitempty"`
-	Password string `json:"password,omitempty"`
-	SSL      bool   `json:"ssl,omitempty"`
+	Protocol         string            `json:"protocol"`
+	URI              string            `json:"uri,omitempty"`
+	Database         string            `json:"database,omitempty"`
+	Host             string            `json:"host,omitempty"`
+	Port             int               `json:"port,omitempty"`
+	User             string            `json:"user,omitempty"`
+	Password         string            `json:"password,omitempty"`
+	SSL              bool              `json:"ssl,omitempty"`
+	ApplicationPorts map[string]uint32 `json:"application_ports,omitempty"`
 }
 
 // DatabaseUser represents a user in the database
@@ -209,6 +211,8 @@ type DatabaseUser struct {
 	Name          string                     `json:"name,omitempty"`
 	Role          string                     `json:"role,omitempty"`
 	Password      string                     `json:"password,omitempty"`
+	AccessCert    string                     `json:"access_cert,omitempty"`
+	AccessKey     string                     `json:"access_key,omitempty"`
 	MySQLSettings *DatabaseMySQLUserSettings `json:"mysql_settings,omitempty"`
 	KafkaSettings *DatabaseKafkaUserSettings `json:"settings,omitempty"`
 }
@@ -296,6 +300,7 @@ type DatabaseTopic struct {
 	Name              string       `json:"name"`
 	PartitionCount    *uint32      `json:"partition_count,omitempty"`
 	ReplicationFactor *uint32      `json:"replication_factor,omitempty"`
+	State             string       `json:"state,omitempty"`
 	Config            *TopicConfig `json:"config,omitempty"`
 }
 
