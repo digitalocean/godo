@@ -701,6 +701,39 @@ func TestDatabases_ResetUserAuth(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestDatabases_ResetUserAuthKafka(t *testing.T) {
+	setup()
+	defer teardown()
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/users/user/reset_auth", dbID)
+
+	body := `{
+	  "user": {
+	     "name": "name",
+	     "role": "foo",
+	     "password": "otherpass"
+	  }
+	}`
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, body)
+	})
+
+	want := &DatabaseUser{
+		Name:     "name",
+		Role:     "foo",
+		Password: "otherpass",
+	}
+
+	got, _, err := client.Databases.ResetUserAuth(ctx, dbID, "user", &DatabaseResetUserAuthRequest{
+		Settings: &DatabaseUserSettings{},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
 func TestDatabases_ListDBs(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1605,6 +1638,24 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 					}
 				]
 			},
+			"kafka": {
+				"regions": [
+					"ams3",
+					"tor1"
+				],
+				"versions": [
+					"3.3"
+				],
+				"layouts": [
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"gd-2vcpu-8gb",
+	            "gd-4vcpu-16gb"
+						]
+					}
+				]
+			},
 			"redis": {
 				"regions": [
 					"ams3",
@@ -1645,18 +1696,22 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 	require.NotNil(t, options.PostgresSQLOptions)
 	require.NotNil(t, options.RedisOptions)
 	require.NotNil(t, options.MySQLOptions)
+	require.NotNil(t, options.KafkaOptions)
 	require.Greater(t, len(options.MongoDBOptions.Regions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Regions), 0)
 	require.Greater(t, len(options.RedisOptions.Regions), 0)
 	require.Greater(t, len(options.MySQLOptions.Regions), 0)
+	require.Greater(t, len(options.KafkaOptions.Regions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Versions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Versions), 0)
 	require.Greater(t, len(options.RedisOptions.Versions), 0)
 	require.Greater(t, len(options.MySQLOptions.Versions), 0)
+	require.Greater(t, len(options.KafkaOptions.Versions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Layouts), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Layouts), 0)
 	require.Greater(t, len(options.RedisOptions.Layouts), 0)
 	require.Greater(t, len(options.MySQLOptions.Layouts), 0)
+	require.Greater(t, len(options.KafkaOptions.Layouts), 0)
 }
 
 func TestDatabases_CreateDatabaseUserWithMySQLSettings(t *testing.T) {
@@ -1755,6 +1810,157 @@ func TestDatabases_GetDatabaseUserWithMySQLSettings(t *testing.T) {
 		Name: "foo",
 		MySQLSettings: &DatabaseMySQLUserSettings{
 			AuthPlugin: SQLAuthPluginNative,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.GetUser(ctx, dbID, userID)
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
+}
+
+func TestDatabases_CreateDatabaseUserWithKafkaSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeTopicACL := []*KafkaACL{
+		{
+			ID:         "1",
+			Topic:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeTopicACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"acl": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			ACL: writeTopicACL,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.CreateUser(ctx, dbID, &DatabaseCreateUserRequest{
+		Name:     expectedUser.Name,
+		Settings: &DatabaseUserSettings{ACL: expectedUser.Settings.ACL},
+	})
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
+}
+
+func TestDatabases_ListDatabaseUsersWithKafkaSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeTopicACL := []*KafkaACL{
+		{
+			ID:         "1",
+			Topic:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeTopicACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"users": [
+			{
+				"name": "foo",
+				"settings": {
+					"acl": %s
+				}
+			}
+		]
+	}`, string(acljson)))
+
+	expectedUsers := []DatabaseUser{
+		{
+			Name: "foo",
+			Settings: &DatabaseUserSettings{
+				ACL: writeTopicACL,
+			},
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	users, _, err := client.Databases.ListUsers(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, expectedUsers, users)
+}
+
+func TestDatabases_GetDatabaseUserWithKafkaSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	userID := "d290a0a0-27da-42bd-a4b2-bcecf43b8832"
+
+	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
+
+	writeTopicACL := []*KafkaACL{
+		{
+			ID:         "1",
+			Topic:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeTopicACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"acl": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			ACL: writeTopicACL,
 		},
 	}
 
@@ -2102,4 +2308,224 @@ func TestDatabases_UpgradeMajorVersion(t *testing.T) {
 	})
 	_, err := client.Databases.UpgradeMajorVersion(ctx, dbID, upgradeVersionReq)
 	require.NoError(t, err)
+}
+
+func TestDatabases_CreateTopic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		numPartitions     = uint32(3)
+		replicationFactor = uint32(2)
+		retentionMS       = int64(1000 * 60)
+	)
+
+	want := &DatabaseTopic{
+		Name:              "events",
+		PartitionCount:    &numPartitions,
+		ReplicationFactor: &replicationFactor,
+		Config: &TopicConfig{
+			RetentionMS: &retentionMS,
+		},
+	}
+
+	body := `{
+	  "topic": {
+	    "name": "events",
+	    "partition_count": 3,
+	    "replication_factor": 2,
+	    "config": {
+	    	"retention_ms": 60000
+	    }
+	  }
+	}`
+
+	path := fmt.Sprintf("/v2/databases/%s/topics", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, body)
+	})
+
+	topic, _, err := client.Databases.CreateTopic(ctx, dbID, &DatabaseCreateTopicRequest{
+		Name:              "events",
+		PartitionCount:    &numPartitions,
+		ReplicationFactor: &replicationFactor,
+		Config: &TopicConfig{
+			RetentionMS: &retentionMS,
+		},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, want, topic)
+}
+
+func TestDatabases_UpdateTopic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		topicName         = "events"
+		numPartitions     = uint32(3)
+		replicationFactor = uint32(2)
+		retentionMS       = int64(1000 * 60)
+	)
+
+	body := `{
+	  "topic": {
+	    "name": "events",
+	    "partition_count": 3,
+	    "replication_factor": 2,
+	    "config": {
+	    	"retention_ms": 60000
+	    }
+	  }
+	}`
+
+	path := fmt.Sprintf("/v2/databases/%s/topics/%s", dbID, topicName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	_, err := client.Databases.UpdateTopic(ctx, dbID, topicName, &DatabaseUpdateTopicRequest{
+		Topic: &DatabaseTopic{
+			PartitionCount:    &numPartitions,
+			ReplicationFactor: &replicationFactor,
+			Config: &TopicConfig{
+				RetentionMS: &retentionMS,
+			},
+		},
+	})
+
+	require.NoError(t, err)
+}
+
+func TestDatabases_DeleteTopic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		topicName = "events"
+	)
+
+	path := fmt.Sprintf("/v2/databases/%s/topics/%s", dbID, topicName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Databases.DeleteTopic(ctx, dbID, topicName)
+	require.NoError(t, err)
+}
+
+func TestDatabases_GetTopic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		topicName         = "events"
+		numPartitions     = uint32(3)
+		replicationFactor = uint32(2)
+		retentionMS       = int64(1000 * 60)
+	)
+
+	want := &DatabaseTopic{
+		Name:              "events",
+		PartitionCount:    &numPartitions,
+		ReplicationFactor: &replicationFactor,
+		Config: &TopicConfig{
+			RetentionMS: &retentionMS,
+		},
+	}
+
+	body := `{
+	  "topic": {
+	    "name": "events",
+	    "partition_count": 3,
+	    "replication_factor": 2,
+	    "config": {
+	    	"retention_ms": 60000
+	    }
+	  }
+	}`
+
+	path := fmt.Sprintf("/v2/databases/%s/topics/%s", dbID, topicName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetTopic(ctx, dbID, topicName)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_ListTopics(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		numPartitions     = uint32(3)
+		replicationFactor = uint32(2)
+		retentionMS       = int64(1000 * 60)
+	)
+
+	want := []DatabaseTopic{
+		{
+			Name:              "events",
+			PartitionCount:    &numPartitions,
+			ReplicationFactor: &replicationFactor,
+			Config: &TopicConfig{
+				RetentionMS: &retentionMS,
+			},
+		},
+		{
+			Name:              "events_ii",
+			PartitionCount:    &numPartitions,
+			ReplicationFactor: &replicationFactor,
+			Config: &TopicConfig{
+				RetentionMS: &retentionMS,
+			},
+		},
+	}
+
+	body := `{
+	  "topics": [
+	  	{
+		    "name": "events",
+		    "partition_count": 3,
+		    "replication_factor": 2,
+		    "config": {
+		    	"retention_ms": 60000
+		    }
+		  },
+		  {
+		    "name": "events_ii",
+		    "partition_count": 3,
+		    "replication_factor": 2,
+		    "config": {
+		    	"retention_ms": 60000
+		    }
+		  }
+		]		 
+	}`
+
+	path := fmt.Sprintf("/v2/databases/%s/topics", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.ListTopics(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
 }
