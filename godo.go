@@ -227,72 +227,26 @@ func addOptions(s string, opt interface{}) (string, error) {
 	return origURL.String(), nil
 }
 
-// configureRetryableClient will create a retryableclient with default behavior
-// if no godo client is passed. It will then convert the retryableclient to a *http.Client.
-func configureRetryableClient(c *Client, httpClient *http.Client) *http.Client {
-	retryableClient := retryablehttp.NewClient()
-
-	if c == nil {
-		retryableClient.RetryMax = defaultRetryMax
-		retryableClient.RetryWaitMin = time.Duration(defaultRetryWaitMin * float64(time.Second))
-		retryableClient.RetryWaitMax = time.Duration(defaultRetryWaitMax * float64(time.Second))
-	} else {
-		retryableClient.RetryMax = c.RetryConfig.RetryMax
-
-		if c.RetryConfig.RetryWaitMin != nil {
-			retryableClient.RetryWaitMin = time.Duration(*c.RetryConfig.RetryWaitMin * float64(time.Second))
-		}
-		if c.RetryConfig.RetryWaitMax != nil {
-			retryableClient.RetryWaitMax = time.Duration(*c.RetryConfig.RetryWaitMax * float64(time.Second))
-		}
-
-		// By default this is nil and does not log.
-		retryableClient.Logger = c.RetryConfig.Logger
-
-		// if timeout is set, it is maintained before overwriting client with StandardClient()
-		retryableClient.HTTPClient.Timeout = c.HTTPClient.Timeout
-	}
-
-	// This custom ErrorHandler is required to provide errors that are consistent
-	// with a *godo.ErrorResponse and a non-nil *godo.Response while providing
-	// insight into retries using an internal header.
-	retryableClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
-		if resp != nil {
-			resp.Header.Add(internalHeaderRetryAttempts, strconv.Itoa(numTries))
-
-			return resp, err
-		}
-
-		return resp, err
-	}
-
-	var source *oauth2.Transport
-	if _, ok := httpClient.Transport.(*oauth2.Transport); ok {
-		source = httpClient.Transport.(*oauth2.Transport)
-	}
-
-	httpClient = retryableClient.StandardClient()
-	httpClient.Transport = &oauth2.Transport{
-		Base:   httpClient.Transport,
-		Source: source.Source,
-	}
-	return httpClient
-
-}
-
 // NewFromToken returns a new DigitalOcean API client with the given API
-// token. Creating a new DigitalOcean API Client with NewFromToken
-// enables retries and backoffs by default for requests that fail with 429
-// or 500-level response codes using the go-retryablehttp client.
+// token.
 func NewFromToken(token string) *Client {
 	cleanToken := strings.Trim(strings.TrimSpace(token), "'")
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: cleanToken})
 
 	oauthClient := oauth2.NewClient(ctx, ts)
+	client, err := New(oauthClient, WithRetryAndBackoffs(
+		RetryConfig{
+			RetryMax:     defaultRetryMax,
+			RetryWaitMin: PtrTo(float64(defaultRetryWaitMin)),
+			RetryWaitMax: PtrTo(float64(defaultRetryWaitMax)),
+		},
+	))
+	if err != nil {
+		panic(err)
+	}
 
-	httpClient := configureRetryableClient(nil, oauthClient)
-	return NewClient(httpClient)
+	return client
 }
 
 // NewClient returns a new DigitalOcean API client, using the given
@@ -365,7 +319,45 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 
 	// if retryMax is set it will use the retryablehttp client.
 	if c.RetryConfig.RetryMax > 0 {
-		c.HTTPClient = configureRetryableClient(c, c.HTTPClient)
+		retryableClient := retryablehttp.NewClient()
+		retryableClient.RetryMax = c.RetryConfig.RetryMax
+
+		if c.RetryConfig.RetryWaitMin != nil {
+			retryableClient.RetryWaitMin = time.Duration(*c.RetryConfig.RetryWaitMin * float64(time.Second))
+		}
+		if c.RetryConfig.RetryWaitMax != nil {
+			retryableClient.RetryWaitMax = time.Duration(*c.RetryConfig.RetryWaitMax * float64(time.Second))
+		}
+
+		// By default this is nil and does not log.
+		retryableClient.Logger = c.RetryConfig.Logger
+
+		// if timeout is set, it is maintained before overwriting client with StandardClient()
+		retryableClient.HTTPClient.Timeout = c.HTTPClient.Timeout
+
+		// This custom ErrorHandler is required to provide errors that are consistent
+		// with a *godo.ErrorResponse and a non-nil *godo.Response while providing
+		// insight into retries using an internal header.
+		retryableClient.ErrorHandler = func(resp *http.Response, err error, numTries int) (*http.Response, error) {
+			if resp != nil {
+				resp.Header.Add(internalHeaderRetryAttempts, strconv.Itoa(numTries))
+
+				return resp, err
+			}
+
+			return resp, err
+		}
+
+		var source *oauth2.Transport
+		if _, ok := c.HTTPClient.Transport.(*oauth2.Transport); ok {
+			source = c.HTTPClient.Transport.(*oauth2.Transport)
+		}
+		c.HTTPClient = retryableClient.StandardClient()
+		c.HTTPClient.Transport = &oauth2.Transport{
+			Base:   c.HTTPClient.Transport,
+			Source: source.Source,
+		}
+
 	}
 
 	return c, nil
