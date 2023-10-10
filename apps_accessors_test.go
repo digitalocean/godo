@@ -2715,6 +2715,13 @@ func TestImageSourceSpec_GetDeployOnPush(tt *testing.T) {
 	i.GetDeployOnPush()
 }
 
+func TestImageSourceSpec_GetDigest(tt *testing.T) {
+	i := &ImageSourceSpec{}
+	i.GetDigest()
+	i = nil
+	i.GetDigest()
+}
+
 func TestImageSourceSpec_GetRegistry(tt *testing.T) {
 	i := &ImageSourceSpec{}
 	i.GetRegistry()
