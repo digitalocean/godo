@@ -186,6 +186,7 @@ type Database struct {
 	PrivateNetworkUUID string                     `json:"private_network_uuid,omitempty"`
 	Tags               []string                   `json:"tags,omitempty"`
 	ProjectID          string                     `json:"project_id,omitempty"`
+	StorageSizeMib     uint64                     `json:"storage_size_mib,omitempty"`
 }
 
 // DatabaseCA represents a database ca.
@@ -267,12 +268,14 @@ type DatabaseCreateRequest struct {
 	Tags               []string               `json:"tags,omitempty"`
 	BackupRestore      *DatabaseBackupRestore `json:"backup_restore,omitempty"`
 	ProjectID          string                 `json:"project_id"`
+	StorageSizeMib     uint64                 `json:"storage_size_mib,omitempty"`
 }
 
 // DatabaseResizeRequest can be used to initiate a database resize operation.
 type DatabaseResizeRequest struct {
-	SizeSlug string `json:"size,omitempty"`
-	NumNodes int    `json:"num_nodes,omitempty"`
+	SizeSlug       string `json:"size,omitempty"`
+	NumNodes       int    `json:"num_nodes,omitempty"`
+	StorageSizeMib uint64 `json:"storage_size_mib,omitempty"`
 }
 
 // DatabaseMigrateRequest can be used to initiate a database migrate operation.
