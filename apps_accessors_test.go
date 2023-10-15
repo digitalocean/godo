@@ -314,6 +314,41 @@ func TestAppAlertSpec_GetWindow(tt *testing.T) {
 	a.GetWindow()
 }
 
+func TestAppAutoscalingSpec_GetMaxInstanceCount(tt *testing.T) {
+	a := &AppAutoscalingSpec{}
+	a.GetMaxInstanceCount()
+	a = nil
+	a.GetMaxInstanceCount()
+}
+
+func TestAppAutoscalingSpec_GetMetrics(tt *testing.T) {
+	a := &AppAutoscalingSpec{}
+	a.GetMetrics()
+	a = nil
+	a.GetMetrics()
+}
+
+func TestAppAutoscalingSpec_GetMinInstanceCount(tt *testing.T) {
+	a := &AppAutoscalingSpec{}
+	a.GetMinInstanceCount()
+	a = nil
+	a.GetMinInstanceCount()
+}
+
+func TestAppAutoscalingSpecMetricCPU_GetPercent(tt *testing.T) {
+	a := &AppAutoscalingSpecMetricCPU{}
+	a.GetPercent()
+	a = nil
+	a.GetPercent()
+}
+
+func TestAppAutoscalingSpecMetrics_GetCPU(tt *testing.T) {
+	a := &AppAutoscalingSpecMetrics{}
+	a.GetCPU()
+	a = nil
+	a.GetCPU()
+}
+
 func TestAppBuildConfig_GetCNBVersioning(tt *testing.T) {
 	a := &AppBuildConfig{}
 	a.GetCNBVersioning()
@@ -1266,6 +1301,13 @@ func TestAppServiceSpec_GetAlerts(tt *testing.T) {
 	a.GetAlerts()
 }
 
+func TestAppServiceSpec_GetAutoscaling(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetAutoscaling()
+	a = nil
+	a.GetAutoscaling()
+}
+
 func TestAppServiceSpec_GetBuildCommand(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetBuildCommand()
@@ -1735,6 +1777,13 @@ func TestAppWorkerSpec_GetAlerts(tt *testing.T) {
 	a.GetAlerts()
 }
 
+func TestAppWorkerSpec_GetAutoscaling(tt *testing.T) {
+	a := &AppWorkerSpec{}
+	a.GetAutoscaling()
+	a = nil
+	a.GetAutoscaling()
+}
+
 func TestAppWorkerSpec_GetBuildCommand(tt *testing.T) {
 	a := &AppWorkerSpec{}
 	a.GetBuildCommand()
@@ -2015,6 +2064,13 @@ func TestDeployment_GetWorkers(tt *testing.T) {
 	d.GetWorkers()
 }
 
+func TestDeploymentCauseDetails_GetAutoscaler(tt *testing.T) {
+	d := &DeploymentCauseDetails{}
+	d.GetAutoscaler()
+	d = nil
+	d.GetAutoscaler()
+}
+
 func TestDeploymentCauseDetails_GetDigitalOceanUserAction(tt *testing.T) {
 	d := &DeploymentCauseDetails{}
 	d.GetDigitalOceanUserAction()
@@ -2048,6 +2104,13 @@ func TestDeploymentCauseDetails_GetType(tt *testing.T) {
 	d.GetType()
 	d = nil
 	d.GetType()
+}
+
+func TestDeploymentCauseDetailsAutoscalerAction_GetAutoscaled(tt *testing.T) {
+	d := &DeploymentCauseDetailsAutoscalerAction{}
+	d.GetAutoscaled()
+	d = nil
+	d.GetAutoscaled()
 }
 
 func TestDeploymentCauseDetailsDigitalOceanUser_GetEmail(tt *testing.T) {
