@@ -60,6 +60,7 @@ var db = Database{
 	PrivateNetworkUUID: "da4e0206-d019-41d7-b51f-deadbeefbb8f",
 	Tags:               []string{"production", "staging"},
 	ProjectID:          "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2",
+	StorageSizeMib:     61440,
 }
 
 var dbJSON = `
@@ -109,7 +110,8 @@ var dbJSON = `
 	"size": "db-s-2vcpu-4gb",
 	"private_network_uuid": "da4e0206-d019-41d7-b51f-deadbeefbb8f",
 	"tags": ["production", "staging"],
-	"project_id": "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2"
+	"project_id": "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2",
+	"storage_size_mib":     61440
 }
 `
 
@@ -241,6 +243,7 @@ func TestDatabases_Create(t *testing.T) {
 				SizeSlug:          "db-s-2vcpu-4gb",
 				Tags:              []string{"production", "staging"},
 				ProjectID:         "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				StorageSizeMib:    61440,
 			},
 			body: `
 {
@@ -276,7 +279,8 @@ func TestDatabases_Create(t *testing.T) {
 		"maintenance_window": null,
 		"size": "db-s-2vcpu-4gb",
 		"tags": ["production", "staging"],
-        "project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8"
+		"project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+		"storage_size_mib": 61440
 	}
 }`,
 		},
@@ -327,6 +331,7 @@ func TestDatabases_Create(t *testing.T) {
 				MaintenanceWindow: nil,
 				SizeSlug:          "db-s-2vcpu-4gb",
 				Tags:              []string{"production", "staging"},
+				StorageSizeMib:    61440,
 			},
 			body: `
 {
@@ -361,7 +366,95 @@ func TestDatabases_Create(t *testing.T) {
 		"created_at": "2019-02-26T06:12:39Z",
 		"maintenance_window": null,
 		"size": "db-s-2vcpu-4gb",
-		"tags": ["production", "staging"]
+		"tags": ["production", "staging"],
+		"storage_size_mib": 61440
+	}
+}`,
+		},
+		{
+			title: "create with additional storage",
+			createRequest: &DatabaseCreateRequest{
+				Name:           "additional-storage-test",
+				EngineSlug:     "pg",
+				Version:        "15",
+				Region:         "nyc3",
+				SizeSlug:       "db-s-2vcpu-4gb",
+				NumNodes:       2,
+				Tags:           []string{"production", "staging"},
+				ProjectID:      "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				StorageSizeMib: 81920,
+			},
+			want: &Database{
+				ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+				Name:        "backend-test",
+				EngineSlug:  "pg",
+				VersionSlug: "10",
+				Connection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				PrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				Users:             nil,
+				DBNames:           nil,
+				NumNodes:          2,
+				RegionSlug:        "nyc3",
+				Status:            "creating",
+				CreatedAt:         time.Date(2019, 2, 26, 6, 12, 39, 0, time.UTC),
+				MaintenanceWindow: nil,
+				SizeSlug:          "db-s-2vcpu-4gb",
+				Tags:              []string{"production", "staging"},
+				ProjectID:         "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				StorageSizeMib:    81920,
+			},
+			body: `
+{
+	"database": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		"name": "backend-test",
+		"engine": "pg",
+		"version": "10",
+		"connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"users": null,
+		"db_names": null,
+		"num_nodes": 2,
+		"region": "nyc3",
+		"status": "creating",
+		"created_at": "2019-02-26T06:12:39Z",
+		"maintenance_window": null,
+		"size": "db-s-2vcpu-4gb",
+		"tags": ["production", "staging"],
+		"project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+		"storage_size_mib": 81920
 	}
 }`,
 		},
@@ -412,19 +505,19 @@ func TestDatabases_Resize(t *testing.T) {
 	defer teardown()
 
 	resizeRequest := &DatabaseResizeRequest{
-		SizeSlug: "db-s-16vcpu-64gb",
-		NumNodes: 3,
+		SizeSlug:       "db-s-16vcpu-64gb",
+		NumNodes:       3,
+		StorageSizeMib: 921600,
 	}
 
 	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
-
 	path := fmt.Sprintf("/v2/databases/%s/resize", dbID)
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPut)
 	})
 
-	_, err := client.Databases.Resize(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", resizeRequest)
+	_, err := client.Databases.Resize(ctx, dbID, resizeRequest)
 	require.NoError(t, err)
 }
 
