@@ -300,11 +300,26 @@ type DatabaseDB struct {
 
 // DatabaseTopic represents a Kafka topic
 type DatabaseTopic struct {
-	Name              string       `json:"name"`
-	PartitionCount    *uint32      `json:"partition_count,omitempty"`
-	ReplicationFactor *uint32      `json:"replication_factor,omitempty"`
-	State             string       `json:"state,omitempty"`
-	Config            *TopicConfig `json:"config,omitempty"`
+	Name              string            `json:"name"`
+	Partitions        []*TopicPartition `json:"partitions,omitempty"`
+	ReplicationFactor *uint32           `json:"replication_factor,omitempty"`
+	State             string            `json:"state,omitempty"`
+	Config            *TopicConfig      `json:"config,omitempty"`
+}
+
+// TopicPartition represents the state of a Kafka topic partition
+type TopicPartition struct {
+	EarliestOffset uint64                `json:"earliest_offset,omitempty"`
+	InSyncReplicas uint32                `json:"in_sync_replicas,omitempty"`
+	Id             uint32                `json:"id,omitempty"`
+	Size           uint64                `json:"size,omitempty"`
+	ConsumerGroups []*TopicConsumerGroup `json:"consumer_groups,omitempty"`
+}
+
+// TopicConsumerGroup represents a consumer group for a particular Kafka topic
+type TopicConsumerGroup struct {
+	Name   string `json:"name,omitempty"`
+	Offset uint64 `json:"offset,omitempty"`
 }
 
 // TopicConfig represents all configurable options for a Kafka topic
@@ -345,7 +360,9 @@ type DatabaseCreateTopicRequest struct {
 
 // DatabaseUpdateTopicRequest ...
 type DatabaseUpdateTopicRequest struct {
-	Topic *DatabaseTopic `json:"topic"` // note: `name` field in Topic unused on update
+	PartitionCount    *uint32      `json:"partition_count,omitempty"`
+	ReplicationFactor *uint32      `json:"replication_factor,omitempty"`
+	Config            *TopicConfig `json:"config,omitempty"`
 }
 
 // DatabaseReplica represents a read-only replica of a particular database
