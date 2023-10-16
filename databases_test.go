@@ -2323,7 +2323,6 @@ func TestDatabases_CreateTopic(t *testing.T) {
 
 	want := &DatabaseTopic{
 		Name:              "events",
-		PartitionCount:    &numPartitions,
 		ReplicationFactor: &replicationFactor,
 		Config: &TopicConfig{
 			RetentionMS: &retentionMS,
@@ -2392,12 +2391,10 @@ func TestDatabases_UpdateTopic(t *testing.T) {
 	})
 
 	_, err := client.Databases.UpdateTopic(ctx, dbID, topicName, &DatabaseUpdateTopicRequest{
-		Topic: &DatabaseTopic{
-			PartitionCount:    &numPartitions,
-			ReplicationFactor: &replicationFactor,
-			Config: &TopicConfig{
-				RetentionMS: &retentionMS,
-			},
+		PartitionCount:    &numPartitions,
+		ReplicationFactor: &replicationFactor,
+		Config: &TopicConfig{
+			RetentionMS: &retentionMS,
 		},
 	})
 
@@ -2430,14 +2427,35 @@ func TestDatabases_GetTopic(t *testing.T) {
 	var (
 		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
 		topicName         = "events"
-		numPartitions     = uint32(3)
 		replicationFactor = uint32(2)
 		retentionMS       = int64(1000 * 60)
 	)
 
 	want := &DatabaseTopic{
-		Name:              "events",
-		PartitionCount:    &numPartitions,
+		Name: "events",
+		Partitions: []*TopicPartition{
+			{
+				Size:           0,
+				Id:             0,
+				InSyncReplicas: 2,
+				EarliestOffset: 0,
+				ConsumerGroups: nil,
+			},
+			{
+				Size:           0,
+				Id:             1,
+				InSyncReplicas: 2,
+				EarliestOffset: 0,
+				ConsumerGroups: nil,
+			},
+			{
+				Size:           0,
+				Id:             2,
+				InSyncReplicas: 2,
+				EarliestOffset: 0,
+				ConsumerGroups: nil,
+			},
+		},
 		ReplicationFactor: &replicationFactor,
 		Config: &TopicConfig{
 			RetentionMS: &retentionMS,
@@ -2445,15 +2463,37 @@ func TestDatabases_GetTopic(t *testing.T) {
 	}
 
 	body := `{
-	  "topic": {
-	    "name": "events",
-	    "partition_count": 3,
-	    "replication_factor": 2,
-	    "config": {
-	    	"retention_ms": 60000
-	    }
-	  }
-	}`
+		"topic":{
+		   "name":"events",
+		   "replication_factor":2,
+		   "config":{
+			  "retention_ms":60000
+		   },
+		   "partitions":[
+			  {
+				 "size":0,
+				 "id":0,
+				 "in_sync_replicas":2,
+				 "earliest_offset":0,
+				 "consumer_groups":null
+			  },
+			  {
+				 "size":0,
+				 "id":1,
+				 "in_sync_replicas":2,
+				 "earliest_offset":0,
+				 "consumer_groups":null
+			  },
+			  {
+				 "size":0,
+				 "id":2,
+				 "in_sync_replicas":2,
+				 "earliest_offset":0,
+				 "consumer_groups":null
+			  }
+		   ]
+		}
+	 }`
 
 	path := fmt.Sprintf("/v2/databases/%s/topics/%s", dbID, topicName)
 
@@ -2473,23 +2513,66 @@ func TestDatabases_ListTopics(t *testing.T) {
 
 	var (
 		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
-		numPartitions     = uint32(3)
 		replicationFactor = uint32(2)
 		retentionMS       = int64(1000 * 60)
 	)
 
 	want := []DatabaseTopic{
 		{
-			Name:              "events",
-			PartitionCount:    &numPartitions,
+			Name: "events",
+			Partitions: []*TopicPartition{
+				{
+					Size:           0,
+					Id:             0,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+				{
+					Size:           0,
+					Id:             1,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+				{
+					Size:           0,
+					Id:             2,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+			},
 			ReplicationFactor: &replicationFactor,
 			Config: &TopicConfig{
 				RetentionMS: &retentionMS,
 			},
 		},
 		{
-			Name:              "events_ii",
-			PartitionCount:    &numPartitions,
+			Name: "events_ii",
+			Partitions: []*TopicPartition{
+				{
+					Size:           0,
+					Id:             0,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+				{
+					Size:           0,
+					Id:             1,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+				{
+					Size:           0,
+					Id:             2,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+			},
 			ReplicationFactor: &replicationFactor,
 			Config: &TopicConfig{
 				RetentionMS: &retentionMS,
@@ -2501,7 +2584,29 @@ func TestDatabases_ListTopics(t *testing.T) {
 	  "topics": [
 	  	{
 		    "name": "events",
-		    "partition_count": 3,
+			"partitions":[
+				{
+				   "size":0,
+				   "id":0,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				},
+				{
+				   "size":0,
+				   "id":1,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				},
+				{
+				   "size":0,
+				   "id":2,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				}
+			],
 		    "replication_factor": 2,
 		    "config": {
 		    	"retention_ms": 60000
@@ -2509,7 +2614,29 @@ func TestDatabases_ListTopics(t *testing.T) {
 		  },
 		  {
 		    "name": "events_ii",
-		    "partition_count": 3,
+			"partitions":[
+				{
+				   "size":0,
+				   "id":0,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				},
+				{
+				   "size":0,
+				   "id":1,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				},
+				{
+				   "size":0,
+				   "id":2,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				}
+			],
 		    "replication_factor": 2,
 		    "config": {
 		    	"retention_ms": 60000
