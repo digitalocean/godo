@@ -1,6 +1,6 @@
 # Change Log
 
-## [v1.104.2] - 2023-10-16
+## [v1.105.0] - 2023-10-16
 
 - #643 - @dweinshenker - Add support for scalable storage on database clusters
 - #641 - @dweinshenker - Fix Kafka Partition Count
