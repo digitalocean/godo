@@ -171,6 +171,9 @@ func TestLinks_ParseURL(t *testing.T) {
 		}
 
 		pageToken, err := pageTokenFromURL(lT.url)
+		if err != nil {
+			t.Fatal(err)
+		}
 		if pageToken != lT.expectedPageToken {
 			t.Errorf("expected pageToken for '%s' to be '%s', was '%s'",
 				lT.url, lT.expectedPageToken, pageToken)
