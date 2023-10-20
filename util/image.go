@@ -15,43 +15,54 @@ const (
 	availableFailure = 3
 )
 
-// WaitForAvailable waits for a image to become available
+// WaitForAvailable waits for an image to become available
 func WaitForAvailable(ctx context.Context, client *godo.Client, monitorURI string) error {
 	if len(monitorURI) == 0 {
-		return fmt.Errorf("create had no monitor uri")
+		return fmt.Errorf("create had no monitor URI")
 	}
 
-	completed := false
 	failCount := 0
-	for !completed {
-		action, _, err := client.ImageActions.GetByURI(ctx, monitorURI)
+	actionCh := make(chan *godo.Action)
+	errCh := make(chan error)
 
-		if err != nil {
+	go func() {
+		for {
+			action, _, err := client.ImageActions.GetByURI(ctx, monitorURI)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			actionCh <- action
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	for {
+		select {
+		case action := <-actionCh:
+			switch action.Status {
+			case godo.ActionInProgress:
+				// Continue waiting
+			case godo.ActionCompleted:
+				return nil
+			default:
+				return fmt.Errorf("unknown status: [%s]", action.Status)
+			}
+
+		case err := <-errCh:
 			select {
 			case <-ctx.Done():
-				return err
+				return ctx.Err()
 			default:
 			}
+
 			if failCount <= availableFailure {
 				failCount++
-				continue
-			}
-			return err
-		}
-
-		switch action.Status {
-		case godo.ActionInProgress:
-			select {
-			case <-time.After(5 * time.Second):
-			case <-ctx.Done():
+			} else {
 				return err
 			}
-		case godo.ActionCompleted:
-			completed = true
-		default:
-			return fmt.Errorf("unknown status: [%s]", action.Status)
+		case <-ctx.Done():
+			return ctx.Err()
 		}
 	}
-
-	return nil
 }
