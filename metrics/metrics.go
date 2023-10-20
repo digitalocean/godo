@@ -23,8 +23,7 @@ import (
 )
 
 const (
-	// MetricNameLabel is the label name indicating the metric name of a
-	// timeseries.
+	// MetricNameLabel is the label name indicating the metric name of a timeseries.
 	MetricNameLabel = "__name__"
 )
 
