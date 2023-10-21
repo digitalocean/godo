@@ -3,7 +3,7 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
@@ -251,7 +251,7 @@ func TestUptimeChecks_Update(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/uptime/checks/check-id", func(w http.ResponseWriter, r *http.Request) {
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("uptime checks mock didn't work")
 		}
@@ -331,7 +331,7 @@ func TestUptimeAlert_Update(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/uptime/checks/check-id/alerts/alert-id", func(w http.ResponseWriter, r *http.Request) {
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("alerts mock didn't work")
 		}
