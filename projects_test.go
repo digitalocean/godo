@@ -3,7 +3,7 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
@@ -233,7 +233,7 @@ func TestProjects_UpdateWithOneAttribute(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/projects/project-1", func(w http.ResponseWriter, r *http.Request) {
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
@@ -278,7 +278,7 @@ func TestProjects_UpdateWithAllAttributes(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/projects/project-1", func(w http.ResponseWriter, r *http.Request) {
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
@@ -505,7 +505,7 @@ func TestProjects_AssignFleetResourcesWithTypes(t *testing.T) {
 
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
@@ -564,7 +564,7 @@ func TestProjects_AssignFleetResourcesWithStrings(t *testing.T) {
 
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
@@ -623,7 +623,7 @@ func TestProjects_AssignFleetResourcesWithStringsAndTypes(t *testing.T) {
 
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
