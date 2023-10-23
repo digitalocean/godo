@@ -28,7 +28,7 @@ func TestUptimeChecks_List(t *testing.T) {
 	mux.HandleFunc("/v2/uptime/checks", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(expectedUptimeChecks)
-		fmt.Fprintf(w, `{"checks":%s, "meta": {"total": 2}}`, string(resp))
+		fmt.Fprintf(w, `{"checks":%s, "meta": {"total": 2}}`, resp)
 	})
 
 	uptimeChecks, resp, err := client.UptimeChecks.List(ctx, nil)
@@ -149,7 +149,7 @@ func TestUptimeChecks_GetState(t *testing.T) {
 	mux.HandleFunc("/v2/uptime/checks/check-1/state", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(uptimeCheckState)
-		fmt.Fprintf(w, `{"state":%s}`, string(resp))
+		fmt.Fprintf(w, `{"state":%s}`, resp)
 	})
 
 	resp, _, err := client.UptimeChecks.GetState(ctx, "check-1")
@@ -174,7 +174,7 @@ func TestUptimeChecks_GetWithID(t *testing.T) {
 	mux.HandleFunc("/v2/uptime/checks/check-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(uptimeCheck)
-		fmt.Fprintf(w, `{"check":%s}`, string(resp))
+		fmt.Fprintf(w, `{"check":%s}`, resp)
 	})
 
 	resp, _, err := client.UptimeChecks.Get(ctx, "check-1")
@@ -219,7 +219,7 @@ func TestUptimeChecks_Create(t *testing.T) {
 		}
 
 		resp, _ := json.Marshal(createResp)
-		fmt.Fprintf(w, fmt.Sprintf(`{"check":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"check":%s}`, resp)
 	})
 
 	uptimeCheck, _, err := client.UptimeChecks.Create(ctx, createRequest)
@@ -263,7 +263,7 @@ func TestUptimeChecks_Update(t *testing.T) {
 		}
 
 		resp, _ := json.Marshal(updateResp)
-		fmt.Fprintf(w, fmt.Sprintf(`{"check":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"check":%s}`, resp)
 	})
 
 	uptimeCheck, _, err := client.UptimeChecks.Update(ctx, "check-id", updateRequest)
@@ -343,7 +343,7 @@ func TestUptimeAlert_Update(t *testing.T) {
 		}
 
 		resp, _ := json.Marshal(updateResp)
-		fmt.Fprintf(w, fmt.Sprintf(`{"alert":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"alert":%s}`, resp)
 	})
 
 	alert, _, err := client.UptimeChecks.UpdateAlert(ctx, "check-id", "alert-id", updateRequest)
@@ -395,7 +395,7 @@ func TestUptimeAlert_Create(t *testing.T) {
 		}
 
 		resp, _ := json.Marshal(createResp)
-		fmt.Fprintf(w, fmt.Sprintf(`{"alert":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"alert":%s}`, resp)
 	})
 
 	uptimeCheck, _, err := client.UptimeChecks.CreateAlert(ctx, "check-id", createRequest)
@@ -430,7 +430,7 @@ func TestUptimeAlert_GetWithID(t *testing.T) {
 	mux.HandleFunc("/v2/uptime/checks/check-1/alerts/alert-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(alert)
-		fmt.Fprintf(w, `{"alert":%s}`, string(resp))
+		fmt.Fprintf(w, `{"alert":%s}`, resp)
 	})
 
 	resp, _, err := client.UptimeChecks.GetAlert(ctx, "check-1", "alert-1")
@@ -481,7 +481,7 @@ func TestUptimeAlerts_List(t *testing.T) {
 	mux.HandleFunc("/v2/uptime/checks/check-1/alerts", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(expectedAlerts)
-		fmt.Fprintf(w, `{"alerts":%s, "meta": {"total": 2}}`, string(resp))
+		fmt.Fprintf(w, `{"alerts":%s, "meta": {"total": 2}}`, resp)
 	})
 
 	alerts, resp, err := client.UptimeChecks.ListAlerts(ctx, "check-1", nil)
