@@ -1,7 +1,9 @@
 # Change Log
 
-## [v1.105.1] - 2023-11-07
+## [v1.106.0] - 2023-11-14
 
+- #654 - @dweinshenker - Remove unclean_leader_election_enable for topic configuration
+- #653 - @andrewsomething - Prep v1.105.1 release.
 - #652 - @andrewsomething - Retry on HTTP/2 internal errors.
 - #648 - @alexandear - test: use fmt.Fprintf instead of fmt.Fprintf(fmt.Sprintf(...))
 - #651 - @alexandear - test: Replace deprecated io/ioutil with io
