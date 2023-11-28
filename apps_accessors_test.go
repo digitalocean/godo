@@ -664,6 +664,13 @@ func TestAppDomainValidation_GetTXTValue(tt *testing.T) {
 	a.GetTXTValue()
 }
 
+func TestAppEgressSpec_GetType(tt *testing.T) {
+	a := &AppEgressSpec{}
+	a.GetType()
+	a = nil
+	a.GetType()
+}
+
 func TestAppFunctionsSpec_GetAlerts(tt *testing.T) {
 	a := &AppFunctionsSpec{}
 	a.GetAlerts()
@@ -1516,6 +1523,13 @@ func TestAppSpec_GetDomains(tt *testing.T) {
 	a.GetDomains()
 	a = nil
 	a.GetDomains()
+}
+
+func TestAppSpec_GetEgress(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetEgress()
+	a = nil
+	a.GetEgress()
 }
 
 func TestAppSpec_GetEnvs(tt *testing.T) {
@@ -2790,6 +2804,13 @@ func TestImageSourceSpec_GetRegistry(tt *testing.T) {
 	i.GetRegistry()
 	i = nil
 	i.GetRegistry()
+}
+
+func TestImageSourceSpec_GetRegistryCredentials(tt *testing.T) {
+	i := &ImageSourceSpec{}
+	i.GetRegistryCredentials()
+	i = nil
+	i.GetRegistryCredentials()
 }
 
 func TestImageSourceSpec_GetRegistryType(tt *testing.T) {
