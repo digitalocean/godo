@@ -739,6 +739,61 @@ func TestDatabases_CreateUser(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestDatabases_UpdateUser(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	userID := "test-user"
+
+	want := &DatabaseUser{
+		Name: userID,
+		Settings: &DatabaseUserSettings{
+			ACL: []*KafkaACL{
+				{
+					Topic:      "events",
+					Permission: "produce_consume",
+				},
+			},
+		},
+	}
+
+	body := `
+{
+  "user": {
+	"name": "test-user",
+	"settings": {
+		"acl": [
+			{
+				"permission": "produce_consume",
+				"topic": "events"
+			}
+		]
+	}
+  }
+}
+`
+	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.UpdateUser(ctx, dbID, userID, &DatabaseUpdateUserRequest{
+		Settings: &DatabaseUserSettings{
+			ACL: []*KafkaACL{
+				{
+					Topic:      "events",
+					Permission: "produce_consume",
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
 func TestDatabases_DeleteUser(t *testing.T) {
 	setup()
 	defer teardown()
