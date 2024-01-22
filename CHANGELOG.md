@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.109.0] - 2024-01-22
+
+- #663 - @dwilsondo - Include replica connection info on DBaaS clusters & DBaaS PG pools
+- #662 - @ddatta-do - load balancer : add regional network as new LB type
+
 ## [v1.108.0] - 2024-01-17
 
 - #660 - @dweinshenker - Enable CRUD operations for replicas with storage_size_mib
