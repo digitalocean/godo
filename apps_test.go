@@ -225,6 +225,17 @@ var (
 			MajorVersion: 0,
 		},
 	}
+
+	testConnectionDetails = []*GetDatabaseConnectionDetailsResponse{
+		{
+			Host:          "db1.b.db.ondigitalocean.com",
+			Port:          3306,
+			Username:      "example",
+			Password:      "PASSWORD",
+			DatabaseName:  "db",
+			ComponentName: "example-service",
+		},
+	}
 )
 
 func TestApps_CreateApp(t *testing.T) {
@@ -739,6 +750,60 @@ func TestApps_UpgradeBuildpack(t *testing.T) {
 	gotResponse, _, err := client.Apps.UpgradeBuildpack(ctx, testApp.ID, opts)
 	require.NoError(t, err)
 	assert.Equal(t, response, gotResponse)
+}
+
+func TestApps_GetAppDatabaseConnectionDetails(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/database_connection_details", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&GetAppDatabaseConnectionDetailsResponse{ConnectionDetails: testConnectionDetails})
+	})
+
+	appConnectionDetails, _, err := client.Apps.GetAppDatabaseConnectionDetails(ctx, testApp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, testConnectionDetails, appConnectionDetails)
+}
+
+func TestApps_ResetDatabasePassword(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/components/%s/reset_password",
+		testApp.ID, testApp.Spec.GetServices()[0].GetName(),
+	), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		json.NewEncoder(w).Encode(&ResetDatabasePasswordResponse{Deployment: &testDeployment})
+	})
+
+	deployment, _, err := client.Apps.ResetDatabasePassword(ctx, testApp.ID, testApp.Spec.GetServices()[0].GetName())
+	require.NoError(t, err)
+	assert.Equal(t, &testDeployment, deployment)
+}
+
+func TestApps_ToggleDatabaseTrustedSource(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/components/%s/trusted_sources",
+		testApp.ID, testApp.Spec.GetServices()[0].GetName(),
+	), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		json.NewEncoder(w).Encode(&ToggleDatabaseTrustedSourceResponse{IsEnabled: true})
+	})
+
+	resp, _, err := client.Apps.ToggleDatabaseTrustedSource(
+		ctx,
+		testApp.ID,
+		testApp.Spec.GetServices()[0].GetName(),
+		ToggleDatabaseTrustedSourceOptions{Enable: true},
+	)
+	require.NoError(t, err)
+	assert.Equal(t, &ToggleDatabaseTrustedSourceResponse{IsEnabled: true}, resp)
 }
 
 func TestApps_ToURN(t *testing.T) {
