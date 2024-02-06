@@ -79,6 +79,16 @@ var db = Database{
 	Tags:               []string{"production", "staging"},
 	ProjectID:          "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2",
 	StorageSizeMib:     61440,
+	MetricsEndpoints: []*ServiceAddress{
+		{
+			Host: "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			Port: 9273,
+		},
+		{
+			Host: "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			Port: 9273,
+		},
+	},
 }
 
 var dbJSON = `
@@ -147,7 +157,17 @@ var dbJSON = `
 	"private_network_uuid": "da4e0206-d019-41d7-b51f-deadbeefbb8f",
 	"tags": ["production", "staging"],
 	"project_id": "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2",
-	"storage_size_mib":     61440
+	"storage_size_mib": 61440,
+	"metrics_endpoints": [
+		{
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 9273
+		},
+		{
+			"host": "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 9273
+		}
+	]
 }
 `
 
@@ -3062,4 +3082,49 @@ func TestDatabases_ListTopics(t *testing.T) {
 	got, _, err := client.Databases.ListTopics(ctx, dbID, &ListOptions{})
 	require.NoError(t, err)
 	require.Equal(t, want, got)
+}
+
+func TestDatabases_GetMetricsCredentials(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &DatabaseMetricsCredentials{
+		BasicAuthUsername: "username_for_http_basic_auth",
+		BasicAuthPassword: "password_for_http_basic_auth",
+	}
+
+	body := `{
+		"credentials": {
+		  "basic_auth_username": "username_for_http_basic_auth",
+			"basic_auth_password": "password_for_http_basic_auth"
+		}
+	}`
+
+	mux.HandleFunc("/v2/databases/metrics/credentials", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetMetricsCredentials(ctx)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_UpdateMetricsCredentials(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &DatabaseUpdateMetricsCredentialsRequest{
+		Credentials: &DatabaseMetricsCredentials{
+			BasicAuthUsername: "username_for_http_basic_auth",
+			BasicAuthPassword: "password_for_http_basic_auth",
+		},
+	}
+
+	mux.HandleFunc("/v2/databases/metrics/credentials", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+	})
+
+	_, err := client.Databases.UpdateMetricsCredentials(ctx, updateRequest)
+	require.NoError(t, err)
 }
