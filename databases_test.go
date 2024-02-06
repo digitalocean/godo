@@ -3095,7 +3095,7 @@ func TestDatabases_GetMetricsCredentials(t *testing.T) {
 
 	body := `{
 		"credentials": {
-		  "basic_auth_username": "username_for_http_basic_auth",
+			"basic_auth_username": "username_for_http_basic_auth",
 			"basic_auth_password": "password_for_http_basic_auth"
 		}
 	}`
