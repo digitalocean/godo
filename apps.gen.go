@@ -1122,6 +1122,8 @@ type AppInstanceSize struct {
 	// Indicates if the tier instance size can enable autoscaling.
 	Scalable       bool `json:"scalable,omitempty"`
 	FeaturePreview bool `json:"feature_preview,omitempty"`
+	// Indicates if the tier instance size allows more than one instance.
+	SingleInstanceOnly bool `json:"single_instance_only,omitempty"`
 }
 
 // AppInstanceSizeCPUType the model 'AppInstanceSizeCPUType'
