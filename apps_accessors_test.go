@@ -902,6 +902,13 @@ func TestAppInstanceSize_GetCPUType(tt *testing.T) {
 	a.GetCPUType()
 }
 
+func TestAppInstanceSize_GetDeprecationIntent(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetDeprecationIntent()
+	a = nil
+	a.GetDeprecationIntent()
+}
+
 func TestAppInstanceSize_GetFeaturePreview(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetFeaturePreview()
@@ -935,6 +942,13 @@ func TestAppInstanceSize_GetSingleInstanceOnly(tt *testing.T) {
 	a.GetSingleInstanceOnly()
 	a = nil
 	a.GetSingleInstanceOnly()
+}
+
+func TestAppInstanceSize_GetBandwidthAllowanceGib(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetBandwidthAllowanceGib()
+	a = nil
+	a.GetBandwidthAllowanceGib()
 }
 
 func TestAppInstanceSize_GetSlug(tt *testing.T) {
