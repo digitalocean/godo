@@ -171,11 +171,11 @@ func TestCertificates_ListByName(t *testing.T) {
 		fmt.Fprint(w, outputResp)
 	})
 
-	certificate, resp, err := client.Certificates.ListByName(ctx, certName, nil)
+	certificates, resp, err := client.Certificates.ListByName(ctx, certName, nil)
 
 	require.NoError(t, err)
 
-	expectedCertificate := &Certificate{
+	expectedCertificates := []Certificate{{
 		ID:              "892071a0-bb95-49bc-8021-3afd67a210bf",
 		Name:            "web-cert-01",
 		DNSNames:        []string{"somedomain.com", "api.somedomain.com"},
@@ -184,9 +184,9 @@ func TestCertificates_ListByName(t *testing.T) {
 		Created:         "2017-02-08T16:02:37Z",
 		State:           "verified",
 		Type:            "custom",
-	}
+	}}
 
-	assert.Equal(t, expectedCertificate, certificate)
+	assert.Equal(t, expectedCertificates, certificates)
 
 	expectedMeta := &Meta{
 		Total: 1,

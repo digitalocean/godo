@@ -14,7 +14,7 @@ const certificatesBasePath = "/v2/certificates"
 type CertificatesService interface {
 	Get(context.Context, string) (*Certificate, *Response, error)
 	List(context.Context, *ListOptions) ([]Certificate, *Response, error)
-	ListByName(context.Context, string, *ListOptions) (*Certificate, *Response, error)
+	ListByName(context.Context, string, *ListOptions) ([]Certificate, *Response, error)
 	Create(context.Context, *CertificateRequest) (*Certificate, *Response, error)
 	Delete(context.Context, string) (*Response, error)
 }
@@ -103,7 +103,7 @@ func (c *CertificatesServiceOp) List(ctx context.Context, opt *ListOptions) ([]C
 	return root.Certificates, resp, nil
 }
 
-func (c *CertificatesServiceOp) ListByName(ctx context.Context, name string, opt *ListOptions) (*Certificate, *Response, error) {
+func (c *CertificatesServiceOp) ListByName(ctx context.Context, name string, opt *ListOptions) ([]Certificate, *Response, error) {
 
 	if len(name) < 1 {
 		return nil, nil, NewArgError("name", "cannot be an empty string")
@@ -133,11 +133,7 @@ func (c *CertificatesServiceOp) ListByName(ctx context.Context, name string, opt
 		resp.Meta = m
 	}
 
-	if len(root.Certificates) == 0 {
-		return nil, resp, err
-	}
-
-	return &root.Certificates[0], resp, err
+	return root.Certificates, resp, err
 }
 
 // Create a new certificate with provided configuration.
