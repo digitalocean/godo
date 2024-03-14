@@ -34,6 +34,13 @@ func TestApp_GetCreatedAt(tt *testing.T) {
 	a.GetCreatedAt()
 }
 
+func TestApp_GetDedicatedIps(tt *testing.T) {
+	a := &App{}
+	a.GetDedicatedIps()
+	a = nil
+	a.GetDedicatedIps()
+}
+
 func TestApp_GetDefaultIngress(tt *testing.T) {
 	a := &App{}
 	a.GetDefaultIngress()
@@ -489,6 +496,27 @@ func TestAppDatabaseSpec_GetVersion(tt *testing.T) {
 	a.GetVersion()
 }
 
+func TestAppDedicatedIp_GetID(tt *testing.T) {
+	a := &AppDedicatedIp{}
+	a.GetID()
+	a = nil
+	a.GetID()
+}
+
+func TestAppDedicatedIp_GetIp(tt *testing.T) {
+	a := &AppDedicatedIp{}
+	a.GetIp()
+	a = nil
+	a.GetIp()
+}
+
+func TestAppDedicatedIp_GetStatus(tt *testing.T) {
+	a := &AppDedicatedIp{}
+	a.GetStatus()
+	a = nil
+	a.GetStatus()
+}
+
 func TestAppDomain_GetCertificateExpiresAt(tt *testing.T) {
 	a := &AppDomain{}
 	a.GetCertificateExpiresAt()
@@ -874,6 +902,20 @@ func TestAppInstanceSize_GetCPUType(tt *testing.T) {
 	a.GetCPUType()
 }
 
+func TestAppInstanceSize_GetDeprecationIntent(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetDeprecationIntent()
+	a = nil
+	a.GetDeprecationIntent()
+}
+
+func TestAppInstanceSize_GetFeaturePreview(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetFeaturePreview()
+	a = nil
+	a.GetFeaturePreview()
+}
+
 func TestAppInstanceSize_GetMemoryBytes(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetMemoryBytes()
@@ -886,6 +928,27 @@ func TestAppInstanceSize_GetName(tt *testing.T) {
 	a.GetName()
 	a = nil
 	a.GetName()
+}
+
+func TestAppInstanceSize_GetScalable(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetScalable()
+	a = nil
+	a.GetScalable()
+}
+
+func TestAppInstanceSize_GetSingleInstanceOnly(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetSingleInstanceOnly()
+	a = nil
+	a.GetSingleInstanceOnly()
+}
+
+func TestAppInstanceSize_GetBandwidthAllowanceGib(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetBandwidthAllowanceGib()
+	a = nil
+	a.GetBandwidthAllowanceGib()
 }
 
 func TestAppInstanceSize_GetSlug(tt *testing.T) {
@@ -2729,6 +2792,139 @@ func TestDetectResponseServerlessPackage_GetName(tt *testing.T) {
 	d.GetName()
 }
 
+func TestGetAppDatabaseConnectionDetailsResponse_GetConnectionDetails(tt *testing.T) {
+	g := &GetAppDatabaseConnectionDetailsResponse{}
+	g.GetConnectionDetails()
+	g = nil
+	g.GetConnectionDetails()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetComponentName(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetComponentName()
+	g = nil
+	g.GetComponentName()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetDatabaseName(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetDatabaseName()
+	g = nil
+	g.GetDatabaseName()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetDatabaseURL(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetDatabaseURL()
+	g = nil
+	g.GetDatabaseURL()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetHost(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetHost()
+	g = nil
+	g.GetHost()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetPassword(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetPassword()
+	g = nil
+	g.GetPassword()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetPools(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetPools()
+	g = nil
+	g.GetPools()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetPort(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetPort()
+	g = nil
+	g.GetPort()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetSslMode(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetSslMode()
+	g = nil
+	g.GetSslMode()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetUsername(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetUsername()
+	g = nil
+	g.GetUsername()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetDatabaseName(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetDatabaseName()
+	g = nil
+	g.GetDatabaseName()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetDatabaseURL(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetDatabaseURL()
+	g = nil
+	g.GetDatabaseURL()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetHost(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetHost()
+	g = nil
+	g.GetHost()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetPassword(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetPassword()
+	g = nil
+	g.GetPassword()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetPoolName(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetPoolName()
+	g = nil
+	g.GetPoolName()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetPort(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetPort()
+	g = nil
+	g.GetPort()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetSslMode(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetSslMode()
+	g = nil
+	g.GetSslMode()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetUsername(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetUsername()
+	g = nil
+	g.GetUsername()
+}
+
+func TestGetDatabaseTrustedSourceResponse_GetIsEnabled(tt *testing.T) {
+	g := &GetDatabaseTrustedSourceResponse{}
+	g.GetIsEnabled()
+	g = nil
+	g.GetIsEnabled()
+}
+
 func TestGitHubSourceSpec_GetBranch(tt *testing.T) {
 	g := &GitHubSourceSpec{}
 	g.GetBranch()
@@ -2846,6 +3042,55 @@ func TestListBuildpacksResponse_GetBuildpacks(tt *testing.T) {
 	l.GetBuildpacks()
 	l = nil
 	l.GetBuildpacks()
+}
+
+func TestResetDatabasePasswordRequest_GetAppID(tt *testing.T) {
+	r := &ResetDatabasePasswordRequest{}
+	r.GetAppID()
+	r = nil
+	r.GetAppID()
+}
+
+func TestResetDatabasePasswordRequest_GetComponentName(tt *testing.T) {
+	r := &ResetDatabasePasswordRequest{}
+	r.GetComponentName()
+	r = nil
+	r.GetComponentName()
+}
+
+func TestResetDatabasePasswordResponse_GetDeployment(tt *testing.T) {
+	r := &ResetDatabasePasswordResponse{}
+	r.GetDeployment()
+	r = nil
+	r.GetDeployment()
+}
+
+func TestToggleDatabaseTrustedSourceRequest_GetAppID(tt *testing.T) {
+	t := &ToggleDatabaseTrustedSourceRequest{}
+	t.GetAppID()
+	t = nil
+	t.GetAppID()
+}
+
+func TestToggleDatabaseTrustedSourceRequest_GetComponentName(tt *testing.T) {
+	t := &ToggleDatabaseTrustedSourceRequest{}
+	t.GetComponentName()
+	t = nil
+	t.GetComponentName()
+}
+
+func TestToggleDatabaseTrustedSourceRequest_GetEnable(tt *testing.T) {
+	t := &ToggleDatabaseTrustedSourceRequest{}
+	t.GetEnable()
+	t = nil
+	t.GetEnable()
+}
+
+func TestToggleDatabaseTrustedSourceResponse_GetIsEnabled(tt *testing.T) {
+	t := &ToggleDatabaseTrustedSourceResponse{}
+	t.GetIsEnabled()
+	t = nil
+	t.GetIsEnabled()
 }
 
 func TestUpgradeBuildpackResponse_GetAffectedComponents(tt *testing.T) {

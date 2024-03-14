@@ -137,6 +137,63 @@ func TestCertificates_List(t *testing.T) {
 	assert.Equal(t, expectedMeta, resp.Meta)
 }
 
+func TestCertificates_ListByName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	outputResp := `{
+		"certificates": [
+			{
+				"id": "892071a0-bb95-49bc-8021-3afd67a210bf",
+				"name": "web-cert-01",
+				"dns_names": [
+					"somedomain.com",
+					"api.somedomain.com"
+				],
+				"not_after": "2017-02-22T00:23:00Z",
+				"sha1_fingerprint": "dfcc9f57d86bf58e321c2c6c31c7a971be244ac7",
+				"created_at": "2017-02-08T16:02:37Z",
+				"state": "verified",
+				"type": "custom"
+			}
+		],
+		"links": {},
+		"meta": {
+			"total": 1
+		}
+	}`
+
+	certName := "web-cert-01"
+
+	mux.HandleFunc("/v2/certificates", func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, certName, r.URL.Query().Get("name"))
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, outputResp)
+	})
+
+	certificates, resp, err := client.Certificates.ListByName(ctx, certName, nil)
+
+	require.NoError(t, err)
+
+	expectedCertificates := []Certificate{{
+		ID:              "892071a0-bb95-49bc-8021-3afd67a210bf",
+		Name:            "web-cert-01",
+		DNSNames:        []string{"somedomain.com", "api.somedomain.com"},
+		NotAfter:        "2017-02-22T00:23:00Z",
+		SHA1Fingerprint: "dfcc9f57d86bf58e321c2c6c31c7a971be244ac7",
+		Created:         "2017-02-08T16:02:37Z",
+		State:           "verified",
+		Type:            "custom",
+	}}
+
+	assert.Equal(t, expectedCertificates, certificates)
+
+	expectedMeta := &Meta{
+		Total: 1,
+	}
+	assert.Equal(t, expectedMeta, resp.Meta)
+}
+
 func TestCertificates_Create(t *testing.T) {
 	tests := []struct {
 		desc                string
