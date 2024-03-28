@@ -128,6 +128,8 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 	for _, domain := range l.Domains {
 		lbDomain := &LBDomain{}
 		*lbDomain = *domain
+		lbDomain.VerificationErrorReasons = append([]string(nil), domain.VerificationErrorReasons...)
+		lbDomain.SSLValidationErrorReasons = append([]string(nil), domain.SSLValidationErrorReasons...)
 		r.Domains = append(r.Domains, lbDomain)
 	}
 
@@ -269,8 +271,10 @@ type LBDomain struct {
 	CertificateID string `json:"certificate_id,omitempty"`
 	// Status indicates the domain validation status
 	Status string `json:"status,omitempty"`
-	// ErrorReason indicates any domain validation error
-	ErrorReason string `json:"error_reason,omitempty"`
+	// VerificationErrorReasons indicates any domain verification errors
+	VerificationErrorReasons []string `json:"verification_error_reasons,omitempty"`
+	// SSLValidationErrorReasons indicates any domain SSL validation errors
+	SSLValidationErrorReasons []string `json:"ssl_validation_error_reasons,omitempty"`
 }
 
 // String creates a human-readable description of a LBDomain
