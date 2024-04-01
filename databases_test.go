@@ -3128,3 +3128,41 @@ func TestDatabases_UpdateMetricsCredentials(t *testing.T) {
 	_, err := client.Databases.UpdateMetricsCredentials(ctx, updateRequest)
 	require.NoError(t, err)
 }
+
+func TestDatabases_ListProjectEvents(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/events", dbID)
+
+	want := []*ProjectEvent{
+		{
+			ID:          "pe8u2huh",
+			ServiceName: "customer-events",
+			EventType:   "cluster_create",
+			CreateTime:  "2020-10-29T15:57:38Z",
+		},
+	}
+
+	body := `{
+		"events": [
+		  {
+			"id": "pe8u2huh",
+			"cluster_name": "customer-events",
+			"event_type": "cluster_create",
+			"create_time": "2020-10-29T15:57:38Z"
+		  }
+		]
+	  } `
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.ListProjectEvents(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
