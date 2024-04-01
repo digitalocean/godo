@@ -12,41 +12,41 @@ import (
 
 var lbListJSONResponse = `
 {
-	"load_balancers":[
+    "load_balancers": [
         {
-            "id":"37e6be88-01ec-4ec7-9bc6-a514d4719057",
-            "name":"example-lb-01",
-            "ip":"46.214.185.203",
-            "algorithm":"round_robin",
-            "status":"active",
-            "created_at":"2016-12-15T14:16:36Z",
-            "forwarding_rules":[
+            "id": "37e6be88-01ec-4ec7-9bc6-a514d4719057",
+            "name": "example-lb-01",
+            "ip": "46.214.185.203",
+            "algorithm": "round_robin",
+            "status": "active",
+            "created_at": "2016-12-15T14:16:36Z",
+            "forwarding_rules": [
                 {
-                    "entry_protocol":"https",
-                    "entry_port":443,
-                    "target_protocol":"http",
-                    "target_port":80,
-                    "certificate_id":"a-b-c"
+                    "entry_protocol": "https",
+                    "entry_port": 443,
+                    "target_protocol": "http",
+                    "target_port": 80,
+                    "certificate_id": "a-b-c"
                 }
             ],
-            "health_check":{
-                "protocol":"http",
-                "port":80,
-                "path":"/index.html",
-                "check_interval_seconds":10,
-                "response_timeout_seconds":5,
-                "healthy_threshold":5,
-                "unhealthy_threshold":3
+            "health_check": {
+                "protocol": "http",
+                "port": 80,
+                "path": "/index.html",
+                "check_interval_seconds": 10,
+                "response_timeout_seconds": 5,
+                "healthy_threshold": 5,
+                "unhealthy_threshold": 3
             },
-            "sticky_sessions":{
-                "type":"cookies",
-                "cookie_name":"DO-LB",
-                "cookie_ttl_seconds":5
+            "sticky_sessions": {
+                "type": "cookies",
+                "cookie_name": "DO-LB",
+                "cookie_ttl_seconds": 5
             },
-            "region":{
-            	"name":"New York 1",
-                "slug":"nyc1",
-                "sizes":[
+            "region": {
+                "name": "New York 1",
+                "slug": "nyc1",
+                "sizes": [
                     "512mb",
                     "1gb",
                     "2gb",
@@ -54,16 +54,16 @@ var lbListJSONResponse = `
                     "8gb",
                     "16gb"
                 ],
-                "features":[
+                "features": [
                     "private_networking",
                     "backups",
                     "ipv6",
                     "metadata",
                     "storage"
                 ],
-                "available":true
+                "available": true
             },
-            "droplet_ids":[
+            "droplet_ids": [
                 2,
                 21
             ],
@@ -71,66 +71,93 @@ var lbListJSONResponse = `
             "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
             "http_idle_timeout_seconds": 60,
             "firewall": {
-                "deny": ["cidr:1.2.0.0/16"],
-                "allow": ["ip:1.2.3.4"]
-            }
+                "deny": [
+                    "cidr:1.2.0.0/16"
+                ],
+                "allow": [
+                    "ip:1.2.3.4"
+                ]
+            },
+            "domains": [
+                {
+                    "name": "test-domain-1",
+                    "is_managed": false,
+                    "certificate_id": "test-cert-id-1"
+                },
+                {
+                    "name": "test-domain-2",
+                    "is_managed": true,
+                    "certificate_id": "test-cert-id-2"
+                }
+            ],
+            "glb_settings": {
+                "target_protocol": "HTTP",
+                "target_port": 80,
+                "cdn": {
+                    "is_enabled": true
+                }
+            },
+            "target_load_balancer_ids": [
+                "8268a81c-fcf5-423e-a337-bbfe95817f24",
+                "8268a81c-fcf6-423e-a337-bbfe95817f24"
+            ]
         }
     ],
-    "links":{
-        "pages":{
-            "last":"http://localhost:3001/v2/load_balancers?page=3&per_page=1",
-            "next":"http://localhost:3001/v2/load_balancers?page=2&per_page=1"
+    "links": {
+        "pages": {
+            "last": "http://localhost:3001/v2/load_balancers?page=3&per_page=1",
+            "next": "http://localhost:3001/v2/load_balancers?page=2&per_page=1"
         }
     },
-    "meta":{
-        "total":3
+    "meta": {
+        "total": 3
     }
 }
 `
 
 var lbCreateJSONResponse = `
 {
-    "load_balancer":{
-        "id":"8268a81c-fcf5-423e-a337-bbfe95817f23",
-        "name":"example-lb-01",
-        "ip":"",
-        "algorithm":"round_robin",
-        "status":"new",
-        "created_at":"2016-12-15T14:19:09Z",
-        "forwarding_rules":[
+    "load_balancer": {
+        "id": "8268a81c-fcf5-423e-a337-bbfe95817f23",
+        "name": "example-lb-01",
+        "ip": "",
+        "algorithm": "round_robin",
+        "status": "new",
+        "created_at": "2016-12-15T14:19:09Z",
+        "forwarding_rules": [
             {
-                "entry_protocol":"https",
-                "entry_port":443,
-                "target_protocol":"http",
-                "target_port":80,
-                "certificate_id":"a-b-c"
+                "entry_protocol": "https",
+                "entry_port": 443,
+                "target_protocol": "http",
+                "target_port": 80,
+                "certificate_id": "a-b-c"
             },
             {
-                "entry_protocol":"https",
-                "entry_port":444,
-                "target_protocol":"https",
-                "target_port":443,
-                "tls_passthrough":true
+                "entry_protocol": "https",
+                "entry_port": 444,
+                "target_protocol": "https",
+                "target_port": 443,
+                "tls_passthrough": true
             }
         ],
-        "health_check":{
-            "protocol":"http",
-            "port":80,
-            "path":"/index.html",
-            "check_interval_seconds":10,
-            "response_timeout_seconds":5,
-            "healthy_threshold":5,
-            "unhealthy_threshold":3
+        "health_check": {
+            "protocol": "http",
+            "port": 80,
+            "path": "/index.html",
+            "check_interval_seconds": 10,
+            "response_timeout_seconds": 5,
+            "healthy_threshold": 5,
+            "unhealthy_threshold": 3
         },
-        "sticky_sessions":{
-            "type":"cookies",
-            "cookie_name":"DO-LB",
-            "cookie_ttl_seconds":5
+        "sticky_sessions": {
+            "type": "cookies",
+            "cookie_name": "DO-LB",
+            "cookie_ttl_seconds": 5
         },
-        "region":{
-            "name":"New York 1",
-            "slug":"nyc1",
-            "sizes":[
+        "region": {
+            "name": "New York 1",
+            "slug": "nyc1",
+            "sizes": [
                 "512mb",
                 "1gb",
                 "2gb",
@@ -138,69 +165,98 @@ var lbCreateJSONResponse = `
                 "8gb",
                 "16gb"
             ],
-            "features":[
+            "features": [
                 "private_networking",
                 "backups",
                 "ipv6",
                 "metadata",
                 "storage"
             ],
-            "available":true
-		},
-		"tags": ["my-tag"],
-        "droplet_ids":[
+            "available": true
+        },
+        "tags": [
+            "my-tag"
+        ],
+        "droplet_ids": [
             2,
             21
         ],
-        "redirect_http_to_https":true,
-        "vpc_uuid":"880b7f98-f062-404d-b33c-458d545696f6",
+        "redirect_http_to_https": true,
+        "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
         "disable_lets_encrypt_dns_records": true,
         "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
         "http_idle_timeout_seconds": 60,
         "firewall": {
-            "deny": ["cidr:1.2.0.0/16"],
-            "allow": ["ip:1.2.3.4"]
-        }
+            "deny": [
+                "cidr:1.2.0.0/16"
+            ],
+            "allow": [
+                "ip:1.2.3.4"
+            ]
+        },
+        "domains": [
+            {
+                "name": "test-domain-1",
+                "is_managed": false,
+                "certificate_id": "test-cert-id-1"
+            },
+            {
+                "name": "test-domain-2",
+                "is_managed": true,
+                "certificate_id": "test-cert-id-2"
+            }
+        ],
+        "glb_settings": {
+            "target_protocol": "HTTP",
+            "target_port": 80,
+            "cdn": {
+                "is_enabled": true
+            }
+        },
+        "target_load_balancer_ids": [
+            "8268a81c-fcf5-423e-a337-bbfe95817f24",
+            "8268a81c-fcf6-423e-a337-bbfe95817f24"
+        ]
     }
 }
 `
 
 var lbGetJSONResponse = `
 {
-    "load_balancer":{
-        "id":"37e6be88-01ec-4ec7-9bc6-a514d4719057",
-        "name":"example-lb-01",
-        "ip":"46.214.185.203",
-        "algorithm":"round_robin",
-        "status":"active",
-        "created_at":"2016-12-15T14:16:36Z",
-        "forwarding_rules":[
+    "load_balancer": {
+        "id": "37e6be88-01ec-4ec7-9bc6-a514d4719057",
+        "name": "example-lb-01",
+        "ip": "46.214.185.203",
+        "algorithm": "round_robin",
+        "status": "active",
+        "created_at": "2016-12-15T14:16:36Z",
+        "forwarding_rules": [
             {
-                "entry_protocol":"https",
-                "entry_port":443,
-                "target_protocol":"http",
-                "target_port":80,
-                "certificate_id":"a-b-c"
+                "entry_protocol": "https",
+                "entry_port": 443,
+                "target_protocol": "http",
+                "target_port": 80,
+                "certificate_id": "a-b-c"
             }
         ],
-        "health_check":{
-            "protocol":"http",
-            "port":80,
-            "path":"/index.html",
-            "check_interval_seconds":10,
-            "response_timeout_seconds":5,
-            "healthy_threshold":5,
-            "unhealthy_threshold":3
+        "health_check": {
+            "protocol": "http",
+            "port": 80,
+            "path": "/index.html",
+            "check_interval_seconds": 10,
+            "response_timeout_seconds": 5,
+            "healthy_threshold": 5,
+            "unhealthy_threshold": 3
         },
-        "sticky_sessions":{
-            "type":"cookies",
-            "cookie_name":"DO-LB",
-            "cookie_ttl_seconds":5
+        "sticky_sessions": {
+            "type": "cookies",
+            "cookie_name": "DO-LB",
+            "cookie_ttl_seconds": 5
         },
-        "region":{
-            "name":"New York 1",
-            "slug":"nyc1",
-            "sizes":[
+        "region": {
+            "name": "New York 1",
+            "slug": "nyc1",
+            "sizes": [
                 "512mb",
                 "1gb",
                 "2gb",
@@ -208,16 +264,16 @@ var lbGetJSONResponse = `
                 "8gb",
                 "16gb"
             ],
-            "features":[
+            "features": [
                 "private_networking",
                 "backups",
                 "ipv6",
                 "metadata",
                 "storage"
             ],
-            "available":true
+            "available": true
         },
-        "droplet_ids":[
+        "droplet_ids": [
             2,
             21
         ],
@@ -225,54 +281,81 @@ var lbGetJSONResponse = `
         "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
         "http_idle_timeout_seconds": 60,
         "firewall": {
-            "deny": ["cidr:1.2.0.0/16"],
-            "allow": ["ip:1.2.3.4"]
-        }
+            "deny": [
+                "cidr:1.2.0.0/16"
+            ],
+            "allow": [
+                "ip:1.2.3.4"
+            ]
+        },
+        "domains": [
+            {
+                "name": "test-domain-1",
+                "is_managed": false,
+                "certificate_id": "test-cert-id-1"
+            },
+            {
+                "name": "test-domain-2",
+                "is_managed": true,
+                "certificate_id": "test-cert-id-2"
+            }
+        ],
+        "glb_settings": {
+            "target_protocol": "HTTP",
+            "target_port": 80,
+            "cdn": {
+                "is_enabled": true
+            }
+        },
+        "target_load_balancer_ids": [
+            "8268a81c-fcf5-423e-a337-bbfe95817f24",
+            "8268a81c-fcf6-423e-a337-bbfe95817f24"
+        ]
     }
 }
 `
 
 var lbUpdateJSONResponse = `
 {
-    "load_balancer":{
-        "id":"8268a81c-fcf5-423e-a337-bbfe95817f23",
-        "name":"example-lb-01",
-        "ip":"12.34.56.78",
-        "algorithm":"least_connections",
-        "status":"active",
-        "size_unit":2,
-        "created_at":"2016-12-15T14:19:09Z",
-        "forwarding_rules":[
+    "load_balancer": {
+        "id": "8268a81c-fcf5-423e-a337-bbfe95817f23",
+        "name": "example-lb-01",
+        "ip": "12.34.56.78",
+        "algorithm": "least_connections",
+        "status": "active",
+        "size_unit": 2,
+        "created_at": "2016-12-15T14:19:09Z",
+        "forwarding_rules": [
             {
-                "entry_protocol":"http",
-                "entry_port":80,
-                "target_protocol":"http",
-                "target_port":80
+                "entry_protocol": "http",
+                "entry_port": 80,
+                "target_protocol": "http",
+                "target_port": 80
             },
             {
-                "entry_protocol":"https",
-                "entry_port":443,
-                "target_protocol":"http",
-                "target_port":80,
-                "certificate_id":"a-b-c"
+                "entry_protocol": "https",
+                "entry_port": 443,
+                "target_protocol": "http",
+                "target_port": 80,
+                "certificate_id": "a-b-c"
             }
         ],
-        "health_check":{
-            "protocol":"tcp",
-            "port":80,
-            "path":"",
-            "check_interval_seconds":10,
-            "response_timeout_seconds":5,
-            "healthy_threshold":5,
-            "unhealthy_threshold":3
+        "health_check": {
+            "protocol": "tcp",
+            "port": 80,
+            "path": "",
+            "check_interval_seconds": 10,
+            "response_timeout_seconds": 5,
+            "healthy_threshold": 5,
+            "unhealthy_threshold": 3
         },
-        "sticky_sessions":{
-            "type":"none"
+        "sticky_sessions": {
+            "type": "none"
         },
-        "region":{
-            "name":"New York 1",
-            "slug":"nyc1",
-            "sizes":[
+        "region": {
+            "name": "New York 1",
+            "slug": "nyc1",
+            "sizes": [
                 "512mb",
                 "1gb",
                 "2gb",
@@ -280,25 +363,52 @@ var lbUpdateJSONResponse = `
                 "8gb",
                 "16gb"
             ],
-            "features":[
+            "features": [
                 "private_networking",
                 "backups",
                 "ipv6",
                 "metadata",
                 "storage"
             ],
-            "available":true
+            "available": true
         },
-        "droplet_ids":[
+        "droplet_ids": [
             2,
             21
         ],
         "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
         "http_idle_timeout_seconds": 60,
         "firewall": {
-            "deny": ["cidr:1.3.0.0/16"],
-            "allow": ["ip:1.2.3.5"]
-        }
+            "deny": [
+                "cidr:1.3.0.0/16"
+            ],
+            "allow": [
+                "ip:1.2.3.5"
+            ]
+        },
+        "domains": [
+            {
+                "name": "test-domain-1",
+                "is_managed": false,
+                "certificate_id": "test-cert-id-1"
+            },
+            {
+                "name": "test-domain-2",
+                "is_managed": true,
+                "certificate_id": "test-cert-id-2"
+            }
+        ],
+        "glb_settings": {
+            "target_protocol": "HTTP",
+            "target_port": 80,
+            "cdn": {
+                "is_enabled": true
+            }
+        },
+        "target_load_balancer_ids": [
+            "8268a81c-fcf5-423e-a337-bbfe95817f24",
+            "8268a81c-fcf6-423e-a337-bbfe95817f24"
+        ]
     }
 }
 `
@@ -364,6 +474,16 @@ func TestLoadBalancers_Get(t *testing.T) {
 			Allow: []string{"ip:1.2.3.4"},
 			Deny:  []string{"cidr:1.2.0.0/16"},
 		},
+		Domains: []*LBDomain{
+			{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+		},
+		GLBSettings: &GLBSettings{
+			TargetProtocol: "HTTP",
+			TargetPort:     80,
+			CDN:            &CDNSettings{IsEnabled: true},
+		},
+		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
 
 	disableLetsEncryptDNSRecords := false
@@ -414,6 +534,16 @@ func TestLoadBalancers_Create(t *testing.T) {
 			Allow: []string{"ip:1.2.3.4"},
 			Deny:  []string{"cidr:1.2.0.0/16"},
 		},
+		Domains: []*LBDomain{
+			{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+		},
+		GLBSettings: &GLBSettings{
+			TargetProtocol: "HTTP",
+			TargetPort:     80,
+			CDN:            &CDNSettings{IsEnabled: true},
+		},
+		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
 
 	path := "/v2/load_balancers"
@@ -489,6 +619,16 @@ func TestLoadBalancers_Create(t *testing.T) {
 			Allow: []string{"ip:1.2.3.4"},
 			Deny:  []string{"cidr:1.2.0.0/16"},
 		},
+		Domains: []*LBDomain{
+			{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+		},
+		GLBSettings: &GLBSettings{
+			TargetProtocol: "HTTP",
+			TargetPort:     80,
+			CDN:            &CDNSettings{IsEnabled: true},
+		},
+		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
 
 	disableLetsEncryptDNSRecords := true
@@ -657,6 +797,16 @@ func TestLoadBalancers_Update(t *testing.T) {
 			Allow: []string{"ip:1.2.3.5"},
 			Deny:  []string{"cidr:1.3.0.0/16"},
 		},
+		Domains: []*LBDomain{
+			{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+		},
+		GLBSettings: &GLBSettings{
+			TargetProtocol: "HTTP",
+			TargetPort:     80,
+			CDN:            &CDNSettings{IsEnabled: true},
+		},
+		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
 
 	path := "/v2/load_balancers"
@@ -730,6 +880,16 @@ func TestLoadBalancers_Update(t *testing.T) {
 			Allow: []string{"ip:1.2.3.5"},
 			Deny:  []string{"cidr:1.3.0.0/16"},
 		},
+		Domains: []*LBDomain{
+			{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+		},
+		GLBSettings: &GLBSettings{
+			TargetProtocol: "HTTP",
+			TargetPort:     80,
+			CDN:            &CDNSettings{IsEnabled: true},
+		},
+		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
 
 	assert.Equal(t, expected, loadBalancer)
@@ -795,6 +955,16 @@ func TestLoadBalancers_List(t *testing.T) {
 				Allow: []string{"ip:1.2.3.4"},
 				Deny:  []string{"cidr:1.2.0.0/16"},
 			},
+			Domains: []*LBDomain{
+				{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+				{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+			},
+			GLBSettings: &GLBSettings{
+				TargetProtocol: "HTTP",
+				TargetPort:     80,
+				CDN:            &CDNSettings{IsEnabled: true},
+			},
+			TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 		},
 	}
 	disableLetsEncryptDNSRecords := true
@@ -1019,6 +1189,16 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 			Allow: []string{"ip:1.2.3.5"},
 			Deny:  []string{"cidr:1.3.0.0/16"},
 		},
+		Domains: []*LBDomain{
+			{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+		},
+		GLBSettings: &GLBSettings{
+			TargetProtocol: "HTTP",
+			TargetPort:     80,
+			CDN:            &CDNSettings{IsEnabled: true},
+		},
+		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
 
 	lb.DropletIDs = make([]int, 1, 2)
@@ -1068,6 +1248,16 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 			Allow: []string{"ip:1.2.3.5"},
 			Deny:  []string{"cidr:1.3.0.0/16"},
 		},
+		Domains: []*LBDomain{
+			{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+		},
+		GLBSettings: &GLBSettings{
+			TargetProtocol: "HTTP",
+			TargetPort:     80,
+			CDN:            &CDNSettings{IsEnabled: true},
+		},
+		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
 
 	r := lb.AsRequest()
@@ -1108,4 +1298,21 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 			TlsPassthrough: true,
 		},
 	}, r.ForwardingRules)
+}
+
+func TestLoadBalancers_PurgeCache(t *testing.T) {
+	setup()
+	defer teardown()
+
+	lbID := "37e6be88-01ec-4ec7-9bc6-a514d4719057"
+	path := "/v2/load_balancers"
+	endpoint := "cache"
+	path = fmt.Sprintf("%s/%s/%s", path, lbID, endpoint)
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.LoadBalancers.PurgeCache(ctx, lbID)
+
+	assert.NoError(t, err)
 }
