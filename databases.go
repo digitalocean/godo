@@ -698,6 +698,7 @@ type DatabaseOptions struct {
 	PostgresSQLOptions DatabaseEngineOptions `json:"pg"`
 	RedisOptions       DatabaseEngineOptions `json:"redis"`
 	KafkaOptions       DatabaseEngineOptions `json:"kafka"`
+	OpensearchOptions  DatabaseEngineOptions `json:"opensearch"`
 }
 
 // DatabaseEngineOptions represents the configuration options that are available for a given database engine
