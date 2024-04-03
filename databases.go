@@ -35,7 +35,7 @@ const (
 	databaseTopicPath                   = databaseBasePath + "/%s/topics/%s"
 	databaseTopicsPath                  = databaseBasePath + "/%s/topics"
 	databaseMetricsCredentialsPath      = databaseBasePath + "/metrics/credentials"
-	databaseProjectEvents               = databaseBasePath + "/%s/events"
+	databaseEvents                      = databaseBasePath + "/%s/events"
 )
 
 // SQL Mode constants allow for MySQL-specific SQL flavor configuration.
@@ -158,7 +158,7 @@ type DatabasesService interface {
 	UpdateTopic(context.Context, string, string, *DatabaseUpdateTopicRequest) (*Response, error)
 	GetMetricsCredentials(context.Context) (*DatabaseMetricsCredentials, *Response, error)
 	UpdateMetricsCredentials(context.Context, *DatabaseUpdateMetricsCredentialsRequest) (*Response, error)
-	ListProjectEvents(context.Context, string) ([]*ProjectEvent, *Response, error)
+	ListDatabaseEvents(context.Context, string) ([]*DatabaseEvent, *Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -713,21 +713,21 @@ type DatabaseLayout struct {
 	Sizes   []string `json:"sizes"`
 }
 
-// ListProjectEventsResponse contains a list of project events.
-type ListProjectEvents struct {
-	Events []*ProjectEvent `json:"events"`
+// ListDatabaseEvents contains a list of project events.
+type ListDatabaseEvents struct {
+	Events []*DatabaseEvent `json:"events"`
 }
 
-// ProjectEvent contains the information about a project event.
-type ProjectEvent struct {
+// DatbaseEvent contains the information about a Datbase event.
+type DatabaseEvent struct {
 	ID          string `json:"id"`
 	ServiceName string `json:"cluster_name"`
 	EventType   string `json:"event_type"`
 	CreateTime  string `json:"create_time"`
 }
 
-type ListProjectEventsRoot struct {
-	Events []*ProjectEvent `json:"events"`
+type ListDatabaseEventsRoot struct {
+	Events []*DatabaseEvent `json:"events"`
 }
 
 // URN returns a URN identifier for the database
@@ -1537,9 +1537,9 @@ func (svc *DatabasesServiceOp) UpdateMetricsCredentials(ctx context.Context, upd
 	return resp, nil
 }
 
-func (svc *DatabasesServiceOp) ListProjectEvents(ctx context.Context, databaseID string) ([]*ProjectEvent, *Response, error) {
-	path := fmt.Sprintf(databaseProjectEvents, databaseID)
-	root := new(ListProjectEventsRoot)
+func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseID string) ([]*DatabaseEvent, *Response, error) {
+	path := fmt.Sprintf(databaseEvents, databaseID)
+	root := new(ListDatabaseEventsRoot)
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err

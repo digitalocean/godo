@@ -3129,7 +3129,7 @@ func TestDatabases_UpdateMetricsCredentials(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestDatabases_ListProjectEvents(t *testing.T) {
+func TestDatabases_ListDatabaseEvents(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -3137,7 +3137,7 @@ func TestDatabases_ListProjectEvents(t *testing.T) {
 
 	path := fmt.Sprintf("/v2/databases/%s/events", dbID)
 
-	want := []*ProjectEvent{
+	want := []*DatabaseEvent{
 		{
 			ID:          "pe8u2huh",
 			ServiceName: "customer-events",
@@ -3162,7 +3162,7 @@ func TestDatabases_ListProjectEvents(t *testing.T) {
 		fmt.Fprint(w, body)
 	})
 
-	got, _, err := client.Databases.ListProjectEvents(ctx, dbID)
+	got, _, err := client.Databases.ListDatabaseEvents(ctx, dbID)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
