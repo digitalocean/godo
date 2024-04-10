@@ -158,7 +158,7 @@ type DatabasesService interface {
 	UpdateTopic(context.Context, string, string, *DatabaseUpdateTopicRequest) (*Response, error)
 	GetMetricsCredentials(context.Context) (*DatabaseMetricsCredentials, *Response, error)
 	UpdateMetricsCredentials(context.Context, *DatabaseUpdateMetricsCredentialsRequest) (*Response, error)
-	ListDatabaseEvents(context.Context, string) ([]*DatabaseEvent, *Response, error)
+	ListDatabaseEvents(context.Context, string, *ListOptions) ([]DatabaseEvent, *Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -716,7 +716,7 @@ type DatabaseLayout struct {
 
 // ListDatabaseEvents contains a list of project events.
 type ListDatabaseEvents struct {
-	Events []*DatabaseEvent `json:"events"`
+	Events []DatabaseEvent `json:"events"`
 }
 
 // DatbaseEvent contains the information about a Datbase event.
@@ -728,7 +728,7 @@ type DatabaseEvent struct {
 }
 
 type ListDatabaseEventsRoot struct {
-	Events []*DatabaseEvent `json:"events"`
+	Events []DatabaseEvent `json:"events"`
 }
 
 // URN returns a URN identifier for the database
@@ -1538,8 +1538,12 @@ func (svc *DatabasesServiceOp) UpdateMetricsCredentials(ctx context.Context, upd
 	return resp, nil
 }
 
-func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseID string) ([]*DatabaseEvent, *Response, error) {
+func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseEvent, *Response, error) {
 	path := fmt.Sprintf(databaseEvents, databaseID)
+	path, err := addOptions(path, opts)
+	if err != nil {
+		return nil, nil, err
+	}
 	root := new(ListDatabaseEventsRoot)
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -1552,5 +1556,4 @@ func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseI
 	}
 
 	return root.Events, resp, nil
-
 }

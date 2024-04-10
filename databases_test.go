@@ -3190,7 +3190,7 @@ func TestDatabases_ListDatabaseEvents(t *testing.T) {
 
 	path := fmt.Sprintf("/v2/databases/%s/events", dbID)
 
-	want := []*DatabaseEvent{
+	want := []DatabaseEvent{
 		{
 			ID:          "pe8u2huh",
 			ServiceName: "customer-events",
@@ -3215,7 +3215,7 @@ func TestDatabases_ListDatabaseEvents(t *testing.T) {
 		fmt.Fprint(w, body)
 	})
 
-	got, _, err := client.Databases.ListDatabaseEvents(ctx, dbID)
+	got, _, err := client.Databases.ListDatabaseEvents(ctx, dbID, &ListOptions{})
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
