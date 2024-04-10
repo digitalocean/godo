@@ -2078,7 +2078,56 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 						"num_nodes": 3,
 						"sizes": [
 							"gd-2vcpu-8gb",
-	            "gd-4vcpu-16gb"
+	            			"gd-4vcpu-16gb"
+						]
+					}
+				]
+			},
+			"opensearch": {
+				"regions": [
+					"ams3",
+					"tor1"
+				],
+				"versions": [
+					"1",
+					"2"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"db-s-2vcpu-4gb",
+							"db-s-4vcpu-8gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"db-s-2vcpu-4gb",
+							"m3-2vcpu-16gb",
+							"db-s-4vcpu-8gb",
+							"m3-4vcpu-32gb"
+						]
+					},
+					{
+						"num_nodes": 6,
+						"sizes": [
+							"m3-2vcpu-16gb",
+							"m3-4vcpu-32gb"
+						]
+					},
+					{
+						"num_nodes": 9,
+						"sizes": [
+							"m3-2vcpu-16gb",
+							"m3-4vcpu-32gb"
+						]
+					},
+					{
+						"num_nodes": 15,
+						"sizes": [
+							"m3-2vcpu-16gb",
+							"m3-4vcpu-32gb"
 						]
 					}
 				]
@@ -2124,21 +2173,25 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 	require.NotNil(t, options.RedisOptions)
 	require.NotNil(t, options.MySQLOptions)
 	require.NotNil(t, options.KafkaOptions)
+	require.NotNil(t, options.OpensearchOptions)
 	require.Greater(t, len(options.MongoDBOptions.Regions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Regions), 0)
 	require.Greater(t, len(options.RedisOptions.Regions), 0)
 	require.Greater(t, len(options.MySQLOptions.Regions), 0)
 	require.Greater(t, len(options.KafkaOptions.Regions), 0)
+	require.Greater(t, len(options.OpensearchOptions.Regions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Versions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Versions), 0)
 	require.Greater(t, len(options.RedisOptions.Versions), 0)
 	require.Greater(t, len(options.MySQLOptions.Versions), 0)
 	require.Greater(t, len(options.KafkaOptions.Versions), 0)
+	require.Greater(t, len(options.OpensearchOptions.Versions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Layouts), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Layouts), 0)
 	require.Greater(t, len(options.RedisOptions.Layouts), 0)
 	require.Greater(t, len(options.MySQLOptions.Layouts), 0)
 	require.Greater(t, len(options.KafkaOptions.Layouts), 0)
+	require.Greater(t, len(options.OpensearchOptions.Layouts), 0)
 }
 
 func TestDatabases_CreateDatabaseUserWithMySQLSettings(t *testing.T) {
@@ -3137,7 +3190,7 @@ func TestDatabases_ListDatabaseEvents(t *testing.T) {
 
 	path := fmt.Sprintf("/v2/databases/%s/events", dbID)
 
-	want := []*DatabaseEvent{
+	want := []DatabaseEvent{
 		{
 			ID:          "pe8u2huh",
 			ServiceName: "customer-events",
@@ -3162,7 +3215,7 @@ func TestDatabases_ListDatabaseEvents(t *testing.T) {
 		fmt.Fprint(w, body)
 	})
 
-	got, _, err := client.Databases.ListDatabaseEvents(ctx, dbID)
+	got, _, err := client.Databases.ListDatabaseEvents(ctx, dbID, &ListOptions{})
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
