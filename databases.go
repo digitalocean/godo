@@ -180,6 +180,7 @@ type Database struct {
 	EngineSlug               string                     `json:"engine,omitempty"`
 	VersionSlug              string                     `json:"version,omitempty"`
 	Connection               *DatabaseConnection        `json:"connection,omitempty"`
+	UIConnection             *DatabaseConnection        `json:"ui_connection,omitempty"`
 	PrivateConnection        *DatabaseConnection        `json:"private_connection,omitempty"`
 	StandbyConnection        *DatabaseConnection        `json:"standby_connection,omitempty"`
 	StandbyPrivateConnection *DatabaseConnection        `json:"standby_private_connection,omitempty"`
@@ -1538,6 +1539,7 @@ func (svc *DatabasesServiceOp) UpdateMetricsCredentials(ctx context.Context, upd
 	return resp, nil
 }
 
+// ListDatabaseEvents returns all the events for a given cluster
 func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseEvent, *Response, error) {
 	path := fmt.Sprintf(databaseEvents, databaseID)
 	path, err := addOptions(path, opts)
