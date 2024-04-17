@@ -958,25 +958,11 @@ func TestAppInstanceSize_GetSlug(tt *testing.T) {
 	a.GetSlug()
 }
 
-func TestAppInstanceSize_GetTierDowngradeTo(tt *testing.T) {
-	a := &AppInstanceSize{}
-	a.GetTierDowngradeTo()
-	a = nil
-	a.GetTierDowngradeTo()
-}
-
 func TestAppInstanceSize_GetTierSlug(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetTierSlug()
 	a = nil
 	a.GetTierSlug()
-}
-
-func TestAppInstanceSize_GetTierUpgradeTo(tt *testing.T) {
-	a := &AppInstanceSize{}
-	a.GetTierUpgradeTo()
-	a = nil
-	a.GetTierUpgradeTo()
 }
 
 func TestAppInstanceSize_GetUSDPerMonth(tt *testing.T) {
@@ -1243,20 +1229,6 @@ func TestAppProposeResponse_GetAppNameSuggestion(tt *testing.T) {
 	a.GetAppNameSuggestion()
 	a = nil
 	a.GetAppNameSuggestion()
-}
-
-func TestAppProposeResponse_GetAppTierDowngradeCost(tt *testing.T) {
-	a := &AppProposeResponse{}
-	a.GetAppTierDowngradeCost()
-	a = nil
-	a.GetAppTierDowngradeCost()
-}
-
-func TestAppProposeResponse_GetAppTierUpgradeCost(tt *testing.T) {
-	a := &AppProposeResponse{}
-	a.GetAppTierUpgradeCost()
-	a = nil
-	a.GetAppTierUpgradeCost()
 }
 
 func TestAppProposeResponse_GetExistingStarterApps(tt *testing.T) {

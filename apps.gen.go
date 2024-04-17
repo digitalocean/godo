@@ -1109,16 +1109,14 @@ const (
 
 // AppInstanceSize struct for AppInstanceSize
 type AppInstanceSize struct {
-	Name            string                 `json:"name,omitempty"`
-	Slug            string                 `json:"slug,omitempty"`
-	CPUType         AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
-	CPUs            string                 `json:"cpus,omitempty"`
-	MemoryBytes     string                 `json:"memory_bytes,omitempty"`
-	USDPerMonth     string                 `json:"usd_per_month,omitempty"`
-	USDPerSecond    string                 `json:"usd_per_second,omitempty"`
-	TierSlug        string                 `json:"tier_slug,omitempty"`
-	TierUpgradeTo   string                 `json:"tier_upgrade_to,omitempty"`
-	TierDowngradeTo string                 `json:"tier_downgrade_to,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Slug         string                 `json:"slug,omitempty"`
+	CPUType      AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs         string                 `json:"cpus,omitempty"`
+	MemoryBytes  string                 `json:"memory_bytes,omitempty"`
+	USDPerMonth  string                 `json:"usd_per_month,omitempty"`
+	USDPerSecond string                 `json:"usd_per_second,omitempty"`
+	TierSlug     string                 `json:"tier_slug,omitempty"`
 	// Indicates if the tier instance size can enable autoscaling.
 	Scalable       bool `json:"scalable,omitempty"`
 	FeaturePreview bool `json:"feature_preview,omitempty"`
@@ -1168,10 +1166,6 @@ type AppProposeResponse struct {
 	Spec              *AppSpec `json:"spec,omitempty"`
 	// The monthly cost of the proposed app in USD.
 	AppCost float32 `json:"app_cost,omitempty"`
-	// The monthly cost of the proposed app in USD using the next pricing plan tier. For example, if you propose an app that uses the Basic tier, the `app_tier_upgrade_cost` field displays the monthly cost of the app if it were to use the Professional tier. If the proposed app already uses the most expensive tier, the field is empty.
-	AppTierUpgradeCost float32 `json:"app_tier_upgrade_cost,omitempty"`
-	// The monthly cost of the proposed app in USD using the previous pricing plan tier. For example, if you propose an app that uses the Professional tier, the `app_tier_downgrade_cost` field displays the monthly cost of the app if it were to use the Basic tier. If the proposed app already uses the lest expensive tier, the field is empty.
-	AppTierDowngradeCost float32 `json:"app_tier_downgrade_cost,omitempty"`
 	// The number of existing starter tier apps the account has.
 	ExistingStarterApps string `json:"existing_starter_apps,omitempty"`
 	// The maximum number of free starter apps the account can have. Any additional starter apps will be charged for. These include apps with only static sites, functions, and databases.

@@ -169,16 +169,18 @@ var (
 	}
 
 	testInstanceSize = AppInstanceSize{
-		Name:            "Basic XXS",
-		Slug:            "basic-xxs",
-		CPUType:         AppInstanceSizeCPUType_Dedicated,
-		CPUs:            "1",
-		MemoryBytes:     "536870912",
-		USDPerMonth:     "5",
-		USDPerSecond:    "0.0000018896447",
-		TierSlug:        "basic",
-		TierUpgradeTo:   "professional-xs",
-		TierDowngradeTo: "basic-xxxs",
+		Name:                  "Basic XXS",
+		Slug:                  "basic-xxs",
+		CPUType:               AppInstanceSizeCPUType_Dedicated,
+		CPUs:                  "1",
+		MemoryBytes:           "536870912",
+		USDPerMonth:           "5",
+		USDPerSecond:          "0.0000018896447",
+		TierSlug:              "basic",
+		BandwidthAllowanceGib: "1",
+		Scalable:              false,
+		SingleInstanceOnly:    true,
+		DeprecationIntent:     true,
 	}
 
 	testAlerts = []*AppAlert{

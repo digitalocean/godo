@@ -1093,28 +1093,12 @@ func (a *AppInstanceSize) GetSlug() string {
 	return a.Slug
 }
 
-// GetTierDowngradeTo returns the TierDowngradeTo field.
-func (a *AppInstanceSize) GetTierDowngradeTo() string {
-	if a == nil {
-		return ""
-	}
-	return a.TierDowngradeTo
-}
-
 // GetTierSlug returns the TierSlug field.
 func (a *AppInstanceSize) GetTierSlug() string {
 	if a == nil {
 		return ""
 	}
 	return a.TierSlug
-}
-
-// GetTierUpgradeTo returns the TierUpgradeTo field.
-func (a *AppInstanceSize) GetTierUpgradeTo() string {
-	if a == nil {
-		return ""
-	}
-	return a.TierUpgradeTo
 }
 
 // GetUSDPerMonth returns the USDPerMonth field.
@@ -1419,22 +1403,6 @@ func (a *AppProposeResponse) GetAppNameSuggestion() string {
 		return ""
 	}
 	return a.AppNameSuggestion
-}
-
-// GetAppTierDowngradeCost returns the AppTierDowngradeCost field.
-func (a *AppProposeResponse) GetAppTierDowngradeCost() float32 {
-	if a == nil {
-		return 0
-	}
-	return a.AppTierDowngradeCost
-}
-
-// GetAppTierUpgradeCost returns the AppTierUpgradeCost field.
-func (a *AppProposeResponse) GetAppTierUpgradeCost() float32 {
-	if a == nil {
-		return 0
-	}
-	return a.AppTierUpgradeCost
 }
 
 // GetExistingStarterApps returns the ExistingStarterApps field.
