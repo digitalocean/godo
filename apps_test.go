@@ -30,6 +30,10 @@ var (
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
+			Termination: &AppServiceSpecTermination{
+				GracePeriodSeconds: 100,
+				DrainSeconds:       60,
+			},
 		}},
 		Workers: []*AppWorkerSpec{{
 			Name:           "worker-name",
@@ -42,6 +46,9 @@ var (
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
+			Termination: &AppWorkerSpecTermination{
+				GracePeriodSeconds: 100,
+			},
 		}},
 		StaticSites: []*AppStaticSiteSpec{{
 			Name:         "static-name",
@@ -63,6 +70,9 @@ var (
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
+			Termination: &AppJobSpecTermination{
+				GracePeriodSeconds: 100,
+			},
 		}},
 		Databases: []*AppDatabaseSpec{{
 			Name:        "db",
