@@ -388,6 +388,7 @@ type AppJobSpec struct {
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
 	LogDestinations []*AppLogDestinationSpec `json:"log_destinations,omitempty"`
+	Termination     *AppJobSpecTermination   `json:"termination,omitempty"`
 }
 
 // AppJobSpecKind  - UNSPECIFIED: Default job type, will auto-complete to POST_DEPLOY kind.  - PRE_DEPLOY: Indicates a job that runs before an app deployment.  - POST_DEPLOY: Indicates a job that runs after an app deployment.  - FAILED_DEPLOY: Indicates a job that runs after a component fails to deploy.
@@ -400,6 +401,12 @@ const (
 	AppJobSpecKind_PostDeploy   AppJobSpecKind = "POST_DEPLOY"
 	AppJobSpecKind_FailedDeploy AppJobSpecKind = "FAILED_DEPLOY"
 )
+
+// AppJobSpecTermination struct for AppJobSpecTermination
+type AppJobSpecTermination struct {
+	// The number of seconds to wait between sending a TERM signal to a container and issuing a KILL which causes immediate shutdown. Default: 120, Minimum 1, Maximum 600.
+	GracePeriodSeconds int32 `json:"grace_period_seconds,omitempty"`
+}
 
 // AppLogDestinationSpec struct for AppLogDestinationSpec
 type AppLogDestinationSpec struct {
@@ -484,27 +491,36 @@ type AppServiceSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations []*AppLogDestinationSpec `json:"log_destinations,omitempty"`
+	LogDestinations []*AppLogDestinationSpec   `json:"log_destinations,omitempty"`
+	Termination     *AppServiceSpecTermination `json:"termination,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
 type AppServiceSpecHealthCheck struct {
 	// Deprecated. Use http_path instead.
 	Path string `json:"path,omitempty"`
-	// The number of seconds to wait before beginning health checks. Default: 0 seconds; start health checks as soon as the service starts.
+	// The number of seconds to wait before beginning health checks. Default: 0 seconds, Minimum 0, Maximum 3600.
 	InitialDelaySeconds int32 `json:"initial_delay_seconds,omitempty"`
-	// The number of seconds to wait between health checks. Default: 10 seconds.
+	// The number of seconds to wait between health checks. Default: 10 seconds, Minimum 1, Maximum 300.
 	PeriodSeconds int32 `json:"period_seconds,omitempty"`
-	// The number of seconds after which the check times out. Default: 1 second.
+	// The number of seconds after which the check times out. Default: 1 second, Minimum 1, Maximum 120.
 	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
-	// The number of successful health checks before considered healthy. Default: 1.
+	// The number of successful health checks before considered healthy. Default: 1, Minimum 1, Maximum 50.
 	SuccessThreshold int32 `json:"success_threshold,omitempty"`
-	// The number of failed health checks before considered unhealthy. Default: 9.
+	// The number of failed health checks before considered unhealthy. Default: 9, Minimum 1, Maximum 50.
 	FailureThreshold int32 `json:"failure_threshold,omitempty"`
 	// The route path used for the HTTP health check ping. If not set, the HTTP health check will be disabled and a TCP health check used instead.
 	HTTPPath string `json:"http_path,omitempty"`
 	// The port on which the health check will be performed. If not set, the health check will be performed on the component's http_port.
 	Port int64 `json:"port,omitempty"`
+}
+
+// AppServiceSpecTermination struct for AppServiceSpecTermination
+type AppServiceSpecTermination struct {
+	// The number of seconds to wait between selecting a container instance for termination and issuing the TERM signal. Selecting a container instance for termination begins an asynchronous drain of new requests on upstream load-balancers. Default: 15 seconds, Minimum 1, Maximum 110.
+	DrainSeconds int32 `json:"drain_seconds,omitempty"`
+	// The number of seconds to wait between sending a TERM signal to a container and issuing a KILL which causes immediate shutdown. Default: 120, Minimum 1, Maximum 600.
+	GracePeriodSeconds int32 `json:"grace_period_seconds,omitempty"`
 }
 
 // AppSpec The desired configuration of an application.
@@ -601,7 +617,14 @@ type AppWorkerSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations []*AppLogDestinationSpec `json:"log_destinations,omitempty"`
+	LogDestinations []*AppLogDestinationSpec  `json:"log_destinations,omitempty"`
+	Termination     *AppWorkerSpecTermination `json:"termination,omitempty"`
+}
+
+// AppWorkerSpecTermination struct for AppWorkerSpecTermination
+type AppWorkerSpecTermination struct {
+	// The number of seconds to wait between sending a TERM signal to a container and issuing a KILL which causes immediate shutdown. Default: 120, Minimum 1, Maximum 600.
+	GracePeriodSeconds int32 `json:"grace_period_seconds,omitempty"`
 }
 
 // Buildpack struct for Buildpack
