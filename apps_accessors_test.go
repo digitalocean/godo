@@ -1105,6 +1105,20 @@ func TestAppJobSpec_GetSourceDir(tt *testing.T) {
 	a.GetSourceDir()
 }
 
+func TestAppJobSpec_GetTermination(tt *testing.T) {
+	a := &AppJobSpec{}
+	a.GetTermination()
+	a = nil
+	a.GetTermination()
+}
+
+func TestAppJobSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
+	a := &AppJobSpecTermination{}
+	a.GetGracePeriodSeconds()
+	a = nil
+	a.GetGracePeriodSeconds()
+}
+
 func TestAppLogDestinationSpec_GetDatadog(tt *testing.T) {
 	a := &AppLogDestinationSpec{}
 	a.GetDatadog()
@@ -1511,6 +1525,13 @@ func TestAppServiceSpec_GetSourceDir(tt *testing.T) {
 	a.GetSourceDir()
 }
 
+func TestAppServiceSpec_GetTermination(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetTermination()
+	a = nil
+	a.GetTermination()
+}
+
 func TestAppServiceSpecHealthCheck_GetFailureThreshold(tt *testing.T) {
 	a := &AppServiceSpecHealthCheck{}
 	a.GetFailureThreshold()
@@ -1565,6 +1586,20 @@ func TestAppServiceSpecHealthCheck_GetTimeoutSeconds(tt *testing.T) {
 	a.GetTimeoutSeconds()
 	a = nil
 	a.GetTimeoutSeconds()
+}
+
+func TestAppServiceSpecTermination_GetDrainSeconds(tt *testing.T) {
+	a := &AppServiceSpecTermination{}
+	a.GetDrainSeconds()
+	a = nil
+	a.GetDrainSeconds()
+}
+
+func TestAppServiceSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
+	a := &AppServiceSpecTermination{}
+	a.GetGracePeriodSeconds()
+	a = nil
+	a.GetGracePeriodSeconds()
 }
 
 func TestAppSpec_GetAlerts(tt *testing.T) {
@@ -1957,6 +1992,20 @@ func TestAppWorkerSpec_GetSourceDir(tt *testing.T) {
 	a.GetSourceDir()
 	a = nil
 	a.GetSourceDir()
+}
+
+func TestAppWorkerSpec_GetTermination(tt *testing.T) {
+	a := &AppWorkerSpec{}
+	a.GetTermination()
+	a = nil
+	a.GetTermination()
+}
+
+func TestAppWorkerSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
+	a := &AppWorkerSpecTermination{}
+	a.GetGracePeriodSeconds()
+	a = nil
+	a.GetGracePeriodSeconds()
 }
 
 func TestBuildpack_GetDescription(tt *testing.T) {
