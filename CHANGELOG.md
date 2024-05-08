@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.115.0] - 2024-05-08
+
+- #688 - @asaha2 - load balancers: support glb active-passive fail-over settings, currently in closed beta
+
 ## [v1.114.0] - 2024-04-12
 
 - #686 - @greeshmapill - APPS-8386: Add comments to mark deprecation of unused instance size fields
