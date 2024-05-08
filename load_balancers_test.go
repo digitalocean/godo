@@ -211,7 +211,12 @@ var lbCreateJSONResponse = `
             "target_port": 80,
             "cdn": {
                 "is_enabled": true
-            }
+            },
+            "region_priorities": {
+                "nyc1": 1,
+                "nyc2": 2
+            },
+            "failover_threshold": 10
         },
         "target_load_balancer_ids": [
             "8268a81c-fcf5-423e-a337-bbfe95817f24",
@@ -539,9 +544,11 @@ func TestLoadBalancers_Create(t *testing.T) {
 			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
 		},
 		GLBSettings: &GLBSettings{
-			TargetProtocol: "HTTP",
-			TargetPort:     80,
-			CDN:            &CDNSettings{IsEnabled: true},
+			TargetProtocol:    "HTTP",
+			TargetPort:        80,
+			CDN:               &CDNSettings{IsEnabled: true},
+			RegionPriorities:  map[string]uint32{"nyc1": 1, "nyc2": 2},
+			FailoverThreshold: 10,
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
@@ -624,9 +631,11 @@ func TestLoadBalancers_Create(t *testing.T) {
 			{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
 		},
 		GLBSettings: &GLBSettings{
-			TargetProtocol: "HTTP",
-			TargetPort:     80,
-			CDN:            &CDNSettings{IsEnabled: true},
+			TargetProtocol:    "HTTP",
+			TargetPort:        80,
+			CDN:               &CDNSettings{IsEnabled: true},
+			RegionPriorities:  map[string]uint32{"nyc1": 1, "nyc2": 2},
+			FailoverThreshold: 10,
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 	}
