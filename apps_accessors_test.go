@@ -888,6 +888,13 @@ func TestAppIngressSpecRuleStringMatch_GetPrefix(tt *testing.T) {
 	a.GetPrefix()
 }
 
+func TestAppInstanceSize_GetBandwidthAllowanceGib(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetBandwidthAllowanceGib()
+	a = nil
+	a.GetBandwidthAllowanceGib()
+}
+
 func TestAppInstanceSize_GetCPUs(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetCPUs()
@@ -942,13 +949,6 @@ func TestAppInstanceSize_GetSingleInstanceOnly(tt *testing.T) {
 	a.GetSingleInstanceOnly()
 	a = nil
 	a.GetSingleInstanceOnly()
-}
-
-func TestAppInstanceSize_GetBandwidthAllowanceGib(tt *testing.T) {
-	a := &AppInstanceSize{}
-	a.GetBandwidthAllowanceGib()
-	a = nil
-	a.GetBandwidthAllowanceGib()
 }
 
 func TestAppInstanceSize_GetSlug(tt *testing.T) {
@@ -1154,6 +1154,13 @@ func TestAppLogDestinationSpec_GetName(tt *testing.T) {
 	a.GetName()
 }
 
+func TestAppLogDestinationSpec_GetOpenSearch(tt *testing.T) {
+	a := &AppLogDestinationSpec{}
+	a.GetOpenSearch()
+	a = nil
+	a.GetOpenSearch()
+}
+
 func TestAppLogDestinationSpec_GetPapertrail(tt *testing.T) {
 	a := &AppLogDestinationSpec{}
 	a.GetPapertrail()
@@ -1201,6 +1208,27 @@ func TestAppLogDestinationSpecLogtail_GetToken(tt *testing.T) {
 	a.GetToken()
 	a = nil
 	a.GetToken()
+}
+
+func TestAppLogDestinationSpecOpenSearch_GetBasicAuth(tt *testing.T) {
+	a := &AppLogDestinationSpecOpenSearch{}
+	a.GetBasicAuth()
+	a = nil
+	a.GetBasicAuth()
+}
+
+func TestAppLogDestinationSpecOpenSearch_GetEndpoint(tt *testing.T) {
+	a := &AppLogDestinationSpecOpenSearch{}
+	a.GetEndpoint()
+	a = nil
+	a.GetEndpoint()
+}
+
+func TestAppLogDestinationSpecOpenSearch_GetIndexName(tt *testing.T) {
+	a := &AppLogDestinationSpecOpenSearch{}
+	a.GetIndexName()
+	a = nil
+	a.GetIndexName()
 }
 
 func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
@@ -3091,6 +3119,20 @@ func TestListBuildpacksResponse_GetBuildpacks(tt *testing.T) {
 	l.GetBuildpacks()
 	l = nil
 	l.GetBuildpacks()
+}
+
+func TestOpenSearchBasicAuth_GetPassword(tt *testing.T) {
+	o := &OpenSearchBasicAuth{}
+	o.GetPassword()
+	o = nil
+	o.GetPassword()
+}
+
+func TestOpenSearchBasicAuth_GetUser(tt *testing.T) {
+	o := &OpenSearchBasicAuth{}
+	o.GetUser()
+	o = nil
+	o.GetUser()
 }
 
 func TestResetDatabasePasswordRequest_GetAppID(tt *testing.T) {
