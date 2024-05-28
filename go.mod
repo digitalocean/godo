@@ -1,4 +1,4 @@
-module github.com/digitalocean/godo
+module github.com/lldrlove/godo
 
 go 1.20
 
