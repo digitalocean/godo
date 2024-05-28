@@ -203,10 +203,11 @@ type KubernetesCluster struct {
 
 	NodePools []*KubernetesNodePool `json:"node_pools,omitempty"`
 
-	MaintenancePolicy *KubernetesMaintenancePolicy `json:"maintenance_policy,omitempty"`
-	AutoUpgrade       bool                         `json:"auto_upgrade,omitempty"`
-	SurgeUpgrade      bool                         `json:"surge_upgrade,omitempty"`
-	RegistryEnabled   bool                         `json:"registry_enabled,omitempty"`
+	MaintenancePolicy      *KubernetesMaintenancePolicy      `json:"maintenance_policy,omitempty"`
+	AutoUpgrade            bool                              `json:"auto_upgrade,omitempty"`
+	SurgeUpgrade           bool                              `json:"surge_upgrade,omitempty"`
+	RegistryEnabled        bool                              `json:"registry_enabled,omitempty"`
+	ControlPlanePermission *KubernetesControlPlanePermission `json:"control_plane_permission,omitempty"`
 
 	Status    *KubernetesClusterStatus `json:"status,omitempty"`
 	CreatedAt time.Time                `json:"created_at,omitempty"`
