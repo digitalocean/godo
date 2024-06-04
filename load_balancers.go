@@ -68,6 +68,7 @@ type LoadBalancer struct {
 	Domains                      []*LBDomain      `json:"domains,omitempty"`
 	GLBSettings                  *GLBSettings     `json:"glb_settings,omitempty"`
 	TargetLoadBalancerIDs        []string         `json:"target_load_balancer_ids,omitempty"`
+	Network                      string           `json:"network,omitempty"`
 }
 
 // String creates a human-readable description of a LoadBalancer.
@@ -101,6 +102,7 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 		ProjectID:                    l.ProjectID,
 		HTTPIdleTimeoutSeconds:       l.HTTPIdleTimeoutSeconds,
 		TargetLoadBalancerIDs:        append([]string(nil), l.TargetLoadBalancerIDs...),
+		Network:                      l.Network,
 	}
 
 	if l.DisableLetsEncryptDNSRecords != nil {
@@ -238,6 +240,7 @@ type LoadBalancerRequest struct {
 	Domains                      []*LBDomain      `json:"domains,omitempty"`
 	GLBSettings                  *GLBSettings     `json:"glb_settings,omitempty"`
 	TargetLoadBalancerIDs        []string         `json:"target_load_balancer_ids,omitempty"`
+	Network                      string           `json:"network,omitempty"`
 }
 
 // String creates a human-readable description of a LoadBalancerRequest.
