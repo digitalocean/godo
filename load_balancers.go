@@ -13,11 +13,15 @@ const (
 	loadBalancersBasePath = "/v2/load_balancers"
 )
 
-// Load Balancer types.
 const (
+	// Load Balancer types
 	LoadBalancerTypeGlobal          = "GLOBAL"
 	LoadBalancerTypeRegional        = "REGIONAL"
 	LoadBalancerTypeRegionalNetwork = "REGIONAL_NETWORK"
+
+	// Load Balancer network types
+	LoadBalancerNetworkTypeExternal = "EXTERNAL"
+	LoadBalancerNetworkTypeInternal = "INTERNAL"
 )
 
 // LoadBalancersService is an interface for managing load balancers with the DigitalOcean API.

@@ -552,7 +552,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 			FailoverThreshold: 10,
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
-		Network:               "INTERNAL",
+		Network:               LoadBalancerNetworkTypeInternal,
 	}
 
 	path := "/v2/load_balancers"
@@ -640,7 +640,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 			FailoverThreshold: 10,
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
-		Network:               "INTERNAL",
+		Network:               LoadBalancerNetworkTypeInternal,
 	}
 
 	disableLetsEncryptDNSRecords := true
