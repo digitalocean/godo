@@ -446,7 +446,7 @@ type AppLogDestinationSpecLogtail struct {
 
 // AppLogDestinationSpecOpenSearch OpenSearch configuration.
 type AppLogDestinationSpecOpenSearch struct {
-	// OpenSearch API Endpoint. Only HTTPS is supported. Format: <host>:<port>.
+	// OpenSearch API Endpoint. Only HTTPS is supported. Format: https://<host>:<port>.
 	Endpoint  string               `json:"endpoint"`
 	BasicAuth *OpenSearchBasicAuth `json:"basic_auth,omitempty"`
 	// The index name to use for the logs. If not set, the default index name is \"logs\".
