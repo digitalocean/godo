@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.117.0] - 2024-06-04
+
+- #697 - @asaha2 - Add support for lb internal network type
+
 ## [v1.116.0] - 2024-05-16
 
 - #693 - @guptado - Introduce VPC peering methods
