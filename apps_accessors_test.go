@@ -1217,6 +1217,13 @@ func TestAppLogDestinationSpecOpenSearch_GetBasicAuth(tt *testing.T) {
 	a.GetBasicAuth()
 }
 
+func TestAppLogDestinationSpecOpenSearch_GetClusterName(tt *testing.T) {
+	a := &AppLogDestinationSpecOpenSearch{}
+	a.GetClusterName()
+	a = nil
+	a.GetClusterName()
+}
+
 func TestAppLogDestinationSpecOpenSearch_GetEndpoint(tt *testing.T) {
 	a := &AppLogDestinationSpecOpenSearch{}
 	a.GetEndpoint()
