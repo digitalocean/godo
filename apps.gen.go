@@ -1158,7 +1158,8 @@ type AppInstanceSize struct {
 	// (Deprecated) The slug of the corresponding downgradable instance size on the lower tier.
 	TierDowngradeTo string `json:"tier_downgrade_to,omitempty"`
 	// Indicates if the tier instance size can enable autoscaling.
-	Scalable       bool `json:"scalable,omitempty"`
+	Scalable bool `json:"scalable,omitempty"`
+	// (Deprecated) Indicates if the tier instance size is in feature preview state.
 	FeaturePreview bool `json:"feature_preview,omitempty"`
 	// Indicates if the tier instance size allows more than one instance.
 	SingleInstanceOnly bool `json:"single_instance_only,omitempty"`
