@@ -1181,6 +1181,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 			ResponseTimeoutSeconds: 10,
 			HealthyThreshold:       3,
 			UnhealthyThreshold:     3,
+			ProxyProtocol:          PtrTo(true),
 		},
 		StickySessions: &StickySessions{
 			Type:             "cookies",
@@ -1242,6 +1243,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 			ResponseTimeoutSeconds: 10,
 			HealthyThreshold:       3,
 			UnhealthyThreshold:     3,
+			ProxyProtocol:          PtrTo(true),
 		},
 		StickySessions: &StickySessions{
 			Type:             "cookies",
