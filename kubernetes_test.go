@@ -851,7 +851,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			"start_time": "00:00",
 			"day": "monday"
 		},
-		"control_plane_permission": {
+		"control_plane_firewall": {
              "enabled": true,
              "allowed_addresses": [
                  "1.2.3.4/32"
@@ -860,7 +860,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_permission":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
