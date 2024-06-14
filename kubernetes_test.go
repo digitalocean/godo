@@ -569,7 +569,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			StartTime: "00:00",
 			Day:       KubernetesMaintenanceDayMonday,
 		},
-		ControlPlanePermission: &KubernetesControlPlanePermission{
+		ControlPlaneFirewall: &KubernetesControlPlaneFirewall{
 			Enabled: &enabled,
 			AllowedAddresses: []string{
 				"1.2.3.4/32",
@@ -633,7 +633,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			"start_time": "00:00",
 			"day": "monday"
 		},
-        "control_plane_permission": {
+        "control_plane_firewall": {
              "enabled": true,
              "allowed_addresses": [
                  "1.2.3.4/32"
@@ -797,7 +797,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			StartTime: "00:00",
 			Day:       KubernetesMaintenanceDayMonday,
 		},
-		ControlPlanePermission: &KubernetesControlPlanePermission{
+		ControlPlaneFirewall: &KubernetesControlPlaneFirewall{
 			Enabled: &enabled,
 			AllowedAddresses: []string{
 				"1.2.3.4/32",
@@ -809,7 +809,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		Tags:              want.Tags,
 		MaintenancePolicy: want.MaintenancePolicy,
 		SurgeUpgrade:      true,
-		ControlPlanePermission: &KubernetesControlPlanePermission{
+		ControlPlaneFirewall: &KubernetesControlPlaneFirewall{
 			Enabled: &enabled,
 			AllowedAddresses: []string{
 				"1.2.3.4/32",
