@@ -6,20 +6,18 @@ require (
 	github.com/google/go-querystring v1.1.0
 	github.com/hashicorp/go-retryablehttp v0.7.4
 	github.com/stretchr/testify v1.8.4
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/digitalocean/github-changelog-generator v0.0.1 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/go-github v17.0.0+incompatible // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/net v0.26.0 // indirect
-	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
+	golang.org/x/net v0.23.0 // indirect
+	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
