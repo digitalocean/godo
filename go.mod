@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/google/go-querystring v1.1.0
-	github.com/hashicorp/go-retryablehttp v0.7.4
+	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af
