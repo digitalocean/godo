@@ -193,7 +193,7 @@ type AppBuildConfigCNBVersioning struct {
 
 // AppDatabaseSpec struct for AppDatabaseSpec
 type AppDatabaseSpec struct {
-	// The name. Must be unique across all components within the same app.
+	// The database's name. The name must be unique across all components within the same app and cannot use capital letters.
 	Name    string                `json:"name"`
 	Engine  AppDatabaseSpecEngine `json:"engine,omitempty"`
 	Version string                `json:"version,omitempty"`
@@ -216,12 +216,13 @@ type AppDatabaseSpecEngine string
 
 // List of AppDatabaseSpecEngine
 const (
-	AppDatabaseSpecEngine_Unset   AppDatabaseSpecEngine = "UNSET"
-	AppDatabaseSpecEngine_MySQL   AppDatabaseSpecEngine = "MYSQL"
-	AppDatabaseSpecEngine_PG      AppDatabaseSpecEngine = "PG"
-	AppDatabaseSpecEngine_Redis   AppDatabaseSpecEngine = "REDIS"
-	AppDatabaseSpecEngine_MongoDB AppDatabaseSpecEngine = "MONGODB"
-	AppDatabaseSpecEngine_Kafka   AppDatabaseSpecEngine = "KAFKA"
+	AppDatabaseSpecEngine_Unset      AppDatabaseSpecEngine = "UNSET"
+	AppDatabaseSpecEngine_MySQL      AppDatabaseSpecEngine = "MYSQL"
+	AppDatabaseSpecEngine_PG         AppDatabaseSpecEngine = "PG"
+	AppDatabaseSpecEngine_Redis      AppDatabaseSpecEngine = "REDIS"
+	AppDatabaseSpecEngine_MongoDB    AppDatabaseSpecEngine = "MONGODB"
+	AppDatabaseSpecEngine_Kafka      AppDatabaseSpecEngine = "KAFKA"
+	AppDatabaseSpecEngine_Opensearch AppDatabaseSpecEngine = "OPENSEARCH"
 )
 
 // AppDedicatedIp Represents a dedicated egress ip.
