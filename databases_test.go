@@ -1568,6 +1568,7 @@ func TestDatabases_GetReplica(t *testing.T) {
 		PrivateNetworkUUID: "deadbeef-dead-4aa5-beef-deadbeef347d",
 		Tags:               []string{"production", "staging"},
 		StorageSizeMib:     51200,
+		Size:               "db-s-1vcpu-1gb",
 	}
 
 	body := `
@@ -1598,7 +1599,8 @@ func TestDatabases_GetReplica(t *testing.T) {
     },
     "private_network_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
 	"tags": ["production", "staging"],
-	"storage_size_mib": 51200
+	"storage_size_mib": 51200,
+	"size": "db-s-1vcpu-1gb"
   }
 }
 `
@@ -1649,6 +1651,7 @@ func TestDatabases_ListReplicas(t *testing.T) {
 			PrivateNetworkUUID: "deadbeef-dead-4aa5-beef-deadbeef347d",
 			Tags:               []string{"production", "staging"},
 			StorageSizeMib:     51200,
+			Size:               "db-s-1vcpu-1gb",
 		},
 	}
 
@@ -1679,7 +1682,8 @@ func TestDatabases_ListReplicas(t *testing.T) {
     },
     "private_network_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
 	"tags": ["production", "staging"],
-	"storage_size_mib": 51200
+	"storage_size_mib": 51200,
+	"size": "db-s-1vcpu-1gb"
   }]
 }
 `
@@ -1729,6 +1733,7 @@ func TestDatabases_CreateReplica(t *testing.T) {
 		PrivateNetworkUUID: "deadbeef-dead-4aa5-beef-deadbeef347d",
 		Tags:               []string{"production", "staging"},
 		StorageSizeMib:     51200,
+		Size:               "db-s-2vcpu-4gb",
 	}
 
 	body := `
@@ -1758,7 +1763,8 @@ func TestDatabases_CreateReplica(t *testing.T) {
     },
     "private_network_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
 	"tags": ["production", "staging"],
-	"storage_size_mib": 51200
+	"storage_size_mib": 51200,
+	"size": "db-s-2vcpu-4gb"
   }
 }
 `
