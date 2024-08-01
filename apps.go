@@ -43,9 +43,6 @@ type AppsService interface {
 
 	ListRegions(ctx context.Context) ([]*AppRegion, *Response, error)
 
-	ListTiers(ctx context.Context) ([]*AppTier, *Response, error)
-	GetTier(ctx context.Context, slug string) (*AppTier, *Response, error)
-
 	ListInstanceSizes(ctx context.Context) ([]*AppInstanceSize, *Response, error)
 	GetInstanceSize(ctx context.Context, slug string) (*AppInstanceSize, *Response, error)
 
@@ -379,36 +376,6 @@ func (s *AppsServiceOp) ListRegions(ctx context.Context) ([]*AppRegion, *Respons
 		return nil, resp, err
 	}
 	return root.Regions, resp, nil
-}
-
-// ListTiers lists available app tiers.
-func (s *AppsServiceOp) ListTiers(ctx context.Context) ([]*AppTier, *Response, error) {
-	path := fmt.Sprintf("%s/tiers", appsBasePath)
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	root := new(appTiersRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root.Tiers, resp, nil
-}
-
-// GetTier retrieves information about a specific app tier.
-func (s *AppsServiceOp) GetTier(ctx context.Context, slug string) (*AppTier, *Response, error) {
-	path := fmt.Sprintf("%s/tiers/%s", appsBasePath, slug)
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	root := new(appTierRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root.Tier, resp, nil
 }
 
 // ListInstanceSizes lists available instance sizes for service, worker, and job components.

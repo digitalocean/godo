@@ -577,40 +577,6 @@ func TestApps_ListRegions(t *testing.T) {
 	assert.Equal(t, []*AppRegion{&testAppRegion}, regions)
 }
 
-func TestApps_ListTiers(t *testing.T) {
-	setup()
-	defer teardown()
-
-	ctx := context.Background()
-
-	mux.HandleFunc("/v2/apps/tiers", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-
-		json.NewEncoder(w).Encode(&appTiersRoot{Tiers: []*AppTier{&testAppTier}})
-	})
-
-	tiers, _, err := client.Apps.ListTiers(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, []*AppTier{&testAppTier}, tiers)
-}
-
-func TestApps_GetTier(t *testing.T) {
-	setup()
-	defer teardown()
-
-	ctx := context.Background()
-
-	mux.HandleFunc(fmt.Sprintf("/v2/apps/tiers/%s", testAppTier.Slug), func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-
-		json.NewEncoder(w).Encode(&appTierRoot{Tier: &testAppTier})
-	})
-
-	tier, _, err := client.Apps.GetTier(ctx, testAppTier.Slug)
-	require.NoError(t, err)
-	assert.Equal(t, &testAppTier, tier)
-}
-
 func TestApps_ListInstanceSizes(t *testing.T) {
 	setup()
 	defer teardown()
