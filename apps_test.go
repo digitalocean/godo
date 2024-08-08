@@ -345,11 +345,12 @@ func TestApps_UpdateApp(t *testing.T) {
 		err := json.NewDecoder(r.Body).Decode(&req)
 		require.NoError(t, err)
 		assert.Equal(t, &updatedSpec, req.Spec)
+		assert.True(t, req.UpdateAllSourceVersions)
 
 		json.NewEncoder(w).Encode(&appRoot{App: &testApp})
 	})
 
-	app, _, err := client.Apps.Update(ctx, testApp.ID, &AppUpdateRequest{Spec: &updatedSpec})
+	app, _, err := client.Apps.Update(ctx, testApp.ID, &AppUpdateRequest{Spec: &updatedSpec, UpdateAllSourceVersions: true})
 	require.NoError(t, err)
 	assert.Equal(t, &testApp, app)
 }
