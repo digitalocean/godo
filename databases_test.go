@@ -3238,7 +3238,7 @@ func TestDatabases_CreateLogsink(t *testing.T) {
 		ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
 		Name: "logs-sink",
 		Type: "opensearch",
-		Config: &LogsinkConfig{
+		Config: &DatabaseLogsinkConfig{
 			URL:         "https://user:passwd@192.168.0.1:25060",
 			IndexPrefix: "opensearch-logs",
 		},
@@ -3264,7 +3264,7 @@ func TestDatabases_CreateLogsink(t *testing.T) {
 	log, _, err := client.Databases.CreateLogsink(ctx, dbID, &DatabaseCreateLogsinkRequest{
 		Name: "logs-sink",
 		Type: "opensearch",
-		Config: &LogsinkConfig{
+		Config: &DatabaseLogsinkConfig{
 			URL:         "https://user:passwd@192.168.0.1:25060",
 			IndexPrefix: "opensearch-logs",
 		},
@@ -3288,7 +3288,7 @@ func TestDatabases_GetLogsink(t *testing.T) {
 		ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
 		Name: "logs-sink",
 		Type: "opensearch",
-		Config: &LogsinkConfig{
+		Config: &DatabaseLogsinkConfig{
 			URL:         "https://user:passwd@192.168.0.1:25060",
 			IndexPrefix: "opensearch-logs",
 		},
@@ -3343,7 +3343,7 @@ func TestDatabases_UpdateLogsink(t *testing.T) {
 	})
 
 	_, err := client.Databases.UpdateLogsink(ctx, dbID, logsinkID, &DatabaseUpdateLogsinkRequest{
-		Config: &LogsinkConfig{
+		Config: &DatabaseLogsinkConfig{
 			Server: "192.168.0.1",
 			Port:   514,
 			TLS:    false,
@@ -3367,7 +3367,7 @@ func TestDatabases_ListLogsinks(t *testing.T) {
 			ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
 			Name: "logs-sink",
 			Type: "opensearch",
-			Config: &LogsinkConfig{
+			Config: &DatabaseLogsinkConfig{
 				URL:         "https://user:passwd@192.168.0.1:25060",
 				IndexPrefix: "opensearch-logs",
 			},
@@ -3376,7 +3376,7 @@ func TestDatabases_ListLogsinks(t *testing.T) {
 			ID:   "d6e95157-5f58-48d0-9023-8cfb409d102a",
 			Name: "logs-sink-2",
 			Type: "opensearch",
-			Config: &LogsinkConfig{
+			Config: &DatabaseLogsinkConfig{
 				URL:         "https://user:passwd@192.168.0.1:25060",
 				IndexPrefix: "opensearch-logs",
 			},
