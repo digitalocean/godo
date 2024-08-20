@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.121.0] - 2024-08-20
+
+- #712 - @danaelhe - Database: Namespace logsink
+- #711 - @danaelhe - Databases: Add Logsinks CRUD support
+
 ## [v1.120.0] - 2024-08-08
 
 - #708 - @markusthoemmes - APPS-9201 Add `UpdateAllSourceVersions` parameter to update app calls
