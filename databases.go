@@ -36,6 +36,8 @@ const (
 	databaseTopicsPath                  = databaseBasePath + "/%s/topics"
 	databaseMetricsCredentialsPath      = databaseBasePath + "/metrics/credentials"
 	databaseEvents                      = databaseBasePath + "/%s/events"
+	databaseLogsinkPath                 = databaseBasePath + "/%s/logsink/%s"
+	databaseLogsinksPath                = databaseBasePath + "/%s/logsink"
 )
 
 // SQL Mode constants allow for MySQL-specific SQL flavor configuration.
@@ -159,6 +161,11 @@ type DatabasesService interface {
 	GetMetricsCredentials(context.Context) (*DatabaseMetricsCredentials, *Response, error)
 	UpdateMetricsCredentials(context.Context, *DatabaseUpdateMetricsCredentialsRequest) (*Response, error)
 	ListDatabaseEvents(context.Context, string, *ListOptions) ([]DatabaseEvent, *Response, error)
+	CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error)
+	GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error)
+	ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseLogsink, *Response, error)
+	UpdateLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateLogsinkRequest) (*Response, error)
+	DeleteLogsink(ctx context.Context, databaseID, logsinkID string) (*Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -323,6 +330,14 @@ type DatabaseTopic struct {
 	Config            *TopicConfig      `json:"config,omitempty"`
 }
 
+// DatabaseLogsink represents a logsink
+type DatabaseLogsink struct {
+	ID     string         `json:"sink_id"`
+	Name   string         `json:"sink_name,omitempty"`
+	Type   string         `json:"sink_type,omitempty"`
+	Config *LogsinkConfig `json:"config,omitempty"`
+}
+
 // TopicPartition represents the state of a Kafka topic partition
 type TopicPartition struct {
 	EarliestOffset uint64                `json:"earliest_offset,omitempty"`
@@ -470,6 +485,35 @@ type DatabaseFirewallRule struct {
 	Type        string    `json:"type"`
 	Value       string    `json:"value"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+// DatabaseCreateLogsinkRequest is used to create logsink for a database cluster
+type DatabaseCreateLogsinkRequest struct {
+	Name   string         `json:"sink_name"`
+	Type   string         `json:"sink_type"`
+	Config *LogsinkConfig `json:"config"`
+}
+
+// DatabaseUpdateLogsinkRequest ...
+type DatabaseUpdateLogsinkRequest struct {
+	Config *LogsinkConfig `json:"config"`
+}
+
+// LogsinkConfig represents one of the configurable options (rsyslog_logsink, elasticsearch_logsink, or opensearch_logsink) for a logsink.
+type LogsinkConfig struct {
+	URL          string `json:"url,omitempty"`
+	IndexPrefix  string `json:"index_prefix,omitempty"`
+	IndexDaysMax string `json:"index_days_max,omitempty"`
+	Timeout      string `json:"timeout,omitempty"`
+	Server       string `json:"server,omitempty"`
+	Port         int    `json:"port,omitempty"`
+	TLS          bool   `json:"tls,omitempty"`
+	Format       string `json:"format,omitempty"`
+	Logline      string `json:"logline,omitempty"`
+	SD           string `json:"sd,omitempty"`
+	CA           string `json:"ca,omitempty"`
+	Key          string `json:"key,omitempty"`
+	Cert         string `json:"cert,omitempty"`
 }
 
 // PostgreSQLConfig holds advanced configurations for PostgreSQL database clusters.
@@ -678,6 +722,10 @@ type databaseTopicRoot struct {
 
 type databaseTopicsRoot struct {
 	Topics []DatabaseTopic `json:"topics"`
+}
+
+type databaseLogsinksRoot struct {
+	Sinks []DatabaseLogsink `json:"sinks"`
 }
 
 type databaseMetricsCredentialsRoot struct {
@@ -1559,4 +1607,84 @@ func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseI
 	}
 
 	return root.Events, resp, nil
+}
+
+// CreateLogsink creates a new logsink for a database
+func (svc *DatabasesServiceOp) CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error) {
+	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
+	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createLogsink)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(DatabaseLogsink)
+	resp, err := svc.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// GetLogsink gets a logsink for a database
+func (svc *DatabasesServiceOp) GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error) {
+	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
+	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(DatabaseLogsink)
+	resp, err := svc.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// ListTopics returns all topics for a given kafka cluster
+func (svc *DatabasesServiceOp) ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseLogsink, *Response, error) {
+	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
+	path, err := addOptions(path, opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(databaseLogsinksRoot)
+	resp, err := svc.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Sinks, resp, nil
+}
+
+// UpdateLogsink updates a logsink for a database cluster
+func (svc *DatabasesServiceOp) UpdateLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateLogsinkRequest) (*Response, error) {
+	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
+	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateLogsink)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := svc.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// DeleteLogsink deletes a logsink for a database cluster
+func (svc *DatabasesServiceOp) DeleteLogsink(ctx context.Context, databaseID, logsinkID string) (*Response, error) {
+	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
+	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
 }
