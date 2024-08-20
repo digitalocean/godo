@@ -332,10 +332,10 @@ type DatabaseTopic struct {
 
 // DatabaseLogsink represents a logsink
 type DatabaseLogsink struct {
-	ID     string         `json:"sink_id"`
-	Name   string         `json:"sink_name,omitempty"`
-	Type   string         `json:"sink_type,omitempty"`
-	Config *LogsinkConfig `json:"config,omitempty"`
+	ID     string                 `json:"sink_id"`
+	Name   string                 `json:"sink_name,omitempty"`
+	Type   string                 `json:"sink_type,omitempty"`
+	Config *DatabaseLogsinkConfig `json:"config,omitempty"`
 }
 
 // TopicPartition represents the state of a Kafka topic partition
@@ -489,18 +489,18 @@ type DatabaseFirewallRule struct {
 
 // DatabaseCreateLogsinkRequest is used to create logsink for a database cluster
 type DatabaseCreateLogsinkRequest struct {
-	Name   string         `json:"sink_name"`
-	Type   string         `json:"sink_type"`
-	Config *LogsinkConfig `json:"config"`
+	Name   string                 `json:"sink_name"`
+	Type   string                 `json:"sink_type"`
+	Config *DatabaseLogsinkConfig `json:"config"`
 }
 
 // DatabaseUpdateLogsinkRequest ...
 type DatabaseUpdateLogsinkRequest struct {
-	Config *LogsinkConfig `json:"config"`
+	Config *DatabaseLogsinkConfig `json:"config"`
 }
 
-// LogsinkConfig represents one of the configurable options (rsyslog_logsink, elasticsearch_logsink, or opensearch_logsink) for a logsink.
-type LogsinkConfig struct {
+// DatabaseLogsinkConfig represents one of the configurable options (rsyslog_logsink, elasticsearch_logsink, or opensearch_logsink) for a logsink.
+type DatabaseLogsinkConfig struct {
 	URL          string `json:"url,omitempty"`
 	IndexPrefix  string `json:"index_prefix,omitempty"`
 	IndexDaysMax string `json:"index_days_max,omitempty"`
