@@ -2,6 +2,7 @@
 
 ## [v1.121.0] - 2024-08-20
 
+- #710 - @bhardwajRahul - Update GODO to include new Openseach index crud changes
 - #712 - @danaelhe - Database: Namespace logsink
 - #711 - @danaelhe - Databases: Add Logsinks CRUD support
 
