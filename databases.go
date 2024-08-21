@@ -36,8 +36,8 @@ const (
 	databaseTopicsPath                  = databaseBasePath + "/%s/topics"
 	databaseMetricsCredentialsPath      = databaseBasePath + "/metrics/credentials"
 	databaseEvents                      = databaseBasePath + "/%s/events"
-	databaseLogsinkPath                 = databaseBasePath + "/%s/logsink/%s"
-	databaseLogsinksPath                = databaseBasePath + "/%s/logsink"
+	databaseIndexesPath                 = databaseBasePath + "/%s/indexes"
+	databaseIndexPath                   = databaseBasePath + "/%s/indexes/%s"
 )
 
 // SQL Mode constants allow for MySQL-specific SQL flavor configuration.
@@ -161,11 +161,8 @@ type DatabasesService interface {
 	GetMetricsCredentials(context.Context) (*DatabaseMetricsCredentials, *Response, error)
 	UpdateMetricsCredentials(context.Context, *DatabaseUpdateMetricsCredentialsRequest) (*Response, error)
 	ListDatabaseEvents(context.Context, string, *ListOptions) ([]DatabaseEvent, *Response, error)
-	CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error)
-	GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error)
-	ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseLogsink, *Response, error)
-	UpdateLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateLogsinkRequest) (*Response, error)
-	DeleteLogsink(ctx context.Context, databaseID, logsinkID string) (*Response, error)
+	ListIndexes(context.Context, string, *ListOptions) ([]DatabaseIndex, *Response, error)
+	DeleteIndex(context.Context, string, string) (*Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -779,6 +776,28 @@ type DatabaseEvent struct {
 
 type ListDatabaseEventsRoot struct {
 	Events []DatabaseEvent `json:"events"`
+}
+
+type DatabaseIndex struct {
+	IndexName        string            `json:"index_name"`
+	NumberofShards   uint64            `json:"number_of_shards"`
+	NumberofReplicas uint64            `json:"number_of_replicas"`
+	Size             int64             `json:"size,omitempty"`
+	Health           string            `json:"health,omitempty"`
+	Status           string            `json:"status,omitempty"`
+	Docs             int64             `json:"docs,omitempty"`
+	CreateTime       string            `json:"create_time"`
+	Replication      *IndexReplication `json:"replication,omitempty"`
+}
+
+type IndexReplication struct {
+	LeaderIndex   string `json:"leader_index,omitempty"`
+	LeaderProject string `json:"leader_project,omitempty"`
+	LeaderService string `json:"leader_service,omitempty"`
+}
+
+type databaseIndexesRoot struct {
+	Indexes []DatabaseIndex `json:"indexes"`
 }
 
 // URN returns a URN identifier for the database
@@ -1609,41 +1628,9 @@ func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseI
 	return root.Events, resp, nil
 }
 
-// CreateLogsink creates a new logsink for a database
-func (svc *DatabasesServiceOp) CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
-	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createLogsink)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(DatabaseLogsink)
-	resp, err := svc.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root, resp, nil
-}
-
-// GetLogsink gets a logsink for a database
-func (svc *DatabasesServiceOp) GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
-	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(DatabaseLogsink)
-	resp, err := svc.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root, resp, nil
-}
-
-// ListTopics returns all topics for a given kafka cluster
-func (svc *DatabasesServiceOp) ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
+// ListIndexes returns all indexes for a given opensearch cluster
+func (svc *DatabasesServiceOp) ListIndexes(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseIndex, *Response, error) {
+	path := fmt.Sprintf(databaseIndexesPath, databaseID)
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -1652,32 +1639,17 @@ func (svc *DatabasesServiceOp) ListLogsinks(ctx context.Context, databaseID stri
 	if err != nil {
 		return nil, nil, err
 	}
-	root := new(databaseLogsinksRoot)
+	root := new(databaseIndexesRoot)
 	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
-	return root.Sinks, resp, nil
+	return root.Indexes, resp, nil
 }
 
-// UpdateLogsink updates a logsink for a database cluster
-func (svc *DatabasesServiceOp) UpdateLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateLogsinkRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
-	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateLogsink)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := svc.client.Do(ctx, req, nil)
-	if err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
-// DeleteLogsink deletes a logsink for a database cluster
-func (svc *DatabasesServiceOp) DeleteLogsink(ctx context.Context, databaseID, logsinkID string) (*Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
+// DeleteIndex will delete an existing opensearch index
+func (svc *DatabasesServiceOp) DeleteIndex(ctx context.Context, databaseID, name string) (*Response, error) {
+	path := fmt.Sprintf(databaseIndexPath, databaseID, name)
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
