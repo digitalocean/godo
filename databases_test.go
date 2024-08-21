@@ -3226,84 +3226,212 @@ func TestDatabases_ListDatabaseEvents(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestDatabases_ListIndexes(t *testing.T) {
+func TestDatabases_CreateLogsink(t *testing.T) {
 	setup()
 	defer teardown()
 
-	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	var (
+		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
+	)
 
-	path := fmt.Sprintf("/v2/databases/%s/indexes", dbID)
-
-	want := []DatabaseIndex{
-		{
-			IndexName:        "sample_index",
-			NumberofShards:   uint64(1),
-			NumberofReplicas: uint64(0),
-			CreateTime:       "2020-10-29T15:57:38Z",
-			Health:           "green",
-			Size:             int64(5314),
-			Status:           "open",
-			Docs:             int64(64811),
-		},
-		{
-			IndexName:        "sample_index_2",
-			NumberofShards:   uint64(1),
-			NumberofReplicas: uint64(0),
-			CreateTime:       "2020-10-30T15:57:38Z",
-			Health:           "red",
-			Size:             int64(6105247),
-			Status:           "close",
-			Docs:             int64(64801),
+	want := &DatabaseLogsink{
+		ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
+		Name: "logs-sink",
+		Type: "opensearch",
+		Config: &DatabaseLogsinkConfig{
+			URL:         "https://user:passwd@192.168.0.1:25060",
+			IndexPrefix: "opensearch-logs",
 		},
 	}
 
 	body := `{
-		"indexes": [
-			{
-            "create_time": "2020-10-29T15:57:38Z",
-            "docs": 64811,
-            "health": "green",
-            "index_name": "sample_index",
-            "number_of_replica": 0,
-            "number_of_shards": 1,
-            "size": 5314,
-            "status": "open"
-        },
-        {
-            "create_time": "2020-10-30T15:57:38Z",
-            "docs": 64801,
-            "health": "red",
-            "index_name": "sample_index_2",
-            "number_of_replica": 0,
-            "number_of_shards": 1,
-            "size": 6105247,
-            "status": "close"
-        }]
-	  } `
+        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+        "sink_name": "logs-sink",
+        "sink_type": "opensearch",
+        "config": {
+          "url": "https://user:passwd@192.168.0.1:25060",
+          "index_prefix": "opensearch-logs"
+        }
+      }`
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, body)
+	})
+
+	log, _, err := client.Databases.CreateLogsink(ctx, dbID, &DatabaseCreateLogsinkRequest{
+		Name: "logs-sink",
+		Type: "opensearch",
+		Config: &DatabaseLogsinkConfig{
+			URL:         "https://user:passwd@192.168.0.1:25060",
+			IndexPrefix: "opensearch-logs",
+		},
+	})
+
+	require.NoError(t, err)
+
+	require.Equal(t, want, log)
+}
+
+func TestDatabases_GetLogsink(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		logsinkID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
+
+	want := &DatabaseLogsink{
+		ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
+		Name: "logs-sink",
+		Type: "opensearch",
+		Config: &DatabaseLogsinkConfig{
+			URL:         "https://user:passwd@192.168.0.1:25060",
+			IndexPrefix: "opensearch-logs",
+		},
+	}
+
+	body := `{
+        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+        "sink_name": "logs-sink",
+        "sink_type": "opensearch",
+        "config": {
+          "url": "https://user:passwd@192.168.0.1:25060",
+          "index_prefix": "opensearch-logs"
+        }
+      }`
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, body)
 	})
 
-	got, _, err := client.Databases.ListIndexes(ctx, dbID, &ListOptions{})
+	got, _, err := client.Databases.GetLogsink(ctx, dbID, logsinkID)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
 
-func TestDatabases_DeleteIndexes(t *testing.T) {
+func TestDatabases_UpdateLogsink(t *testing.T) {
 	setup()
 	defer teardown()
 
-	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
-	indexName := "sample_index"
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		logsinkID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
 
-	path := fmt.Sprintf("/v2/databases/%s/indexes/%s", dbID, indexName)
+	body := `{
+        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+        "sink_name": "logs-sink",
+        "sink_type": "opensearch",
+        "config": {
+          "url": "https://user:passwd@192.168.0.1:25060",
+          "index_prefix": "opensearch-logs"
+        }
+      }`
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	_, err := client.Databases.UpdateLogsink(ctx, dbID, logsinkID, &DatabaseUpdateLogsinkRequest{
+		Config: &DatabaseLogsinkConfig{
+			Server: "192.168.0.1",
+			Port:   514,
+			TLS:    false,
+			Format: "rfc3164",
+		},
+	})
+
+	require.NoError(t, err)
+}
+
+func TestDatabases_ListLogsinks(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
+	)
+
+	want := []DatabaseLogsink{
+		{
+			ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
+			Name: "logs-sink",
+			Type: "opensearch",
+			Config: &DatabaseLogsinkConfig{
+				URL:         "https://user:passwd@192.168.0.1:25060",
+				IndexPrefix: "opensearch-logs",
+			},
+		},
+		{
+			ID:   "d6e95157-5f58-48d0-9023-8cfb409d102a",
+			Name: "logs-sink-2",
+			Type: "opensearch",
+			Config: &DatabaseLogsinkConfig{
+				URL:         "https://user:passwd@192.168.0.1:25060",
+				IndexPrefix: "opensearch-logs",
+			},
+		}}
+
+	body := `{
+		"sinks": [
+		  {
+			"sink_id": "deadbeef-dead-4aa5-beef-deadbeef347d",
+			"sink_name": "logs-sink",
+			"sink_type": "opensearch",
+			"config": {
+			  "url": "https://user:passwd@192.168.0.1:25060",
+			  "index_prefix": "opensearch-logs"
+			}
+		  },
+		  {
+			"sink_id": "d6e95157-5f58-48d0-9023-8cfb409d102a",
+			"sink_name": "logs-sink-2",
+			"sink_type": "opensearch",
+			"config": {
+				"url": "https://user:passwd@192.168.0.1:25060",
+				"index_prefix": "opensearch-logs"
+			}
+		  }
+		]
+	  }`
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.ListLogsinks(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_DeleteLogsink(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		logsinkID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 	})
 
-	_, err := client.Databases.DeleteIndex(ctx, dbID, indexName)
+	_, err := client.Databases.DeleteLogsink(ctx, dbID, logsinkID)
 	require.NoError(t, err)
 }
