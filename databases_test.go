@@ -3226,6 +3226,88 @@ func TestDatabases_ListDatabaseEvents(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestDatabases_ListIndexes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/indexes", dbID)
+
+	want := []DatabaseIndex{
+		{
+			IndexName:        "sample_index",
+			NumberofShards:   uint64(1),
+			NumberofReplicas: uint64(0),
+			CreateTime:       "2020-10-29T15:57:38Z",
+			Health:           "green",
+			Size:             int64(5314),
+			Status:           "open",
+			Docs:             int64(64811),
+		},
+		{
+			IndexName:        "sample_index_2",
+			NumberofShards:   uint64(1),
+			NumberofReplicas: uint64(0),
+			CreateTime:       "2020-10-30T15:57:38Z",
+			Health:           "red",
+			Size:             int64(6105247),
+			Status:           "close",
+			Docs:             int64(64801),
+		},
+	}
+
+	body := `{
+		"indexes": [
+			{
+            "create_time": "2020-10-29T15:57:38Z",
+            "docs": 64811,
+            "health": "green",
+            "index_name": "sample_index",
+            "number_of_replica": 0,
+            "number_of_shards": 1,
+            "size": 5314,
+            "status": "open"
+        },
+        {
+            "create_time": "2020-10-30T15:57:38Z",
+            "docs": 64801,
+            "health": "red",
+            "index_name": "sample_index_2",
+            "number_of_replica": 0,
+            "number_of_shards": 1,
+            "size": 6105247,
+            "status": "close"
+        }]
+	  } `
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.ListIndexes(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_DeleteIndexes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	indexName := "sample_index"
+
+	path := fmt.Sprintf("/v2/databases/%s/indexes/%s", dbID, indexName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Databases.DeleteIndex(ctx, dbID, indexName)
+	require.NoError(t, err)
+}
+
 func TestDatabases_CreateLogsink(t *testing.T) {
 	setup()
 	defer teardown()

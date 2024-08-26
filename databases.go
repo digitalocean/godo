@@ -36,6 +36,8 @@ const (
 	databaseTopicsPath                  = databaseBasePath + "/%s/topics"
 	databaseMetricsCredentialsPath      = databaseBasePath + "/metrics/credentials"
 	databaseEvents                      = databaseBasePath + "/%s/events"
+	databaseIndexesPath                 = databaseBasePath + "/%s/indexes"
+	databaseIndexPath                   = databaseBasePath + "/%s/indexes/%s"
 	databaseLogsinkPath                 = databaseBasePath + "/%s/logsink/%s"
 	databaseLogsinksPath                = databaseBasePath + "/%s/logsink"
 )
@@ -161,6 +163,8 @@ type DatabasesService interface {
 	GetMetricsCredentials(context.Context) (*DatabaseMetricsCredentials, *Response, error)
 	UpdateMetricsCredentials(context.Context, *DatabaseUpdateMetricsCredentialsRequest) (*Response, error)
 	ListDatabaseEvents(context.Context, string, *ListOptions) ([]DatabaseEvent, *Response, error)
+	ListIndexes(context.Context, string, *ListOptions) ([]DatabaseIndex, *Response, error)
+	DeleteIndex(context.Context, string, string) (*Response, error)
 	CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error)
 	GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error)
 	ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseLogsink, *Response, error)
@@ -494,7 +498,7 @@ type DatabaseCreateLogsinkRequest struct {
 	Config *DatabaseLogsinkConfig `json:"config"`
 }
 
-// DatabaseUpdateLogsinkRequest ...
+// DatabaseUpdateLogsinkRequest is used to update logsink for a database cluster
 type DatabaseUpdateLogsinkRequest struct {
 	Config *DatabaseLogsinkConfig `json:"config"`
 }
@@ -779,6 +783,28 @@ type DatabaseEvent struct {
 
 type ListDatabaseEventsRoot struct {
 	Events []DatabaseEvent `json:"events"`
+}
+
+type DatabaseIndex struct {
+	IndexName        string            `json:"index_name"`
+	NumberofShards   uint64            `json:"number_of_shards"`
+	NumberofReplicas uint64            `json:"number_of_replicas"`
+	Size             int64             `json:"size,omitempty"`
+	Health           string            `json:"health,omitempty"`
+	Status           string            `json:"status,omitempty"`
+	Docs             int64             `json:"docs,omitempty"`
+	CreateTime       string            `json:"create_time"`
+	Replication      *IndexReplication `json:"replication,omitempty"`
+}
+
+type IndexReplication struct {
+	LeaderIndex   string `json:"leader_index,omitempty"`
+	LeaderProject string `json:"leader_project,omitempty"`
+	LeaderService string `json:"leader_service,omitempty"`
+}
+
+type databaseIndexesRoot struct {
+	Indexes []DatabaseIndex `json:"indexes"`
 }
 
 // URN returns a URN identifier for the database
@@ -1607,6 +1633,39 @@ func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseI
 	}
 
 	return root.Events, resp, nil
+}
+
+// ListIndexes returns all indexes for a given opensearch cluster
+func (svc *DatabasesServiceOp) ListIndexes(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseIndex, *Response, error) {
+	path := fmt.Sprintf(databaseIndexesPath, databaseID)
+	path, err := addOptions(path, opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(databaseIndexesRoot)
+	resp, err := svc.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Indexes, resp, nil
+}
+
+// DeleteIndex will delete an existing opensearch index
+func (svc *DatabasesServiceOp) DeleteIndex(ctx context.Context, databaseID, name string) (*Response, error) {
+	path := fmt.Sprintf(databaseIndexPath, databaseID, name)
+	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
 }
 
 // CreateLogsink creates a new logsink for a database
