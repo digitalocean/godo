@@ -252,9 +252,16 @@ type KafkaACL struct {
 	Topic      string `json:"topic,omitempty"`
 }
 
-// DatabaseUserSettings contains Kafka-specific user settings
+// OpenSearchACL contains OpenSearch specific user access control information
+type OpenSearchACL struct {
+	Permission string `json:"permission,omitempty"`
+	Index      string `json:"index,omitempty"`
+}
+
+// DatabaseUserSettings contains user settings
 type DatabaseUserSettings struct {
-	ACL []*KafkaACL `json:"acl,omitempty"`
+	ACL           []*KafkaACL      `json:"acl,omitempty"`
+	OpenSearchACL []*OpenSearchACL `json:"opensearch_acl,omitempty"`
 }
 
 // DatabaseMySQLUserSettings contains MySQL-specific user settings

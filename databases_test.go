@@ -958,6 +958,61 @@ func TestDatabases_UpdateUser(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestDatabases_UpdateUser_OpenSearchACL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	userID := "test-user"
+
+	want := &DatabaseUser{
+		Name: userID,
+		Settings: &DatabaseUserSettings{
+			OpenSearchACL: []*OpenSearchACL{
+				{
+					Index:      "sample-index",
+					Permission: "read",
+				},
+			},
+		},
+	}
+
+	body := `
+{
+  "user": {
+	"name": "test-user",
+	"settings": {
+		"opensearch_acl": [
+			{
+				"permission": "read",
+				"index": "sample-index"
+			}
+		]
+	}
+  }
+}
+`
+	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.UpdateUser(ctx, dbID, userID, &DatabaseUpdateUserRequest{
+		Settings: &DatabaseUserSettings{
+			OpenSearchACL: []*OpenSearchACL{
+				{
+					Index:      "sample-index",
+					Permission: "read",
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
 func TestDatabases_DeleteUser(t *testing.T) {
 	setup()
 	defer teardown()
@@ -2360,6 +2415,55 @@ func TestDatabases_CreateDatabaseUserWithKafkaSettings(t *testing.T) {
 	require.Equal(t, expectedUser, user)
 }
 
+func TestDatabases_CreateDatabaseUserWithOpenSearchSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeIndexACL := []*OpenSearchACL{
+		{
+			Index:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeIndexACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"opensearch_acl": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			OpenSearchACL: writeIndexACL,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.CreateUser(ctx, dbID, &DatabaseCreateUserRequest{
+		Name:     expectedUser.Name,
+		Settings: &DatabaseUserSettings{OpenSearchACL: expectedUser.Settings.OpenSearchACL},
+	})
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
+}
+
 func TestDatabases_ListDatabaseUsersWithKafkaSettings(t *testing.T) {
 	setup()
 	defer teardown()
@@ -2410,6 +2514,105 @@ func TestDatabases_ListDatabaseUsersWithKafkaSettings(t *testing.T) {
 	users, _, err := client.Databases.ListUsers(ctx, dbID, &ListOptions{})
 	require.NoError(t, err)
 	require.Equal(t, expectedUsers, users)
+}
+
+func TestDatabases_ListDatabaseUsersWithOpenSearchSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeIndexACL := []*OpenSearchACL{
+		{
+			Index:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeIndexACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"users": [
+			{
+				"name": "foo",
+				"settings": {
+					"opensearch_acl": %s
+				}
+			}
+		]
+	}`, string(acljson)))
+
+	expectedUsers := []DatabaseUser{
+		{
+			Name: "foo",
+			Settings: &DatabaseUserSettings{
+				OpenSearchACL: writeIndexACL,
+			},
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	users, _, err := client.Databases.ListUsers(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, expectedUsers, users)
+}
+
+func TestDatabases_GetDatabaseUserWithOpenSearchSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	userID := "d290a0a0-27da-42bd-a4b2-bcecf43b8832"
+
+	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
+
+	writeIndexACL := []*OpenSearchACL{
+		{
+			Index:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeIndexACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"opensearch_acl": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			OpenSearchACL: writeIndexACL,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.GetUser(ctx, dbID, userID)
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
 }
 
 func TestDatabases_GetDatabaseUserWithKafkaSettings(t *testing.T) {
