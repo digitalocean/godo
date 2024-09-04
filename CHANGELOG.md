@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.122.0] - 2024-09-04
+
+- #717 - @danaelhe - DB: Fix Logsink Attribute Types
+- #716 - @bhardwajRahul - Databases: Add support for OpenSearch ACL
+
 ## [v1.121.0] - 2024-08-20
 
 - #715 - @danaelhe - Databases: Bring back Logsink Support
