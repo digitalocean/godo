@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.123.0] - 2024-09-06
+
+- #719 - @andrewsomething - apps: mark ListTiers and GetTier as deprecated
+
 ## [v1.122.0] - 2024-09-04
 
 - #717 - @danaelhe - DB: Fix Logsink Attribute Types
