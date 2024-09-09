@@ -16,7 +16,7 @@ const (
 	databaseResizePath                  = databaseBasePath + "/%s/resize"
 	databaseMigratePath                 = databaseBasePath + "/%s/migrate"
 	databaseMaintenancePath             = databaseBasePath + "/%s/maintenance"
-	databaseUpdateInstalltionPath       = databaseBasePath + "/%s/install_update"
+	databaseUpdateInstallationPath      = databaseBasePath + "/%s/install_update"
 	databaseBackupsPath                 = databaseBasePath + "/%s/backups"
 	databaseUsersPath                   = databaseBasePath + "/%s/users"
 	databaseUserPath                    = databaseBasePath + "/%s/users/%s"
@@ -944,7 +944,7 @@ func (svc *DatabasesServiceOp) UpdateMaintenance(ctx context.Context, databaseID
 
 // InstallUpdate starts installation of updates
 func (svc *DatabasesServiceOp) InstallUpdate(ctx context.Context, databaseID string) (*Response, error) {
-	path := fmt.Sprintf(databaseUpdateInstalltionPath, databaseID)
+	path := fmt.Sprintf(databaseUpdateInstallationPath, databaseID)
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, nil)
 	if err != nil {
 		return nil, err
