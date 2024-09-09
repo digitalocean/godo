@@ -753,7 +753,7 @@ func TestDatabases_InstallUpdate(t *testing.T) {
 
 	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
 
-	path := fmt.Sprintf("/v2/databases/%s/maintenance", dbID)
+	path := fmt.Sprintf("/v2/databases/%s/install_update", dbID)
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPut)
