@@ -747,6 +747,22 @@ func TestDatabases_UpdateMaintenance(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_InstallUpdate(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/maintenance", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+	})
+
+	_, err := client.Databases.InstallUpdate(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
+	require.NoError(t, err)
+}
+
 func TestDatabases_ListBackups(t *testing.T) {
 	setup()
 	defer teardown()
