@@ -412,7 +412,7 @@ func TestRepository_ListTags(t *testing.T) {
 	}
 }`
 
-	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/tags", testRegistry, testRepository), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/tags", testRegistry, testEncodedRepository), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		testFormValues(t, r, map[string]string{"page": "1", "per_page": "1"})
 		fmt.Fprint(w, getResponseJSON)
@@ -441,7 +441,7 @@ func TestRegistry_DeleteTag(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/tags/%s", testRegistry, testRepository, testTag), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/tags/%s", testRegistry, testEncodedRepository, testTag), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 	})
 
@@ -510,7 +510,7 @@ func TestRegistry_ListManifests(t *testing.T) {
 	}
 }`
 
-	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/digests", testRegistry, testRepository), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/digests", testRegistry, testEncodedRepository), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		testFormValues(t, r, map[string]string{"page": "3", "per_page": "1"})
 		fmt.Fprint(w, getResponseJSON)
@@ -541,7 +541,7 @@ func TestRegistry_DeleteManifest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/digests/%s", testRegistry, testRepository, testDigest), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/registry/%s/repositories/%s/digests/%s", testRegistry, testEncodedRepository, testDigest), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 	})
 
