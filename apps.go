@@ -43,9 +43,6 @@ type AppsService interface {
 
 	ListRegions(ctx context.Context) ([]*AppRegion, *Response, error)
 
-	ListTiers(ctx context.Context) ([]*AppTier, *Response, error)
-	GetTier(ctx context.Context, slug string) (*AppTier, *Response, error)
-
 	ListInstanceSizes(ctx context.Context) ([]*AppInstanceSize, *Response, error)
 	GetInstanceSize(ctx context.Context, slug string) (*AppInstanceSize, *Response, error)
 
@@ -129,14 +126,6 @@ type deploymentsRoot struct {
 	Deployments []*Deployment `json:"deployments"`
 	Links       *Links        `json:"links"`
 	Meta        *Meta         `json:"meta"`
-}
-
-type appTierRoot struct {
-	Tier *AppTier `json:"tier"`
-}
-
-type appTiersRoot struct {
-	Tiers []*AppTier `json:"tiers"`
 }
 
 type instanceSizeRoot struct {
@@ -381,42 +370,6 @@ func (s *AppsServiceOp) ListRegions(ctx context.Context) ([]*AppRegion, *Respons
 		return nil, resp, err
 	}
 	return root.Regions, resp, nil
-}
-
-// ListTiers lists available app tiers.
-//
-// Deprecated: The '/v2/apps/tiers' endpoint has been deprecated as app tiers
-// are no longer tied to instance sizes. The concept of tiers is being retired.
-func (s *AppsServiceOp) ListTiers(ctx context.Context) ([]*AppTier, *Response, error) {
-	path := fmt.Sprintf("%s/tiers", appsBasePath)
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	root := new(appTiersRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root.Tiers, resp, nil
-}
-
-// GetTier retrieves information about a specific app tier.
-//
-// Deprecated: The '/v2/apps/tiers/{slug}' endpoints have been deprecated as app
-// tiers are no longer tied to instance sizes. The concept of tiers is being retired.
-func (s *AppsServiceOp) GetTier(ctx context.Context, slug string) (*AppTier, *Response, error) {
-	path := fmt.Sprintf("%s/tiers/%s", appsBasePath, slug)
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	root := new(appTierRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root.Tier, resp, nil
 }
 
 // ListInstanceSizes lists available instance sizes for service, worker, and job components.
