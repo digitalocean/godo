@@ -2991,6 +2991,79 @@ func TestDatabases_UpdateConfigMySQL(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetConfigMongoDB(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		mongoDBConfigJSON = `{
+  "config": {
+    "default_read_concern": "LOCAL",
+    "default_write_concern": "majority",
+    "transaction_lifetime_limit_seconds": 60,
+    "slow_op_threshold_ms": 100,
+    "verbosity": 0
+  }
+}
+`
+
+		mongoDBConfig = MongoDBConfig{
+			DefaultReadConcern:              PtrTo("LOCAL"),
+			DefaultWriteConcern:             PtrTo("majority"),
+			TransactionLifetimeLimitSeconds: PtrTo(60),
+			SlowOpThresholdMs:               PtrTo(100),
+			Verbosity:                       PtrTo(0),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, mongoDBConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetMongoDBConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &mongoDBConfig, got)
+}
+
+func TestDatabases_UpdateConfigMongoDB(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID          = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path          = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		mongoDBConfig = &MongoDBConfig{
+			DefaultReadConcern:  PtrTo("AVAILABLE"),
+			DefaultWriteConcern: PtrTo(""),
+			SlowOpThresholdMs:   PtrTo(0),
+			Verbosity:           PtrTo(5),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseMongoDBConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, mongoDBConfig)
+		assert.Equal(t, "", *b.Config.DefaultWriteConcern, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.TransactionLifetimeLimitSeconds, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateMongoDBConfig(ctx, dbID, mongoDBConfig)
+	require.NoError(t, err)
+}
+
 func TestDatabases_UpgradeMajorVersion(t *testing.T) {
 	setup()
 	defer teardown()
