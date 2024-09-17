@@ -3,6 +3,7 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"testing"
 	"time"
@@ -3085,7 +3086,7 @@ func TestDatabases_GetConfigKafka(t *testing.T) {
     "log_message_downconversion_enable": true,
     "log_message_timestamp_difference_max_ms": 120000,
     "log_preallocate": false,
-    "log_retention_bytes": 1,
+    "log_retention_bytes": -1,
     "log_retention_hours": 168,
     "log_retention_ms": 604800000,
     "log_roll_jitter_ms": 0,
@@ -3099,17 +3100,17 @@ func TestDatabases_GetConfigKafka(t *testing.T) {
 			GroupMinSessionTimeoutMs:           PtrTo(6000),
 			GroupMaxSessionTimeoutMs:           PtrTo(1800000),
 			MessageMaxBytes:                    PtrTo(1048588),
-			LogCleanerDeleteRetentionMs:        PtrTo(86400000),
-			LogCleanerMinCompactionLagMs:       PtrTo(0),
-			LogFlushIntervalMs:                 PtrTo(60000),
+			LogCleanerDeleteRetentionMs:        PtrTo(int64(86400000)),
+			LogCleanerMinCompactionLagMs:       PtrTo(uint64(0)),
+			LogFlushIntervalMs:                 PtrTo(uint64(60000)),
 			LogIndexIntervalBytes:              PtrTo(4096),
 			LogMessageDownconversionEnable:     PtrTo(true),
-			LogMessageTimestampDifferenceMaxMs: PtrTo(120000),
+			LogMessageTimestampDifferenceMaxMs: PtrTo(uint64(120000)),
 			LogPreallocate:                     PtrTo(false),
-			LogRetentionBytes:                  PtrTo(1),
+			LogRetentionBytes:                  big.NewInt(int64(-1)),
 			LogRetentionHours:                  PtrTo(168),
-			LogRetentionMs:                     PtrTo(604800000),
-			LogRollJitterMs:                    PtrTo(0),
+			LogRetentionMs:                     big.NewInt(int64(604800000)),
+			LogRollJitterMs:                    PtrTo(uint64(0)),
 			LogSegmentDeleteDelayMs:            PtrTo(60000),
 			AutoCreateTopicsEnable:             PtrTo(true),
 		}
@@ -3137,8 +3138,8 @@ func TestDatabases_UpdateConfigKafka(t *testing.T) {
 			GroupMinSessionTimeoutMs:     PtrTo(6000),
 			GroupMaxSessionTimeoutMs:     PtrTo(1800000),
 			MessageMaxBytes:              PtrTo(1048588),
-			LogCleanerDeleteRetentionMs:  PtrTo(86400000),
-			LogCleanerMinCompactionLagMs: PtrTo(0),
+			LogCleanerDeleteRetentionMs:  PtrTo(int64(86400000)),
+			LogCleanerMinCompactionLagMs: PtrTo(uint64(0)),
 		}
 	)
 
@@ -3151,7 +3152,7 @@ func TestDatabases_UpdateConfigKafka(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, b.Config, kafkaConfig)
-		assert.Equal(t, 0, *b.Config.LogCleanerMinCompactionLagMs, "pointers to zero value should be sent")
+		assert.Equal(t, uint64(0), *b.Config.LogCleanerMinCompactionLagMs, "pointers to zero value should be sent")
 		assert.Nil(t, b.Config.LogFlushIntervalMs, "excluded value should not be sent")
 
 		w.WriteHeader(http.StatusNoContent)

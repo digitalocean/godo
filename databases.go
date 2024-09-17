@@ -3,6 +3,7 @@ package godo
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -663,23 +664,23 @@ type MongoDBConfig struct {
 
 // KafkaConfig holds advanced configurations for Kafka database clusters.
 type KafkaConfig struct {
-	GroupInitialRebalanceDelayMs       *int  `json:"group_initial_rebalance_delay_ms,omitempty"`
-	GroupMinSessionTimeoutMs           *int  `json:"group_min_session_timeout_ms,omitempty"`
-	GroupMaxSessionTimeoutMs           *int  `json:"group_max_session_timeout_ms,omitempty"`
-	MessageMaxBytes                    *int  `json:"message_max_bytes,omitempty"`
-	LogCleanerDeleteRetentionMs        *int  `json:"log_cleaner_delete_retention_ms,omitempty"`
-	LogCleanerMinCompactionLagMs       *int  `json:"log_cleaner_min_compaction_lag_ms,omitempty"`
-	LogFlushIntervalMs                 *int  `json:"log_flush_interval_ms,omitempty"`
-	LogIndexIntervalBytes              *int  `json:"log_index_interval_bytes,omitempty"`
-	LogMessageDownconversionEnable     *bool `json:"log_message_downconversion_enable,omitempty"`
-	LogMessageTimestampDifferenceMaxMs *int  `json:"log_message_timestamp_difference_max_ms,omitempty"`
-	LogPreallocate                     *bool `json:"log_preallocate,omitempty"`
-	LogRetentionBytes                  *int  `json:"log_retention_bytes,omitempty"`
-	LogRetentionHours                  *int  `json:"log_retention_hours,omitempty"`
-	LogRetentionMs                     *int  `json:"log_retention_ms,omitempty"`
-	LogRollJitterMs                    *int  `json:"log_roll_jitter_ms,omitempty"`
-	LogSegmentDeleteDelayMs            *int  `json:"log_segment_delete_delay_ms,omitempty"`
-	AutoCreateTopicsEnable             *bool `json:"auto_create_topics_enable,omitempty"`
+	GroupInitialRebalanceDelayMs       *int     `json:"group_initial_rebalance_delay_ms,omitempty"`
+	GroupMinSessionTimeoutMs           *int     `json:"group_min_session_timeout_ms,omitempty"`
+	GroupMaxSessionTimeoutMs           *int     `json:"group_max_session_timeout_ms,omitempty"`
+	MessageMaxBytes                    *int     `json:"message_max_bytes,omitempty"`
+	LogCleanerDeleteRetentionMs        *int64   `json:"log_cleaner_delete_retention_ms,omitempty"`
+	LogCleanerMinCompactionLagMs       *uint64  `json:"log_cleaner_min_compaction_lag_ms,omitempty"`
+	LogFlushIntervalMs                 *uint64  `json:"log_flush_interval_ms,omitempty"`
+	LogIndexIntervalBytes              *int     `json:"log_index_interval_bytes,omitempty"`
+	LogMessageDownconversionEnable     *bool    `json:"log_message_downconversion_enable,omitempty"`
+	LogMessageTimestampDifferenceMaxMs *uint64  `json:"log_message_timestamp_difference_max_ms,omitempty"`
+	LogPreallocate                     *bool    `json:"log_preallocate,omitempty"`
+	LogRetentionBytes                  *big.Int `json:"log_retention_bytes,omitempty"`
+	LogRetentionHours                  *int     `json:"log_retention_hours,omitempty"`
+	LogRetentionMs                     *big.Int `json:"log_retention_ms,omitempty"`
+	LogRollJitterMs                    *uint64  `json:"log_roll_jitter_ms,omitempty"`
+	LogSegmentDeleteDelayMs            *int     `json:"log_segment_delete_delay_ms,omitempty"`
+	AutoCreateTopicsEnable             *bool    `json:"auto_create_topics_enable,omitempty"`
 }
 
 type databaseUserRoot struct {
