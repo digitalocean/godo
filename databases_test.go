@@ -3162,7 +3162,6 @@ func TestDatabases_UpdateConfigKafka(t *testing.T) {
 	require.NoError(t, err)
 }
 
-    
 func TestDatabases_GetConfigOpensearch(t *testing.T) {
 	setup()
 	defer teardown()
