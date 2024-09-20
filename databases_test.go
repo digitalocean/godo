@@ -3213,7 +3213,7 @@ func TestDatabases_GetConfigOpensearch(t *testing.T) {
   }
 }`
 
-		kafkaConfig = OpensearchConfig{
+		opensearchConfig = OpensearchConfig{
 			HttpMaxContentLengthBytes:                        PtrTo(100000000),
 			HttpMaxHeaderSizeBytes:                           PtrTo(8192),
 			HttpMaxInitialLineLengthBytes:                    PtrTo(4096),
@@ -3261,7 +3261,7 @@ func TestDatabases_GetConfigOpensearch(t *testing.T) {
 
 	got, _, err := dbSvc.GetOpensearchConfig(ctx, dbID)
 	require.NoError(t, err)
-	require.Equal(t, &kafkaConfig, got)
+	require.Equal(t, &opensearchConfig, got)
 }
 
 func TestDatabases_UpdateConfigOpensearch(t *testing.T) {
