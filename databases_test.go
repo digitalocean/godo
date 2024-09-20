@@ -3,6 +3,7 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"testing"
 	"time"
@@ -3008,8 +3009,7 @@ func TestDatabases_GetConfigMongoDB(t *testing.T) {
     "slow_op_threshold_ms": 100,
     "verbosity": 0
   }
-}
-`
+}`
 
 		mongoDBConfig = MongoDBConfig{
 			DefaultReadConcern:              PtrTo("LOCAL"),
@@ -3064,6 +3064,105 @@ func TestDatabases_UpdateConfigMongoDB(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetConfigKafka(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		kafkaConfigJSON = `{
+  "config": {
+    "group_initial_rebalance_delay_ms": 3000,
+    "group_min_session_timeout_ms": 6000,
+    "group_max_session_timeout_ms": 1800000,
+    "message_max_bytes": 1048588,
+    "log_cleaner_delete_retention_ms": 86400000,
+    "log_cleaner_min_compaction_lag_ms": 0,
+    "log_flush_interval_ms": 60000,
+    "log_index_interval_bytes": 4096,
+    "log_message_downconversion_enable": true,
+    "log_message_timestamp_difference_max_ms": 120000,
+    "log_preallocate": false,
+    "log_retention_bytes": -1,
+    "log_retention_hours": 168,
+    "log_retention_ms": 604800000,
+    "log_roll_jitter_ms": 0,
+    "log_segment_delete_delay_ms": 60000,
+    "auto_create_topics_enable": true
+  }
+}`
+
+		kafkaConfig = KafkaConfig{
+			GroupInitialRebalanceDelayMs:       PtrTo(3000),
+			GroupMinSessionTimeoutMs:           PtrTo(6000),
+			GroupMaxSessionTimeoutMs:           PtrTo(1800000),
+			MessageMaxBytes:                    PtrTo(1048588),
+			LogCleanerDeleteRetentionMs:        PtrTo(int64(86400000)),
+			LogCleanerMinCompactionLagMs:       PtrTo(uint64(0)),
+			LogFlushIntervalMs:                 PtrTo(uint64(60000)),
+			LogIndexIntervalBytes:              PtrTo(4096),
+			LogMessageDownconversionEnable:     PtrTo(true),
+			LogMessageTimestampDifferenceMaxMs: PtrTo(uint64(120000)),
+			LogPreallocate:                     PtrTo(false),
+			LogRetentionBytes:                  big.NewInt(int64(-1)),
+			LogRetentionHours:                  PtrTo(168),
+			LogRetentionMs:                     big.NewInt(int64(604800000)),
+			LogRollJitterMs:                    PtrTo(uint64(0)),
+			LogSegmentDeleteDelayMs:            PtrTo(60000),
+			AutoCreateTopicsEnable:             PtrTo(true),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, kafkaConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetKafkaConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &kafkaConfig, got)
+}
+
+func TestDatabases_UpdateConfigKafka(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path        = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		kafkaConfig = &KafkaConfig{
+			GroupInitialRebalanceDelayMs: PtrTo(3000),
+			GroupMinSessionTimeoutMs:     PtrTo(6000),
+			GroupMaxSessionTimeoutMs:     PtrTo(1800000),
+			MessageMaxBytes:              PtrTo(1048588),
+			LogCleanerDeleteRetentionMs:  PtrTo(int64(86400000)),
+			LogCleanerMinCompactionLagMs: PtrTo(uint64(0)),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseKafkaConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, kafkaConfig)
+		assert.Equal(t, uint64(0), *b.Config.LogCleanerMinCompactionLagMs, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.LogFlushIntervalMs, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateKafkaConfig(ctx, dbID, kafkaConfig)
+	require.NoError(t, err)
+}
+
+    
 func TestDatabases_GetConfigOpensearch(t *testing.T) {
 	setup()
 	defer teardown()

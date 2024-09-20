@@ -3,6 +3,7 @@ package godo
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"net/http"
 	"strings"
 	"time"
@@ -154,11 +155,13 @@ type DatabasesService interface {
 	GetMySQLConfig(context.Context, string) (*MySQLConfig, *Response, error)
 	GetMongoDBConfig(context.Context, string) (*MongoDBConfig, *Response, error)
 	GetOpensearchConfig(context.Context, string) (*OpensearchConfig, *Response, error)
+	GetKafkaConfig(context.Context, string) (*KafkaConfig, *Response, error)
 	UpdatePostgreSQLConfig(context.Context, string, *PostgreSQLConfig) (*Response, error)
 	UpdateRedisConfig(context.Context, string, *RedisConfig) (*Response, error)
 	UpdateMySQLConfig(context.Context, string, *MySQLConfig) (*Response, error)
 	UpdateMongoDBConfig(context.Context, string, *MongoDBConfig) (*Response, error)
 	UpdateOpensearchConfig(context.Context, string, *OpensearchConfig) (*Response, error)
+	UpdateKafkaConfig(context.Context, string, *KafkaConfig) (*Response, error)
 	ListOptions(todo context.Context) (*DatabaseOptions, *Response, error)
 	UpgradeMajorVersion(context.Context, string, *UpgradeVersionRequest) (*Response, error)
 	ListTopics(context.Context, string, *ListOptions) ([]DatabaseTopic, *Response, error)
@@ -661,6 +664,27 @@ type MongoDBConfig struct {
 	Verbosity                       *int    `json:"verbosity,omitempty"`
 }
 
+// KafkaConfig holds advanced configurations for Kafka database clusters.
+type KafkaConfig struct {
+	GroupInitialRebalanceDelayMs       *int     `json:"group_initial_rebalance_delay_ms,omitempty"`
+	GroupMinSessionTimeoutMs           *int     `json:"group_min_session_timeout_ms,omitempty"`
+	GroupMaxSessionTimeoutMs           *int     `json:"group_max_session_timeout_ms,omitempty"`
+	MessageMaxBytes                    *int     `json:"message_max_bytes,omitempty"`
+	LogCleanerDeleteRetentionMs        *int64   `json:"log_cleaner_delete_retention_ms,omitempty"`
+	LogCleanerMinCompactionLagMs       *uint64  `json:"log_cleaner_min_compaction_lag_ms,omitempty"`
+	LogFlushIntervalMs                 *uint64  `json:"log_flush_interval_ms,omitempty"`
+	LogIndexIntervalBytes              *int     `json:"log_index_interval_bytes,omitempty"`
+	LogMessageDownconversionEnable     *bool    `json:"log_message_downconversion_enable,omitempty"`
+	LogMessageTimestampDifferenceMaxMs *uint64  `json:"log_message_timestamp_difference_max_ms,omitempty"`
+	LogPreallocate                     *bool    `json:"log_preallocate,omitempty"`
+	LogRetentionBytes                  *big.Int `json:"log_retention_bytes,omitempty"`
+	LogRetentionHours                  *int     `json:"log_retention_hours,omitempty"`
+	LogRetentionMs                     *big.Int `json:"log_retention_ms,omitempty"`
+	LogRollJitterMs                    *uint64  `json:"log_roll_jitter_ms,omitempty"`
+	LogSegmentDeleteDelayMs            *int     `json:"log_segment_delete_delay_ms,omitempty"`
+	AutoCreateTopicsEnable             *bool    `json:"auto_create_topics_enable,omitempty"`
+}
+
 type databaseUserRoot struct {
 	User *DatabaseUser `json:"user"`
 }
@@ -707,6 +731,10 @@ type databaseMongoDBConfigRoot struct {
 
 type databaseOpensearchConfigRoot struct {
 	Config *OpensearchConfig `json:"config"`
+}
+
+type databaseKafkaConfigRoot struct {
+	Config *KafkaConfig `json:"config"`
 }
 
 type databaseBackupsRoot struct {
@@ -1552,6 +1580,38 @@ func (svc *DatabasesServiceOp) UpdateMongoDBConfig(ctx context.Context, database
 	return resp, nil
 }
 
+// GetKafkaConfig retrieves the config for a Kafka database cluster.
+func (svc *DatabasesServiceOp) GetKafkaConfig(ctx context.Context, databaseID string) (*KafkaConfig, *Response, error) {
+	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(databaseKafkaConfigRoot)
+	resp, err := svc.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Config, resp, nil
+}
+
+// UpdateKafkaConfig updates the config for a Kafka database cluster.
+func (svc *DatabasesServiceOp) UpdateKafkaConfig(ctx context.Context, databaseID string, config *KafkaConfig) (*Response, error) {
+	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	root := &databaseKafkaConfigRoot{
+		Config: config,
+	}
+	req, err := svc.client.NewRequest(ctx, http.MethodPatch, path, root)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+    
 // GetOpensearchConfig retrieves the config for a Opensearch database cluster.
 func (svc *DatabasesServiceOp) GetOpensearchConfig(ctx context.Context, databaseID string) (*OpensearchConfig, *Response, error) {
 	path := fmt.Sprintf(databaseConfigPath, databaseID)
