@@ -3,7 +3,6 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"net/http"
 	"testing"
 	"time"
@@ -3101,16 +3100,16 @@ func TestDatabases_GetConfigKafka(t *testing.T) {
 			GroupMaxSessionTimeoutMs:           PtrTo(1800000),
 			MessageMaxBytes:                    PtrTo(1048588),
 			LogCleanerDeleteRetentionMs:        PtrTo(int64(86400000)),
-			LogCleanerMinCompactionLagMs:       PtrTo(uint64(0)),
-			LogFlushIntervalMs:                 PtrTo(uint64(60000)),
+			LogCleanerMinCompactionLagMs:       PtrTo(int64(0)),
+			LogFlushIntervalMs:                 PtrTo(int64(60000)),
 			LogIndexIntervalBytes:              PtrTo(4096),
 			LogMessageDownconversionEnable:     PtrTo(true),
-			LogMessageTimestampDifferenceMaxMs: PtrTo(uint64(120000)),
+			LogMessageTimestampDifferenceMaxMs: PtrTo(int64(120000)),
 			LogPreallocate:                     PtrTo(false),
-			LogRetentionBytes:                  big.NewInt(int64(-1)),
+			LogRetentionBytes:                  PtrTo(int64(-1)),
 			LogRetentionHours:                  PtrTo(168),
-			LogRetentionMs:                     big.NewInt(int64(604800000)),
-			LogRollJitterMs:                    PtrTo(uint64(0)),
+			LogRetentionMs:                     PtrTo(int64(604800000)),
+			LogRollJitterMs:                    PtrTo(int64(0)),
 			LogSegmentDeleteDelayMs:            PtrTo(60000),
 			AutoCreateTopicsEnable:             PtrTo(true),
 		}
@@ -3139,7 +3138,7 @@ func TestDatabases_UpdateConfigKafka(t *testing.T) {
 			GroupMaxSessionTimeoutMs:     PtrTo(1800000),
 			MessageMaxBytes:              PtrTo(1048588),
 			LogCleanerDeleteRetentionMs:  PtrTo(int64(86400000)),
-			LogCleanerMinCompactionLagMs: PtrTo(uint64(0)),
+			LogCleanerMinCompactionLagMs: PtrTo(int64(0)),
 		}
 	)
 
@@ -3152,7 +3151,7 @@ func TestDatabases_UpdateConfigKafka(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, b.Config, kafkaConfig)
-		assert.Equal(t, uint64(0), *b.Config.LogCleanerMinCompactionLagMs, "pointers to zero value should be sent")
+		assert.Equal(t, int64(0), *b.Config.LogCleanerMinCompactionLagMs, "pointers to zero value should be sent")
 		assert.Nil(t, b.Config.LogFlushIntervalMs, "excluded value should not be sent")
 
 		w.WriteHeader(http.StatusNoContent)
