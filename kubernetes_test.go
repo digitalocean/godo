@@ -549,8 +549,8 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		Name:          "antoine-test-cluster",
 		RegionSlug:    "s2r1",
 		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
+		ClusterSubnet: "192.168.0.0/16",
+		ServiceSubnet: "192.169.0.0/16",
 		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		HA:            true,
@@ -577,13 +577,15 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		},
 	}
 	createRequest := &KubernetesClusterCreateRequest{
-		Name:         want.Name,
-		RegionSlug:   want.RegionSlug,
-		VersionSlug:  want.VersionSlug,
-		Tags:         want.Tags,
-		VPCUUID:      want.VPCUUID,
-		SurgeUpgrade: true,
-		HA:           true,
+		Name:          want.Name,
+		RegionSlug:    want.RegionSlug,
+		VersionSlug:   want.VersionSlug,
+		Tags:          want.Tags,
+		VPCUUID:       want.VPCUUID,
+		ClusterSubnet: want.ClusterSubnet,
+		ServiceSubnet: want.ServiceSubnet,
+		SurgeUpgrade:  true,
+		HA:            true,
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			{
 				Size:      want.NodePools[0].Size,
@@ -606,8 +608,8 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		"name": "antoine-test-cluster",
 		"region": "s2r1",
 		"version": "1.10.0-gen0",
-		"cluster_subnet": "10.244.0.0/16",
-		"service_subnet": "10.245.0.0/16",
+		"cluster_subnet": "192.168.0.0/16",
+		"service_subnet": "192.169.0.0/16",
 		"tags": [
 			"cluster-tag-1",
 			"cluster-tag-2"
