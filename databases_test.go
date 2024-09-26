@@ -3162,6 +3162,140 @@ func TestDatabases_UpdateConfigKafka(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetConfigOpensearch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		opensearchConfigJSON = `{
+  "config": {
+    "ism_enabled": true,
+    "ism_history_enabled": true,
+    "ism_history_max_age_hours": 24,
+    "ism_history_max_docs": 2500000,
+    "ism_history_rollover_check_period_hours": 8,
+    "ism_history_rollover_retention_period_days": 30,
+    "http_max_content_length_bytes": 100000000,
+    "http_max_header_size_bytes": 8192,
+    "http_max_initial_line_length_bytes": 4096,
+    "indices_query_bool_max_clause_count": 1024,
+    "search_max_buckets": 10000,
+    "indices_fielddata_cache_size_percentage": 0,
+    "indices_memory_index_buffer_size_percentage": 10,
+    "indices_memory_min_index_buffer_size_mb": 48,
+    "indices_memory_max_index_buffer_size_mb": 0,
+    "indices_queries_cache_size_percentage": 10,
+    "indices_recovery_max_mb_per_sec": 40,
+    "indices_recovery_max_concurrent_file_chunks": 2,
+    "action_auto_create_index_enabled": true,
+    "action_destructive_requires_name": false,
+    "plugins_alerting_filter_by_backend_roles_enabled": false,
+    "enable_security_audit": false,
+    "thread_pool_search_size": 0,
+    "thread_pool_search_throttled_size": 0,
+    "thread_pool_search_throttled_queue_size": 0,
+    "thread_pool_search_queue_size": 0,
+    "thread_pool_get_size": 0,
+    "thread_pool_get_queue_size": 0,
+    "thread_pool_analyze_size": 0,
+    "thread_pool_analyze_queue_size": 0,
+    "thread_pool_write_size": 0,
+    "thread_pool_write_queue_size": 0,
+    "thread_pool_force_merge_size": 0,
+    "override_main_response_version": false,
+    "script_max_compilations_rate": "use-context",
+    "cluster_max_shards_per_node": 0,
+    "cluster_routing_allocation_node_concurrent_recoveries": 2
+  }
+}`
+
+		opensearchConfig = OpensearchConfig{
+			HttpMaxContentLengthBytes:                        PtrTo(100000000),
+			HttpMaxHeaderSizeBytes:                           PtrTo(8192),
+			HttpMaxInitialLineLengthBytes:                    PtrTo(4096),
+			IndicesQueryBoolMaxClauseCount:                   PtrTo(1024),
+			IndicesFielddataCacheSizePercentage:              PtrTo(0),
+			IndicesMemoryIndexBufferSizePercentage:           PtrTo(10),
+			IndicesMemoryMinIndexBufferSizeMb:                PtrTo(48),
+			IndicesMemoryMaxIndexBufferSizeMb:                PtrTo(0),
+			IndicesQueriesCacheSizePercentage:                PtrTo(10),
+			IndicesRecoveryMaxMbPerSec:                       PtrTo(40),
+			IndicesRecoveryMaxConcurrentFileChunks:           PtrTo(2),
+			ThreadPoolSearchSize:                             PtrTo(0),
+			ThreadPoolSearchThrottledSize:                    PtrTo(0),
+			ThreadPoolGetSize:                                PtrTo(0),
+			ThreadPoolAnalyzeSize:                            PtrTo(0),
+			ThreadPoolWriteSize:                              PtrTo(0),
+			ThreadPoolForceMergeSize:                         PtrTo(0),
+			ThreadPoolSearchQueueSize:                        PtrTo(0),
+			ThreadPoolSearchThrottledQueueSize:               PtrTo(0),
+			ThreadPoolGetQueueSize:                           PtrTo(0),
+			ThreadPoolAnalyzeQueueSize:                       PtrTo(0),
+			ThreadPoolWriteQueueSize:                         PtrTo(0),
+			IsmEnabled:                                       PtrTo(true),
+			IsmHistoryEnabled:                                PtrTo(true),
+			IsmHistoryMaxAgeHours:                            PtrTo(24),
+			IsmHistoryMaxDocs:                                PtrTo(uint64(2500000)),
+			IsmHistoryRolloverCheckPeriodHours:               PtrTo(8),
+			IsmHistoryRolloverRetentionPeriodDays:            PtrTo(30),
+			SearchMaxBuckets:                                 PtrTo(10000),
+			ActionAutoCreateIndexEnabled:                     PtrTo(true),
+			EnableSecurityAudit:                              PtrTo(false),
+			ActionDestructiveRequiresName:                    PtrTo(false),
+			ClusterMaxShardsPerNode:                          PtrTo(0),
+			OverrideMainResponseVersion:                      PtrTo(false),
+			ScriptMaxCompilationsRate:                        PtrTo("use-context"),
+			ClusterRoutingAllocationNodeConcurrentRecoveries: PtrTo(2),
+			ReindexRemoteWhitelist:                           nil,
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, opensearchConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetOpensearchConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &opensearchConfig, got)
+}
+
+func TestDatabases_UpdateConfigOpensearch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID             = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path             = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		opensearchConfig = &OpensearchConfig{
+			HttpMaxContentLengthBytes: PtrTo(1),
+			HttpMaxHeaderSizeBytes:    PtrTo(0),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseOpensearchConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, opensearchConfig)
+		assert.Equal(t, 0, *b.Config.HttpMaxHeaderSizeBytes, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.HttpMaxInitialLineLengthBytes, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateOpensearchConfig(ctx, dbID, opensearchConfig)
+	require.NoError(t, err)
+}
+
 func TestDatabases_UpgradeMajorVersion(t *testing.T) {
 	setup()
 	defer teardown()
