@@ -63,6 +63,7 @@ type ReservedIPCreateRequest struct {
 	Region    string `json:"region,omitempty"`
 	DropletID int    `json:"droplet_id,omitempty"`
 	ProjectID string `json:"project_id,omitempty"`
+	IPv6      bool   `json:"ipv6,omitempty"`
 }
 
 // List all reserved IPs.
