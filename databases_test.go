@@ -3210,7 +3210,7 @@ func TestDatabases_GetConfigOpensearch(t *testing.T) {
     "script_max_compilations_rate": "use-context",
     "cluster_max_shards_per_node": 0,
     "cluster_routing_allocation_node_concurrent_recoveries": 2,
-	"plugins_alerting_filter_by_backend_roles_enabled": true
+    "plugins_alerting_filter_by_backend_roles_enabled": true
   }
 }`
 
