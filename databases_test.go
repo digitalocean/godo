@@ -3209,7 +3209,8 @@ func TestDatabases_GetConfigOpensearch(t *testing.T) {
     "override_main_response_version": false,
     "script_max_compilations_rate": "use-context",
     "cluster_max_shards_per_node": 0,
-    "cluster_routing_allocation_node_concurrent_recoveries": 2
+    "cluster_routing_allocation_node_concurrent_recoveries": 2,
+	"plugins_alerting_filter_by_backend_roles_enabled": true
   }
 }`
 
@@ -3251,6 +3252,7 @@ func TestDatabases_GetConfigOpensearch(t *testing.T) {
 			ScriptMaxCompilationsRate:                        PtrTo("use-context"),
 			ClusterRoutingAllocationNodeConcurrentRecoveries: PtrTo(2),
 			ReindexRemoteWhitelist:                           nil,
+			PluginsAlertingFilterByBackendRolesEnabled:       PtrTo(true),
 		}
 	)
 
