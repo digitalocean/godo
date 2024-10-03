@@ -828,6 +828,10 @@ type databaseTopicsRoot struct {
 	Topics []DatabaseTopic `json:"topics"`
 }
 
+type databaseLogsinkRoot struct {
+	Sink *DatabaseLogsink `json:"sink"`
+}
+
 type databaseLogsinksRoot struct {
 	Sinks []DatabaseLogsink `json:"sinks"`
 }
@@ -1886,13 +1890,13 @@ func (svc *DatabasesServiceOp) CreateLogsink(ctx context.Context, databaseID str
 		return nil, nil, err
 	}
 
-	root := new(databaseLogsinksRoot)
+	root := new(databaseLogsinkRoot)
 
 	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
-	return &root.Sinks[0], resp, nil
+	return root.Sink, resp, nil
 }
 
 // GetLogsink gets a logsink for a database
