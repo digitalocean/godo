@@ -1886,16 +1886,13 @@ func (svc *DatabasesServiceOp) CreateLogsink(ctx context.Context, databaseID str
 		return nil, nil, err
 	}
 
-	root := new(DatabaseLogsink)
-	root.Name = createLogsink.Name
-	root.Type = createLogsink.Type
-	root.Config = createLogsink.Config
+	root := new(databaseLogsinksRoot)
 
 	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
-	return root, resp, nil
+	return &root.Sinks[0], resp, nil
 }
 
 // GetLogsink gets a logsink for a database
