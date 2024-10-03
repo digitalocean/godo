@@ -1886,7 +1886,12 @@ func (svc *DatabasesServiceOp) CreateLogsink(ctx context.Context, databaseID str
 		return nil, nil, err
 	}
 
-	root := new(DatabaseLogsink)
+	// root := new(DatabaseLogsink)
+	root := &DatabaseLogsink{
+		Name:   createLogsink.Name,
+		Type:   createLogsink.Type,
+		Config: createLogsink.Config,
+	}
 	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
