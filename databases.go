@@ -1907,12 +1907,12 @@ func (svc *DatabasesServiceOp) GetLogsink(ctx context.Context, databaseID string
 		return nil, nil, err
 	}
 
-	root := new(DatabaseLogsink)
+	root := new(databaseLogsinkRoot)
 	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
-	return root, resp, nil
+	return root.Sink, resp, nil
 }
 
 // ListTopics returns all topics for a given kafka cluster
@@ -1942,7 +1942,8 @@ func (svc *DatabasesServiceOp) UpdateLogsink(ctx context.Context, databaseID str
 		return nil, err
 	}
 
-	resp, err := svc.client.Do(ctx, req, nil)
+	root := new(databaseLogsinkRoot)
+	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return resp, err
 	}
