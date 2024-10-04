@@ -3240,7 +3240,7 @@ func TestDatabases_GetConfigOpensearch(t *testing.T) {
 			IsmEnabled:                                       PtrTo(true),
 			IsmHistoryEnabled:                                PtrTo(true),
 			IsmHistoryMaxAgeHours:                            PtrTo(24),
-			IsmHistoryMaxDocs:                                PtrTo(uint64(2500000)),
+			IsmHistoryMaxDocs:                                PtrTo(int64(2500000)),
 			IsmHistoryRolloverCheckPeriodHours:               PtrTo(8),
 			IsmHistoryRolloverRetentionPeriodDays:            PtrTo(30),
 			SearchMaxBuckets:                                 PtrTo(10000),
