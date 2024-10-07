@@ -174,17 +174,21 @@ type DatabasesService interface {
 	ListDatabaseEvents(context.Context, string, *ListOptions) ([]DatabaseEvent, *Response, error)
 	ListIndexes(context.Context, string, *ListOptions) ([]DatabaseIndex, *Response, error)
 	DeleteIndex(context.Context, string, string) (*Response, error)
-	GetRsyslogLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseRsyslogLogsink, *Response, error)
-	CreateRsyslogLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateRsyslogLogsinkRequest) (*DatabaseRsyslogLogsink, *Response, error)
-	UpdateRsyslogLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateRsyslogLogsinkRequest) (*Response, error)
-	GetElasticsearchLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseElasticsearchLogsink, *Response, error)
-	CreateElasticsearchLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateElasticsearchLogsinkRequest) (*DatabaseElasticsearchLogsink, *Response, error)
-	UpdateElasticsearchLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateElasticsearchLogsinkRequest) (*Response, error)
-	GetOpensearchLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseOpensearchLogsink, *Response, error)
-	CreateOpensearchLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateOpensearchLogsinkRequest) (*DatabaseOpensearchLogsink, *Response, error)
-	UpdateOpensearchLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateOpensearchLogsinkRequest) (*Response, error)
+	// GetRsyslogLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseRsyslogLogsink, *Response, error)
+	// CreateRsyslogLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateRsyslogLogsinkRequest) (*DatabaseRsyslogLogsink, *Response, error)
+	// UpdateRsyslogLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateRsyslogLogsinkRequest) (*Response, error)
+	// GetElasticsearchLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseElasticsearchLogsink, *Response, error)
+	// CreateElasticsearchLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateElasticsearchLogsinkRequest) (*DatabaseElasticsearchLogsink, *Response, error)
+	// UpdateElasticsearchLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateElasticsearchLogsinkRequest) (*Response, error)
+	// GetOpensearchLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseOpensearchLogsink, *Response, error)
+	// CreateOpensearchLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateOpensearchLogsinkRequest) (*DatabaseOpensearchLogsink, *Response, error)
+	// UpdateOpensearchLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateOpensearchLogsinkRequest) (*Response, error)
 	ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]interface{}, *Response, error)
 	DeleteLogsink(ctx context.Context, databaseID, logsinkID string) (*Response, error)
+
+	GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error)
+	CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error)
+	UpdateLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateLogsinkRequest) (*Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -503,6 +507,26 @@ type DatabaseFirewallRule struct {
 	Type        string    `json:"type"`
 	Value       string    `json:"value"`
 	CreatedAt   time.Time `json:"created_at"`
+}
+
+// DatabaseLogsink represents a logsink.
+type DatabaseLogsink struct {
+	ID     string       `json:"sink_id"`
+	Name   string       `json:"sink_name,required"`
+	Type   string       `json:"sink_type,required"`
+	Config *interface{} `json:"config,required"`
+}
+
+// DatabaseCreateLogsinkRequest is used to create logsink for a database cluster.
+type DatabaseCreateLogsinkRequest struct {
+	Name   string       `json:"sink_name"`
+	Type   string       `json:"sink_type"`
+	Config *interface{} `json:"config"`
+}
+
+// DatabaseUpdateLogsinkRequest is used to update logsink for a database cluster.
+type DatabaseUpdateLogsinkRequest struct {
+	Config *interface{} `json:"config"`
 }
 
 // DatabaseRsyslogLogsink represents a rsyslog logsink.
@@ -888,16 +912,8 @@ type databaseTopicsRoot struct {
 	Topics []DatabaseTopic `json:"topics"`
 }
 
-type databaseRsyslogLogsinkRoot struct {
-	Sink DatabaseRsyslogLogsink `json:"sink"`
-}
-
-type databaseElasticsearchLogsinkRoot struct {
-	Sink DatabaseElasticsearchLogsink `json:"sink"`
-}
-
-type databaseOpensearchLogsinkRoot struct {
-	Sink DatabaseOpensearchLogsink `json:"sink"`
+type databaseLogsinkRoot struct {
+	Sink DatabaseLogsink `json:"sink"`
 }
 
 type databaseLogsinksRoot struct {
@@ -1983,15 +1999,15 @@ func (svc *DatabasesServiceOp) DeleteLogsink(ctx context.Context, databaseID, lo
 	return resp, nil
 }
 
-// GetRsyslogLogsink gets a logsink for a database.
-func (svc *DatabasesServiceOp) GetRsyslogLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseRsyslogLogsink, *Response, error) {
+// GetLogsink gets a logsink for a database.
+func (svc *DatabasesServiceOp) GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error) {
 	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	root := new(databaseRsyslogLogsinkRoot)
+	root := new(databaseLogsinkRoot)
 	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -1999,15 +2015,15 @@ func (svc *DatabasesServiceOp) GetRsyslogLogsink(ctx context.Context, databaseID
 	return &root.Sink, resp, nil
 }
 
-// CreateRsyslogLogsink creates a new logsink for a database.
-func (svc *DatabasesServiceOp) CreateRsyslogLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateRsyslogLogsinkRequest) (*DatabaseRsyslogLogsink, *Response, error) {
+// CreateLogsink creates a new logsink for a database.
+func (svc *DatabasesServiceOp) CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error) {
 	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createLogsink)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	root := new(databaseRsyslogLogsinkRoot)
+	root := new(databaseLogsinkRoot)
 	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -2016,104 +2032,8 @@ func (svc *DatabasesServiceOp) CreateRsyslogLogsink(ctx context.Context, databas
 	return &root.Sink, resp, nil
 }
 
-// UpdateRsyslogLogsink updates a logsink for a database cluster.
-func (svc *DatabasesServiceOp) UpdateRsyslogLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateRsyslogLogsinkRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
-	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateLogsink)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := svc.client.Do(ctx, req, nil)
-	if err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
-// GetElasticsearchLogsink gets a logsink for a database.
-func (svc *DatabasesServiceOp) GetElasticsearchLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseElasticsearchLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
-	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(databaseElasticsearchLogsinkRoot)
-	resp, err := svc.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return &root.Sink, resp, nil
-}
-
-// CreateElasticsearchLogsink creates a new logsink for a database.
-func (svc *DatabasesServiceOp) CreateElasticsearchLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateElasticsearchLogsinkRequest) (*DatabaseElasticsearchLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
-	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createLogsink)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(databaseElasticsearchLogsinkRoot)
-	resp, err := svc.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return &root.Sink, resp, nil
-}
-
-// UpdateElasticsearchLogsink updates a logsink for a database cluster.
-func (svc *DatabasesServiceOp) UpdateElasticsearchLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateElasticsearchLogsinkRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
-	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateLogsink)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := svc.client.Do(ctx, req, nil)
-	if err != nil {
-		return resp, err
-	}
-	return resp, nil
-}
-
-// GetOpensearchLogsink gets a logsink for a database.
-func (svc *DatabasesServiceOp) GetOpensearchLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseOpensearchLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
-	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(databaseOpensearchLogsinkRoot)
-	resp, err := svc.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return &root.Sink, resp, nil
-}
-
-// CreateOpensearchLogsink creates a new logsink for a database.
-func (svc *DatabasesServiceOp) CreateOpensearchLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateOpensearchLogsinkRequest) (*DatabaseOpensearchLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
-	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createLogsink)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(databaseOpensearchLogsinkRoot)
-	resp, err := svc.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return &root.Sink, resp, nil
-}
-
-// UpdateOpensearchLogsink updates a logsink for a database cluster.
-func (svc *DatabasesServiceOp) UpdateOpensearchLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateOpensearchLogsinkRequest) (*Response, error) {
+// UpdateLogsink updates a logsink for a database cluster.
+func (svc *DatabasesServiceOp) UpdateLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateLogsinkRequest) (*Response, error) {
 	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateLogsink)
 	if err != nil {
