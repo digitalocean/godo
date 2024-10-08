@@ -174,21 +174,11 @@ type DatabasesService interface {
 	ListDatabaseEvents(context.Context, string, *ListOptions) ([]DatabaseEvent, *Response, error)
 	ListIndexes(context.Context, string, *ListOptions) ([]DatabaseIndex, *Response, error)
 	DeleteIndex(context.Context, string, string) (*Response, error)
-	// GetRsyslogLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseRsyslogLogsink, *Response, error)
-	// CreateRsyslogLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateRsyslogLogsinkRequest) (*DatabaseRsyslogLogsink, *Response, error)
-	// UpdateRsyslogLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateRsyslogLogsinkRequest) (*Response, error)
-	// GetElasticsearchLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseElasticsearchLogsink, *Response, error)
-	// CreateElasticsearchLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateElasticsearchLogsinkRequest) (*DatabaseElasticsearchLogsink, *Response, error)
-	// UpdateElasticsearchLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateElasticsearchLogsinkRequest) (*Response, error)
-	// GetOpensearchLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseOpensearchLogsink, *Response, error)
-	// CreateOpensearchLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateOpensearchLogsinkRequest) (*DatabaseOpensearchLogsink, *Response, error)
-	// UpdateOpensearchLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateOpensearchLogsinkRequest) (*Response, error)
-	ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]interface{}, *Response, error)
-	DeleteLogsink(ctx context.Context, databaseID, logsinkID string) (*Response, error)
-
-	GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error)
 	CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error)
+	GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error)
+	ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]interface{}, *Response, error)
 	UpdateLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateLogsinkRequest) (*Response, error)
+	DeleteLogsink(ctx context.Context, databaseID, logsinkID string) (*Response, error)
 }
 
 // DatabasesServiceOp handles communication with the Databases related methods
@@ -529,26 +519,6 @@ type DatabaseUpdateLogsinkRequest struct {
 	Config *interface{} `json:"config"`
 }
 
-// DatabaseRsyslogLogsink represents a rsyslog logsink.
-type DatabaseRsyslogLogsink struct {
-	ID     string                `json:"sink_id"`
-	Name   string                `json:"sink_name,required"`
-	Type   string                `json:"sink_type,required"`
-	Config *RsyslogLogsinkConfig `json:"config,required"`
-}
-
-// DatabaseCreateRsyslogLogsinkRequest is used to create rsyslog logsink for a database cluster.
-type DatabaseCreateRsyslogLogsinkRequest struct {
-	Name   string                `json:"sink_name"`
-	Type   string                `json:"sink_type"`
-	Config *RsyslogLogsinkConfig `json:"config"`
-}
-
-// DatabaseUpdateRsyslogLogsinkRequest is used to update rsyslog logsink for a database cluster.
-type DatabaseUpdateRsyslogLogsinkRequest struct {
-	Config *RsyslogLogsinkConfig `json:"config"`
-}
-
 // RsyslogLogsinkConfig represents rsyslog logsink configuration.
 type RsyslogLogsinkConfig struct {
 	Server  string `json:"server,required"`
@@ -562,26 +532,6 @@ type RsyslogLogsinkConfig struct {
 	Cert    string `json:"cert,omitempty"`
 }
 
-// DatabaseElasticsearchLogsink represents an elasticsearch logsink.
-type DatabaseElasticsearchLogsink struct {
-	ID     string                      `json:"sink_id"`
-	Name   string                      `json:"sink_name,required"`
-	Type   string                      `json:"sink_type,required"`
-	Config *ElasticsearchLogsinkConfig `json:"config,required"`
-}
-
-// DatabaseCreateElasticsearchLogsinkRequest is used to create elasticsearch logsink for a database cluster.
-type DatabaseCreateElasticsearchLogsinkRequest struct {
-	Name   string                      `json:"sink_name"`
-	Type   string                      `json:"sink_type"`
-	Config *ElasticsearchLogsinkConfig `json:"config"`
-}
-
-// DatabaseUpdateElasticsearchLogsinkRequest is used to update elasticsearch logsink for a database cluster.
-type DatabaseUpdateElasticsearchLogsinkRequest struct {
-	Config *ElasticsearchLogsinkConfig `json:"config"`
-}
-
 // ElasticsearchLogsinkConfig represents elasticsearch logsink configuration.
 type ElasticsearchLogsinkConfig struct {
 	URL          string  `json:"url,required"`
@@ -589,26 +539,6 @@ type ElasticsearchLogsinkConfig struct {
 	IndexDaysMax int     `json:"index_days_max,omitempty"`
 	Timeout      float32 `json:"timeout,omitempty"`
 	CA           string  `json:"ca,omitempty"`
-}
-
-// DatabaseOpensearchLogsink represents an opensearch logsink.
-type DatabaseOpensearchLogsink struct {
-	ID     string                   `json:"sink_id"`
-	Name   string                   `json:"sink_name,required"`
-	Type   string                   `json:"sink_type,required"`
-	Config *OpensearchLogsinkConfig `json:"config,required"`
-}
-
-// DatabaseCreateOpensearchLogsinkRequest is used to create opensearch logsink for a database cluster.
-type DatabaseCreateOpensearchLogsinkRequest struct {
-	Name   string                   `json:"sink_name"`
-	Type   string                   `json:"sink_type"`
-	Config *OpensearchLogsinkConfig `json:"config"`
-}
-
-// DatabaseUpdateOpensearchLogsinkRequest is used to update opensearch logsink for a database cluster.
-type DatabaseUpdateOpensearchLogsinkRequest struct {
-	Config *OpensearchLogsinkConfig `json:"config"`
 }
 
 // OpensearchLogsinkConfig represents opensearch logsink configuration.
