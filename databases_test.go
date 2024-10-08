@@ -4006,24 +4006,30 @@ func TestDatabases_ListLogsinks(t *testing.T) {
 		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
 	)
 
-	want := []map[string]interface{}{
+	var cfg1 interface{}
+	cfg1 = OpensearchLogsinkConfig{
+		URL:         "https://user:passwd@192.168.0.1:25060",
+		IndexPrefix: "opensearch-logs",
+	}
+
+	var cfg2 interface{}
+	cfg2 = OpensearchLogsinkConfig{
+		URL:         "https://user:passwd@192.168.0.1:25060",
+		IndexPrefix: "opensearch-logs",
+	}
+
+	want := []DatabaseLogsink{
 		{
-			"config": map[string]interface{}{
-				"index_prefix": "opensearch-logs",
-				"url":          "https://user:passwd@192.168.0.1:25060",
-			},
-			"sink_id":   "deadbeef-dead-4aa5-beef-deadbeef347d",
-			"sink_name": "logs-sink",
-			"sink_type": "opensearch",
+			ID:     "deadbeef-dead-4aa5-beef-deadbeef347d",
+			Name:   "logs-sink",
+			Type:   "opensearch",
+			Config: &cfg1,
 		},
 		{
-			"config": map[string]interface{}{
-				"index_prefix": "opensearch-logs",
-				"url":          "https://user:passwd@192.168.0.1:25060",
-			},
-			"sink_id":   "d6e95157-5f58-48d0-9023-8cfb409d102a",
-			"sink_name": "logs-sink-2",
-			"sink_type": "opensearch",
+			ID:     "d6e95157-5f58-48d0-9023-8cfb409d102a",
+			Name:   "logs-sink-2",
+			Type:   "opensearch",
+			Config: &cfg2,
 		},
 	}
 
@@ -4059,8 +4065,17 @@ func TestDatabases_ListLogsinks(t *testing.T) {
 
 	got, _, err := client.Databases.ListLogsinks(ctx, dbID, &ListOptions{})
 	require.NoError(t, err)
-	for i := range got {
-		if !reflect.DeepEqual(want[i], got[i]) {
+
+	for i, v := range got {
+		var gotCfg interface{}
+		if configMap, ok := (*v.Config).(map[string]interface{}); ok {
+			gotCfg = OpensearchLogsinkConfig{
+				URL:         configMap["url"].(string),
+				IndexPrefix: configMap["index_prefix"].(string),
+			}
+		}
+		v.Config = &gotCfg
+		if !reflect.DeepEqual(want[i], v) {
 			t.Errorf("expected %v, got %v", want[i], got[i])
 		}
 	}
