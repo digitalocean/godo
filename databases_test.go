@@ -3919,14 +3919,12 @@ func TestDatabases_GetLogsink(t *testing.T) {
 	}
 
 	body := `{
-		"sink":{
-			"sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
-			"sink_name":"logs-sink",
-			"sink_type":"opensearch",
-			"config":{
-				"url":"https://user:passwd@192.168.0.1:25060",
-				"index_prefix":"opensearch-logs"
-			}
+		"sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+		"sink_name":"logs-sink",
+		"sink_type":"opensearch",
+		"config":{
+			"url":"https://user:passwd@192.168.0.1:25060",
+			"index_prefix":"opensearch-logs"
 		}
 	}`
 

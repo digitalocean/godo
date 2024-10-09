@@ -1921,12 +1921,12 @@ func (svc *DatabasesServiceOp) GetLogsink(ctx context.Context, databaseID string
 		return nil, nil, err
 	}
 
-	root := new(databaseLogsinkRoot)
-	resp, err := svc.client.Do(ctx, req, root.Sink)
+	root := new(DatabaseLogsink)
+	resp, err := svc.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
-	return &root.Sink, resp, nil
+	return root, resp, nil
 }
 
 // ListTopics returns all logsinks for a given database cluster.
