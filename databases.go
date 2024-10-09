@@ -1922,7 +1922,7 @@ func (svc *DatabasesServiceOp) GetLogsink(ctx context.Context, databaseID string
 	}
 
 	root := new(databaseLogsinkRoot)
-	resp, err := svc.client.Do(ctx, req, root)
+	resp, err := svc.client.Do(ctx, req, root.Sink)
 	if err != nil {
 		return nil, resp, err
 	}
