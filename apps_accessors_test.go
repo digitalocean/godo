@@ -1539,6 +1539,13 @@ func TestAppServiceSpec_GetName(tt *testing.T) {
 	a.GetName()
 }
 
+func TestAppServiceSpec_GetProtocol(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetProtocol()
+	a = nil
+	a.GetProtocol()
+}
+
 func TestAppServiceSpec_GetRoutes(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetRoutes()
@@ -2706,6 +2713,13 @@ func TestDetectResponse_GetComponents(tt *testing.T) {
 	d.GetComponents()
 	d = nil
 	d.GetComponents()
+}
+
+func TestDetectResponse_GetPending(tt *testing.T) {
+	d := &DetectResponse{}
+	d.GetPending()
+	d = nil
+	d.GetPending()
 }
 
 func TestDetectResponse_GetTemplate(tt *testing.T) {
