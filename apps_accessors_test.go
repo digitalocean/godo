@@ -1245,6 +1245,13 @@ func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
 	a.GetEndpoint()
 }
 
+func TestAppMaintenanceSpec_GetEnabled(tt *testing.T) {
+	a := &AppMaintenanceSpec{}
+	a.GetEnabled()
+	a = nil
+	a.GetEnabled()
+}
+
 func TestAppProposeRequest_GetAppID(tt *testing.T) {
 	a := &AppProposeRequest{}
 	a.GetAppID()
@@ -1698,6 +1705,13 @@ func TestAppSpec_GetJobs(tt *testing.T) {
 	a.GetJobs()
 	a = nil
 	a.GetJobs()
+}
+
+func TestAppSpec_GetMaintenance(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetMaintenance()
+	a = nil
+	a.GetMaintenance()
 }
 
 func TestAppSpec_GetName(tt *testing.T) {
