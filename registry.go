@@ -253,7 +253,8 @@ type RegistryValidateNameRequest struct {
 // Multi-registry Open Beta API structs
 
 type registriesRoot struct {
-	Registries []*Registry `json:"registries,omitempty"`
+	Registries             []*Registry `json:"registries,omitempty"`
+	TotalStorageUsageBytes uint64      `json:"total_storage_usage_bytes,omitempty"`
 }
 
 // RegistriesCreateRequest represents a request to create a secondary registry.
