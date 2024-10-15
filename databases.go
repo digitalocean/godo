@@ -501,53 +501,39 @@ type DatabaseFirewallRule struct {
 
 // DatabaseLogsink represents a logsink.
 type DatabaseLogsink struct {
-	ID     string       `json:"sink_id"`
-	Name   string       `json:"sink_name,required"`
-	Type   string       `json:"sink_type,required"`
-	Config *interface{} `json:"config,required"`
+	ID     string                 `json:"sink_id"`
+	Name   string                 `json:"sink_name,required"`
+	Type   string                 `json:"sink_type,required"`
+	Config *DatabaseLogsinkConfig `json:"config,required"`
 }
 
 // DatabaseCreateLogsinkRequest is used to create logsink for a database cluster.
 type DatabaseCreateLogsinkRequest struct {
-	Name   string       `json:"sink_name"`
-	Type   string       `json:"sink_type"`
-	Config *interface{} `json:"config"`
+	Name   string                 `json:"sink_name"`
+	Type   string                 `json:"sink_type"`
+	Config *DatabaseLogsinkConfig `json:"config"`
 }
 
 // DatabaseUpdateLogsinkRequest is used to update logsink for a database cluster.
 type DatabaseUpdateLogsinkRequest struct {
-	Config *interface{} `json:"config"`
+	Config *DatabaseLogsinkConfig `json:"config"`
 }
 
-// RsyslogLogsinkConfig represents rsyslog logsink configuration.
-type RsyslogLogsinkConfig struct {
-	Server  string `json:"server,required"`
-	Port    int    `json:"port,required"`
-	TLS     bool   `json:"tls,required"`
-	Format  string `json:"format,required"`
-	Logline string `json:"logline,omitempty"`
-	SD      string `json:"sd,omitempty"`
-	CA      string `json:"ca,omitempty"`
-	Key     string `json:"key,omitempty"`
-	Cert    string `json:"cert,omitempty"`
-}
-
-// ElasticsearchLogsinkConfig represents elasticsearch logsink configuration.
-type ElasticsearchLogsinkConfig struct {
-	URL          string  `json:"url,required"`
-	IndexPrefix  string  `json:"index_prefix,required"`
+// DatabaseLogsinkConfig represents one of the configurable options (rsyslog_logsink, elasticsearch_logsink, or opensearch_logsink) for a logsink.
+type DatabaseLogsinkConfig struct {
+	URL          string  `json:"url,omitempty"`
+	IndexPrefix  string  `json:"index_prefix,omitempty"`
 	IndexDaysMax int     `json:"index_days_max,omitempty"`
 	Timeout      float32 `json:"timeout,omitempty"`
+	Server       string  `json:"server,omitempty"`
+	Port         int     `json:"port,omitempty"`
+	TLS          bool    `json:"tls,omitempty"`
+	Format       string  `json:"format,omitempty"`
+	Logline      string  `json:"logline,omitempty"`
+	SD           string  `json:"sd,omitempty"`
 	CA           string  `json:"ca,omitempty"`
-}
-
-// OpensearchLogsinkConfig represents opensearch logsink configuration.
-type OpensearchLogsinkConfig struct {
-	URL          string  `json:"url,required"`
-	IndexPrefix  string  `json:"index_prefix,required"`
-	IndexDaysMax int     `json:"index_days_max,omitempty"`
-	Timeout      float32 `json:"timeout,omitempty"`
-	CA           string  `json:"ca,omitempty"`
+	Key          string  `json:"key,omitempty"`
+	Cert         string  `json:"cert,omitempty"`
 }
 
 // PostgreSQLConfig holds advanced configurations for PostgreSQL database clusters.
