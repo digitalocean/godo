@@ -3853,14 +3853,16 @@ func TestDatabases_CreateLogsink(t *testing.T) {
 	}
 
 	body := `{
-        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
-        "sink_name": "logs-sink",
-        "sink_type": "opensearch",
-        "config": {
-          "url": "https://user:passwd@192.168.0.1:25060",
-          "index_prefix": "opensearch-logs"
-        }
-      }`
+		"sink":{
+			"sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+			"sink_name":"logs-sink",
+			"sink_type":"opensearch",
+			"config":{
+				"url":"https://user:passwd@192.168.0.1:25060",
+				"index_prefix":"opensearch-logs"
+			}
+		}
+	}`
 
 	path := fmt.Sprintf("/v2/databases/%s/logsink", dbID)
 
@@ -3869,7 +3871,7 @@ func TestDatabases_CreateLogsink(t *testing.T) {
 		fmt.Fprint(w, body)
 	})
 
-	log, _, err := client.Databases.CreateLogsink(ctx, dbID, &DatabaseCreateLogsinkRequest{
+	logsink, _, err := client.Databases.CreateLogsink(ctx, dbID, &DatabaseCreateLogsinkRequest{
 		Name: "logs-sink",
 		Type: "opensearch",
 		Config: &DatabaseLogsinkConfig{
@@ -3879,8 +3881,7 @@ func TestDatabases_CreateLogsink(t *testing.T) {
 	})
 
 	require.NoError(t, err)
-
-	require.Equal(t, want, log)
+	require.Equal(t, want, logsink)
 }
 
 func TestDatabases_GetLogsink(t *testing.T) {
@@ -3903,14 +3904,14 @@ func TestDatabases_GetLogsink(t *testing.T) {
 	}
 
 	body := `{
-        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
-        "sink_name": "logs-sink",
-        "sink_type": "opensearch",
-        "config": {
-          "url": "https://user:passwd@192.168.0.1:25060",
-          "index_prefix": "opensearch-logs"
-        }
-      }`
+		"sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+		"sink_name":"logs-sink",
+		"sink_type":"opensearch",
+		"config":{
+			"url":"https://user:passwd@192.168.0.1:25060",
+			"index_prefix":"opensearch-logs"
+		}
+	}`
 
 	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
 
@@ -3919,9 +3920,9 @@ func TestDatabases_GetLogsink(t *testing.T) {
 		fmt.Fprint(w, body)
 	})
 
-	got, _, err := client.Databases.GetLogsink(ctx, dbID, logsinkID)
+	logsink, _, err := client.Databases.GetLogsink(ctx, dbID, logsinkID)
 	require.NoError(t, err)
-	require.Equal(t, want, got)
+	require.Equal(t, want, logsink)
 }
 
 func TestDatabases_UpdateLogsink(t *testing.T) {
@@ -3934,14 +3935,16 @@ func TestDatabases_UpdateLogsink(t *testing.T) {
 	)
 
 	body := `{
-        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
-        "sink_name": "logs-sink",
-        "sink_type": "opensearch",
-        "config": {
-          "url": "https://user:passwd@192.168.0.1:25060",
-          "index_prefix": "opensearch-logs"
-        }
-      }`
+		"sink":{
+			"sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+			"sink_name":"logs-sink",
+			"sink_type":"opensearch",
+			"config":{
+				"url":"https://user:passwd@192.168.0.1:25060",
+				"index_prefix":"opensearch-logs"
+			}
+		}
+	}`
 
 	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
 
@@ -3988,30 +3991,31 @@ func TestDatabases_ListLogsinks(t *testing.T) {
 				URL:         "https://user:passwd@192.168.0.1:25060",
 				IndexPrefix: "opensearch-logs",
 			},
-		}}
+		},
+	}
 
 	body := `{
-		"sinks": [
-		  {
-			"sink_id": "deadbeef-dead-4aa5-beef-deadbeef347d",
-			"sink_name": "logs-sink",
-			"sink_type": "opensearch",
-			"config": {
-			  "url": "https://user:passwd@192.168.0.1:25060",
-			  "index_prefix": "opensearch-logs"
+		"sinks":[
+			{
+				"sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+				"sink_name":"logs-sink",
+				"sink_type":"opensearch",
+				"config":{
+					"url":"https://user:passwd@192.168.0.1:25060",
+					"index_prefix":"opensearch-logs"
+				}
+			},
+			{
+				"sink_id":"d6e95157-5f58-48d0-9023-8cfb409d102a",
+				"sink_name":"logs-sink-2",
+				"sink_type":"opensearch",
+				"config":{
+					"url":"https://user:passwd@192.168.0.1:25060",
+					"index_prefix":"opensearch-logs"
+				}
 			}
-		  },
-		  {
-			"sink_id": "d6e95157-5f58-48d0-9023-8cfb409d102a",
-			"sink_name": "logs-sink-2",
-			"sink_type": "opensearch",
-			"config": {
-				"url": "https://user:passwd@192.168.0.1:25060",
-				"index_prefix": "opensearch-logs"
-			}
-		  }
 		]
-	  }`
+	}`
 
 	path := fmt.Sprintf("/v2/databases/%s/logsink", dbID)
 
@@ -4020,9 +4024,9 @@ func TestDatabases_ListLogsinks(t *testing.T) {
 		fmt.Fprint(w, body)
 	})
 
-	got, _, err := client.Databases.ListLogsinks(ctx, dbID, &ListOptions{})
+	logsinks, _, err := client.Databases.ListLogsinks(ctx, dbID, &ListOptions{})
 	require.NoError(t, err)
-	require.Equal(t, want, got)
+	require.Equal(t, want, logsinks)
 }
 
 func TestDatabases_DeleteLogsink(t *testing.T) {
