@@ -257,16 +257,16 @@ func TestDropletAutoscaler_Get(t *testing.T) {
 			CooldownMinutes:      5,
 		},
 		DropletTemplate: &DropletAutoscaleResourceTemplate{
-			SizeSlug:   "s-1vcpu-512mb-10gb",
-			RegionSlug: "s2r1",
-			Image:      "547864",
-			Tags:       []string{"test-ag-01"},
-			SSHKeys:    []string{"372862", "367582", "355790"},
-			VpcUUID:    "72b0812c-7535-4388-8507-5ad29b4487b3",
-			IPV6:       true,
-			UserData:   "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
+			Size:     "s-1vcpu-512mb-10gb",
+			Region:   "s2r1",
+			Image:    "547864",
+			Tags:     []string{"test-ag-01"},
+			SSHKeys:  []string{"372862", "367582", "355790"},
+			VpcUUID:  "72b0812c-7535-4388-8507-5ad29b4487b3",
+			IPV6:     true,
+			UserData: "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
 		},
-		CurrentUtlization: &DropletAutoscaleResourceUtilization{
+		CurrentUtilization: &DropletAutoscaleResourceUtilization{
 			Memory: 0.35,
 			CPU:    0.0008,
 		},
@@ -297,14 +297,14 @@ func TestDropletAutoscaler_List(t *testing.T) {
 		CooldownMinutes:      5,
 	}
 	expectedDropletTemplate := &DropletAutoscaleResourceTemplate{
-		SizeSlug:   "s-1vcpu-512mb-10gb",
-		RegionSlug: "s2r1",
-		Image:      "547864",
-		Tags:       []string{"test-ag-01"},
-		SSHKeys:    []string{"372862", "367582", "355790"},
-		VpcUUID:    "72b0812c-7535-4388-8507-5ad29b4487b3",
-		IPV6:       true,
-		UserData:   "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
+		Size:     "s-1vcpu-512mb-10gb",
+		Region:   "s2r1",
+		Image:    "547864",
+		Tags:     []string{"test-ag-01"},
+		SSHKeys:  []string{"372862", "367582", "355790"},
+		VpcUUID:  "72b0812c-7535-4388-8507-5ad29b4487b3",
+		IPV6:     true,
+		UserData: "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
 	}
 	expectedPoolsResp := []*DropletAutoscalePool{
 		{
@@ -312,7 +312,7 @@ func TestDropletAutoscaler_List(t *testing.T) {
 			Name:            "test-autoscalergroup-01",
 			Config:          expectedConfig,
 			DropletTemplate: expectedDropletTemplate,
-			CurrentUtlization: &DropletAutoscaleResourceUtilization{
+			CurrentUtilization: &DropletAutoscaleResourceUtilization{
 				Memory: 0.35,
 				CPU:    0.0009,
 			},
@@ -323,7 +323,7 @@ func TestDropletAutoscaler_List(t *testing.T) {
 			Name:            "test-autoscalergroup-02",
 			Config:          expectedConfig,
 			DropletTemplate: expectedDropletTemplate,
-			CurrentUtlization: &DropletAutoscaleResourceUtilization{
+			CurrentUtilization: &DropletAutoscaleResourceUtilization{
 				Memory: 0.56,
 				CPU:    0.0002,
 			},
@@ -334,7 +334,7 @@ func TestDropletAutoscaler_List(t *testing.T) {
 			Name:            "test-autoscalergroup-03",
 			Config:          expectedConfig,
 			DropletTemplate: expectedDropletTemplate,
-			CurrentUtlization: &DropletAutoscaleResourceUtilization{
+			CurrentUtilization: &DropletAutoscaleResourceUtilization{
 				Memory: 0.33,
 				CPU:    0.0007,
 			},
@@ -370,7 +370,7 @@ func TestDropletAutoscaler_ListMembers(t *testing.T) {
 			DropletID:    1677149,
 			HealthStatus: "healthy",
 			Status:       "active",
-			DropletAutoscaleResourceUtilization: &DropletAutoscaleResourceUtilization{
+			CurrentUtilization: &DropletAutoscaleResourceUtilization{
 				Memory: 0.35,
 				CPU:    0.0012,
 			},
@@ -379,7 +379,7 @@ func TestDropletAutoscaler_ListMembers(t *testing.T) {
 			DropletID:    1677150,
 			HealthStatus: "healthy",
 			Status:       "active",
-			DropletAutoscaleResourceUtilization: &DropletAutoscaleResourceUtilization{
+			CurrentUtilization: &DropletAutoscaleResourceUtilization{
 				Memory: 0.40,
 				CPU:    0.0013,
 			},
@@ -452,20 +452,20 @@ func TestDropletAutoscaler_Create(t *testing.T) {
 
 	createReq := &DropletAutoscalePoolRequest{
 		Name: "test-autoscalergroup-01",
-		AutoscalingConfig: &DropletAutoscaleConfiguration{
+		Config: &DropletAutoscaleConfiguration{
 			MinInstances:         1,
 			MaxInstances:         5,
 			TargetCPUUtilization: 0.5,
 		},
 		DropletTemplate: &DropletAutoscaleResourceTemplate{
-			SizeSlug:   "s-1vcpu-512mb-10gb",
-			RegionSlug: "s2r1",
-			Image:      "547864",
-			Tags:       []string{"test-ag-01"},
-			SSHKeys:    []string{"372862", "367582", "355790"},
-			VpcUUID:    "72b0812c-7535-4388-8507-5ad29b4487b3",
-			IPV6:       true,
-			UserData:   "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
+			Size:     "s-1vcpu-512mb-10gb",
+			Region:   "s2r1",
+			Image:    "547864",
+			Tags:     []string{"test-ag-01"},
+			SSHKeys:  []string{"372862", "367582", "355790"},
+			VpcUUID:  "72b0812c-7535-4388-8507-5ad29b4487b3",
+			IPV6:     true,
+			UserData: "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
 		},
 	}
 
@@ -495,20 +495,20 @@ func TestDropletAutoscaler_Update(t *testing.T) {
 
 	updateReq := &DropletAutoscalePoolRequest{
 		Name: "test-autoscalergroup-01",
-		AutoscalingConfig: &DropletAutoscaleConfiguration{
+		Config: &DropletAutoscaleConfiguration{
 			MinInstances:         1,
 			MaxInstances:         5,
 			TargetCPUUtilization: 0.5,
 		},
 		DropletTemplate: &DropletAutoscaleResourceTemplate{
-			SizeSlug:   "s-1vcpu-512mb-10gb",
-			RegionSlug: "s2r1",
-			Image:      "547864",
-			Tags:       []string{"test-ag-01"},
-			SSHKeys:    []string{"372862", "367582", "355790"},
-			VpcUUID:    "72b0812c-7535-4388-8507-5ad29b4487b3",
-			IPV6:       true,
-			UserData:   "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
+			Size:     "s-1vcpu-512mb-10gb",
+			Region:   "s2r1",
+			Image:    "547864",
+			Tags:     []string{"test-ag-01"},
+			SSHKeys:  []string{"372862", "367582", "355790"},
+			VpcUUID:  "72b0812c-7535-4388-8507-5ad29b4487b3",
+			IPV6:     true,
+			UserData: "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
 		},
 	}
 

@@ -25,14 +25,14 @@ type DropletAutoscaleService interface {
 
 // DropletAutoscalePool represents a DigitalOcean droplet autoscale pool
 type DropletAutoscalePool struct {
-	ID                string                               `json:"id"`
-	Name              string                               `json:"name"`
-	Config            *DropletAutoscaleConfiguration       `json:"config"`
-	DropletTemplate   *DropletAutoscaleResourceTemplate    `json:"droplet_template"`
-	CreatedAt         time.Time                            `json:"created_at"`
-	UpdatedAt         time.Time                            `json:"updated_at"`
-	CurrentUtlization *DropletAutoscaleResourceUtilization `json:"current_utilization,omitempty"`
-	Status            string                               `json:"status"`
+	ID                 string                               `json:"id"`
+	Name               string                               `json:"name"`
+	Config             *DropletAutoscaleConfiguration       `json:"config"`
+	DropletTemplate    *DropletAutoscaleResourceTemplate    `json:"droplet_template"`
+	CreatedAt          time.Time                            `json:"created_at"`
+	UpdatedAt          time.Time                            `json:"updated_at"`
+	CurrentUtilization *DropletAutoscaleResourceUtilization `json:"current_utilization,omitempty"`
+	Status             string                               `json:"status"`
 }
 
 // DropletAutoscaleConfiguration represents a DigitalOcean droplet autoscale pool configuration
@@ -47,8 +47,8 @@ type DropletAutoscaleConfiguration struct {
 
 // DropletAutoscaleResourceTemplate represents a DigitalOcean droplet autoscale pool resource template
 type DropletAutoscaleResourceTemplate struct {
-	SizeSlug         string   `json:"size"`
-	RegionSlug       string   `json:"region"`
+	Size             string   `json:"size"`
+	Region           string   `json:"region"`
 	Image            string   `json:"image"`
 	Tags             []string `json:"tags"`
 	SSHKeys          []string `json:"ssh_keys"`
@@ -67,13 +67,13 @@ type DropletAutoscaleResourceUtilization struct {
 
 // DropletAutoscaleResource represents a DigitalOcean droplet autoscale pool resource
 type DropletAutoscaleResource struct {
-	DropletID                           uint64                               `json:"droplet_id"`
-	CreatedAt                           time.Time                            `json:"created_at"`
-	UpdatedAt                           time.Time                            `json:"updated_at"`
-	HealthStatus                        string                               `json:"health_status"`
-	UnhealthyReason                     string                               `json:"unhealthy_reason,omitempty"`
-	Status                              string                               `json:"status"`
-	DropletAutoscaleResourceUtilization *DropletAutoscaleResourceUtilization `json:"current_utilization,omitempty"`
+	DropletID          uint64                               `json:"droplet_id"`
+	CreatedAt          time.Time                            `json:"created_at"`
+	UpdatedAt          time.Time                            `json:"updated_at"`
+	HealthStatus       string                               `json:"health_status"`
+	UnhealthyReason    string                               `json:"unhealthy_reason,omitempty"`
+	Status             string                               `json:"status"`
+	CurrentUtilization *DropletAutoscaleResourceUtilization `json:"current_utilization,omitempty"`
 }
 
 // DropletAutoscaleHistoryEvent represents a DigitalOcean droplet autoscale pool history event
@@ -90,9 +90,9 @@ type DropletAutoscaleHistoryEvent struct {
 
 // DropletAutoscalePoolRequest represents a DigitalOcean droplet autoscale pool create/update request
 type DropletAutoscalePoolRequest struct {
-	Name              string                            `json:"name"`
-	AutoscalingConfig *DropletAutoscaleConfiguration    `json:"config"`
-	DropletTemplate   *DropletAutoscaleResourceTemplate `json:"droplet_template"`
+	Name            string                            `json:"name"`
+	Config          *DropletAutoscaleConfiguration    `json:"config"`
+	DropletTemplate *DropletAutoscaleResourceTemplate `json:"droplet_template"`
 }
 
 type dropletAutoscalePoolRoot struct {
