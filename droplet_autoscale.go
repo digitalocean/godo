@@ -13,12 +13,12 @@ const (
 
 // DropletAutoscaleService defines an interface for managing droplet autoscale pools through DigitalOcean API
 type DropletAutoscaleService interface {
-	Create(context.Context, *DropletAutoscalePoolRequest) (string, *Response, error)
+	Create(context.Context, *DropletAutoscalePoolRequest) (*DropletAutoscalePool, *Response, error)
 	Get(context.Context, string) (*DropletAutoscalePool, *Response, error)
 	List(context.Context, *ListOptions) ([]*DropletAutoscalePool, *Response, error)
 	ListMembers(context.Context, string, *ListOptions) ([]*DropletAutoscaleResource, *Response, error)
 	ListHistory(context.Context, string, *ListOptions) ([]*DropletAutoscaleHistoryEvent, *Response, error)
-	Update(context.Context, string, *DropletAutoscalePoolRequest) (string, *Response, error)
+	Update(context.Context, string, *DropletAutoscalePoolRequest) (*DropletAutoscalePool, *Response, error)
 	Delete(context.Context, string) (*Response, error)
 	DeleteDangerous(context.Context, string) (*Response, error)
 }
@@ -96,7 +96,7 @@ type DropletAutoscalePoolRequest struct {
 }
 
 type dropletAutoscalePoolRoot struct {
-	ID string `json:"id"`
+	AutoscalePool *DropletAutoscalePool `json:"autoscale_pool"`
 }
 
 type dropletAutoscalePoolsRoot struct {
@@ -125,17 +125,17 @@ type DropletAutoscaleServiceOp struct {
 var _ DropletAutoscaleService = &DropletAutoscaleServiceOp{}
 
 // Create a new droplet autoscale pool
-func (d *DropletAutoscaleServiceOp) Create(ctx context.Context, createReq *DropletAutoscalePoolRequest) (string, *Response, error) {
+func (d *DropletAutoscaleServiceOp) Create(ctx context.Context, createReq *DropletAutoscalePoolRequest) (*DropletAutoscalePool, *Response, error) {
 	req, err := d.client.NewRequest(ctx, http.MethodPost, dropletAutoscaleBasePath, createReq)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
 	root := new(dropletAutoscalePoolRoot)
 	resp, err := d.client.Do(ctx, req, root)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
-	return root.ID, resp, nil
+	return root.AutoscalePool, resp, nil
 }
 
 // Get an existing droplet autoscale pool
@@ -144,12 +144,12 @@ func (d *DropletAutoscaleServiceOp) Get(ctx context.Context, id string) (*Drople
 	if err != nil {
 		return nil, nil, err
 	}
-	root := new(DropletAutoscalePool)
+	root := new(dropletAutoscalePoolRoot)
 	resp, err := d.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, nil, err
 	}
-	return root, resp, err
+	return root.AutoscalePool, resp, err
 }
 
 // List all existing droplet autoscale pools
@@ -225,17 +225,17 @@ func (d *DropletAutoscaleServiceOp) ListHistory(ctx context.Context, id string, 
 }
 
 // Update an existing autoscale pool
-func (d *DropletAutoscaleServiceOp) Update(ctx context.Context, id string, updateReq *DropletAutoscalePoolRequest) (string, *Response, error) {
+func (d *DropletAutoscaleServiceOp) Update(ctx context.Context, id string, updateReq *DropletAutoscalePoolRequest) (*DropletAutoscalePool, *Response, error) {
 	req, err := d.client.NewRequest(ctx, http.MethodPut, fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, id), updateReq)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
 	root := new(dropletAutoscalePoolRoot)
 	resp, err := d.client.Do(ctx, req, root)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
-	return root.ID, resp, nil
+	return root.AutoscalePool, resp, nil
 }
 
 // Delete an existing autoscale pool

@@ -201,39 +201,41 @@ var dropletAutoscaleListJSONResponse = `
 
 var dropletAutoscaleGetJSONResponse = `
 {
-  "id": "1044bfca-e490-44a1-aa1c-6f002daf6a13",
-  "name": "test-autoscalergroup-01",
-  "config": {
-    "min_instances": 1,
-    "max_instances": 5,
-    "target_cpu_utilization": 0.5,
-    "cooldown_minutes": 5
-  },
-  "droplet_template": {
-    "size": "s-1vcpu-512mb-10gb",
-    "region": "s2r1",
-    "image": "547864",
-    "tags": [
-      "test-ag-01"
-    ],
-    "ssh_keys": [
-      "372862",
-      "367582",
-      "355790"
-    ],
-    "vpc_uuid": "72b0812c-7535-4388-8507-5ad29b4487b3",
-    "with_droplet_agent": false,
-    "project_id": "",
-    "ipv6": true,
-    "user_data": "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n"
-  },
-  "created_at": "2024-10-18T19:03:08Z",
-  "updated_at": "2024-10-18T19:03:08Z",
-  "current_utilization": {
-    "memory": 0.35,
-    "cpu": 0.0008
-  },
-  "status": "active"
+  "autoscale_pool": {
+    "id": "1044bfca-e490-44a1-aa1c-6f002daf6a13",
+    "name": "test-autoscalergroup-01",
+    "config": {
+      "min_instances": 1,
+      "max_instances": 5,
+      "target_cpu_utilization": 0.5,
+      "cooldown_minutes": 5
+    },
+    "droplet_template": {
+      "size": "s-1vcpu-512mb-10gb",
+      "region": "s2r1",
+      "image": "547864",
+      "tags": [
+        "test-ag-01"
+      ],
+      "ssh_keys": [
+        "372862",
+        "367582",
+        "355790"
+      ],
+      "vpc_uuid": "72b0812c-7535-4388-8507-5ad29b4487b3",
+      "with_droplet_agent": false,
+      "project_id": "",
+      "ipv6": true,
+      "user_data": "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n"
+    },
+    "created_at": "2024-10-18T19:03:08Z",
+    "updated_at": "2024-10-18T19:03:08Z",
+    "current_utilization": {
+      "memory": 0.35,
+      "cpu": 0.0008
+    },
+    "status": "active"
+  }
 }
 `
 
@@ -477,16 +479,41 @@ func TestDropletAutoscaler_Create(t *testing.T) {
 		}
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, createReq, req)
-		fmt.Fprintf(w, `
-{
-  "id": "d50d8276-ad17-475d-8d2a-26b0acac756c"
-}`)
+		fmt.Fprintf(w, dropletAutoscaleGetJSONResponse)
 	})
+
+	expectedPoolResp := &DropletAutoscalePool{
+		ID:   "1044bfca-e490-44a1-aa1c-6f002daf6a13",
+		Name: "test-autoscalergroup-01",
+		Config: &DropletAutoscaleConfiguration{
+			MinInstances:         1,
+			MaxInstances:         5,
+			TargetCPUUtilization: 0.5,
+			CooldownMinutes:      5,
+		},
+		DropletTemplate: &DropletAutoscaleResourceTemplate{
+			Size:     "s-1vcpu-512mb-10gb",
+			Region:   "s2r1",
+			Image:    "547864",
+			Tags:     []string{"test-ag-01"},
+			SSHKeys:  []string{"372862", "367582", "355790"},
+			VpcUUID:  "72b0812c-7535-4388-8507-5ad29b4487b3",
+			IPV6:     true,
+			UserData: "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
+		},
+		CurrentUtilization: &DropletAutoscaleResourceUtilization{
+			Memory: 0.35,
+			CPU:    0.0008,
+		},
+		Status: "active",
+	}
 
 	createPoolResp, _, err := client.DropletAutoscale.Create(ctx, createReq)
 	require.NoError(t, err)
 	require.NotEmpty(t, createPoolResp)
-	assert.Equal(t, "d50d8276-ad17-475d-8d2a-26b0acac756c", createPoolResp)
+	expectedPoolResp.CreatedAt = createPoolResp.CreatedAt
+	expectedPoolResp.UpdatedAt = createPoolResp.UpdatedAt
+	assert.Equal(t, expectedPoolResp, createPoolResp)
 }
 
 func TestDropletAutoscaler_Update(t *testing.T) {
@@ -521,16 +548,41 @@ func TestDropletAutoscaler_Update(t *testing.T) {
 		}
 		testMethod(t, r, http.MethodPut)
 		assert.Equal(t, updateReq, req)
-		fmt.Fprintf(w, `
-{
-  "id": "d50d8276-ad17-475d-8d2a-26b0acac756c"
-}`)
+		fmt.Fprintf(w, dropletAutoscaleGetJSONResponse)
 	})
+
+	expectedPoolResp := &DropletAutoscalePool{
+		ID:   "1044bfca-e490-44a1-aa1c-6f002daf6a13",
+		Name: "test-autoscalergroup-01",
+		Config: &DropletAutoscaleConfiguration{
+			MinInstances:         1,
+			MaxInstances:         5,
+			TargetCPUUtilization: 0.5,
+			CooldownMinutes:      5,
+		},
+		DropletTemplate: &DropletAutoscaleResourceTemplate{
+			Size:     "s-1vcpu-512mb-10gb",
+			Region:   "s2r1",
+			Image:    "547864",
+			Tags:     []string{"test-ag-01"},
+			SSHKeys:  []string{"372862", "367582", "355790"},
+			VpcUUID:  "72b0812c-7535-4388-8507-5ad29b4487b3",
+			IPV6:     true,
+			UserData: "\n#cloud-config\nruncmd:\n- apt-get update\n- apt-get install -y stress-ng\n",
+		},
+		CurrentUtilization: &DropletAutoscaleResourceUtilization{
+			Memory: 0.35,
+			CPU:    0.0008,
+		},
+		Status: "active",
+	}
 
 	updatePoolResp, _, err := client.DropletAutoscale.Update(ctx, autoscalePoolID, updateReq)
 	require.NoError(t, err)
 	require.NotEmpty(t, updatePoolResp)
-	assert.Equal(t, autoscalePoolID, updatePoolResp)
+	expectedPoolResp.CreatedAt = updatePoolResp.CreatedAt
+	expectedPoolResp.UpdatedAt = updatePoolResp.UpdatedAt
+	assert.Equal(t, expectedPoolResp, updatePoolResp)
 }
 
 func TestDropletAutoscaler_Delete(t *testing.T) {
