@@ -65,6 +65,7 @@ type Client struct {
 	Domains           DomainsService
 	Droplets          DropletsService
 	DropletActions    DropletActionsService
+	DropletAutoscale  DropletAutoscaleService
 	Firewalls         FirewallsService
 	FloatingIPs       FloatingIPsService
 	FloatingIPActions FloatingIPActionsService
@@ -275,6 +276,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Domains = &DomainsServiceOp{client: c}
 	c.Droplets = &DropletsServiceOp{client: c}
 	c.DropletActions = &DropletActionsServiceOp{client: c}
+	c.DropletAutoscale = &DropletAutoscaleServiceOp{client: c}
 	c.Firewalls = &FirewallsServiceOp{client: c}
 	c.FloatingIPs = &FloatingIPsServiceOp{client: c}
 	c.FloatingIPActions = &FloatingIPActionsServiceOp{client: c}
