@@ -1757,6 +1757,14 @@ func (a *AppServiceSpec) GetName() string {
 	return a.Name
 }
 
+// GetProtocol returns the Protocol field.
+func (a *AppServiceSpec) GetProtocol() ServingProtocol {
+	if a == nil {
+		return ""
+	}
+	return a.Protocol
+}
+
 // GetRoutes returns the Routes field.
 func (a *AppServiceSpec) GetRoutes() []*AppRouteSpec {
 	if a == nil {
@@ -3091,6 +3099,14 @@ func (d *DetectResponse) GetComponents() []*DetectResponseComponent {
 		return nil
 	}
 	return d.Components
+}
+
+// GetPending returns the Pending field.
+func (d *DetectResponse) GetPending() bool {
+	if d == nil {
+		return false
+	}
+	return d.Pending
 }
 
 // GetTemplate returns the Template field.
