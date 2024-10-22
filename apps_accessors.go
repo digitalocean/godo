@@ -1421,6 +1421,14 @@ func (a *AppLogDestinationSpecPapertrail) GetEndpoint() string {
 	return a.Endpoint
 }
 
+// GetEnabled returns the Enabled field.
+func (a *AppMaintenanceSpec) GetEnabled() bool {
+	if a == nil {
+		return false
+	}
+	return a.Enabled
+}
+
 // GetAppID returns the AppID field.
 func (a *AppProposeRequest) GetAppID() string {
 	if a == nil {
@@ -1947,6 +1955,14 @@ func (a *AppSpec) GetJobs() []*AppJobSpec {
 		return nil
 	}
 	return a.Jobs
+}
+
+// GetMaintenance returns the Maintenance field.
+func (a *AppSpec) GetMaintenance() *AppMaintenanceSpec {
+	if a == nil {
+		return nil
+	}
+	return a.Maintenance
 }
 
 // GetName returns the Name field.

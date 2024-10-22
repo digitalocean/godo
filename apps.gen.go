@@ -462,6 +462,12 @@ type AppLogDestinationSpecPapertrail struct {
 	Endpoint string `json:"endpoint"`
 }
 
+// AppMaintenanceSpec struct for AppMaintenanceSpec
+type AppMaintenanceSpec struct {
+	// Indicates whether maintenance mode should be enabled for the app.
+	Enabled bool `json:"enabled,omitempty"`
+}
+
 // AppRouteSpec struct for AppRouteSpec
 type AppRouteSpec struct {
 	// (Deprecated) An HTTP path prefix. Paths must start with / and must be unique across all components within an app.
@@ -560,10 +566,11 @@ type AppSpec struct {
 	// A list of environment variables made available to all components in the app.
 	Envs []*AppVariableDefinition `json:"envs,omitempty"`
 	// A list of alerts which apply to the app.
-	Alerts   []*AppAlertSpec `json:"alerts,omitempty"`
-	Ingress  *AppIngressSpec `json:"ingress,omitempty"`
-	Egress   *AppEgressSpec  `json:"egress,omitempty"`
-	Features []string        `json:"features,omitempty"`
+	Alerts      []*AppAlertSpec     `json:"alerts,omitempty"`
+	Ingress     *AppIngressSpec     `json:"ingress,omitempty"`
+	Egress      *AppEgressSpec      `json:"egress,omitempty"`
+	Features    []string            `json:"features,omitempty"`
+	Maintenance *AppMaintenanceSpec `json:"maintenance,omitempty"`
 }
 
 // AppStaticSiteSpec struct for AppStaticSiteSpec
