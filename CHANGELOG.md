@@ -1,5 +1,11 @@
 # Change Log
 
+## [v1.127.0] - 2024-10-18
+
+- #737 - @loosla - [databases]: change Opensearch ism_history_max_docs type to int64 to …
+- #735 - @loosla - [databases]: add a missing field to Opensearch advanced configuration
+- #729 - @loosla - [databases]: add support for Opensearch advanced configuration
+
 ## [v1.126.0] - 2024-09-25
 
 - #732 - @gottwald - DOKS: add custom CIDR fields
