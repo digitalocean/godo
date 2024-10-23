@@ -603,7 +603,7 @@ func TestDropletAutoscaler_DeleteDangerous(t *testing.T) {
 	defer teardown()
 
 	autoscalePoolID := "d50d8276-ad17-475d-8d2a-26b0acac756c"
-	mux.HandleFunc(fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, autoscalePoolID), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("%s/%s/dangerous", dropletAutoscaleBasePath, autoscalePoolID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		if expectedHeader, err := strconv.ParseBool(r.Header.Get("X-Dangerous")); err != nil {
 			t.Fatal(err)
