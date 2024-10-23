@@ -41,13 +41,6 @@ type RegistryService interface {
 	GetSubscription(context.Context) (*RegistrySubscription, *Response, error)
 	UpdateSubscription(context.Context, *RegistrySubscriptionUpdateRequest) (*RegistrySubscription, *Response, error)
 	ValidateName(context.Context, *RegistryValidateNameRequest) (*Response, error)
-
-	// Multi-registry Open Beta API methods
-	GetBeta(context.Context, string) (*Registry, *Response, error)
-	ListBeta(context.Context) ([]*Registry, *Response, error)
-	CreateBeta(context.Context, *RegistriesCreateRequest) (*Registry, *Response, error)
-	DeleteBeta(context.Context, string) (*Response, error)
-	DockerCredentialsBeta(context.Context, string, *RegistryDockerCredentialsRequest) (*DockerCredentials, *Response, error)
 }
 
 var _ RegistryService = &RegistryServiceOp{}
@@ -634,10 +627,27 @@ func (svc *RegistryServiceOp) ValidateName(ctx context.Context, request *Registr
 	return resp, nil
 }
 
-// Multi-registry Open Beta API endpoints
+// RegistriesService is an interface for interfacing with the new multiple-registry beta endpoints
+// of the DigitalOcean API.
+//
+// We are creating a separate Service in alignment with the new /v2/registries endpoints.
+type RegistriesService interface {
+	Get(context.Context, string) (*Registry, *Response, error)
+	List(context.Context) ([]*Registry, *Response, error)
+	Create(context.Context, *RegistriesCreateRequest) (*Registry, *Response, error)
+	Delete(context.Context, string) (*Response, error)
+	DockerCredentials(context.Context, string, *RegistryDockerCredentialsRequest) (*DockerCredentials, *Response, error)
+}
 
-// GetBeta returns the details of a named Registry.
-func (svc *RegistryServiceOp) GetBeta(ctx context.Context, registry string) (*Registry, *Response, error) {
+var _ RegistriesService = &RegistriesServiceOp{}
+
+// RegistriesServiceOp handles communication with the multiple-registry beta methods.
+type RegistriesServiceOp struct {
+	client *Client
+}
+
+// Get returns the details of a named Registry.
+func (svc *RegistriesServiceOp) Get(ctx context.Context, registry string) (*Registry, *Response, error) {
 	path := fmt.Sprintf("%s/%s", registriesPath, registry)
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -651,8 +661,8 @@ func (svc *RegistryServiceOp) GetBeta(ctx context.Context, registry string) (*Re
 	return root.Registry, resp, nil
 }
 
-// ListBeta returns a list of the named Registries.
-func (svc *RegistryServiceOp) ListBeta(ctx context.Context) ([]*Registry, *Response, error) {
+// List returns a list of the named Registries.
+func (svc *RegistriesServiceOp) List(ctx context.Context) ([]*Registry, *Response, error) {
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, registriesPath, nil)
 	if err != nil {
 		return nil, nil, err
@@ -665,8 +675,8 @@ func (svc *RegistryServiceOp) ListBeta(ctx context.Context) ([]*Registry, *Respo
 	return root.Registries, resp, nil
 }
 
-// CreateBeta creates a named Registry.
-func (svc *RegistryServiceOp) CreateBeta(ctx context.Context, create *RegistriesCreateRequest) (*Registry, *Response, error) {
+// Create creates a named Registry.
+func (svc *RegistriesServiceOp) Create(ctx context.Context, create *RegistriesCreateRequest) (*Registry, *Response, error) {
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, registriesPath, create)
 	if err != nil {
 		return nil, nil, err
@@ -681,7 +691,7 @@ func (svc *RegistryServiceOp) CreateBeta(ctx context.Context, create *Registries
 
 // Delete deletes a named Registry. There is no way to recover a Registry once it has
 // been destroyed.
-func (svc *RegistryServiceOp) DeleteBeta(ctx context.Context, registry string) (*Response, error) {
+func (svc *RegistriesServiceOp) Delete(ctx context.Context, registry string) (*Response, error) {
 	path := fmt.Sprintf("%s/%s", registriesPath, registry)
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -695,7 +705,7 @@ func (svc *RegistryServiceOp) DeleteBeta(ctx context.Context, registry string) (
 }
 
 // DockerCredentials retrieves a Docker config file containing named Registry's credentials.
-func (svc *RegistryServiceOp) DockerCredentialsBeta(ctx context.Context, registry string, request *RegistryDockerCredentialsRequest) (*DockerCredentials, *Response, error) {
+func (svc *RegistriesServiceOp) DockerCredentials(ctx context.Context, registry string, request *RegistryDockerCredentialsRequest) (*DockerCredentials, *Response, error) {
 	path := fmt.Sprintf("%s/%s/%s", registriesPath, registry, "docker-credentials")
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

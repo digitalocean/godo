@@ -80,6 +80,7 @@ type Client struct {
 	Projects          ProjectsService
 	Regions           RegionsService
 	Registry          RegistryService
+	Registries        RegistriesService
 	ReservedIPs       ReservedIPsService
 	ReservedIPActions ReservedIPActionsService
 	Sizes             SizesService
@@ -290,6 +291,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Projects = &ProjectsServiceOp{client: c}
 	c.Regions = &RegionsServiceOp{client: c}
 	c.Registry = &RegistryServiceOp{client: c}
+	c.Registries = &RegistriesServiceOp{client: c}
 	c.ReservedIPs = &ReservedIPsServiceOp{client: c}
 	c.ReservedIPActions = &ReservedIPActionsServiceOp{client: c}
 	c.Sizes = &SizesServiceOp{client: c}

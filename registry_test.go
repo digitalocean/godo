@@ -966,7 +966,8 @@ func TestRegistry_ValidateName(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestRegistries_GetBeta(t *testing.T) {
+// Tests for Registries service methods
+func TestRegistries_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -994,13 +995,12 @@ func TestRegistries_GetBeta(t *testing.T) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, getResponseJSON)
 	})
-	got, _, err := client.Registry.GetBeta(ctx, testRegistry)
+	got, _, err := client.Registries.Get(ctx, testRegistry)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
 
-// TODO: Fix following test
-func TestRegistries_ListBeta(t *testing.T) {
+func TestRegistries_List(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -1031,14 +1031,14 @@ func TestRegistries_ListBeta(t *testing.T) {
 		fmt.Printf("Returning: %v", getResponseJSON)
 		fmt.Fprint(w, getResponseJSON)
 	})
-	got, _, err := client.Registry.ListBeta(ctx)
+	got, _, err := client.Registries.List(ctx)
 	require.NoError(t, err)
 	fmt.Printf("Expected: %+v\n", wantRegistries)
 	fmt.Printf("Got: %+v\n", got)
 	require.Equal(t, wantRegistries, got)
 }
 
-func TestRegistries_CreateBeta(t *testing.T) {
+func TestRegistries_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -1078,12 +1078,12 @@ func TestRegistries_CreateBeta(t *testing.T) {
 		fmt.Fprint(w, createResponseJSON)
 	})
 
-	got, _, err := client.Registry.CreateBeta(ctx, createRequest)
+	got, _, err := client.Registries.Create(ctx, createRequest)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
 
-func TestRegistries_DeleteBeta(t *testing.T) {
+func TestRegistries_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -1091,11 +1091,11 @@ func TestRegistries_DeleteBeta(t *testing.T) {
 		testMethod(t, r, http.MethodDelete)
 	})
 
-	_, err := client.Registry.DeleteBeta(ctx, testRegistry)
+	_, err := client.Registries.Delete(ctx, testRegistry)
 	require.NoError(t, err)
 }
 
-func TestRegistries_DockerCredentialsBeta(t *testing.T) {
+func TestRegistries_DockerCredentials(t *testing.T) {
 	returnedConfig := "this could be a docker config"
 	tests := []struct {
 		name                  string
@@ -1139,7 +1139,7 @@ func TestRegistries_DockerCredentialsBeta(t *testing.T) {
 				fmt.Fprint(w, returnedConfig)
 			})
 
-			got, _, err := client.Registry.DockerCredentialsBeta(ctx, testRegistry, test.params)
+			got, _, err := client.Registries.DockerCredentials(ctx, testRegistry, test.params)
 			fmt.Println(returnedConfig)
 			require.NoError(t, err)
 			require.Equal(t, []byte(returnedConfig), got.DockerConfigJSON)
