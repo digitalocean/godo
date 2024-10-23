@@ -249,7 +249,7 @@ func (d *DropletAutoscaleServiceOp) Delete(ctx context.Context, id string) (*Res
 
 // DeleteDangerous deletes an existing autoscale pool with all underlying resources
 func (d *DropletAutoscaleServiceOp) DeleteDangerous(ctx context.Context, id string) (*Response, error) {
-	req, err := d.client.NewRequest(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, id), nil)
+	req, err := d.client.NewRequest(ctx, http.MethodDelete, fmt.Sprintf("%s/%s/dangerous", dropletAutoscaleBasePath, id), nil)
 	req.Header.Set("X-Dangerous", "true")
 	if err != nil {
 		return nil, err
