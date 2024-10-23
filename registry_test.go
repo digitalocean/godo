@@ -1060,8 +1060,8 @@ func TestRegistries_Create(t *testing.T) {
 	"registry": {
 		"name": "` + testRegistry + `",
 		"storage_usage_bytes": 0,
-        "storage_usage_bytes_updated_at": "` + testTimeString + `",
-        "created_at": "` + testTimeString + `",
+		"storage_usage_bytes_updated_at": "` + testTimeString + `",
+		"created_at": "` + testTimeString + `",
 		"region": "` + testRegion + `"
 	}
 }`
