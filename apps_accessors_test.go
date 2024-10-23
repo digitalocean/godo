@@ -1245,6 +1245,13 @@ func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
 	a.GetEndpoint()
 }
 
+func TestAppMaintenanceSpec_GetEnabled(tt *testing.T) {
+	a := &AppMaintenanceSpec{}
+	a.GetEnabled()
+	a = nil
+	a.GetEnabled()
+}
+
 func TestAppProposeRequest_GetAppID(tt *testing.T) {
 	a := &AppProposeRequest{}
 	a.GetAppID()
@@ -1539,6 +1546,13 @@ func TestAppServiceSpec_GetName(tt *testing.T) {
 	a.GetName()
 }
 
+func TestAppServiceSpec_GetProtocol(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetProtocol()
+	a = nil
+	a.GetProtocol()
+}
+
 func TestAppServiceSpec_GetRoutes(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetRoutes()
@@ -1698,6 +1712,13 @@ func TestAppSpec_GetJobs(tt *testing.T) {
 	a.GetJobs()
 	a = nil
 	a.GetJobs()
+}
+
+func TestAppSpec_GetMaintenance(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetMaintenance()
+	a = nil
+	a.GetMaintenance()
 }
 
 func TestAppSpec_GetName(tt *testing.T) {
@@ -2706,6 +2727,13 @@ func TestDetectResponse_GetComponents(tt *testing.T) {
 	d.GetComponents()
 	d = nil
 	d.GetComponents()
+}
+
+func TestDetectResponse_GetPending(tt *testing.T) {
+	d := &DetectResponse{}
+	d.GetPending()
+	d = nil
+	d.GetPending()
 }
 
 func TestDetectResponse_GetTemplate(tt *testing.T) {

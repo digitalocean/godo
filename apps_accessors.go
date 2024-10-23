@@ -1421,6 +1421,14 @@ func (a *AppLogDestinationSpecPapertrail) GetEndpoint() string {
 	return a.Endpoint
 }
 
+// GetEnabled returns the Enabled field.
+func (a *AppMaintenanceSpec) GetEnabled() bool {
+	if a == nil {
+		return false
+	}
+	return a.Enabled
+}
+
 // GetAppID returns the AppID field.
 func (a *AppProposeRequest) GetAppID() string {
 	if a == nil {
@@ -1757,6 +1765,14 @@ func (a *AppServiceSpec) GetName() string {
 	return a.Name
 }
 
+// GetProtocol returns the Protocol field.
+func (a *AppServiceSpec) GetProtocol() ServingProtocol {
+	if a == nil {
+		return ""
+	}
+	return a.Protocol
+}
+
 // GetRoutes returns the Routes field.
 func (a *AppServiceSpec) GetRoutes() []*AppRouteSpec {
 	if a == nil {
@@ -1939,6 +1955,14 @@ func (a *AppSpec) GetJobs() []*AppJobSpec {
 		return nil
 	}
 	return a.Jobs
+}
+
+// GetMaintenance returns the Maintenance field.
+func (a *AppSpec) GetMaintenance() *AppMaintenanceSpec {
+	if a == nil {
+		return nil
+	}
+	return a.Maintenance
 }
 
 // GetName returns the Name field.
@@ -3091,6 +3115,14 @@ func (d *DetectResponse) GetComponents() []*DetectResponseComponent {
 		return nil
 	}
 	return d.Components
+}
+
+// GetPending returns the Pending field.
+func (d *DetectResponse) GetPending() bool {
+	if d == nil {
+		return false
+	}
+	return d.Pending
 }
 
 // GetTemplate returns the Template field.
