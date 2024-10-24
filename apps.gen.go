@@ -466,6 +466,9 @@ type AppLogDestinationSpecPapertrail struct {
 type AppMaintenanceSpec struct {
 	// Indicates whether maintenance mode should be enabled for the app.
 	Enabled bool `json:"enabled,omitempty"`
+	// Indicates whether the app should be archived. Setting this to true implies that enabled is set to true.
+	// Note that this feature is currently in closed beta.
+	Archive bool `json:"archive,omitempty"`
 }
 
 // AppRouteSpec struct for AppRouteSpec

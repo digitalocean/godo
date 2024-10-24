@@ -1245,6 +1245,13 @@ func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
 	a.GetEndpoint()
 }
 
+func TestAppMaintenanceSpec_GetArchive(tt *testing.T) {
+	a := &AppMaintenanceSpec{}
+	a.GetArchive()
+	a = nil
+	a.GetArchive()
+}
+
 func TestAppMaintenanceSpec_GetEnabled(tt *testing.T) {
 	a := &AppMaintenanceSpec{}
 	a.GetEnabled()
