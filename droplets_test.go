@@ -44,6 +44,98 @@ func TestDroplets_ListDroplets(t *testing.T) {
 	}
 }
 
+func TestDroplets_ListDropletsWithGPUs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if r.URL.Query().Get("type") != "gpus" {
+			t.Errorf("Droplets.ListWithGPUs did not request with a type parameter")
+		}
+		fmt.Fprint(w, `{
+			"droplets": [
+				{
+					"id": 1,
+					"size": {
+						"gpu_info": {
+							"count": 1,
+							"vram": {
+								"amount": 8,
+								"unit": "gib"
+							},
+							"model": "nvidia_tesla_v100"
+						},
+						"disk_info": [
+							{
+								"type": "local",
+								"size": {
+									"amount": 200,
+									"unit": "gib"
+								}
+							},
+							{
+								"type": "scratch",
+								"size": {
+									"amount": 40960,
+									"unit": "gib"
+								}
+							}
+						]
+					}
+				}
+			],
+			"meta": {
+				"total": 1
+			}
+		}`)
+	})
+
+	droplets, resp, err := client.Droplets.ListWithGPUs(ctx, nil)
+	if err != nil {
+		t.Errorf("Droplets.List returned error: %v", err)
+	}
+
+	expectedDroplets := []Droplet{
+		{
+			ID: 1,
+			Size: &Size{
+				GPUInfo: &GPUInfo{
+					Count: 1,
+					VRAM: &VRAM{
+						Amount: 8,
+						Unit:   "gib",
+					},
+					Model: "nvidia_tesla_v100",
+				},
+				DiskInfo: []DiskInfo{
+					{
+						Type: "local",
+						Size: &DiskSize{
+							Amount: 200,
+							Unit:   "gib",
+						},
+					},
+					{
+						Type: "scratch",
+						Size: &DiskSize{
+							Amount: 40960,
+							Unit:   "gib",
+						},
+					},
+				},
+			},
+		},
+	}
+	if !reflect.DeepEqual(droplets, expectedDroplets) {
+		t.Errorf("Droplets.List\nDroplets: got=%#v\nwant=%#v", droplets, expectedDroplets)
+	}
+	expectedMeta := &Meta{Total: 1}
+	if !reflect.DeepEqual(resp.Meta, expectedMeta) {
+		t.Errorf("Droplets.List\nMeta: got=%#v\nwant=%#v", resp.Meta, expectedMeta)
+	}
+}
+
 func TestDroplets_ListDropletsByTag(t *testing.T) {
 	setup()
 	defer teardown()
