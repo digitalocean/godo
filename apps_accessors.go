@@ -1421,6 +1421,14 @@ func (a *AppLogDestinationSpecPapertrail) GetEndpoint() string {
 	return a.Endpoint
 }
 
+// GetArchive returns the Archive field.
+func (a *AppMaintenanceSpec) GetArchive() bool {
+	if a == nil {
+		return false
+	}
+	return a.Archive
+}
+
 // GetEnabled returns the Enabled field.
 func (a *AppMaintenanceSpec) GetEnabled() bool {
 	if a == nil {
