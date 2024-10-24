@@ -23,6 +23,15 @@ func TestSizes_List(t *testing.T) {
 			Available:    true,
 			Transfer:     1,
 			Description:  "Basic",
+			DiskInfo: []DiskInfo{
+				{
+					Type: "local",
+					Size: DiskSize{
+						Amount: 25,
+						Unit:   "gib",
+					},
+				},
+			},
 		},
 		{
 			Slug:         "512mb",
@@ -35,6 +44,43 @@ func TestSizes_List(t *testing.T) {
 			Available:    true,
 			Transfer:     1,
 			Description:  "Legacy Basic",
+			DiskInfo: []DiskInfo{
+				{
+					Type: "local",
+					Size: DiskSize{
+						Amount: 20,
+						Unit:   "gib",
+					},
+				},
+			},
+		},
+		{
+			Slug:         "gpu-h100x8-640gb-200",
+			Memory:       1966080,
+			Vcpus:        160,
+			Disk:         200,
+			PriceMonthly: 35414.4,
+			PriceHourly:  52.7,
+			Regions:      []string{"tor1"},
+			Available:    true,
+			Transfer:     60,
+			Description:  "H100 GPU - 8X (small disk)",
+			DiskInfo: []DiskInfo{
+				{
+					Type: "local",
+					Size: DiskSize{
+						Amount: 200,
+						Unit:   "gib",
+					},
+				},
+				{
+					Type: "scratch",
+					Size: DiskSize{
+						Amount: 40960,
+						Unit:   "gib",
+					},
+				},
+			},
 		},
 	}
 
@@ -55,7 +101,16 @@ func TestSizes_List(t *testing.T) {
 						"nyc2"
 					],
 					"available": true,
-					"description": "Basic"
+					"description": "Basic",
+					"disk_info": [
+						{
+							"type": "local",
+							"size": {
+								"amount": 25,
+								"unit": "gib"
+							}
+						}
+					]
 				},
 				{
 					"slug": "512mb",
@@ -70,11 +125,59 @@ func TestSizes_List(t *testing.T) {
 						"nyc2"
 					],
 					"available": true,
-					"description": "Legacy Basic"
+					"description": "Legacy Basic",
+					"disk_info": [
+						{
+							"type": "local",
+							"size": {
+								"amount": 20,
+								"unit": "gib"
+							}
+						}
+					]
+				},
+				{
+					"slug": "gpu-h100x8-640gb-200",
+					"memory": 1966080,
+					"vcpus": 160,
+					"disk": 200,
+					"transfer": 60,
+					"price_monthly": 35414.4,
+					"price_hourly": 52.7,
+					"regions": [
+						"tor1"
+					],
+					"available": true,
+					"description": "H100 GPU - 8X (small disk)",
+					"networking_throughput": 10000,
+					"gpu_info": {
+						"count": 8,
+						"vram": {
+						"amount": 640,
+						"unit": "gib"
+						},
+						"model": "nvidia_h100"
+					},
+					"disk_info": [
+						{
+							"type": "local",
+							"size": {
+								"amount": 200,
+								"unit": "gib"
+							}
+						},
+						{
+							"type": "scratch",
+							"size": {
+								"amount": 40960,
+								"unit": "gib"
+							}
+						}
+					]
 				}
 			],
 			"meta": {
-				"total": 2
+				"total": 3
 			}
 		}`)
 	})
@@ -88,7 +191,7 @@ func TestSizes_List(t *testing.T) {
 		t.Errorf("Sizes.List returned sizes %+v, expected %+v", sizes, expectedSizes)
 	}
 
-	expectedMeta := &Meta{Total: 2}
+	expectedMeta := &Meta{Total: 3}
 	if !reflect.DeepEqual(resp.Meta, expectedMeta) {
 		t.Errorf("Sizes.List returned meta %+v, expected %+v", resp.Meta, expectedMeta)
 	}
