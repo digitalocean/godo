@@ -26,7 +26,7 @@ func TestSizes_List(t *testing.T) {
 			DiskInfo: []DiskInfo{
 				{
 					Type: "local",
-					Size: DiskSize{
+					Size: &DiskSize{
 						Amount: 25,
 						Unit:   "gib",
 					},
@@ -47,7 +47,7 @@ func TestSizes_List(t *testing.T) {
 			DiskInfo: []DiskInfo{
 				{
 					Type: "local",
-					Size: DiskSize{
+					Size: &DiskSize{
 						Amount: 20,
 						Unit:   "gib",
 					},
@@ -65,17 +65,25 @@ func TestSizes_List(t *testing.T) {
 			Available:    true,
 			Transfer:     60,
 			Description:  "H100 GPU - 8X (small disk)",
+			GPUInfo: &GPUInfo{
+				Count: 8,
+				VRAM: &VRAM{
+					Amount: 640,
+					Unit:   "gib",
+				},
+				Model: "nvidia_h100",
+			},
 			DiskInfo: []DiskInfo{
 				{
 					Type: "local",
-					Size: DiskSize{
+					Size: &DiskSize{
 						Amount: 200,
 						Unit:   "gib",
 					},
 				},
 				{
 					Type: "scratch",
-					Size: DiskSize{
+					Size: &DiskSize{
 						Amount: 40960,
 						Unit:   "gib",
 					},
@@ -153,8 +161,8 @@ func TestSizes_List(t *testing.T) {
 					"gpu_info": {
 						"count": 8,
 						"vram": {
-						"amount": 640,
-						"unit": "gib"
+							"amount": 640,
+							"unit": "gib"
 						},
 						"model": "nvidia_h100"
 					},
