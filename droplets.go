@@ -30,6 +30,7 @@ type DropletsService interface {
 	Backups(context.Context, int, *ListOptions) ([]Image, *Response, error)
 	Actions(context.Context, int, *ListOptions) ([]Action, *Response, error)
 	Neighbors(context.Context, int) ([]Droplet, *Response, error)
+	GetBackupPolicy(context.Context, int) (*DropletBackupPolicy, *Response, error)
 }
 
 // DropletsServiceOp handles communication with the Droplet related methods of the
@@ -617,4 +618,106 @@ func (s *DropletsServiceOp) dropletActionStatus(ctx context.Context, uri string)
 	}
 
 	return action.Status, nil
+}
+
+// DropletBackupPolicy defines the information about a droplet's backup policy.
+type DropletBackupPolicy struct {
+	DropletID        int           `json:"droplet_id"`
+	BackupEnabled    bool          `json:"backup_enabled,omitempty"`
+	BackupPolicy     *BackupPolicy `json:"backup_policy,omitempty"`
+	NextBackupWindow *BackupWindow `json:"next_backup_window,omitempty"`
+}
+
+// BackupPolicy defines the backup policy for a Droplet.
+type BackupPolicy struct {
+	Plan                string `json:"plan,omitempty"`
+	Weekday             string `json:"weekday,omitempty"`
+	Hour                string `json:"hour,omitempty"`
+	WindowLengthHours   int    `json:"window_length_hours,omitempty"`
+	RetentionPeriodDays int    `json:"retention_period_days,omitempty"`
+}
+
+// dropletBackupPolicyRoot represents a DropletBackupPolicy root
+type dropletBackupPolicyRoot struct {
+	DropletBackupPolicy *DropletBackupPolicy `json:"policy,omitempty"`
+}
+
+type dropletBackupPoliciesRoot struct {
+	DropletBackupPolicies []*DropletBackupPolicy `json:"policies,omitempty"`
+	Links                 *Links                 `json:"links"`
+	Meta                  *Meta                  `json:"meta"`
+}
+
+// Get individual droplet backup policy.
+func (s *DropletsServiceOp) GetBackupPolicy(ctx context.Context, dropletID int) (*DropletBackupPolicy, *Response, error) {
+	if dropletID < 1 {
+		return nil, nil, NewArgError("dropletID", "cannot be less than 1")
+	}
+
+	path := fmt.Sprintf("%s/%d/backups/policy", dropletBasePath, dropletID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dropletBackupPolicyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.DropletBackupPolicy, resp, err
+}
+
+// List all droplet backup policies.
+func (s *DropletsServiceOp) ListBackupPolicies(ctx context.Context) ([]*DropletBackupPolicy, *Response, error) {
+	path := fmt.Sprintf("%s/backups/policies", dropletBasePath)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dropletBackupPoliciesRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.DropletBackupPolicies, resp, err
+}
+
+type SupportedBackupPolicy struct {
+	Name                 string   `json:"name,omitempty"`
+	PossibleWindowStarts []int    `json:"possible_window_starts,omitempty"`
+	WindowLengthHours    int      `json:"window_length_hours,omitempty"`
+	RetentionPeriodDays  int      `json:"retention_period_days,omitempty"`
+	PossibleDays         []string `json:"possible_days,omitempty"`
+}
+
+type dropletSupportedBackupPoliciesRoot struct {
+	SupportedBackupPolicies []*SupportedBackupPolicy `json:"supported_policies,omitempty"`
+}
+
+// List supported droplet backup policies.
+func (s *DropletsServiceOp) ListSupportedBackupPolicies(ctx context.Context) ([]*SupportedBackupPolicy, *Response, error) {
+	path := fmt.Sprintf("%s/backups/supported_policies", dropletBasePath)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dropletSupportedBackupPoliciesRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.SupportedBackupPolicies, resp, err
 }
