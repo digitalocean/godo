@@ -316,6 +316,10 @@ func TestDroplets_Create(t *testing.T) {
 		},
 		Tags:    []string{"one", "two"},
 		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
+		BackupPolicy: &BackupPolicyCreateRequest{
+			Plan:    "weekly",
+			Weekday: "MON",
+		},
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
@@ -333,8 +337,9 @@ func TestDroplets_Create(t *testing.T) {
 				map[string]interface{}{"id": "hello-im-another-volume"},
 				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
 			},
-			"tags":     []interface{}{"one", "two"},
-			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+			"tags":          []interface{}{"one", "two"},
+			"vpc_uuid":      "880b7f98-f062-404d-b33c-458d545696f6",
+			"backup_policy": map[string]interface{}{"plan": "weekly", "weekday": "MON"},
 		}
 		jsonBlob := `
 {
