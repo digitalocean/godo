@@ -1,11 +1,16 @@
 package godo
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDroplets_ListDroplets(t *testing.T) {
@@ -951,4 +956,119 @@ func TestDroplets_IPMethods(t *testing.T) {
 	if got, expected := ip, ipv6; got != expected {
 		t.Errorf("Droplet.PublicIPv6 returned %s; expected %s", got, expected)
 	}
+}
+
+func TestDroplets_GetBackupPolicy(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345/backups/policy", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+				"policy": {
+					"droplet_id": 12345,
+					"backup_enabled": true,
+					"backup_policy": {
+					"plan": "weekly",
+					"weekday": "SUN",
+					"hour": 0,
+					"window_length_hours": 4,
+					"retention_period_days": 28
+					},
+					"next_backup_window": {
+						"start": "2021-01-01T00:00:00Z",
+						"end": "2021-01-01T00:00:00Z"
+					}
+				}
+			}`)
+	})
+
+	policy, _, err := client.Droplets.GetBackupPolicy(ctx, 12345)
+	if err != nil {
+		t.Errorf("Droplets.GetBackupPolicy returned error: %v", err)
+	}
+
+	pt, err := time.Parse(time.RFC3339, "2021-01-01T00:00:00Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	expected := &DropletBackupPolicy{
+		DropletID:     12345,
+		BackupEnabled: true,
+		BackupPolicy: &BackupPolicy{
+			Plan:                "weekly",
+			Weekday:             "SUN",
+			Hour:                0,
+			WindowLengthHours:   4,
+			RetentionPeriodDays: 28,
+		},
+		NextBackupWindow: &BackupWindow{
+			Start: &Timestamp{Time: pt},
+			End:   &Timestamp{Time: pt},
+		},
+	}
+	if !reflect.DeepEqual(policy, expected) {
+		t.Errorf("Droplets.GetBackupPolicy\n got=%#v\nwant=%#v", policy, expected)
+	}
+}
+
+func TestDroplets_ListBackupPolicies(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+	pt, err := time.Parse(time.RFC3339, "2021-01-01T00:00:00Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	testBackupPolicy := DropletBackupPolicy{
+		DropletID:     12345,
+		BackupEnabled: true,
+		BackupPolicy: &BackupPolicy{
+			Plan:                "weekly",
+			Weekday:             "SUN",
+			Hour:                0,
+			WindowLengthHours:   4,
+			RetentionPeriodDays: 28,
+		},
+		NextBackupWindow: &BackupWindow{
+			Start: &Timestamp{Time: pt},
+			End:   &Timestamp{Time: pt},
+		},
+	}
+
+	mux.HandleFunc("/v2/droplets/backups/policies", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&dropletBackupPoliciesRoot{DropletBackupPolicies: []*DropletBackupPolicy{&testBackupPolicy}})
+	})
+
+	policies, _, err := client.Droplets.ListBackupPolicies(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, []*DropletBackupPolicy{&testBackupPolicy}, policies)
+}
+
+func TestDroplets_ListSupportedBackupPolicies(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+	testSupportedBackupPolicy := SupportedBackupPolicy{
+		Name:                 "weekly",
+		PossibleWindowStarts: []int{0, 4, 8, 12, 16, 20},
+		WindowLengthHours:    4,
+		RetentionPeriodDays:  28,
+		PossibleDays:         []string{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"},
+	}
+
+	mux.HandleFunc("/v2/droplets/backups/supported_policies", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&dropletSupportedBackupPoliciesRoot{SupportedBackupPolicies: []*SupportedBackupPolicy{&testSupportedBackupPolicy}})
+	})
+
+	policies, _, err := client.Droplets.ListSupportedBackupPolicies(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, []*SupportedBackupPolicy{&testSupportedBackupPolicy}, policies)
 }

@@ -31,6 +31,8 @@ type DropletsService interface {
 	Actions(context.Context, int, *ListOptions) ([]Action, *Response, error)
 	Neighbors(context.Context, int) ([]Droplet, *Response, error)
 	GetBackupPolicy(context.Context, int) (*DropletBackupPolicy, *Response, error)
+	ListBackupPolicies(context.Context) ([]*DropletBackupPolicy, *Response, error)
+	ListSupportedBackupPolicies(context.Context) ([]*SupportedBackupPolicy, *Response, error)
 }
 
 // DropletsServiceOp handles communication with the Droplet related methods of the
@@ -631,7 +633,7 @@ func (s *DropletsServiceOp) dropletActionStatus(ctx context.Context, uri string)
 
 // DropletBackupPolicy defines the information about a droplet's backup policy.
 type DropletBackupPolicy struct {
-	DropletID        int           `json:"droplet_id"`
+	DropletID        int           `json:"droplet_id,omitempty"`
 	BackupEnabled    bool          `json:"backup_enabled,omitempty"`
 	BackupPolicy     *BackupPolicy `json:"backup_policy,omitempty"`
 	NextBackupWindow *BackupWindow `json:"next_backup_window,omitempty"`
@@ -641,7 +643,7 @@ type DropletBackupPolicy struct {
 type BackupPolicy struct {
 	Plan                string `json:"plan,omitempty"`
 	Weekday             string `json:"weekday,omitempty"`
-	Hour                string `json:"hour,omitempty"`
+	Hour                int    `json:"hour,omitempty"`
 	WindowLengthHours   int    `json:"window_length_hours,omitempty"`
 	RetentionPeriodDays int    `json:"retention_period_days,omitempty"`
 }
@@ -653,7 +655,7 @@ type dropletBackupPolicyRoot struct {
 
 type dropletBackupPoliciesRoot struct {
 	DropletBackupPolicies []*DropletBackupPolicy `json:"policies,omitempty"`
-	Links                 *Links                 `json:"links"`
+	Links                 *Links                 `json:"links,omitempty"`
 	Meta                  *Meta                  `json:"meta"`
 }
 
@@ -699,7 +701,7 @@ func (s *DropletsServiceOp) ListBackupPolicies(ctx context.Context) ([]*DropletB
 		resp.Meta = m
 	}
 
-	return root.DropletBackupPolicies, resp, err
+	return root.DropletBackupPolicies, resp, nil
 }
 
 type SupportedBackupPolicy struct {
@@ -728,5 +730,5 @@ func (s *DropletsServiceOp) ListSupportedBackupPolicies(ctx context.Context) ([]
 		return nil, resp, err
 	}
 
-	return root.SupportedBackupPolicies, resp, err
+	return root.SupportedBackupPolicies, resp, nil
 }
