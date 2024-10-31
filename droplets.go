@@ -654,7 +654,7 @@ type dropletBackupPolicyRoot struct {
 }
 
 type dropletBackupPoliciesRoot struct {
-	DropletBackupPolicies []*DropletBackupPolicy `json:"policies,omitempty"`
+	DropletBackupPolicies map[int]*DropletBackupPolicy `json:"policies,omitempty"`
 	Links                 *Links                 `json:"links,omitempty"`
 	Meta                  *Meta                  `json:"meta"`
 }
