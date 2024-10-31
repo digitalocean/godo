@@ -31,7 +31,7 @@ type DropletsService interface {
 	Actions(context.Context, int, *ListOptions) ([]Action, *Response, error)
 	Neighbors(context.Context, int) ([]Droplet, *Response, error)
 	GetBackupPolicy(context.Context, int) (*DropletBackupPolicy, *Response, error)
-	ListBackupPolicies(context.Context) ([]*DropletBackupPolicy, *Response, error)
+	ListBackupPolicies(context.Context, *ListOptions) (map[int]*DropletBackupPolicy, *Response, error)
 	ListSupportedBackupPolicies(context.Context) ([]*SupportedBackupPolicy, *Response, error)
 }
 
