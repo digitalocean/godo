@@ -996,7 +996,7 @@ func TestDroplets_GetBackupPolicy(t *testing.T) {
 	expected := &DropletBackupPolicy{
 		DropletID:     12345,
 		BackupEnabled: true,
-		BackupPolicy: &BackupPolicy{
+		BackupPolicy: &DropletBackupPolicyConfig{
 			Plan:                "weekly",
 			Weekday:             "SUN",
 			Hour:                0,
@@ -1026,7 +1026,7 @@ func TestDroplets_ListBackupPolicies(t *testing.T) {
 	testBackupPolicy := DropletBackupPolicy{
 		DropletID:     12345,
 		BackupEnabled: true,
-		BackupPolicy: &BackupPolicy{
+		BackupPolicy: &DropletBackupPolicyConfig{
 			Plan:                "weekly",
 			Weekday:             "SUN",
 			Hour:                0,

@@ -633,14 +633,14 @@ func (s *DropletsServiceOp) dropletActionStatus(ctx context.Context, uri string)
 
 // DropletBackupPolicy defines the information about a droplet's backup policy.
 type DropletBackupPolicy struct {
-	DropletID        int           `json:"droplet_id,omitempty"`
-	BackupEnabled    bool          `json:"backup_enabled,omitempty"`
-	BackupPolicy     *BackupPolicy `json:"backup_policy,omitempty"`
-	NextBackupWindow *BackupWindow `json:"next_backup_window,omitempty"`
+	DropletID        int                        `json:"droplet_id,omitempty"`
+	BackupEnabled    bool                       `json:"backup_enabled,omitempty"`
+	BackupPolicy     *DropletBackupPolicyConfig `json:"backup_policy,omitempty"`
+	NextBackupWindow *BackupWindow              `json:"next_backup_window,omitempty"`
 }
 
-// BackupPolicy defines the backup policy for a Droplet.
-type BackupPolicy struct {
+// DropletBackupPolicyConfig defines the backup policy for a Droplet.
+type DropletBackupPolicyConfig struct {
 	Plan                string `json:"plan,omitempty"`
 	Weekday             string `json:"weekday,omitempty"`
 	Hour                int    `json:"hour,omitempty"`
