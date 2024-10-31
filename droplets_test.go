@@ -1018,6 +1018,7 @@ func TestDroplets_ListBackupPolicies(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
+	policyID := 123
 	pt, err := time.Parse(time.RFC3339, "2021-01-01T00:00:00Z")
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
@@ -1041,12 +1042,16 @@ func TestDroplets_ListBackupPolicies(t *testing.T) {
 	mux.HandleFunc("/v2/droplets/backups/policies", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 
-		json.NewEncoder(w).Encode(&dropletBackupPoliciesRoot{DropletBackupPolicies: []*DropletBackupPolicy{&testBackupPolicy}})
+		json.NewEncoder(w).Encode(&dropletBackupPoliciesRoot{
+			DropletBackupPolicies: map[int]*DropletBackupPolicy{policyID: &testBackupPolicy},
+			Meta:                  &Meta{Total: 1},
+			Links:                 &Links{},
+		})
 	})
 
-	policies, _, err := client.Droplets.ListBackupPolicies(ctx)
+	policies, _, err := client.Droplets.ListBackupPolicies(ctx, &ListOptions{Page: 1})
 	require.NoError(t, err)
-	assert.Equal(t, []*DropletBackupPolicy{&testBackupPolicy}, policies)
+	assert.Equal(t, map[int]*DropletBackupPolicy{policyID: &testBackupPolicy}, policies)
 }
 
 func TestDroplets_ListSupportedBackupPolicies(t *testing.T) {
