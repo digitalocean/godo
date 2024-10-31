@@ -592,6 +592,48 @@ func TestDropletAction_EnableBackupsByTag(t *testing.T) {
 	}
 }
 
+func TestDropletAction_EnableBackupsWithPolicy(t *testing.T) {
+	setup()
+	defer teardown()
+
+	policy := map[string]interface{}{
+		"plan":    "weekly",
+		"weekday": "TUE",
+		"hour":    "20",
+	}
+
+	// request := &ActionRequest{
+	// 	"type":          "enable_backups",
+	// 	"backup_policy": policy,
+	// }
+
+	mux.HandleFunc("/v2/droplets/1/actions", func(w http.ResponseWriter, r *http.Request) {
+		v := new(ActionRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+
+		// if !reflect.DeepEqual(v, request) {
+		// 	t.Errorf("Request body = %+v, expected %+v", v, request)
+		// }
+
+		fmt.Fprintf(w, `{"action":{"status":"in-progress"}}`)
+	})
+
+	action, _, err := client.DropletActions.EnableBackupsWithPolicy(ctx, 1, policy)
+	if err != nil {
+		t.Errorf("DropletActions.EnableBackups returned error: %v", err)
+	}
+
+	expected := &Action{Status: "in-progress"}
+	if !reflect.DeepEqual(action, expected) {
+		t.Errorf("DropletActions.EnableBackups returned %+v, expected %+v", action, expected)
+	}
+}
+
 func TestDropletAction_DisableBackups(t *testing.T) {
 	setup()
 	defer teardown()

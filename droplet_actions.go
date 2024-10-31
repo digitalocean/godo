@@ -30,6 +30,7 @@ type DropletActionsService interface {
 	SnapshotByTag(context.Context, string, string) ([]Action, *Response, error)
 	EnableBackups(context.Context, int) (*Action, *Response, error)
 	EnableBackupsByTag(context.Context, string) ([]Action, *Response, error)
+	EnableBackupsWithPolicy(context.Context, int, map[string]interface{}) (*Action, *Response, error)
 	DisableBackups(context.Context, int) (*Action, *Response, error)
 	DisableBackupsByTag(context.Context, string) ([]Action, *Response, error)
 	PasswordReset(context.Context, int) (*Action, *Response, error)
@@ -167,6 +168,15 @@ func (s *DropletActionsServiceOp) EnableBackups(ctx context.Context, id int) (*A
 func (s *DropletActionsServiceOp) EnableBackupsByTag(ctx context.Context, tag string) ([]Action, *Response, error) {
 	request := &ActionRequest{"type": "enable_backups"}
 	return s.doActionByTag(ctx, tag, request)
+}
+
+// EnableBackupsWithPolicy enables droplet's backup with a backup policy applied.
+func (s *DropletActionsServiceOp) EnableBackupsWithPolicy(ctx context.Context, id int, policy map[string]interface{}) (*Action, *Response, error) {
+	// For cases when applying backup policy and backups are disabled: disable backup to reenable with backup_policy config.
+	requestToDisable := &ActionRequest{"type": "disable_backups"}
+	s.doAction(ctx, id, requestToDisable)
+	request := &ActionRequest{"type": "enable_backups", "backup_policy": policy}
+	return s.doAction(ctx, id, request)
 }
 
 // DisableBackups disables backups for a Droplet.
