@@ -221,43 +221,43 @@ func (d DropletCreateSSHKey) MarshalJSON() ([]byte, error) {
 
 // DropletCreateRequest represents a request to create a Droplet.
 type DropletCreateRequest struct {
-	Name              string                     `json:"name"`
-	Region            string                     `json:"region"`
-	Size              string                     `json:"size"`
-	Image             DropletCreateImage         `json:"image"`
-	SSHKeys           []DropletCreateSSHKey      `json:"ssh_keys"`
-	Backups           bool                       `json:"backups"`
-	IPv6              bool                       `json:"ipv6"`
-	PrivateNetworking bool                       `json:"private_networking"`
-	Monitoring        bool                       `json:"monitoring"`
-	UserData          string                     `json:"user_data,omitempty"`
-	Volumes           []DropletCreateVolume      `json:"volumes,omitempty"`
-	Tags              []string                   `json:"tags"`
-	VPCUUID           string                     `json:"vpc_uuid,omitempty"`
-	WithDropletAgent  *bool                      `json:"with_droplet_agent,omitempty"`
-	BackupPolicy      *BackupPolicyCreateRequest `json:"backup_policy,omitempty"`
+	Name              string                      `json:"name"`
+	Region            string                      `json:"region"`
+	Size              string                      `json:"size"`
+	Image             DropletCreateImage          `json:"image"`
+	SSHKeys           []DropletCreateSSHKey       `json:"ssh_keys"`
+	Backups           bool                        `json:"backups"`
+	IPv6              bool                        `json:"ipv6"`
+	PrivateNetworking bool                        `json:"private_networking"`
+	Monitoring        bool                        `json:"monitoring"`
+	UserData          string                      `json:"user_data,omitempty"`
+	Volumes           []DropletCreateVolume       `json:"volumes,omitempty"`
+	Tags              []string                    `json:"tags"`
+	VPCUUID           string                      `json:"vpc_uuid,omitempty"`
+	WithDropletAgent  *bool                       `json:"with_droplet_agent,omitempty"`
+	BackupPolicy      *DropletBackupPolicyRequest `json:"backup_policy,omitempty"`
 }
 
 // DropletMultiCreateRequest is a request to create multiple Droplets.
 type DropletMultiCreateRequest struct {
-	Names             []string                   `json:"names"`
-	Region            string                     `json:"region"`
-	Size              string                     `json:"size"`
-	Image             DropletCreateImage         `json:"image"`
-	SSHKeys           []DropletCreateSSHKey      `json:"ssh_keys"`
-	Backups           bool                       `json:"backups"`
-	IPv6              bool                       `json:"ipv6"`
-	PrivateNetworking bool                       `json:"private_networking"`
-	Monitoring        bool                       `json:"monitoring"`
-	UserData          string                     `json:"user_data,omitempty"`
-	Tags              []string                   `json:"tags"`
-	VPCUUID           string                     `json:"vpc_uuid,omitempty"`
-	WithDropletAgent  *bool                      `json:"with_droplet_agent,omitempty"`
-	BackupPolicy      *BackupPolicyCreateRequest `json:"backup_policy,omitempty"`
+	Names             []string                    `json:"names"`
+	Region            string                      `json:"region"`
+	Size              string                      `json:"size"`
+	Image             DropletCreateImage          `json:"image"`
+	SSHKeys           []DropletCreateSSHKey       `json:"ssh_keys"`
+	Backups           bool                        `json:"backups"`
+	IPv6              bool                        `json:"ipv6"`
+	PrivateNetworking bool                        `json:"private_networking"`
+	Monitoring        bool                        `json:"monitoring"`
+	UserData          string                      `json:"user_data,omitempty"`
+	Tags              []string                    `json:"tags"`
+	VPCUUID           string                      `json:"vpc_uuid,omitempty"`
+	WithDropletAgent  *bool                       `json:"with_droplet_agent,omitempty"`
+	BackupPolicy      *DropletBackupPolicyRequest `json:"backup_policy,omitempty"`
 }
 
-// BackupPolicyCreateRequest defines the backup policy when creating a Droplet.
-type BackupPolicyCreateRequest struct {
+// DropletBackupPolicyRequest defines the backup policy when creating a Droplet.
+type DropletBackupPolicyRequest struct {
 	Plan    string `json:"plan,omitempty"`
 	Weekday string `json:"weekday,omitempty"`
 	Hour    int    `json:"hour,omitempty"`
@@ -655,8 +655,8 @@ type dropletBackupPolicyRoot struct {
 
 type dropletBackupPoliciesRoot struct {
 	DropletBackupPolicies map[int]*DropletBackupPolicy `json:"policies,omitempty"`
-	Links                 *Links                 `json:"links,omitempty"`
-	Meta                  *Meta                  `json:"meta"`
+	Links                 *Links                       `json:"links,omitempty"`
+	Meta                  *Meta                        `json:"meta"`
 }
 
 // Get individual droplet backup policy.

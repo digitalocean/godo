@@ -321,7 +321,7 @@ func TestDroplets_Create(t *testing.T) {
 		},
 		Tags:    []string{"one", "two"},
 		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
-		BackupPolicy: &BackupPolicyCreateRequest{
+		BackupPolicy: &DropletBackupPolicyRequest{
 			Plan:    "weekly",
 			Weekday: "MON",
 		},
