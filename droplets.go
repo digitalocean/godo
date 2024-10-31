@@ -682,8 +682,12 @@ func (s *DropletsServiceOp) GetBackupPolicy(ctx context.Context, dropletID int) 
 }
 
 // List all droplet backup policies.
-func (s *DropletsServiceOp) ListBackupPolicies(ctx context.Context) ([]*DropletBackupPolicy, *Response, error) {
+func (s *DropletsServiceOp) ListBackupPolicies(ctx context.Context, opt *ListOptions) (map[int]*DropletBackupPolicy, *Response, error) {
 	path := fmt.Sprintf("%s/backups/policies", dropletBasePath)
+	path, err := addOptions(path, opt)
+	if err != nil {
+		return nil, nil, err
+	}
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
