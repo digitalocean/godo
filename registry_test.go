@@ -965,3 +965,184 @@ func TestRegistry_ValidateName(t *testing.T) {
 	_, err := client.Registry.ValidateName(ctx, validateNameRequest)
 	require.NoError(t, err)
 }
+
+// Tests for Registries service methods
+func TestRegistries_Get(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &Registry{
+		Name:                       testRegistry,
+		StorageUsageBytes:          0,
+		StorageUsageBytesUpdatedAt: testTime,
+		CreatedAt:                  testTime,
+		Region:                     testRegion,
+	}
+
+	// We return `read_only` and `type` (only for multi-regsitry) -- check if we need to do this or not -- older tests don't add `read_only` to the response
+	getResponseJSON := `
+{
+	"registry": {
+		"name": "` + testRegistry + `",
+		"storage_usage_bytes": 0,
+		"storage_usage_bytes_updated_at": "` + testTimeString + `",
+		"created_at": "` + testTimeString + `",
+		"region": "` + testRegion + `"
+	}
+}`
+
+	mux.HandleFunc(fmt.Sprintf("/v2/registries/%s", testRegistry), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getResponseJSON)
+	})
+	got, _, err := client.Registries.Get(ctx, testRegistry)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestRegistries_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	wantRegistries := []*Registry{
+		{
+			Name:                       testRegistry,
+			StorageUsageBytes:          0,
+			StorageUsageBytesUpdatedAt: testTime,
+			CreatedAt:                  testTime,
+			Region:                     testRegion,
+		},
+	}
+	getResponseJSON := `
+{
+	"registries": [
+		{
+			"name": "` + testRegistry + `",
+			"storage_usage_bytes": 0,
+			"storage_usage_bytes_updated_at": "` + testTimeString + `",
+			"created_at": "` + testTimeString + `",
+			"region": "` + testRegion + `"
+		}
+	]
+}`
+
+	mux.HandleFunc("/v2/registries", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Printf("Returning: %v", getResponseJSON)
+		fmt.Fprint(w, getResponseJSON)
+	})
+	got, _, err := client.Registries.List(ctx)
+	require.NoError(t, err)
+	fmt.Printf("Expected: %+v\n", wantRegistries)
+	fmt.Printf("Got: %+v\n", got)
+	require.Equal(t, wantRegistries, got)
+}
+
+func TestRegistries_Create(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &Registry{
+		Name:                       testRegistry,
+		StorageUsageBytes:          0,
+		StorageUsageBytesUpdatedAt: testTime,
+		CreatedAt:                  testTime,
+		Region:                     testRegion,
+	}
+
+	createRequest := &RegistriesCreateRequest{
+		Name:   want.Name,
+		Region: testRegion,
+	}
+
+	createResponseJSON := `
+{
+	"registry": {
+		"name": "` + testRegistry + `",
+		"storage_usage_bytes": 0,
+		"storage_usage_bytes_updated_at": "` + testTimeString + `",
+		"created_at": "` + testTimeString + `",
+		"region": "` + testRegion + `"
+	}
+}`
+
+	mux.HandleFunc("/v2/registries", func(w http.ResponseWriter, r *http.Request) {
+		v := new(RegistriesCreateRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, v, createRequest)
+		fmt.Fprint(w, createResponseJSON)
+	})
+
+	got, _, err := client.Registries.Create(ctx, createRequest)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestRegistries_Delete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/registries/%s", testRegistry), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Registries.Delete(ctx, testRegistry)
+	require.NoError(t, err)
+}
+
+func TestRegistries_DockerCredentials(t *testing.T) {
+	returnedConfig := "this could be a docker config"
+	tests := []struct {
+		name                  string
+		params                *RegistryDockerCredentialsRequest
+		expectedReadWrite     string
+		expectedExpirySeconds string
+	}{
+		{
+			name:              "read-only (default)",
+			params:            &RegistryDockerCredentialsRequest{},
+			expectedReadWrite: "false",
+		},
+		{
+			name:              "read/write",
+			params:            &RegistryDockerCredentialsRequest{ReadWrite: true},
+			expectedReadWrite: "true",
+		},
+		{
+			name:                  "read-only + custom expiry",
+			params:                &RegistryDockerCredentialsRequest{ExpirySeconds: PtrTo(60 * 60)},
+			expectedReadWrite:     "false",
+			expectedExpirySeconds: "3600",
+		},
+		{
+			name:                  "read/write + custom expiry",
+			params:                &RegistryDockerCredentialsRequest{ReadWrite: true, ExpirySeconds: PtrTo(60 * 60)},
+			expectedReadWrite:     "true",
+			expectedExpirySeconds: "3600",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			mux.HandleFunc(fmt.Sprintf("/v2/registries/%s/docker-credentials", testRegistry), func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, test.expectedReadWrite, r.URL.Query().Get("read_write"))
+				require.Equal(t, test.expectedExpirySeconds, r.URL.Query().Get("expiry_seconds"))
+				testMethod(t, r, http.MethodGet)
+				fmt.Fprint(w, returnedConfig)
+			})
+
+			got, _, err := client.Registries.DockerCredentials(ctx, testRegistry, test.params)
+			fmt.Println(returnedConfig)
+			require.NoError(t, err)
+			require.Equal(t, []byte(returnedConfig), got.DockerConfigJSON)
+		})
+	}
+}
