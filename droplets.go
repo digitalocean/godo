@@ -260,7 +260,7 @@ type DropletMultiCreateRequest struct {
 type DropletBackupPolicyRequest struct {
 	Plan    string `json:"plan,omitempty"`
 	Weekday string `json:"weekday,omitempty"`
-	Hour    int    `json:"hour,omitempty"`
+	Hour    int    `json:"hour"` // Avoid using omitempty to ensure zero values are included in the JSON output.
 }
 
 func (d DropletCreateRequest) String() string {

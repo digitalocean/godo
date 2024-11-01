@@ -321,9 +321,11 @@ func TestDroplets_Create(t *testing.T) {
 		},
 		Tags:    []string{"one", "two"},
 		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
+		Backups: true,
 		BackupPolicy: &DropletBackupPolicyRequest{
 			Plan:    "weekly",
 			Weekday: "MON",
+			Hour:    0,
 		},
 	}
 
@@ -334,7 +336,6 @@ func TestDroplets_Create(t *testing.T) {
 			"size":               "size",
 			"image":              float64(1),
 			"ssh_keys":           nil,
-			"backups":            false,
 			"ipv6":               false,
 			"private_networking": false,
 			"monitoring":         false,
@@ -344,7 +345,8 @@ func TestDroplets_Create(t *testing.T) {
 			},
 			"tags":          []interface{}{"one", "two"},
 			"vpc_uuid":      "880b7f98-f062-404d-b33c-458d545696f6",
-			"backup_policy": map[string]interface{}{"plan": "weekly", "weekday": "MON"},
+			"backups":       true,
+			"backup_policy": map[string]interface{}{"plan": "weekly", "weekday": "MON", "hour": float64(0)},
 		}
 		jsonBlob := `
 {
