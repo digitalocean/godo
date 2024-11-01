@@ -1,6 +1,7 @@
 package godo
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -725,6 +726,89 @@ var (
 			},
 		},
 	}
+
+	testLBResponseJSON = `
+	{
+	  "status": "success",
+	  "data": {
+		"resultType": "matrix",
+		"result": [
+		  {
+			"metric": {
+			  "lb_id": "d699d327-5ad6-4894-8172-e8105f711cd4",
+			  "region": "s2r1"
+			},
+			"values": [
+			  [
+				1729453800,
+				"1.5082956259357405"
+			  ],
+			  [
+				1729453920,
+				"1.4755197853656865"
+			  ],
+			  [
+				1729454040,
+				"1.2758099714636817"
+			  ],
+			  [
+				1729454160,
+				"1.4922870556695833"
+			  ],
+			  [
+				1729454280,
+				"1.509813789633041"
+			  ],
+			  [
+				1729454400,
+				"1.3252809931070697"
+			  ]
+			]
+		  }
+		]
+	  }
+	}`
+
+	testLBResponse = &MetricsResponse{
+		Status: "success",
+		Data: MetricsData{
+			ResultType: "matrix",
+			Result: []metrics.SampleStream{
+				{
+					Metric: metrics.Metric{
+						"lb_id":  "d699d327-5ad6-4894-8172-e8105f711cd4",
+						"region": "s2r1",
+					},
+					Values: []metrics.SamplePair{
+						{
+							Timestamp: 1729453800000,
+							Value:     1.5082956259357405,
+						},
+						{
+							Timestamp: 1729453920000,
+							Value:     1.4755197853656865,
+						},
+						{
+							Timestamp: 1729454040000,
+							Value:     1.2758099714636817,
+						},
+						{
+							Timestamp: 1729454160000,
+							Value:     1.4922870556695833,
+						},
+						{
+							Timestamp: 1729454280000,
+							Value:     1.509813789633041,
+						},
+						{
+							Timestamp: 1729454400000,
+							Value:     1.3252809931070697,
+						},
+					},
+				},
+			},
+		},
+	}
 )
 
 func TestAlertPolicies_List(t *testing.T) {
@@ -1304,4 +1388,124 @@ func TestGetDropletCPU(t *testing.T) {
 	}
 
 	assert.Equal(t, testCPUResponse, metricsResp)
+}
+
+func TestGetLoadBalancerMetrics(t *testing.T) {
+	setup()
+	defer teardown()
+
+	for _, tc := range []struct {
+		testFunc func(ctx context.Context, args *LoadBalancerMetricsRequest) (*MetricsResponse, *Response, error)
+		path     string
+	}{
+		{
+			client.Monitoring.GetLoadBalancerFrontendHttpRequestsPerSecond,
+			"/frontend_http_requests_per_second"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendConnectionsCurrent,
+			"/frontend_connections_current"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendConnectionsLimit,
+			"/frontend_connections_limit"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendCpuUtilization,
+			"/frontend_cpu_utilization"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendNetworkThroughputHttp,
+			"/frontend_network_throughput_http"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendNetworkThroughputUdp,
+			"/frontend_network_throughput_udp"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendNetworkThroughputTcp,
+			"/frontend_network_throughput_tcp"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendNlbTcpNetworkThroughput,
+			"/frontend_nlb_tcp_network_throughput"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendNlbUdpNetworkThroughput,
+			"/frontend_nlb_udp_network_throughput"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendFirewallDroppedBytes,
+			"/frontend_firewall_dropped_bytes"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendFirewallDroppedPackets,
+			"/frontend_firewall_dropped_packets"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendHttpResponses,
+			"/frontend_http_responses"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendTlsConnectionsCurrent,
+			"/frontend_tls_connections_current"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendTlsConnectionsLimit,
+			"/frontend_tls_connections_limit"},
+		{
+			client.Monitoring.GetLoadBalancerFrontendTlsConnectionsExceedingRateLimit,
+			"/frontend_tls_connections_exceeding_rate_limit"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHttpSessionDurationAvg,
+			"/droplets_http_session_duration_avg"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHttpSessionDuration50P,
+			"/droplets_http_session_duration_50p"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHttpSessionDuration95P,
+			"/droplets_http_session_duration_95p"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHttpResponseTimeAvg,
+			"/droplets_http_response_time_avg"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHttpResponseTime50P,
+			"/droplets_http_response_time_50p"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHttpResponseTime95P,
+			"/droplets_http_response_time_95p"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHttpResponseTime99P,
+			"/droplets_http_response_time_99p"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsQueueSize,
+			"/droplets_queue_size"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHttpResponses,
+			"/droplets_http_responses"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsConnections,
+			"/droplets_connections"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsHealthChecks,
+			"/droplets_health_checks"},
+		{
+			client.Monitoring.GetLoadBalancerDropletsDowntime,
+			"/droplets_downtime",
+		},
+	} {
+		now := time.Now()
+		metricReq := &LoadBalancerMetricsRequest{
+			LoadBalancerID: "123",
+			Start:          now.Add(-300 * time.Second),
+			End:            now,
+		}
+
+		mux.HandleFunc("/v2/monitoring/metrics/load_balancer"+tc.path, func(w http.ResponseWriter, r *http.Request) {
+			lbID := r.URL.Query().Get("lb_id")
+			start := r.URL.Query().Get("start")
+			end := r.URL.Query().Get("end")
+
+			assert.Equal(t, metricReq.LoadBalancerID, lbID)
+			assert.Equal(t, fmt.Sprintf("%d", metricReq.Start.Unix()), start)
+			assert.Equal(t, fmt.Sprintf("%d", metricReq.End.Unix()), end)
+			testMethod(t, r, http.MethodGet)
+
+			fmt.Fprintf(w, testLBResponseJSON)
+		})
+
+		metricsResp, _, err := tc.testFunc(ctx, metricReq)
+		if err != nil {
+			t.Errorf("Monitoring.%v returned error: %v", tc.path, err)
+		}
+
+		assert.Equal(t, testLBResponse, metricsResp)
+	}
 }
