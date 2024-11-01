@@ -602,10 +602,10 @@ func TestDropletAction_EnableBackupsWithPolicy(t *testing.T) {
 		"hour":    "20",
 	}
 
-	// request := &ActionRequest{
-	// 	"type":          "enable_backups",
-	// 	"backup_policy": policy,
-	// }
+	request := &ActionRequest{
+		"type":          "change_backup_policy",
+		"backup_policy": policy,
+	}
 
 	mux.HandleFunc("/v2/droplets/1/actions", func(w http.ResponseWriter, r *http.Request) {
 		v := new(ActionRequest)
@@ -616,9 +616,9 @@ func TestDropletAction_EnableBackupsWithPolicy(t *testing.T) {
 
 		testMethod(t, r, http.MethodPost)
 
-		// if !reflect.DeepEqual(v, request) {
-		// 	t.Errorf("Request body = %+v, expected %+v", v, request)
-		// }
+		if !reflect.DeepEqual(v, request) {
+			t.Errorf("Request body = %+v, expected %+v", v, request)
+		}
 
 		fmt.Fprintf(w, `{"action":{"status":"in-progress"}}`)
 	})
