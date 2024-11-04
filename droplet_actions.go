@@ -172,7 +172,15 @@ func (s *DropletActionsServiceOp) EnableBackupsByTag(ctx context.Context, tag st
 
 // EnableBackupsWithPolicy enables droplet's backup with a backup policy applied.
 func (s *DropletActionsServiceOp) EnableBackupsWithPolicy(ctx context.Context, id int, policy map[string]interface{}) (*Action, *Response, error) {
-	request := &ActionRequest{"type": "change_backup_policy", "backup_policy": policy}
+	policyMap := map[string]interface{}{
+		"plan":    policy.Plan,
+		"weekday": policy.Weekday,
+	}
+	if policy.Hour != nil {
+		policyMap["hour"] = policy.Hour
+	}
+
+	request := &ActionRequest{"type": "enable_backups", "backup_policy": policyMap}
 	return s.doAction(ctx, id, request)
 }
 
