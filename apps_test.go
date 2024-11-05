@@ -427,6 +427,46 @@ func TestApps_ProposeApp(t *testing.T) {
 	assert.True(t, res.AppNameAvailable)
 }
 
+func TestApps_Restart(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		components []string
+	}{
+		{
+			name:       "all",
+			components: nil,
+		},
+		{
+			name:       "specific",
+			components: []string{"service1", "service2"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			ctx := context.Background()
+
+			mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/restart", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, http.MethodPost)
+
+				var req AppRestartRequest
+				err := json.NewDecoder(r.Body).Decode(&req)
+				require.NoError(t, err)
+				assert.Equal(t, tc.components, req.Components)
+
+				json.NewEncoder(w).Encode(&deploymentRoot{Deployment: &testDeployment})
+			})
+
+			deployment, _, err := client.Apps.Restart(ctx, testApp.ID, &AppRestartRequest{
+				Components: tc.components,
+			})
+			require.NoError(t, err)
+			assert.Equal(t, &testDeployment, deployment)
+		})
+	}
+}
+
 func TestApps_CreateDeployment(t *testing.T) {
 	for _, forceBuild := range []bool{true, false} {
 		t.Run(fmt.Sprintf("ForceBuild_%t", forceBuild), func(t *testing.T) {
