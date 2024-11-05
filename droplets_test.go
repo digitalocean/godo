@@ -325,7 +325,7 @@ func TestDroplets_Create(t *testing.T) {
 		BackupPolicy: &DropletBackupPolicyRequest{
 			Plan:    "weekly",
 			Weekday: "MON",
-			Hour:    0,
+			Hour:    PtrTo(0),
 		},
 	}
 
