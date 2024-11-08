@@ -516,6 +516,38 @@ func TestApps_GetLogs(t *testing.T) {
 	assert.NotEmpty(t, logs.LiveURL)
 }
 
+func TestApps_GetExec(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/components/%s/exec", testApp.ID, testDeployment.ID, "service-name"), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		_, hasComponent := r.URL.Query()["component_name"]
+		assert.False(t, hasComponent)
+
+		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url1"})
+	})
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/components/%s/exec", testApp.ID, "service-name"), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		_, hasComponent := r.URL.Query()["component_name"]
+		assert.False(t, hasComponent)
+
+		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url2"})
+	})
+
+	exec, _, err := client.Apps.GetExec(ctx, testApp.ID, testDeployment.ID, "service-name")
+	require.NoError(t, err)
+	assert.Equal(t, "https://exec.url1", exec.URL)
+
+	exec, _, err = client.Apps.GetExec(ctx, testApp.ID, "", "service-name")
+	require.NoError(t, err)
+	assert.Equal(t, "https://exec.url2", exec.URL)
+}
+
 func TestApps_GetLogs_ActiveDeployment(t *testing.T) {
 	setup()
 	defer teardown()
