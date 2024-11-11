@@ -589,6 +589,9 @@ type PostgreSQLConfig struct {
 	BackupMinute                    *int                         `json:"backup_minute,omitempty"`
 	WorkMem                         *int                         `json:"work_mem,omitempty"`
 	TimeScaleDB                     *PostgreSQLTimeScaleDBConfig `json:"timescaledb,omitempty"`
+	SynchronousReplication          *string                      `json:"synchronous_replication,omitempty"`
+	StatMonitorEnable               *bool                        `json:"stat_monitor_enable,omitempty"`
+	MaxFailoverReplicationTimeLag   *uint64                      `json:"max_failover_replication_time_lag,omitempty"`
 }
 
 // PostgreSQLBouncerConfig configuration
@@ -653,6 +656,13 @@ type MySQLConfig struct {
 	BackupHour                   *int     `json:"backup_hour,omitempty"`
 	BackupMinute                 *int     `json:"backup_minute,omitempty"`
 	BinlogRetentionPeriod        *int     `json:"binlog_retention_period,omitempty"`
+	InnodbChangeBufferMaxSize    *uint32  `json:"innodb_change_buffer_max_size,omitempty"`
+	InnodbFlushNeighbors         *uint32  `json:"innodb_flush_neighbors,omitempty"`
+	InnodbReadIoThreads          *uint32  `json:"innodb_read_io_threads,omitempty"`
+	InnodbThreadConcurrency      *uint32  `json:"innodb_thread_concurrency,omitempty"`
+	InnodbWriteIoThreads         *uint32  `json:"innodb_write_io_threads,omitempty"`
+	NetBufferLength              *uint32  `json:"net_buffer_length,omitempty"`
+	LogOutput                    *string  `json:"log_output,omitempty"`
 }
 
 // MongoDBConfig holds advanced configurations for MongoDB database clusters.
