@@ -591,7 +591,7 @@ type PostgreSQLConfig struct {
 	TimeScaleDB                     *PostgreSQLTimeScaleDBConfig `json:"timescaledb,omitempty"`
 	SynchronousReplication          *string                      `json:"synchronous_replication,omitempty"`
 	StatMonitorEnable               *bool                        `json:"stat_monitor_enable,omitempty"`
-	MaxFailoverReplicationTimeLag   *uint64                      `json:"max_failover_replication_time_lag,omitempty"`
+	MaxFailoverReplicationTimeLag   *int64                       `json:"max_failover_replication_time_lag,omitempty"`
 }
 
 // PostgreSQLBouncerConfig configuration
@@ -656,7 +656,7 @@ type MySQLConfig struct {
 	BackupHour                   *int     `json:"backup_hour,omitempty"`
 	BackupMinute                 *int     `json:"backup_minute,omitempty"`
 	BinlogRetentionPeriod        *int     `json:"binlog_retention_period,omitempty"`
-	InnodbChangeBufferMaxSize    *int  `json:"innodb_change_buffer_max_size,omitempty"`
+	InnodbChangeBufferMaxSize    *int     `json:"innodb_change_buffer_max_size,omitempty"`
 	InnodbFlushNeighbors         *uint32  `json:"innodb_flush_neighbors,omitempty"`
 	InnodbReadIoThreads          *uint32  `json:"innodb_read_io_threads,omitempty"`
 	InnodbThreadConcurrency      *uint32  `json:"innodb_thread_concurrency,omitempty"`
