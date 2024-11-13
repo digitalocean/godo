@@ -657,11 +657,11 @@ type MySQLConfig struct {
 	BackupMinute                 *int     `json:"backup_minute,omitempty"`
 	BinlogRetentionPeriod        *int     `json:"binlog_retention_period,omitempty"`
 	InnodbChangeBufferMaxSize    *int     `json:"innodb_change_buffer_max_size,omitempty"`
-	InnodbFlushNeighbors         *uint32  `json:"innodb_flush_neighbors,omitempty"`
-	InnodbReadIoThreads          *uint32  `json:"innodb_read_io_threads,omitempty"`
-	InnodbThreadConcurrency      *uint32  `json:"innodb_thread_concurrency,omitempty"`
-	InnodbWriteIoThreads         *uint32  `json:"innodb_write_io_threads,omitempty"`
-	NetBufferLength              *uint32  `json:"net_buffer_length,omitempty"`
+	InnodbFlushNeighbors         *int     `json:"innodb_flush_neighbors,omitempty"`
+	InnodbReadIoThreads          *int     `json:"innodb_read_io_threads,omitempty"`
+	InnodbThreadConcurrency      *int     `json:"innodb_thread_concurrency,omitempty"`
+	InnodbWriteIoThreads         *int     `json:"innodb_write_io_threads,omitempty"`
+	NetBufferLength              *int     `json:"net_buffer_length,omitempty"`
 	LogOutput                    *string  `json:"log_output,omitempty"`
 }
 
