@@ -9,17 +9,17 @@ import (
 	"time"
 )
 
-func TestReservedIPV6s_Reserve(t *testing.T) {
+func TestReservedIPV6s_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	reserveRequest := &ReservedIPV6ReserveRequest{
+	reserveRequest := &ReservedIPV6CreateRequest{
 		Region: "nyc3",
 	}
 	nowTime := time.Now()
 
 	mux.HandleFunc("/v2/reserved_ipv6", func(w http.ResponseWriter, r *http.Request) {
-		v := new(ReservedIPV6ReserveRequest)
+		v := new(ReservedIPV6CreateRequest)
 		err := json.NewDecoder(r.Body).Decode(v)
 		if err != nil {
 			t.Fatal(err)
@@ -33,7 +33,7 @@ func TestReservedIPV6s_Reserve(t *testing.T) {
 		fmt.Fprint(w, `{"ip":"2604:a880:800:14::42c3:d000","region_slug":"nyc3","reserved_at":"`+nowTime.Format(time.RFC3339Nano)+`"}`)
 	})
 
-	reservedIP, _, err := client.ReservedIPV6s.Reserve(ctx, reserveRequest)
+	reservedIP, _, err := client.ReservedIPV6s.Create(ctx, reserveRequest)
 	if err != nil {
 		t.Errorf("ReservedIPV6s.Create returned error: %v", err)
 	}
@@ -128,7 +128,7 @@ func TestReservedIPV6s_Get(t *testing.T) {
 	}
 }
 
-func TestReservedIPV6s_Release(t *testing.T) {
+func TestReservedIPV6s_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -136,7 +136,7 @@ func TestReservedIPV6s_Release(t *testing.T) {
 		testMethod(t, r, http.MethodDelete)
 	})
 
-	_, err := client.ReservedIPV6s.Release(ctx, "2604:a880:800:14::42c3:d001")
+	_, err := client.ReservedIPV6s.Delete(ctx, "2604:a880:800:14::42c3:d001")
 	if err != nil {
 		t.Errorf("ReservedIPV6s.Release returned error: %v", err)
 	}
