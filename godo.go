@@ -83,6 +83,7 @@ type Client struct {
 	Registry          RegistryService
 	Registries        RegistriesService
 	ReservedIPs       ReservedIPsService
+	ReservedIPV6s     ReservedIPV6sService
 	ReservedIPActions ReservedIPActionsService
 	Sizes             SizesService
 	Snapshots         SnapshotsService
@@ -295,6 +296,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Registry = &RegistryServiceOp{client: c}
 	c.Registries = &RegistriesServiceOp{client: c}
 	c.ReservedIPs = &ReservedIPsServiceOp{client: c}
+	c.ReservedIPV6s = &ReservedIPV6sServiceOp{client: c}
 	c.ReservedIPActions = &ReservedIPActionsServiceOp{client: c}
 	c.Sizes = &SizesServiceOp{client: c}
 	c.Snapshots = &SnapshotsServiceOp{client: c}
