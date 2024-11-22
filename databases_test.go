@@ -623,6 +623,138 @@ func TestDatabases_Create(t *testing.T) {
 	}
 }`,
 		},
+		{
+			title: "create with firewall rules",
+			createRequest: &DatabaseCreateRequest{
+				Name:       "firewall-rules-test",
+				EngineSlug: "pg",
+				Version:    "15",
+				Region:     "nyc3",
+				SizeSlug:   "db-s-2vcpu-4gb",
+				NumNodes:   2,
+				Tags:       []string{"production", "staging"},
+				ProjectID:  "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				Rules: []*DatabaseCreateFirewallRule{
+					{
+						UUID:  "bc47473b-603e-49a8-b36a-810c2703f1d0",
+						Type:  "ip_addr",
+						Value: "172.16.1.1",
+					},
+					{
+						UUID:  "17d460b2-5879-4466-ac09-6c90c9a6d7e0",
+						Type:  "tag",
+						Value: "production",
+					},
+				},
+			},
+			want: &Database{
+				ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+				Name:        "firewall-rules-test",
+				EngineSlug:  "pg",
+				VersionSlug: "10",
+				Connection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				PrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				StandbyConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				StandbyPrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				Users:             nil,
+				DBNames:           nil,
+				NumNodes:          2,
+				RegionSlug:        "nyc3",
+				Status:            "creating",
+				CreatedAt:         time.Date(2019, 2, 26, 6, 12, 39, 0, time.UTC),
+				MaintenanceWindow: nil,
+				SizeSlug:          "db-s-2vcpu-4gb",
+				Tags:              []string{"production", "staging"},
+				ProjectID:         "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+			},
+			body: `
+{
+	"database": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		"name": "firewall-rules-test",
+		"engine": "pg",
+		"version": "10",
+		"connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"users": null,
+		"db_names": null,
+		"num_nodes": 2,
+		"region": "nyc3",
+		"status": "creating",
+		"created_at": "2019-02-26T06:12:39Z",
+		"maintenance_window": null,
+		"size": "db-s-2vcpu-4gb",
+		"tags": ["production", "staging"],
+		"project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8"
+	}
+}`,
+		},
 	}
 
 	for _, tt := range tests {
