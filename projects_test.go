@@ -3,7 +3,7 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"strings"
@@ -28,7 +28,7 @@ func TestProjects_List(t *testing.T) {
 	mux.HandleFunc("/v2/projects", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(expectedProjects)
-		fmt.Fprint(w, fmt.Sprintf(`{"projects":%s, "meta": {"total": 2}}`, string(resp)))
+		fmt.Fprintf(w, `{"projects":%s, "meta": {"total": 2}}`, resp)
 	})
 
 	projects, resp, err := client.Projects.List(ctx, nil)
@@ -133,7 +133,7 @@ func TestProjects_GetDefault(t *testing.T) {
 	mux.HandleFunc("/v2/projects/default", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(project)
-		fmt.Fprint(w, fmt.Sprintf(`{"project":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"project":%s}`, resp)
 	})
 
 	resp, _, err := client.Projects.GetDefault(ctx)
@@ -158,7 +158,7 @@ func TestProjects_GetWithUUID(t *testing.T) {
 	mux.HandleFunc("/v2/projects/project-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(project)
-		fmt.Fprint(w, fmt.Sprintf(`{"project":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"project":%s}`, resp)
 	})
 
 	resp, _, err := client.Projects.Get(ctx, "project-1")
@@ -203,7 +203,7 @@ func TestProjects_Create(t *testing.T) {
 		}
 
 		resp, _ := json.Marshal(createResp)
-		fmt.Fprintf(w, fmt.Sprintf(`{"project":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"project":%s}`, resp)
 	})
 
 	project, _, err := client.Projects.Create(ctx, createRequest)
@@ -233,7 +233,7 @@ func TestProjects_UpdateWithOneAttribute(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/projects/project-1", func(w http.ResponseWriter, r *http.Request) {
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
@@ -245,7 +245,7 @@ func TestProjects_UpdateWithOneAttribute(t *testing.T) {
 		}
 
 		resp, _ := json.Marshal(updateResp)
-		fmt.Fprintf(w, fmt.Sprintf(`{"project":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"project":%s}`, resp)
 	})
 
 	project, _, err := client.Projects.Update(ctx, "project-1", updateRequest)
@@ -278,7 +278,7 @@ func TestProjects_UpdateWithAllAttributes(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/projects/project-1", func(w http.ResponseWriter, r *http.Request) {
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
@@ -290,7 +290,7 @@ func TestProjects_UpdateWithAllAttributes(t *testing.T) {
 		}
 
 		resp, _ := json.Marshal(updateResp)
-		fmt.Fprintf(w, fmt.Sprintf(`{"project":%s}`, string(resp)))
+		fmt.Fprintf(w, `{"project":%s}`, resp)
 	})
 
 	project, _, err := client.Projects.Update(ctx, "project-1", updateRequest)
@@ -347,7 +347,7 @@ func TestProjects_ListResources(t *testing.T) {
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		resp, _ := json.Marshal(expectedResources)
-		fmt.Fprint(w, fmt.Sprintf(`{"resources":%s, "meta": {"total": 2}}`, string(resp)))
+		fmt.Fprintf(w, `{"resources":%s, "meta": {"total": 2}}`, resp)
 	})
 
 	resources, resp, err := client.Projects.ListResources(ctx, "project-1", nil)
@@ -505,7 +505,7 @@ func TestProjects_AssignFleetResourcesWithTypes(t *testing.T) {
 
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
@@ -564,7 +564,7 @@ func TestProjects_AssignFleetResourcesWithStrings(t *testing.T) {
 
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}
@@ -623,7 +623,7 @@ func TestProjects_AssignFleetResourcesWithStringsAndTypes(t *testing.T) {
 
 	mux.HandleFunc("/v2/projects/project-1/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		reqBytes, respErr := ioutil.ReadAll(r.Body)
+		reqBytes, respErr := io.ReadAll(r.Body)
 		if respErr != nil {
 			t.Error("projects mock didn't work")
 		}

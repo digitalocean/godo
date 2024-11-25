@@ -3,6 +3,7 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net/http"
 	"testing"
 	"time"
@@ -27,10 +28,28 @@ var db = Database{
 		Password: "zt91mum075ofzyww",
 		SSL:      true,
 	},
+	StandbyConnection: &DatabaseConnection{
+		URI:      "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+		Database: "defaultdb",
+		Host:     "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+		Port:     25060,
+		User:     "doadmin",
+		Password: "zt91mum075ofzyww",
+		SSL:      true,
+	},
 	PrivateConnection: &DatabaseConnection{
 		URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
 		Database: "defaultdb",
 		Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+		Port:     25060,
+		User:     "doadmin",
+		Password: "zt91mum075ofzyww",
+		SSL:      true,
+	},
+	StandbyPrivateConnection: &DatabaseConnection{
+		URI:      "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+		Database: "defaultdb",
+		Host:     "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
 		Port:     25060,
 		User:     "doadmin",
 		Password: "zt91mum075ofzyww",
@@ -60,6 +79,17 @@ var db = Database{
 	PrivateNetworkUUID: "da4e0206-d019-41d7-b51f-deadbeefbb8f",
 	Tags:               []string{"production", "staging"},
 	ProjectID:          "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2",
+	StorageSizeMib:     61440,
+	MetricsEndpoints: []*ServiceAddress{
+		{
+			Host: "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			Port: 9273,
+		},
+		{
+			Host: "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			Port: 9273,
+		},
+	},
 }
 
 var dbJSON = `
@@ -81,6 +111,24 @@ var dbJSON = `
 		"uri": "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
 		"database": "defaultdb",
 		"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+		"port": 25060,
+		"user": "doadmin",
+		"password": "zt91mum075ofzyww",
+		"ssl": true
+	},
+	"standby_connection": {
+		"uri": "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+		"database": "defaultdb",
+		"host": "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+		"port": 25060,
+		"user": "doadmin",
+		"password": "zt91mum075ofzyww",
+		"ssl": true
+	},
+	"standby_private_connection": {
+		"uri": "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+		"database": "defaultdb",
+		"host": "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
 		"port": 25060,
 		"user": "doadmin",
 		"password": "zt91mum075ofzyww",
@@ -109,7 +157,18 @@ var dbJSON = `
 	"size": "db-s-2vcpu-4gb",
 	"private_network_uuid": "da4e0206-d019-41d7-b51f-deadbeefbb8f",
 	"tags": ["production", "staging"],
-	"project_id": "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2"
+	"project_id": "6d0f9073-0a24-4f1b-9065-7dc5c8bad3e2",
+	"storage_size_mib": 61440,
+	"metrics_endpoints": [
+		{
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 9273
+		},
+		{
+			"host": "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 9273
+		}
+	]
 }
 `
 
@@ -222,10 +281,28 @@ func TestDatabases_Create(t *testing.T) {
 					Password: "zt91mum075ofzyww",
 					SSL:      true,
 				},
+				StandbyConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
 				PrivateConnection: &DatabaseConnection{
 					URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
 					Database: "defaultdb",
-					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Host:     "private-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				StandbyPrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
 					Port:     25060,
 					User:     "doadmin",
 					Password: "zt91mum075ofzyww",
@@ -241,6 +318,7 @@ func TestDatabases_Create(t *testing.T) {
 				SizeSlug:          "db-s-2vcpu-4gb",
 				Tags:              []string{"production", "staging"},
 				ProjectID:         "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				StorageSizeMib:    61440,
 			},
 			body: `
 {
@@ -261,7 +339,25 @@ func TestDatabases_Create(t *testing.T) {
 		"private_connection": {
 			"uri": "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
 			"database": "defaultdb",
-			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"host": "private-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
 			"port": 25060,
 			"user": "doadmin",
 			"password": "zt91mum075ofzyww",
@@ -276,7 +372,8 @@ func TestDatabases_Create(t *testing.T) {
 		"maintenance_window": null,
 		"size": "db-s-2vcpu-4gb",
 		"tags": ["production", "staging"],
-        "project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8"
+		"project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+		"storage_size_mib": 61440
 	}
 }`,
 		},
@@ -318,6 +415,24 @@ func TestDatabases_Create(t *testing.T) {
 					Password: "zt91mum075ofzyww",
 					SSL:      true,
 				},
+				StandbyConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				StandbyPrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
 				Users:             nil,
 				DBNames:           nil,
 				NumNodes:          2,
@@ -327,6 +442,7 @@ func TestDatabases_Create(t *testing.T) {
 				MaintenanceWindow: nil,
 				SizeSlug:          "db-s-2vcpu-4gb",
 				Tags:              []string{"production", "staging"},
+				StorageSizeMib:    61440,
 			},
 			body: `
 {
@@ -353,6 +469,24 @@ func TestDatabases_Create(t *testing.T) {
 			"password": "zt91mum075ofzyww",
 			"ssl": true
 		},
+		"standby_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
 		"users": null,
 		"db_names": null,
 		"num_nodes": 2,
@@ -361,7 +495,263 @@ func TestDatabases_Create(t *testing.T) {
 		"created_at": "2019-02-26T06:12:39Z",
 		"maintenance_window": null,
 		"size": "db-s-2vcpu-4gb",
-		"tags": ["production", "staging"]
+		"tags": ["production", "staging"],
+		"storage_size_mib": 61440
+	}
+}`,
+		},
+		{
+			title: "create with additional storage",
+			createRequest: &DatabaseCreateRequest{
+				Name:           "additional-storage-test",
+				EngineSlug:     "pg",
+				Version:        "15",
+				Region:         "nyc3",
+				SizeSlug:       "db-s-2vcpu-4gb",
+				NumNodes:       2,
+				Tags:           []string{"production", "staging"},
+				ProjectID:      "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				StorageSizeMib: 81920,
+			},
+			want: &Database{
+				ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+				Name:        "backend-test",
+				EngineSlug:  "pg",
+				VersionSlug: "10",
+				Connection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				PrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				StandbyConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				StandbyPrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				Users:             nil,
+				DBNames:           nil,
+				NumNodes:          2,
+				RegionSlug:        "nyc3",
+				Status:            "creating",
+				CreatedAt:         time.Date(2019, 2, 26, 6, 12, 39, 0, time.UTC),
+				MaintenanceWindow: nil,
+				SizeSlug:          "db-s-2vcpu-4gb",
+				Tags:              []string{"production", "staging"},
+				ProjectID:         "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				StorageSizeMib:    81920,
+			},
+			body: `
+{
+	"database": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		"name": "backend-test",
+		"engine": "pg",
+		"version": "10",
+		"connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"users": null,
+		"db_names": null,
+		"num_nodes": 2,
+		"region": "nyc3",
+		"status": "creating",
+		"created_at": "2019-02-26T06:12:39Z",
+		"maintenance_window": null,
+		"size": "db-s-2vcpu-4gb",
+		"tags": ["production", "staging"],
+		"project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+		"storage_size_mib": 81920
+	}
+}`,
+		},
+		{
+			title: "create with firewall rules",
+			createRequest: &DatabaseCreateRequest{
+				Name:       "firewall-rules-test",
+				EngineSlug: "pg",
+				Version:    "15",
+				Region:     "nyc3",
+				SizeSlug:   "db-s-2vcpu-4gb",
+				NumNodes:   2,
+				Tags:       []string{"production", "staging"},
+				ProjectID:  "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				Rules: []*DatabaseCreateFirewallRule{
+					{
+						UUID:  "bc47473b-603e-49a8-b36a-810c2703f1d0",
+						Type:  "ip_addr",
+						Value: "172.16.1.1",
+					},
+					{
+						UUID:  "17d460b2-5879-4466-ac09-6c90c9a6d7e0",
+						Type:  "tag",
+						Value: "production",
+					},
+				},
+			},
+			want: &Database{
+				ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+				Name:        "firewall-rules-test",
+				EngineSlug:  "pg",
+				VersionSlug: "10",
+				Connection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				PrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				StandbyConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				StandbyPrivateConnection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				Users:             nil,
+				DBNames:           nil,
+				NumNodes:          2,
+				RegionSlug:        "nyc3",
+				Status:            "creating",
+				CreatedAt:         time.Date(2019, 2, 26, 6, 12, 39, 0, time.UTC),
+				MaintenanceWindow: nil,
+				SizeSlug:          "db-s-2vcpu-4gb",
+				Tags:              []string{"production", "staging"},
+				ProjectID:         "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+			},
+			body: `
+{
+	"database": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		"name": "firewall-rules-test",
+		"engine": "pg",
+		"version": "10",
+		"connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"standby_private_connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "private-replica-dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"users": null,
+		"db_names": null,
+		"num_nodes": 2,
+		"region": "nyc3",
+		"status": "creating",
+		"created_at": "2019-02-26T06:12:39Z",
+		"maintenance_window": null,
+		"size": "db-s-2vcpu-4gb",
+		"tags": ["production", "staging"],
+		"project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8"
 	}
 }`,
 		},
@@ -412,19 +802,19 @@ func TestDatabases_Resize(t *testing.T) {
 	defer teardown()
 
 	resizeRequest := &DatabaseResizeRequest{
-		SizeSlug: "db-s-16vcpu-64gb",
-		NumNodes: 3,
+		SizeSlug:       "db-s-16vcpu-64gb",
+		NumNodes:       3,
+		StorageSizeMib: 921600,
 	}
 
 	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
-
 	path := fmt.Sprintf("/v2/databases/%s/resize", dbID)
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPut)
 	})
 
-	_, err := client.Databases.Resize(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", resizeRequest)
+	_, err := client.Databases.Resize(ctx, dbID, resizeRequest)
 	require.NoError(t, err)
 }
 
@@ -487,6 +877,22 @@ func TestDatabases_UpdateMaintenance(t *testing.T) {
 	})
 
 	_, err := client.Databases.UpdateMaintenance(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", maintenanceRequest)
+	require.NoError(t, err)
+}
+
+func TestDatabases_InstallUpdate(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/install_update", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+	})
+
+	_, err := client.Databases.InstallUpdate(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
 	require.NoError(t, err)
 }
 
@@ -646,6 +1052,116 @@ func TestDatabases_CreateUser(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestDatabases_UpdateUser(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	userID := "test-user"
+
+	want := &DatabaseUser{
+		Name: userID,
+		Settings: &DatabaseUserSettings{
+			ACL: []*KafkaACL{
+				{
+					Topic:      "events",
+					Permission: "produce_consume",
+				},
+			},
+		},
+	}
+
+	body := `
+{
+  "user": {
+	"name": "test-user",
+	"settings": {
+		"acl": [
+			{
+				"permission": "produce_consume",
+				"topic": "events"
+			}
+		]
+	}
+  }
+}
+`
+	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.UpdateUser(ctx, dbID, userID, &DatabaseUpdateUserRequest{
+		Settings: &DatabaseUserSettings{
+			ACL: []*KafkaACL{
+				{
+					Topic:      "events",
+					Permission: "produce_consume",
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_UpdateUser_OpenSearchACL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	userID := "test-user"
+
+	want := &DatabaseUser{
+		Name: userID,
+		Settings: &DatabaseUserSettings{
+			OpenSearchACL: []*OpenSearchACL{
+				{
+					Index:      "sample-index",
+					Permission: "read",
+				},
+			},
+		},
+	}
+
+	body := `
+{
+  "user": {
+	"name": "test-user",
+	"settings": {
+		"opensearch_acl": [
+			{
+				"permission": "read",
+				"index": "sample-index"
+			}
+		]
+	}
+  }
+}
+`
+	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.UpdateUser(ctx, dbID, userID, &DatabaseUpdateUserRequest{
+		Settings: &DatabaseUserSettings{
+			OpenSearchACL: []*OpenSearchACL{
+				{
+					Index:      "sample-index",
+					Permission: "read",
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
 func TestDatabases_DeleteUser(t *testing.T) {
 	setup()
 	defer teardown()
@@ -696,6 +1212,39 @@ func TestDatabases_ResetUserAuth(t *testing.T) {
 		MySQLSettings: &DatabaseMySQLUserSettings{
 			AuthPlugin: SQLAuthPluginCachingSHA2,
 		}})
+
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_ResetUserAuthKafka(t *testing.T) {
+	setup()
+	defer teardown()
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/users/user/reset_auth", dbID)
+
+	body := `{
+	  "user": {
+	     "name": "name",
+	     "role": "foo",
+	     "password": "otherpass"
+	  }
+	}`
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, body)
+	})
+
+	want := &DatabaseUser{
+		Name:     "name",
+		Role:     "foo",
+		Password: "otherpass",
+	}
+
+	got, _, err := client.Databases.ResetUserAuth(ctx, dbID, "user", &DatabaseResetUserAuthRequest{
+		Settings: &DatabaseUserSettings{},
+	})
 
 	require.NoError(t, err)
 	require.Equal(t, want, got)
@@ -847,6 +1396,24 @@ func TestDatabases_ListPools(t *testing.T) {
 				SSL:      true,
 				Database: "db",
 			},
+			StandbyConnection: &DatabaseConnection{
+				URI:      "postgresql://user:pass@replica-host.com/db",
+				Host:     "replica-host.com",
+				Port:     1234,
+				User:     "user",
+				Password: "pass",
+				SSL:      true,
+				Database: "db",
+			},
+			StandbyPrivateConnection: &DatabaseConnection{
+				URI:      "postgresql://user:pass@replica-private-host.com/db",
+				Host:     "replica-private-host.com",
+				Port:     1234,
+				User:     "user",
+				Password: "pass",
+				SSL:      true,
+				Database: "db",
+			},
 		},
 	}
 
@@ -870,6 +1437,24 @@ func TestDatabases_ListPools(t *testing.T) {
     "private_connection": {
       "uri": "postgresql://user:pass@private-host.com/db",
       "host": "private-host.com",
+      "port": 1234,
+      "user": "user",
+      "password": "pass",
+      "database": "db",
+      "ssl": true
+    },
+    "standby_connection": {
+      "uri": "postgresql://user:pass@replica-host.com/db",
+      "host": "replica-host.com",
+      "port": 1234,
+      "user": "user",
+      "password": "pass",
+      "database": "db",
+      "ssl": true
+    },
+    "standby_private_connection": {
+      "uri": "postgresql://user:pass@replica-private-host.com/db",
+      "host": "replica-private-host.com",
       "port": 1234,
       "user": "user",
       "password": "pass",
@@ -921,6 +1506,24 @@ func TestDatabases_CreatePool(t *testing.T) {
 			SSL:      true,
 			Database: "db",
 		},
+		StandbyConnection: &DatabaseConnection{
+			URI:      "postgresql://user:pass@replica-host.com/db",
+			Host:     "replica-host.com",
+			Port:     1234,
+			User:     "user",
+			Password: "pass",
+			SSL:      true,
+			Database: "db",
+		},
+		StandbyPrivateConnection: &DatabaseConnection{
+			URI:      "postgresql://user:pass@replica-private-host.com/db",
+			Host:     "replica-private-host.com",
+			Port:     1234,
+			User:     "user",
+			Password: "pass",
+			SSL:      true,
+			Database: "db",
+		},
 	}
 
 	body := `
@@ -943,6 +1546,24 @@ func TestDatabases_CreatePool(t *testing.T) {
     "private_connection": {
       "uri": "postgresql://user:pass@private-host.com/db",
       "host": "private-host.com",
+      "port": 1234,
+      "user": "user",
+      "password": "pass",
+      "database": "db",
+      "ssl": true
+    },
+    "standby_connection": {
+      "uri": "postgresql://user:pass@replica-host.com/db",
+      "host": "replica-host.com",
+      "port": 1234,
+      "user": "user",
+      "password": "pass",
+      "database": "db",
+      "ssl": true
+    },
+    "standby_private_connection": {
+      "uri": "postgresql://user:pass@replica-private-host.com/db",
+      "host": "replica-private-host.com",
       "port": 1234,
       "user": "user",
       "password": "pass",
@@ -1000,6 +1621,24 @@ func TestDatabases_GetPool(t *testing.T) {
 			SSL:      true,
 			Database: "db",
 		},
+		StandbyConnection: &DatabaseConnection{
+			URI:      "postgresql://user:pass@replica-host.com/db",
+			Host:     "replica-host.com",
+			Port:     1234,
+			User:     "user",
+			Password: "pass",
+			SSL:      true,
+			Database: "db",
+		},
+		StandbyPrivateConnection: &DatabaseConnection{
+			URI:      "postgresql://user:pass@replica-private-host.com/db",
+			Host:     "replica-private-host.com",
+			Port:     1234,
+			User:     "user",
+			Password: "pass",
+			SSL:      true,
+			Database: "db",
+		},
 	}
 
 	body := `
@@ -1022,6 +1661,24 @@ func TestDatabases_GetPool(t *testing.T) {
     "private_connection": {
       "uri": "postgresql://user:pass@private-host.com/db",
       "host": "private-host.com",
+      "port": 1234,
+      "user": "user",
+      "password": "pass",
+      "database": "db",
+      "ssl": true
+    },
+    "standby_connection": {
+      "uri": "postgresql://user:pass@replica-host.com/db",
+      "host": "replica-host.com",
+      "port": 1234,
+      "user": "user",
+      "password": "pass",
+      "database": "db",
+      "ssl": true
+    },
+    "standby_private_connection": {
+      "uri": "postgresql://user:pass@replica-private-host.com/db",
+      "host": "replica-private-host.com",
       "port": 1234,
       "user": "user",
       "password": "pass",
@@ -1114,6 +1771,8 @@ func TestDatabases_GetReplica(t *testing.T) {
 		},
 		PrivateNetworkUUID: "deadbeef-dead-4aa5-beef-deadbeef347d",
 		Tags:               []string{"production", "staging"},
+		StorageSizeMib:     51200,
+		Size:               "db-s-1vcpu-1gb",
 	}
 
 	body := `
@@ -1143,7 +1802,9 @@ func TestDatabases_GetReplica(t *testing.T) {
       "ssl": true
     },
     "private_network_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
-	"tags": ["production", "staging"]
+	"tags": ["production", "staging"],
+	"storage_size_mib": 51200,
+	"size": "db-s-1vcpu-1gb"
   }
 }
 `
@@ -1193,6 +1854,8 @@ func TestDatabases_ListReplicas(t *testing.T) {
 			},
 			PrivateNetworkUUID: "deadbeef-dead-4aa5-beef-deadbeef347d",
 			Tags:               []string{"production", "staging"},
+			StorageSizeMib:     51200,
+			Size:               "db-s-1vcpu-1gb",
 		},
 	}
 
@@ -1222,7 +1885,9 @@ func TestDatabases_ListReplicas(t *testing.T) {
       "ssl": true
     },
     "private_network_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
-	"tags": ["production", "staging"]
+	"tags": ["production", "staging"],
+	"storage_size_mib": 51200,
+	"size": "db-s-1vcpu-1gb"
   }]
 }
 `
@@ -1271,6 +1936,8 @@ func TestDatabases_CreateReplica(t *testing.T) {
 		},
 		PrivateNetworkUUID: "deadbeef-dead-4aa5-beef-deadbeef347d",
 		Tags:               []string{"production", "staging"},
+		StorageSizeMib:     51200,
+		Size:               "db-s-2vcpu-4gb",
 	}
 
 	body := `
@@ -1299,7 +1966,9 @@ func TestDatabases_CreateReplica(t *testing.T) {
       "ssl": true
     },
     "private_network_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
-	"tags": ["production", "staging"]
+	"tags": ["production", "staging"],
+	"storage_size_mib": 51200,
+	"size": "db-s-2vcpu-4gb"
   }
 }
 `
@@ -1316,6 +1985,7 @@ func TestDatabases_CreateReplica(t *testing.T) {
 		Size:               "db-s-2vcpu-4gb",
 		PrivateNetworkUUID: privateNetworkUUID,
 		Tags:               []string{"production", "staging"},
+		StorageSizeMib:     uint64(51200),
 	})
 	require.NoError(t, err)
 	require.Equal(t, want, got)
@@ -1605,6 +2275,73 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 					}
 				]
 			},
+			"kafka": {
+				"regions": [
+					"ams3",
+					"tor1"
+				],
+				"versions": [
+					"3.3"
+				],
+				"layouts": [
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"gd-2vcpu-8gb",
+	            			"gd-4vcpu-16gb"
+						]
+					}
+				]
+			},
+			"opensearch": {
+				"regions": [
+					"ams3",
+					"tor1"
+				],
+				"versions": [
+					"1",
+					"2"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"db-s-2vcpu-4gb",
+							"db-s-4vcpu-8gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"db-s-2vcpu-4gb",
+							"m3-2vcpu-16gb",
+							"db-s-4vcpu-8gb",
+							"m3-4vcpu-32gb"
+						]
+					},
+					{
+						"num_nodes": 6,
+						"sizes": [
+							"m3-2vcpu-16gb",
+							"m3-4vcpu-32gb"
+						]
+					},
+					{
+						"num_nodes": 9,
+						"sizes": [
+							"m3-2vcpu-16gb",
+							"m3-4vcpu-32gb"
+						]
+					},
+					{
+						"num_nodes": 15,
+						"sizes": [
+							"m3-2vcpu-16gb",
+							"m3-4vcpu-32gb"
+						]
+					}
+				]
+			},
 			"redis": {
 				"regions": [
 					"ams3",
@@ -1645,18 +2382,26 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 	require.NotNil(t, options.PostgresSQLOptions)
 	require.NotNil(t, options.RedisOptions)
 	require.NotNil(t, options.MySQLOptions)
+	require.NotNil(t, options.KafkaOptions)
+	require.NotNil(t, options.OpensearchOptions)
 	require.Greater(t, len(options.MongoDBOptions.Regions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Regions), 0)
 	require.Greater(t, len(options.RedisOptions.Regions), 0)
 	require.Greater(t, len(options.MySQLOptions.Regions), 0)
+	require.Greater(t, len(options.KafkaOptions.Regions), 0)
+	require.Greater(t, len(options.OpensearchOptions.Regions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Versions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Versions), 0)
 	require.Greater(t, len(options.RedisOptions.Versions), 0)
 	require.Greater(t, len(options.MySQLOptions.Versions), 0)
+	require.Greater(t, len(options.KafkaOptions.Versions), 0)
+	require.Greater(t, len(options.OpensearchOptions.Versions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Layouts), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Layouts), 0)
 	require.Greater(t, len(options.RedisOptions.Layouts), 0)
 	require.Greater(t, len(options.MySQLOptions.Layouts), 0)
+	require.Greater(t, len(options.KafkaOptions.Layouts), 0)
+	require.Greater(t, len(options.OpensearchOptions.Layouts), 0)
 }
 
 func TestDatabases_CreateDatabaseUserWithMySQLSettings(t *testing.T) {
@@ -1755,6 +2500,305 @@ func TestDatabases_GetDatabaseUserWithMySQLSettings(t *testing.T) {
 		Name: "foo",
 		MySQLSettings: &DatabaseMySQLUserSettings{
 			AuthPlugin: SQLAuthPluginNative,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.GetUser(ctx, dbID, userID)
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
+}
+
+func TestDatabases_CreateDatabaseUserWithKafkaSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeTopicACL := []*KafkaACL{
+		{
+			ID:         "1",
+			Topic:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeTopicACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"acl": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			ACL: writeTopicACL,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.CreateUser(ctx, dbID, &DatabaseCreateUserRequest{
+		Name:     expectedUser.Name,
+		Settings: &DatabaseUserSettings{ACL: expectedUser.Settings.ACL},
+	})
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
+}
+
+func TestDatabases_CreateDatabaseUserWithOpenSearchSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeIndexACL := []*OpenSearchACL{
+		{
+			Index:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeIndexACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"opensearch_acl": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			OpenSearchACL: writeIndexACL,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.CreateUser(ctx, dbID, &DatabaseCreateUserRequest{
+		Name:     expectedUser.Name,
+		Settings: &DatabaseUserSettings{OpenSearchACL: expectedUser.Settings.OpenSearchACL},
+	})
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
+}
+
+func TestDatabases_ListDatabaseUsersWithKafkaSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeTopicACL := []*KafkaACL{
+		{
+			ID:         "1",
+			Topic:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeTopicACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"users": [
+			{
+				"name": "foo",
+				"settings": {
+					"acl": %s
+				}
+			}
+		]
+	}`, string(acljson)))
+
+	expectedUsers := []DatabaseUser{
+		{
+			Name: "foo",
+			Settings: &DatabaseUserSettings{
+				ACL: writeTopicACL,
+			},
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	users, _, err := client.Databases.ListUsers(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, expectedUsers, users)
+}
+
+func TestDatabases_ListDatabaseUsersWithOpenSearchSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeIndexACL := []*OpenSearchACL{
+		{
+			Index:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeIndexACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"users": [
+			{
+				"name": "foo",
+				"settings": {
+					"opensearch_acl": %s
+				}
+			}
+		]
+	}`, string(acljson)))
+
+	expectedUsers := []DatabaseUser{
+		{
+			Name: "foo",
+			Settings: &DatabaseUserSettings{
+				OpenSearchACL: writeIndexACL,
+			},
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	users, _, err := client.Databases.ListUsers(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, expectedUsers, users)
+}
+
+func TestDatabases_GetDatabaseUserWithOpenSearchSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	userID := "d290a0a0-27da-42bd-a4b2-bcecf43b8832"
+
+	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
+
+	writeIndexACL := []*OpenSearchACL{
+		{
+			Index:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeIndexACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"opensearch_acl": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			OpenSearchACL: writeIndexACL,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.GetUser(ctx, dbID, userID)
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
+}
+
+func TestDatabases_GetDatabaseUserWithKafkaSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	userID := "d290a0a0-27da-42bd-a4b2-bcecf43b8832"
+
+	path := fmt.Sprintf("/v2/databases/%s/users/%s", dbID, userID)
+
+	writeTopicACL := []*KafkaACL{
+		{
+			ID:         "1",
+			Topic:      "bar",
+			Permission: "write",
+		},
+	}
+
+	acljson, err := json.Marshal(writeTopicACL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"acl": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			ACL: writeTopicACL,
 		},
 	}
 
@@ -2080,6 +3124,312 @@ func TestDatabases_UpdateConfigMySQL(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetConfigMongoDB(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		mongoDBConfigJSON = `{
+  "config": {
+    "default_read_concern": "LOCAL",
+    "default_write_concern": "majority",
+    "transaction_lifetime_limit_seconds": 60,
+    "slow_op_threshold_ms": 100,
+    "verbosity": 0
+  }
+}`
+
+		mongoDBConfig = MongoDBConfig{
+			DefaultReadConcern:              PtrTo("LOCAL"),
+			DefaultWriteConcern:             PtrTo("majority"),
+			TransactionLifetimeLimitSeconds: PtrTo(60),
+			SlowOpThresholdMs:               PtrTo(100),
+			Verbosity:                       PtrTo(0),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, mongoDBConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetMongoDBConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &mongoDBConfig, got)
+}
+
+func TestDatabases_UpdateConfigMongoDB(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID          = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path          = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		mongoDBConfig = &MongoDBConfig{
+			DefaultReadConcern:  PtrTo("AVAILABLE"),
+			DefaultWriteConcern: PtrTo(""),
+			SlowOpThresholdMs:   PtrTo(0),
+			Verbosity:           PtrTo(5),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseMongoDBConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, mongoDBConfig)
+		assert.Equal(t, "", *b.Config.DefaultWriteConcern, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.TransactionLifetimeLimitSeconds, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateMongoDBConfig(ctx, dbID, mongoDBConfig)
+	require.NoError(t, err)
+}
+
+func TestDatabases_GetConfigKafka(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		kafkaConfigJSON = `{
+  "config": {
+    "group_initial_rebalance_delay_ms": 3000,
+    "group_min_session_timeout_ms": 6000,
+    "group_max_session_timeout_ms": 1800000,
+    "message_max_bytes": 1048588,
+    "log_cleaner_delete_retention_ms": 86400000,
+    "log_cleaner_min_compaction_lag_ms": 0,
+    "log_flush_interval_ms": 60000,
+    "log_index_interval_bytes": 4096,
+    "log_message_downconversion_enable": true,
+    "log_message_timestamp_difference_max_ms": 120000,
+    "log_preallocate": false,
+    "log_retention_bytes": -1,
+    "log_retention_hours": 168,
+    "log_retention_ms": 604800000,
+    "log_roll_jitter_ms": 0,
+    "log_segment_delete_delay_ms": 60000,
+    "auto_create_topics_enable": true
+  }
+}`
+
+		kafkaConfig = KafkaConfig{
+			GroupInitialRebalanceDelayMs:       PtrTo(3000),
+			GroupMinSessionTimeoutMs:           PtrTo(6000),
+			GroupMaxSessionTimeoutMs:           PtrTo(1800000),
+			MessageMaxBytes:                    PtrTo(1048588),
+			LogCleanerDeleteRetentionMs:        PtrTo(int64(86400000)),
+			LogCleanerMinCompactionLagMs:       PtrTo(uint64(0)),
+			LogFlushIntervalMs:                 PtrTo(uint64(60000)),
+			LogIndexIntervalBytes:              PtrTo(4096),
+			LogMessageDownconversionEnable:     PtrTo(true),
+			LogMessageTimestampDifferenceMaxMs: PtrTo(uint64(120000)),
+			LogPreallocate:                     PtrTo(false),
+			LogRetentionBytes:                  big.NewInt(int64(-1)),
+			LogRetentionHours:                  PtrTo(168),
+			LogRetentionMs:                     big.NewInt(int64(604800000)),
+			LogRollJitterMs:                    PtrTo(uint64(0)),
+			LogSegmentDeleteDelayMs:            PtrTo(60000),
+			AutoCreateTopicsEnable:             PtrTo(true),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, kafkaConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetKafkaConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &kafkaConfig, got)
+}
+
+func TestDatabases_UpdateConfigKafka(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path        = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		kafkaConfig = &KafkaConfig{
+			GroupInitialRebalanceDelayMs: PtrTo(3000),
+			GroupMinSessionTimeoutMs:     PtrTo(6000),
+			GroupMaxSessionTimeoutMs:     PtrTo(1800000),
+			MessageMaxBytes:              PtrTo(1048588),
+			LogCleanerDeleteRetentionMs:  PtrTo(int64(86400000)),
+			LogCleanerMinCompactionLagMs: PtrTo(uint64(0)),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseKafkaConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, kafkaConfig)
+		assert.Equal(t, uint64(0), *b.Config.LogCleanerMinCompactionLagMs, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.LogFlushIntervalMs, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateKafkaConfig(ctx, dbID, kafkaConfig)
+	require.NoError(t, err)
+}
+
+func TestDatabases_GetConfigOpensearch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		opensearchConfigJSON = `{
+  "config": {
+    "ism_enabled": true,
+    "ism_history_enabled": true,
+    "ism_history_max_age_hours": 24,
+    "ism_history_max_docs": 2500000,
+    "ism_history_rollover_check_period_hours": 8,
+    "ism_history_rollover_retention_period_days": 30,
+    "http_max_content_length_bytes": 100000000,
+    "http_max_header_size_bytes": 8192,
+    "http_max_initial_line_length_bytes": 4096,
+    "indices_query_bool_max_clause_count": 1024,
+    "search_max_buckets": 10000,
+    "indices_fielddata_cache_size_percentage": 0,
+    "indices_memory_index_buffer_size_percentage": 10,
+    "indices_memory_min_index_buffer_size_mb": 48,
+    "indices_memory_max_index_buffer_size_mb": 0,
+    "indices_queries_cache_size_percentage": 10,
+    "indices_recovery_max_mb_per_sec": 40,
+    "indices_recovery_max_concurrent_file_chunks": 2,
+    "action_auto_create_index_enabled": true,
+    "action_destructive_requires_name": false,
+    "plugins_alerting_filter_by_backend_roles_enabled": false,
+    "enable_security_audit": false,
+    "thread_pool_search_size": 0,
+    "thread_pool_search_throttled_size": 0,
+    "thread_pool_search_throttled_queue_size": 0,
+    "thread_pool_search_queue_size": 0,
+    "thread_pool_get_size": 0,
+    "thread_pool_get_queue_size": 0,
+    "thread_pool_analyze_size": 0,
+    "thread_pool_analyze_queue_size": 0,
+    "thread_pool_write_size": 0,
+    "thread_pool_write_queue_size": 0,
+    "thread_pool_force_merge_size": 0,
+    "override_main_response_version": false,
+    "script_max_compilations_rate": "use-context",
+    "cluster_max_shards_per_node": 0,
+    "cluster_routing_allocation_node_concurrent_recoveries": 2,
+    "plugins_alerting_filter_by_backend_roles_enabled": true
+  }
+}`
+
+		opensearchConfig = OpensearchConfig{
+			HttpMaxContentLengthBytes:                        PtrTo(100000000),
+			HttpMaxHeaderSizeBytes:                           PtrTo(8192),
+			HttpMaxInitialLineLengthBytes:                    PtrTo(4096),
+			IndicesQueryBoolMaxClauseCount:                   PtrTo(1024),
+			IndicesFielddataCacheSizePercentage:              PtrTo(0),
+			IndicesMemoryIndexBufferSizePercentage:           PtrTo(10),
+			IndicesMemoryMinIndexBufferSizeMb:                PtrTo(48),
+			IndicesMemoryMaxIndexBufferSizeMb:                PtrTo(0),
+			IndicesQueriesCacheSizePercentage:                PtrTo(10),
+			IndicesRecoveryMaxMbPerSec:                       PtrTo(40),
+			IndicesRecoveryMaxConcurrentFileChunks:           PtrTo(2),
+			ThreadPoolSearchSize:                             PtrTo(0),
+			ThreadPoolSearchThrottledSize:                    PtrTo(0),
+			ThreadPoolGetSize:                                PtrTo(0),
+			ThreadPoolAnalyzeSize:                            PtrTo(0),
+			ThreadPoolWriteSize:                              PtrTo(0),
+			ThreadPoolForceMergeSize:                         PtrTo(0),
+			ThreadPoolSearchQueueSize:                        PtrTo(0),
+			ThreadPoolSearchThrottledQueueSize:               PtrTo(0),
+			ThreadPoolGetQueueSize:                           PtrTo(0),
+			ThreadPoolAnalyzeQueueSize:                       PtrTo(0),
+			ThreadPoolWriteQueueSize:                         PtrTo(0),
+			IsmEnabled:                                       PtrTo(true),
+			IsmHistoryEnabled:                                PtrTo(true),
+			IsmHistoryMaxAgeHours:                            PtrTo(24),
+			IsmHistoryMaxDocs:                                PtrTo(int64(2500000)),
+			IsmHistoryRolloverCheckPeriodHours:               PtrTo(8),
+			IsmHistoryRolloverRetentionPeriodDays:            PtrTo(30),
+			SearchMaxBuckets:                                 PtrTo(10000),
+			ActionAutoCreateIndexEnabled:                     PtrTo(true),
+			EnableSecurityAudit:                              PtrTo(false),
+			ActionDestructiveRequiresName:                    PtrTo(false),
+			ClusterMaxShardsPerNode:                          PtrTo(0),
+			OverrideMainResponseVersion:                      PtrTo(false),
+			ScriptMaxCompilationsRate:                        PtrTo("use-context"),
+			ClusterRoutingAllocationNodeConcurrentRecoveries: PtrTo(2),
+			ReindexRemoteWhitelist:                           nil,
+			PluginsAlertingFilterByBackendRolesEnabled:       PtrTo(true),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, opensearchConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetOpensearchConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &opensearchConfig, got)
+}
+
+func TestDatabases_UpdateConfigOpensearch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID             = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path             = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		opensearchConfig = &OpensearchConfig{
+			HttpMaxContentLengthBytes: PtrTo(1),
+			HttpMaxHeaderSizeBytes:    PtrTo(0),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseOpensearchConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, opensearchConfig)
+		assert.Equal(t, 0, *b.Config.HttpMaxHeaderSizeBytes, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.HttpMaxInitialLineLengthBytes, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateOpensearchConfig(ctx, dbID, opensearchConfig)
+	require.NoError(t, err)
+}
+
 func TestDatabases_UpgradeMajorVersion(t *testing.T) {
 	setup()
 	defer teardown()
@@ -2101,5 +3451,727 @@ func TestDatabases_UpgradeMajorVersion(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 	_, err := client.Databases.UpgradeMajorVersion(ctx, dbID, upgradeVersionReq)
+	require.NoError(t, err)
+}
+
+func TestDatabases_CreateTopic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		numPartitions     = uint32(3)
+		replicationFactor = uint32(2)
+		retentionMS       = int64(1000 * 60)
+	)
+
+	want := &DatabaseTopic{
+		Name:              "events",
+		ReplicationFactor: &replicationFactor,
+		Config: &TopicConfig{
+			RetentionMS: &retentionMS,
+		},
+	}
+
+	body := `{
+	  "topic": {
+	    "name": "events",
+	    "partition_count": 3,
+	    "replication_factor": 2,
+	    "config": {
+	    	"retention_ms": 60000
+	    }
+	  }
+	}`
+
+	path := fmt.Sprintf("/v2/databases/%s/topics", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, body)
+	})
+
+	topic, _, err := client.Databases.CreateTopic(ctx, dbID, &DatabaseCreateTopicRequest{
+		Name:              "events",
+		PartitionCount:    &numPartitions,
+		ReplicationFactor: &replicationFactor,
+		Config: &TopicConfig{
+			RetentionMS: &retentionMS,
+		},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, want, topic)
+}
+
+func TestDatabases_UpdateTopic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		topicName         = "events"
+		numPartitions     = uint32(3)
+		replicationFactor = uint32(2)
+		retentionMS       = int64(1000 * 60)
+	)
+
+	body := `{
+	  "topic": {
+	    "name": "events",
+	    "partition_count": 3,
+	    "replication_factor": 2,
+	    "config": {
+	    	"retention_ms": 60000
+	    }
+	  }
+	}`
+
+	path := fmt.Sprintf("/v2/databases/%s/topics/%s", dbID, topicName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	_, err := client.Databases.UpdateTopic(ctx, dbID, topicName, &DatabaseUpdateTopicRequest{
+		PartitionCount:    &numPartitions,
+		ReplicationFactor: &replicationFactor,
+		Config: &TopicConfig{
+			RetentionMS: &retentionMS,
+		},
+	})
+
+	require.NoError(t, err)
+}
+
+func TestDatabases_DeleteTopic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		topicName = "events"
+	)
+
+	path := fmt.Sprintf("/v2/databases/%s/topics/%s", dbID, topicName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Databases.DeleteTopic(ctx, dbID, topicName)
+	require.NoError(t, err)
+}
+
+func TestDatabases_GetTopic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		topicName         = "events"
+		replicationFactor = uint32(2)
+		retentionMS       = int64(1000 * 60)
+	)
+
+	want := &DatabaseTopic{
+		Name: "events",
+		Partitions: []*TopicPartition{
+			{
+				Size:           0,
+				Id:             0,
+				InSyncReplicas: 2,
+				EarliestOffset: 0,
+				ConsumerGroups: nil,
+			},
+			{
+				Size:           0,
+				Id:             1,
+				InSyncReplicas: 2,
+				EarliestOffset: 0,
+				ConsumerGroups: nil,
+			},
+			{
+				Size:           0,
+				Id:             2,
+				InSyncReplicas: 2,
+				EarliestOffset: 0,
+				ConsumerGroups: nil,
+			},
+		},
+		ReplicationFactor: &replicationFactor,
+		Config: &TopicConfig{
+			RetentionMS: &retentionMS,
+		},
+	}
+
+	body := `{
+		"topic":{
+		   "name":"events",
+		   "replication_factor":2,
+		   "config":{
+			  "retention_ms":60000
+		   },
+		   "partitions":[
+			  {
+				 "size":0,
+				 "id":0,
+				 "in_sync_replicas":2,
+				 "earliest_offset":0,
+				 "consumer_groups":null
+			  },
+			  {
+				 "size":0,
+				 "id":1,
+				 "in_sync_replicas":2,
+				 "earliest_offset":0,
+				 "consumer_groups":null
+			  },
+			  {
+				 "size":0,
+				 "id":2,
+				 "in_sync_replicas":2,
+				 "earliest_offset":0,
+				 "consumer_groups":null
+			  }
+		   ]
+		}
+	 }`
+
+	path := fmt.Sprintf("/v2/databases/%s/topics/%s", dbID, topicName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetTopic(ctx, dbID, topicName)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_ListTopics(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID              = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		replicationFactor = uint32(2)
+		retentionMS       = int64(1000 * 60)
+	)
+
+	want := []DatabaseTopic{
+		{
+			Name: "events",
+			Partitions: []*TopicPartition{
+				{
+					Size:           0,
+					Id:             0,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+				{
+					Size:           0,
+					Id:             1,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+				{
+					Size:           0,
+					Id:             2,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+			},
+			ReplicationFactor: &replicationFactor,
+			Config: &TopicConfig{
+				RetentionMS: &retentionMS,
+			},
+		},
+		{
+			Name: "events_ii",
+			Partitions: []*TopicPartition{
+				{
+					Size:           0,
+					Id:             0,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+				{
+					Size:           0,
+					Id:             1,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+				{
+					Size:           0,
+					Id:             2,
+					InSyncReplicas: 2,
+					EarliestOffset: 0,
+					ConsumerGroups: nil,
+				},
+			},
+			ReplicationFactor: &replicationFactor,
+			Config: &TopicConfig{
+				RetentionMS: &retentionMS,
+			},
+		},
+	}
+
+	body := `{
+	  "topics": [
+	  	{
+		    "name": "events",
+			"partitions":[
+				{
+				   "size":0,
+				   "id":0,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				},
+				{
+				   "size":0,
+				   "id":1,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				},
+				{
+				   "size":0,
+				   "id":2,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				}
+			],
+		    "replication_factor": 2,
+		    "config": {
+		    	"retention_ms": 60000
+		    }
+		  },
+		  {
+		    "name": "events_ii",
+			"partitions":[
+				{
+				   "size":0,
+				   "id":0,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				},
+				{
+				   "size":0,
+				   "id":1,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				},
+				{
+				   "size":0,
+				   "id":2,
+				   "in_sync_replicas":2,
+				   "earliest_offset":0,
+				   "consumer_groups":null
+				}
+			],
+		    "replication_factor": 2,
+		    "config": {
+		    	"retention_ms": 60000
+		    }
+		  }
+		]		 
+	}`
+
+	path := fmt.Sprintf("/v2/databases/%s/topics", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.ListTopics(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_GetMetricsCredentials(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &DatabaseMetricsCredentials{
+		BasicAuthUsername: "username_for_http_basic_auth",
+		BasicAuthPassword: "password_for_http_basic_auth",
+	}
+
+	body := `{
+		"credentials": {
+			"basic_auth_username": "username_for_http_basic_auth",
+			"basic_auth_password": "password_for_http_basic_auth"
+		}
+	}`
+
+	mux.HandleFunc("/v2/databases/metrics/credentials", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetMetricsCredentials(ctx)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_UpdateMetricsCredentials(t *testing.T) {
+	setup()
+	defer teardown()
+
+	updateRequest := &DatabaseUpdateMetricsCredentialsRequest{
+		Credentials: &DatabaseMetricsCredentials{
+			BasicAuthUsername: "username_for_http_basic_auth",
+			BasicAuthPassword: "password_for_http_basic_auth",
+		},
+	}
+
+	mux.HandleFunc("/v2/databases/metrics/credentials", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+	})
+
+	_, err := client.Databases.UpdateMetricsCredentials(ctx, updateRequest)
+	require.NoError(t, err)
+}
+
+func TestDatabases_ListDatabaseEvents(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/events", dbID)
+
+	want := []DatabaseEvent{
+		{
+			ID:          "pe8u2huh",
+			ServiceName: "customer-events",
+			EventType:   "cluster_create",
+			CreateTime:  "2020-10-29T15:57:38Z",
+		},
+	}
+
+	body := `{
+		"events": [
+		  {
+			"id": "pe8u2huh",
+			"cluster_name": "customer-events",
+			"event_type": "cluster_create",
+			"create_time": "2020-10-29T15:57:38Z"
+		  }
+		]
+	  } `
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.ListDatabaseEvents(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_ListIndexes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/indexes", dbID)
+
+	want := []DatabaseIndex{
+		{
+			IndexName:        "sample_index",
+			NumberofShards:   uint64(1),
+			NumberofReplicas: uint64(0),
+			CreateTime:       "2020-10-29T15:57:38Z",
+			Health:           "green",
+			Size:             int64(5314),
+			Status:           "open",
+			Docs:             int64(64811),
+		},
+		{
+			IndexName:        "sample_index_2",
+			NumberofShards:   uint64(1),
+			NumberofReplicas: uint64(0),
+			CreateTime:       "2020-10-30T15:57:38Z",
+			Health:           "red",
+			Size:             int64(6105247),
+			Status:           "close",
+			Docs:             int64(64801),
+		},
+	}
+
+	body := `{
+		"indexes": [
+			{
+            "create_time": "2020-10-29T15:57:38Z",
+            "docs": 64811,
+            "health": "green",
+            "index_name": "sample_index",
+            "number_of_replica": 0,
+            "number_of_shards": 1,
+            "size": 5314,
+            "status": "open"
+        },
+        {
+            "create_time": "2020-10-30T15:57:38Z",
+            "docs": 64801,
+            "health": "red",
+            "index_name": "sample_index_2",
+            "number_of_replica": 0,
+            "number_of_shards": 1,
+            "size": 6105247,
+            "status": "close"
+        }]
+	  } `
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.ListIndexes(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_DeleteIndexes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	indexName := "sample_index"
+
+	path := fmt.Sprintf("/v2/databases/%s/indexes/%s", dbID, indexName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Databases.DeleteIndex(ctx, dbID, indexName)
+	require.NoError(t, err)
+}
+
+func TestDatabases_CreateLogsink(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
+	)
+
+	want := &DatabaseLogsink{
+		ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
+		Name: "logs-sink",
+		Type: "opensearch",
+		Config: &DatabaseLogsinkConfig{
+			URL:         "https://user:passwd@192.168.0.1:25060",
+			IndexPrefix: "opensearch-logs",
+		},
+	}
+
+	body := `{
+        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+        "sink_name": "logs-sink",
+        "sink_type": "opensearch",
+        "config": {
+          "url": "https://user:passwd@192.168.0.1:25060",
+          "index_prefix": "opensearch-logs"
+        }
+      }`
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, body)
+	})
+
+	log, _, err := client.Databases.CreateLogsink(ctx, dbID, &DatabaseCreateLogsinkRequest{
+		Name: "logs-sink",
+		Type: "opensearch",
+		Config: &DatabaseLogsinkConfig{
+			URL:         "https://user:passwd@192.168.0.1:25060",
+			IndexPrefix: "opensearch-logs",
+		},
+	})
+
+	require.NoError(t, err)
+
+	require.Equal(t, want, log)
+}
+
+func TestDatabases_GetLogsink(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		logsinkID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
+
+	want := &DatabaseLogsink{
+		ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
+		Name: "logs-sink",
+		Type: "opensearch",
+		Config: &DatabaseLogsinkConfig{
+			URL:         "https://user:passwd@192.168.0.1:25060",
+			IndexPrefix: "opensearch-logs",
+		},
+	}
+
+	body := `{
+        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+        "sink_name": "logs-sink",
+        "sink_type": "opensearch",
+        "config": {
+          "url": "https://user:passwd@192.168.0.1:25060",
+          "index_prefix": "opensearch-logs"
+        }
+      }`
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetLogsink(ctx, dbID, logsinkID)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_UpdateLogsink(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		logsinkID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
+
+	body := `{
+        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+        "sink_name": "logs-sink",
+        "sink_type": "opensearch",
+        "config": {
+          "url": "https://user:passwd@192.168.0.1:25060",
+          "index_prefix": "opensearch-logs"
+        }
+      }`
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	_, err := client.Databases.UpdateLogsink(ctx, dbID, logsinkID, &DatabaseUpdateLogsinkRequest{
+		Config: &DatabaseLogsinkConfig{
+			Server: "192.168.0.1",
+			Port:   514,
+			TLS:    false,
+			Format: "rfc3164",
+		},
+	})
+
+	require.NoError(t, err)
+}
+
+func TestDatabases_ListLogsinks(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
+	)
+
+	want := []DatabaseLogsink{
+		{
+			ID:   "deadbeef-dead-4aa5-beef-deadbeef347d",
+			Name: "logs-sink",
+			Type: "opensearch",
+			Config: &DatabaseLogsinkConfig{
+				URL:         "https://user:passwd@192.168.0.1:25060",
+				IndexPrefix: "opensearch-logs",
+			},
+		},
+		{
+			ID:   "d6e95157-5f58-48d0-9023-8cfb409d102a",
+			Name: "logs-sink-2",
+			Type: "opensearch",
+			Config: &DatabaseLogsinkConfig{
+				URL:         "https://user:passwd@192.168.0.1:25060",
+				IndexPrefix: "opensearch-logs",
+			},
+		}}
+
+	body := `{
+		"sinks": [
+		  {
+			"sink_id": "deadbeef-dead-4aa5-beef-deadbeef347d",
+			"sink_name": "logs-sink",
+			"sink_type": "opensearch",
+			"config": {
+			  "url": "https://user:passwd@192.168.0.1:25060",
+			  "index_prefix": "opensearch-logs"
+			}
+		  },
+		  {
+			"sink_id": "d6e95157-5f58-48d0-9023-8cfb409d102a",
+			"sink_name": "logs-sink-2",
+			"sink_type": "opensearch",
+			"config": {
+				"url": "https://user:passwd@192.168.0.1:25060",
+				"index_prefix": "opensearch-logs"
+			}
+		  }
+		]
+	  }`
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.ListLogsinks(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestDatabases_DeleteLogsink(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		logsinkID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Databases.DeleteLogsink(ctx, dbID, logsinkID)
 	require.NoError(t, err)
 }

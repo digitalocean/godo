@@ -34,6 +34,13 @@ func TestApp_GetCreatedAt(tt *testing.T) {
 	a.GetCreatedAt()
 }
 
+func TestApp_GetDedicatedIps(tt *testing.T) {
+	a := &App{}
+	a.GetDedicatedIps()
+	a = nil
+	a.GetDedicatedIps()
+}
+
 func TestApp_GetDefaultIngress(tt *testing.T) {
 	a := &App{}
 	a.GetDefaultIngress()
@@ -314,6 +321,41 @@ func TestAppAlertSpec_GetWindow(tt *testing.T) {
 	a.GetWindow()
 }
 
+func TestAppAutoscalingSpec_GetMaxInstanceCount(tt *testing.T) {
+	a := &AppAutoscalingSpec{}
+	a.GetMaxInstanceCount()
+	a = nil
+	a.GetMaxInstanceCount()
+}
+
+func TestAppAutoscalingSpec_GetMetrics(tt *testing.T) {
+	a := &AppAutoscalingSpec{}
+	a.GetMetrics()
+	a = nil
+	a.GetMetrics()
+}
+
+func TestAppAutoscalingSpec_GetMinInstanceCount(tt *testing.T) {
+	a := &AppAutoscalingSpec{}
+	a.GetMinInstanceCount()
+	a = nil
+	a.GetMinInstanceCount()
+}
+
+func TestAppAutoscalingSpecMetricCPU_GetPercent(tt *testing.T) {
+	a := &AppAutoscalingSpecMetricCPU{}
+	a.GetPercent()
+	a = nil
+	a.GetPercent()
+}
+
+func TestAppAutoscalingSpecMetrics_GetCPU(tt *testing.T) {
+	a := &AppAutoscalingSpecMetrics{}
+	a.GetCPU()
+	a = nil
+	a.GetCPU()
+}
+
 func TestAppBuildConfig_GetCNBVersioning(tt *testing.T) {
 	a := &AppBuildConfig{}
 	a.GetCNBVersioning()
@@ -452,6 +494,27 @@ func TestAppDatabaseSpec_GetVersion(tt *testing.T) {
 	a.GetVersion()
 	a = nil
 	a.GetVersion()
+}
+
+func TestAppDedicatedIp_GetID(tt *testing.T) {
+	a := &AppDedicatedIp{}
+	a.GetID()
+	a = nil
+	a.GetID()
+}
+
+func TestAppDedicatedIp_GetIp(tt *testing.T) {
+	a := &AppDedicatedIp{}
+	a.GetIp()
+	a = nil
+	a.GetIp()
+}
+
+func TestAppDedicatedIp_GetStatus(tt *testing.T) {
+	a := &AppDedicatedIp{}
+	a.GetStatus()
+	a = nil
+	a.GetStatus()
 }
 
 func TestAppDomain_GetCertificateExpiresAt(tt *testing.T) {
@@ -627,6 +690,13 @@ func TestAppDomainValidation_GetTXTValue(tt *testing.T) {
 	a.GetTXTValue()
 	a = nil
 	a.GetTXTValue()
+}
+
+func TestAppEgressSpec_GetType(tt *testing.T) {
+	a := &AppEgressSpec{}
+	a.GetType()
+	a = nil
+	a.GetType()
 }
 
 func TestAppFunctionsSpec_GetAlerts(tt *testing.T) {
@@ -818,6 +888,13 @@ func TestAppIngressSpecRuleStringMatch_GetPrefix(tt *testing.T) {
 	a.GetPrefix()
 }
 
+func TestAppInstanceSize_GetBandwidthAllowanceGib(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetBandwidthAllowanceGib()
+	a = nil
+	a.GetBandwidthAllowanceGib()
+}
+
 func TestAppInstanceSize_GetCPUs(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetCPUs()
@@ -832,6 +909,20 @@ func TestAppInstanceSize_GetCPUType(tt *testing.T) {
 	a.GetCPUType()
 }
 
+func TestAppInstanceSize_GetDeprecationIntent(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetDeprecationIntent()
+	a = nil
+	a.GetDeprecationIntent()
+}
+
+func TestAppInstanceSize_GetFeaturePreview(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetFeaturePreview()
+	a = nil
+	a.GetFeaturePreview()
+}
+
 func TestAppInstanceSize_GetMemoryBytes(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetMemoryBytes()
@@ -844,6 +935,20 @@ func TestAppInstanceSize_GetName(tt *testing.T) {
 	a.GetName()
 	a = nil
 	a.GetName()
+}
+
+func TestAppInstanceSize_GetScalable(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetScalable()
+	a = nil
+	a.GetScalable()
+}
+
+func TestAppInstanceSize_GetSingleInstanceOnly(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetSingleInstanceOnly()
+	a = nil
+	a.GetSingleInstanceOnly()
 }
 
 func TestAppInstanceSize_GetSlug(tt *testing.T) {
@@ -1000,6 +1105,20 @@ func TestAppJobSpec_GetSourceDir(tt *testing.T) {
 	a.GetSourceDir()
 }
 
+func TestAppJobSpec_GetTermination(tt *testing.T) {
+	a := &AppJobSpec{}
+	a.GetTermination()
+	a = nil
+	a.GetTermination()
+}
+
+func TestAppJobSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
+	a := &AppJobSpecTermination{}
+	a.GetGracePeriodSeconds()
+	a = nil
+	a.GetGracePeriodSeconds()
+}
+
 func TestAppLogDestinationSpec_GetDatadog(tt *testing.T) {
 	a := &AppLogDestinationSpec{}
 	a.GetDatadog()
@@ -1033,6 +1152,13 @@ func TestAppLogDestinationSpec_GetName(tt *testing.T) {
 	a.GetName()
 	a = nil
 	a.GetName()
+}
+
+func TestAppLogDestinationSpec_GetOpenSearch(tt *testing.T) {
+	a := &AppLogDestinationSpec{}
+	a.GetOpenSearch()
+	a = nil
+	a.GetOpenSearch()
 }
 
 func TestAppLogDestinationSpec_GetPapertrail(tt *testing.T) {
@@ -1084,11 +1210,53 @@ func TestAppLogDestinationSpecLogtail_GetToken(tt *testing.T) {
 	a.GetToken()
 }
 
+func TestAppLogDestinationSpecOpenSearch_GetBasicAuth(tt *testing.T) {
+	a := &AppLogDestinationSpecOpenSearch{}
+	a.GetBasicAuth()
+	a = nil
+	a.GetBasicAuth()
+}
+
+func TestAppLogDestinationSpecOpenSearch_GetClusterName(tt *testing.T) {
+	a := &AppLogDestinationSpecOpenSearch{}
+	a.GetClusterName()
+	a = nil
+	a.GetClusterName()
+}
+
+func TestAppLogDestinationSpecOpenSearch_GetEndpoint(tt *testing.T) {
+	a := &AppLogDestinationSpecOpenSearch{}
+	a.GetEndpoint()
+	a = nil
+	a.GetEndpoint()
+}
+
+func TestAppLogDestinationSpecOpenSearch_GetIndexName(tt *testing.T) {
+	a := &AppLogDestinationSpecOpenSearch{}
+	a.GetIndexName()
+	a = nil
+	a.GetIndexName()
+}
+
 func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
 	a := &AppLogDestinationSpecPapertrail{}
 	a.GetEndpoint()
 	a = nil
 	a.GetEndpoint()
+}
+
+func TestAppMaintenanceSpec_GetArchive(tt *testing.T) {
+	a := &AppMaintenanceSpec{}
+	a.GetArchive()
+	a = nil
+	a.GetArchive()
+}
+
+func TestAppMaintenanceSpec_GetEnabled(tt *testing.T) {
+	a := &AppMaintenanceSpec{}
+	a.GetEnabled()
+	a = nil
+	a.GetEnabled()
 }
 
 func TestAppProposeRequest_GetAppID(tt *testing.T) {
@@ -1266,6 +1434,13 @@ func TestAppServiceSpec_GetAlerts(tt *testing.T) {
 	a.GetAlerts()
 }
 
+func TestAppServiceSpec_GetAutoscaling(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetAutoscaling()
+	a = nil
+	a.GetAutoscaling()
+}
+
 func TestAppServiceSpec_GetBuildCommand(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetBuildCommand()
@@ -1378,6 +1553,13 @@ func TestAppServiceSpec_GetName(tt *testing.T) {
 	a.GetName()
 }
 
+func TestAppServiceSpec_GetProtocol(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetProtocol()
+	a = nil
+	a.GetProtocol()
+}
+
 func TestAppServiceSpec_GetRoutes(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetRoutes()
@@ -1397,6 +1579,13 @@ func TestAppServiceSpec_GetSourceDir(tt *testing.T) {
 	a.GetSourceDir()
 	a = nil
 	a.GetSourceDir()
+}
+
+func TestAppServiceSpec_GetTermination(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetTermination()
+	a = nil
+	a.GetTermination()
 }
 
 func TestAppServiceSpecHealthCheck_GetFailureThreshold(tt *testing.T) {
@@ -1455,6 +1644,20 @@ func TestAppServiceSpecHealthCheck_GetTimeoutSeconds(tt *testing.T) {
 	a.GetTimeoutSeconds()
 }
 
+func TestAppServiceSpecTermination_GetDrainSeconds(tt *testing.T) {
+	a := &AppServiceSpecTermination{}
+	a.GetDrainSeconds()
+	a = nil
+	a.GetDrainSeconds()
+}
+
+func TestAppServiceSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
+	a := &AppServiceSpecTermination{}
+	a.GetGracePeriodSeconds()
+	a = nil
+	a.GetGracePeriodSeconds()
+}
+
 func TestAppSpec_GetAlerts(tt *testing.T) {
 	a := &AppSpec{}
 	a.GetAlerts()
@@ -1474,6 +1677,13 @@ func TestAppSpec_GetDomains(tt *testing.T) {
 	a.GetDomains()
 	a = nil
 	a.GetDomains()
+}
+
+func TestAppSpec_GetEgress(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetEgress()
+	a = nil
+	a.GetEgress()
 }
 
 func TestAppSpec_GetEnvs(tt *testing.T) {
@@ -1509,6 +1719,13 @@ func TestAppSpec_GetJobs(tt *testing.T) {
 	a.GetJobs()
 	a = nil
 	a.GetJobs()
+}
+
+func TestAppSpec_GetMaintenance(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetMaintenance()
+	a = nil
+	a.GetMaintenance()
 }
 
 func TestAppSpec_GetName(tt *testing.T) {
@@ -1735,6 +1952,13 @@ func TestAppWorkerSpec_GetAlerts(tt *testing.T) {
 	a.GetAlerts()
 }
 
+func TestAppWorkerSpec_GetAutoscaling(tt *testing.T) {
+	a := &AppWorkerSpec{}
+	a.GetAutoscaling()
+	a = nil
+	a.GetAutoscaling()
+}
+
 func TestAppWorkerSpec_GetBuildCommand(tt *testing.T) {
 	a := &AppWorkerSpec{}
 	a.GetBuildCommand()
@@ -1831,6 +2055,20 @@ func TestAppWorkerSpec_GetSourceDir(tt *testing.T) {
 	a.GetSourceDir()
 	a = nil
 	a.GetSourceDir()
+}
+
+func TestAppWorkerSpec_GetTermination(tt *testing.T) {
+	a := &AppWorkerSpec{}
+	a.GetTermination()
+	a = nil
+	a.GetTermination()
+}
+
+func TestAppWorkerSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
+	a := &AppWorkerSpecTermination{}
+	a.GetGracePeriodSeconds()
+	a = nil
+	a.GetGracePeriodSeconds()
 }
 
 func TestBuildpack_GetDescription(tt *testing.T) {
@@ -2015,6 +2253,13 @@ func TestDeployment_GetWorkers(tt *testing.T) {
 	d.GetWorkers()
 }
 
+func TestDeploymentCauseDetails_GetAutoscaler(tt *testing.T) {
+	d := &DeploymentCauseDetails{}
+	d.GetAutoscaler()
+	d = nil
+	d.GetAutoscaler()
+}
+
 func TestDeploymentCauseDetails_GetDigitalOceanUserAction(tt *testing.T) {
 	d := &DeploymentCauseDetails{}
 	d.GetDigitalOceanUserAction()
@@ -2048,6 +2293,13 @@ func TestDeploymentCauseDetails_GetType(tt *testing.T) {
 	d.GetType()
 	d = nil
 	d.GetType()
+}
+
+func TestDeploymentCauseDetailsAutoscalerAction_GetAutoscaled(tt *testing.T) {
+	d := &DeploymentCauseDetailsAutoscalerAction{}
+	d.GetAutoscaled()
+	d = nil
+	d.GetAutoscaled()
 }
 
 func TestDeploymentCauseDetailsDigitalOceanUser_GetEmail(tt *testing.T) {
@@ -2484,6 +2736,13 @@ func TestDetectResponse_GetComponents(tt *testing.T) {
 	d.GetComponents()
 }
 
+func TestDetectResponse_GetPending(tt *testing.T) {
+	d := &DetectResponse{}
+	d.GetPending()
+	d = nil
+	d.GetPending()
+}
+
 func TestDetectResponse_GetTemplate(tt *testing.T) {
 	d := &DetectResponse{}
 	d.GetTemplate()
@@ -2652,6 +2911,139 @@ func TestDetectResponseServerlessPackage_GetName(tt *testing.T) {
 	d.GetName()
 }
 
+func TestGetAppDatabaseConnectionDetailsResponse_GetConnectionDetails(tt *testing.T) {
+	g := &GetAppDatabaseConnectionDetailsResponse{}
+	g.GetConnectionDetails()
+	g = nil
+	g.GetConnectionDetails()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetComponentName(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetComponentName()
+	g = nil
+	g.GetComponentName()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetDatabaseName(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetDatabaseName()
+	g = nil
+	g.GetDatabaseName()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetDatabaseURL(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetDatabaseURL()
+	g = nil
+	g.GetDatabaseURL()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetHost(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetHost()
+	g = nil
+	g.GetHost()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetPassword(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetPassword()
+	g = nil
+	g.GetPassword()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetPools(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetPools()
+	g = nil
+	g.GetPools()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetPort(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetPort()
+	g = nil
+	g.GetPort()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetSslMode(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetSslMode()
+	g = nil
+	g.GetSslMode()
+}
+
+func TestGetDatabaseConnectionDetailsResponse_GetUsername(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponse{}
+	g.GetUsername()
+	g = nil
+	g.GetUsername()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetDatabaseName(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetDatabaseName()
+	g = nil
+	g.GetDatabaseName()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetDatabaseURL(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetDatabaseURL()
+	g = nil
+	g.GetDatabaseURL()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetHost(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetHost()
+	g = nil
+	g.GetHost()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetPassword(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetPassword()
+	g = nil
+	g.GetPassword()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetPoolName(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetPoolName()
+	g = nil
+	g.GetPoolName()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetPort(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetPort()
+	g = nil
+	g.GetPort()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetSslMode(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetSslMode()
+	g = nil
+	g.GetSslMode()
+}
+
+func TestGetDatabaseConnectionDetailsResponsePool_GetUsername(tt *testing.T) {
+	g := &GetDatabaseConnectionDetailsResponsePool{}
+	g.GetUsername()
+	g = nil
+	g.GetUsername()
+}
+
+func TestGetDatabaseTrustedSourceResponse_GetIsEnabled(tt *testing.T) {
+	g := &GetDatabaseTrustedSourceResponse{}
+	g.GetIsEnabled()
+	g = nil
+	g.GetIsEnabled()
+}
+
 func TestGitHubSourceSpec_GetBranch(tt *testing.T) {
 	g := &GitHubSourceSpec{}
 	g.GetBranch()
@@ -2715,11 +3107,25 @@ func TestImageSourceSpec_GetDeployOnPush(tt *testing.T) {
 	i.GetDeployOnPush()
 }
 
+func TestImageSourceSpec_GetDigest(tt *testing.T) {
+	i := &ImageSourceSpec{}
+	i.GetDigest()
+	i = nil
+	i.GetDigest()
+}
+
 func TestImageSourceSpec_GetRegistry(tt *testing.T) {
 	i := &ImageSourceSpec{}
 	i.GetRegistry()
 	i = nil
 	i.GetRegistry()
+}
+
+func TestImageSourceSpec_GetRegistryCredentials(tt *testing.T) {
+	i := &ImageSourceSpec{}
+	i.GetRegistryCredentials()
+	i = nil
+	i.GetRegistryCredentials()
 }
 
 func TestImageSourceSpec_GetRegistryType(tt *testing.T) {
@@ -2755,6 +3161,69 @@ func TestListBuildpacksResponse_GetBuildpacks(tt *testing.T) {
 	l.GetBuildpacks()
 	l = nil
 	l.GetBuildpacks()
+}
+
+func TestOpenSearchBasicAuth_GetPassword(tt *testing.T) {
+	o := &OpenSearchBasicAuth{}
+	o.GetPassword()
+	o = nil
+	o.GetPassword()
+}
+
+func TestOpenSearchBasicAuth_GetUser(tt *testing.T) {
+	o := &OpenSearchBasicAuth{}
+	o.GetUser()
+	o = nil
+	o.GetUser()
+}
+
+func TestResetDatabasePasswordRequest_GetAppID(tt *testing.T) {
+	r := &ResetDatabasePasswordRequest{}
+	r.GetAppID()
+	r = nil
+	r.GetAppID()
+}
+
+func TestResetDatabasePasswordRequest_GetComponentName(tt *testing.T) {
+	r := &ResetDatabasePasswordRequest{}
+	r.GetComponentName()
+	r = nil
+	r.GetComponentName()
+}
+
+func TestResetDatabasePasswordResponse_GetDeployment(tt *testing.T) {
+	r := &ResetDatabasePasswordResponse{}
+	r.GetDeployment()
+	r = nil
+	r.GetDeployment()
+}
+
+func TestToggleDatabaseTrustedSourceRequest_GetAppID(tt *testing.T) {
+	t := &ToggleDatabaseTrustedSourceRequest{}
+	t.GetAppID()
+	t = nil
+	t.GetAppID()
+}
+
+func TestToggleDatabaseTrustedSourceRequest_GetComponentName(tt *testing.T) {
+	t := &ToggleDatabaseTrustedSourceRequest{}
+	t.GetComponentName()
+	t = nil
+	t.GetComponentName()
+}
+
+func TestToggleDatabaseTrustedSourceRequest_GetEnable(tt *testing.T) {
+	t := &ToggleDatabaseTrustedSourceRequest{}
+	t.GetEnable()
+	t = nil
+	t.GetEnable()
+}
+
+func TestToggleDatabaseTrustedSourceResponse_GetIsEnabled(tt *testing.T) {
+	t := &ToggleDatabaseTrustedSourceResponse{}
+	t.GetIsEnabled()
+	t = nil
+	t.GetIsEnabled()
 }
 
 func TestUpgradeBuildpackResponse_GetAffectedComponents(tt *testing.T) {

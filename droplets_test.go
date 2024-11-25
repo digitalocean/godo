@@ -1,11 +1,16 @@
 package godo
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDroplets_ListDroplets(t *testing.T) {
@@ -39,6 +44,98 @@ func TestDroplets_ListDroplets(t *testing.T) {
 		t.Errorf("Droplets.List\nDroplets: got=%#v\nwant=%#v", droplets, expectedDroplets)
 	}
 	expectedMeta := &Meta{Total: 2}
+	if !reflect.DeepEqual(resp.Meta, expectedMeta) {
+		t.Errorf("Droplets.List\nMeta: got=%#v\nwant=%#v", resp.Meta, expectedMeta)
+	}
+}
+
+func TestDroplets_ListDropletsWithGPUs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if r.URL.Query().Get("type") != "gpus" {
+			t.Errorf("Droplets.ListWithGPUs did not request with a type parameter")
+		}
+		fmt.Fprint(w, `{
+			"droplets": [
+				{
+					"id": 1,
+					"size": {
+						"gpu_info": {
+							"count": 1,
+							"vram": {
+								"amount": 8,
+								"unit": "gib"
+							},
+							"model": "nvidia_tesla_v100"
+						},
+						"disk_info": [
+							{
+								"type": "local",
+								"size": {
+									"amount": 200,
+									"unit": "gib"
+								}
+							},
+							{
+								"type": "scratch",
+								"size": {
+									"amount": 40960,
+									"unit": "gib"
+								}
+							}
+						]
+					}
+				}
+			],
+			"meta": {
+				"total": 1
+			}
+		}`)
+	})
+
+	droplets, resp, err := client.Droplets.ListWithGPUs(ctx, nil)
+	if err != nil {
+		t.Errorf("Droplets.List returned error: %v", err)
+	}
+
+	expectedDroplets := []Droplet{
+		{
+			ID: 1,
+			Size: &Size{
+				GPUInfo: &GPUInfo{
+					Count: 1,
+					VRAM: &VRAM{
+						Amount: 8,
+						Unit:   "gib",
+					},
+					Model: "nvidia_tesla_v100",
+				},
+				DiskInfo: []DiskInfo{
+					{
+						Type: "local",
+						Size: &DiskSize{
+							Amount: 200,
+							Unit:   "gib",
+						},
+					},
+					{
+						Type: "scratch",
+						Size: &DiskSize{
+							Amount: 40960,
+							Unit:   "gib",
+						},
+					},
+				},
+			},
+		},
+	}
+	if !reflect.DeepEqual(droplets, expectedDroplets) {
+		t.Errorf("Droplets.List\nDroplets: got=%#v\nwant=%#v", droplets, expectedDroplets)
+	}
+	expectedMeta := &Meta{Total: 1}
 	if !reflect.DeepEqual(resp.Meta, expectedMeta) {
 		t.Errorf("Droplets.List\nMeta: got=%#v\nwant=%#v", resp.Meta, expectedMeta)
 	}
@@ -224,6 +321,12 @@ func TestDroplets_Create(t *testing.T) {
 		},
 		Tags:    []string{"one", "two"},
 		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
+		Backups: true,
+		BackupPolicy: &DropletBackupPolicyRequest{
+			Plan:    "weekly",
+			Weekday: "MON",
+			Hour:    PtrTo(0),
+		},
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
@@ -233,7 +336,6 @@ func TestDroplets_Create(t *testing.T) {
 			"size":               "size",
 			"image":              float64(1),
 			"ssh_keys":           nil,
-			"backups":            false,
 			"ipv6":               false,
 			"private_networking": false,
 			"monitoring":         false,
@@ -241,8 +343,10 @@ func TestDroplets_Create(t *testing.T) {
 				map[string]interface{}{"id": "hello-im-another-volume"},
 				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
 			},
-			"tags":     []interface{}{"one", "two"},
-			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+			"tags":          []interface{}{"one", "two"},
+			"vpc_uuid":      "880b7f98-f062-404d-b33c-458d545696f6",
+			"backups":       true,
+			"backup_policy": map[string]interface{}{"plan": "weekly", "weekday": "MON", "hour": float64(0)},
 		}
 		jsonBlob := `
 {
@@ -854,4 +958,124 @@ func TestDroplets_IPMethods(t *testing.T) {
 	if got, expected := ip, ipv6; got != expected {
 		t.Errorf("Droplet.PublicIPv6 returned %s; expected %s", got, expected)
 	}
+}
+
+func TestDroplets_GetBackupPolicy(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345/backups/policy", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+				"policy": {
+					"droplet_id": 12345,
+					"backup_enabled": true,
+					"backup_policy": {
+					"plan": "weekly",
+					"weekday": "SUN",
+					"hour": 0,
+					"window_length_hours": 4,
+					"retention_period_days": 28
+					},
+					"next_backup_window": {
+						"start": "2021-01-01T00:00:00Z",
+						"end": "2021-01-01T00:00:00Z"
+					}
+				}
+			}`)
+	})
+
+	policy, _, err := client.Droplets.GetBackupPolicy(ctx, 12345)
+	if err != nil {
+		t.Errorf("Droplets.GetBackupPolicy returned error: %v", err)
+	}
+
+	pt, err := time.Parse(time.RFC3339, "2021-01-01T00:00:00Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	expected := &DropletBackupPolicy{
+		DropletID:     12345,
+		BackupEnabled: true,
+		BackupPolicy: &DropletBackupPolicyConfig{
+			Plan:                "weekly",
+			Weekday:             "SUN",
+			Hour:                0,
+			WindowLengthHours:   4,
+			RetentionPeriodDays: 28,
+		},
+		NextBackupWindow: &BackupWindow{
+			Start: &Timestamp{Time: pt},
+			End:   &Timestamp{Time: pt},
+		},
+	}
+	if !reflect.DeepEqual(policy, expected) {
+		t.Errorf("Droplets.GetBackupPolicy\n got=%#v\nwant=%#v", policy, expected)
+	}
+}
+
+func TestDroplets_ListBackupPolicies(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+	policyID := 123
+	pt, err := time.Parse(time.RFC3339, "2021-01-01T00:00:00Z")
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	testBackupPolicy := DropletBackupPolicy{
+		DropletID:     12345,
+		BackupEnabled: true,
+		BackupPolicy: &DropletBackupPolicyConfig{
+			Plan:                "weekly",
+			Weekday:             "SUN",
+			Hour:                0,
+			WindowLengthHours:   4,
+			RetentionPeriodDays: 28,
+		},
+		NextBackupWindow: &BackupWindow{
+			Start: &Timestamp{Time: pt},
+			End:   &Timestamp{Time: pt},
+		},
+	}
+
+	mux.HandleFunc("/v2/droplets/backups/policies", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&dropletBackupPoliciesRoot{
+			DropletBackupPolicies: map[int]*DropletBackupPolicy{policyID: &testBackupPolicy},
+			Meta:                  &Meta{Total: 1},
+			Links:                 &Links{},
+		})
+	})
+
+	policies, _, err := client.Droplets.ListBackupPolicies(ctx, &ListOptions{Page: 1})
+	require.NoError(t, err)
+	assert.Equal(t, map[int]*DropletBackupPolicy{policyID: &testBackupPolicy}, policies)
+}
+
+func TestDroplets_ListSupportedBackupPolicies(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+	testSupportedBackupPolicy := SupportedBackupPolicy{
+		Name:                 "weekly",
+		PossibleWindowStarts: []int{0, 4, 8, 12, 16, 20},
+		WindowLengthHours:    4,
+		RetentionPeriodDays:  28,
+		PossibleDays:         []string{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"},
+	}
+
+	mux.HandleFunc("/v2/droplets/backups/supported_policies", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&dropletSupportedBackupPoliciesRoot{SupportedBackupPolicies: []*SupportedBackupPolicy{&testSupportedBackupPolicy}})
+	})
+
+	policies, _, err := client.Droplets.ListSupportedBackupPolicies(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, []*SupportedBackupPolicy{&testSupportedBackupPolicy}, policies)
 }

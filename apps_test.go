@@ -30,6 +30,10 @@ var (
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
+			Termination: &AppServiceSpecTermination{
+				GracePeriodSeconds: 100,
+				DrainSeconds:       60,
+			},
 		}},
 		Workers: []*AppWorkerSpec{{
 			Name:           "worker-name",
@@ -42,6 +46,9 @@ var (
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
+			Termination: &AppWorkerSpecTermination{
+				GracePeriodSeconds: 100,
+			},
 		}},
 		StaticSites: []*AppStaticSiteSpec{{
 			Name:         "static-name",
@@ -63,6 +70,9 @@ var (
 			},
 			InstanceSizeSlug: "professional-xs",
 			InstanceCount:    1,
+			Termination: &AppJobSpecTermination{
+				GracePeriodSeconds: 100,
+			},
 		}},
 		Databases: []*AppDatabaseSpec{{
 			Name:        "db",
@@ -225,6 +235,17 @@ var (
 			MajorVersion: 0,
 		},
 	}
+
+	testConnectionDetails = []*GetDatabaseConnectionDetailsResponse{
+		{
+			Host:          "db1.b.db.ondigitalocean.com",
+			Port:          3306,
+			Username:      "example",
+			Password:      "PASSWORD",
+			DatabaseName:  "db",
+			ComponentName: "example-service",
+		},
+	}
 )
 
 func TestApps_CreateApp(t *testing.T) {
@@ -324,11 +345,12 @@ func TestApps_UpdateApp(t *testing.T) {
 		err := json.NewDecoder(r.Body).Decode(&req)
 		require.NoError(t, err)
 		assert.Equal(t, &updatedSpec, req.Spec)
+		assert.True(t, req.UpdateAllSourceVersions)
 
 		json.NewEncoder(w).Encode(&appRoot{App: &testApp})
 	})
 
-	app, _, err := client.Apps.Update(ctx, testApp.ID, &AppUpdateRequest{Spec: &updatedSpec})
+	app, _, err := client.Apps.Update(ctx, testApp.ID, &AppUpdateRequest{Spec: &updatedSpec, UpdateAllSourceVersions: true})
 	require.NoError(t, err)
 	assert.Equal(t, &testApp, app)
 }
@@ -403,6 +425,46 @@ func TestApps_ProposeApp(t *testing.T) {
 	assert.Equal(t, int64(1), res.Spec.Services[0].InstanceCount)
 	assert.Equal(t, "/", res.Spec.Services[0].Routes[0].Path)
 	assert.True(t, res.AppNameAvailable)
+}
+
+func TestApps_Restart(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		components []string
+	}{
+		{
+			name:       "all",
+			components: nil,
+		},
+		{
+			name:       "specific",
+			components: []string{"service1", "service2"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			ctx := context.Background()
+
+			mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/restart", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, http.MethodPost)
+
+				var req AppRestartRequest
+				err := json.NewDecoder(r.Body).Decode(&req)
+				require.NoError(t, err)
+				assert.Equal(t, tc.components, req.Components)
+
+				json.NewEncoder(w).Encode(&deploymentRoot{Deployment: &testDeployment})
+			})
+
+			deployment, _, err := client.Apps.Restart(ctx, testApp.ID, &AppRestartRequest{
+				Components: tc.components,
+			})
+			require.NoError(t, err)
+			assert.Equal(t, &testDeployment, deployment)
+		})
+	}
 }
 
 func TestApps_CreateDeployment(t *testing.T) {
@@ -492,6 +554,38 @@ func TestApps_GetLogs(t *testing.T) {
 	logs, _, err := client.Apps.GetLogs(ctx, testApp.ID, testDeployment.ID, "", AppLogTypeRun, true, 1)
 	require.NoError(t, err)
 	assert.NotEmpty(t, logs.LiveURL)
+}
+
+func TestApps_GetExec(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/components/%s/exec", testApp.ID, testDeployment.ID, "service-name"), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		_, hasComponent := r.URL.Query()["component_name"]
+		assert.False(t, hasComponent)
+
+		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url1"})
+	})
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/components/%s/exec", testApp.ID, "service-name"), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		_, hasComponent := r.URL.Query()["component_name"]
+		assert.False(t, hasComponent)
+
+		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url2"})
+	})
+
+	exec, _, err := client.Apps.GetExec(ctx, testApp.ID, testDeployment.ID, "service-name")
+	require.NoError(t, err)
+	assert.Equal(t, "https://exec.url1", exec.URL)
+
+	exec, _, err = client.Apps.GetExec(ctx, testApp.ID, "", "service-name")
+	require.NoError(t, err)
+	assert.Equal(t, "https://exec.url2", exec.URL)
 }
 
 func TestApps_GetLogs_ActiveDeployment(t *testing.T) {
@@ -739,6 +833,60 @@ func TestApps_UpgradeBuildpack(t *testing.T) {
 	gotResponse, _, err := client.Apps.UpgradeBuildpack(ctx, testApp.ID, opts)
 	require.NoError(t, err)
 	assert.Equal(t, response, gotResponse)
+}
+
+func TestApps_GetAppDatabaseConnectionDetails(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/database_connection_details", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(&GetAppDatabaseConnectionDetailsResponse{ConnectionDetails: testConnectionDetails})
+	})
+
+	appConnectionDetails, _, err := client.Apps.GetAppDatabaseConnectionDetails(ctx, testApp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, testConnectionDetails, appConnectionDetails)
+}
+
+func TestApps_ResetDatabasePassword(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/components/%s/reset_password",
+		testApp.ID, testApp.Spec.GetServices()[0].GetName(),
+	), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		json.NewEncoder(w).Encode(&ResetDatabasePasswordResponse{Deployment: &testDeployment})
+	})
+
+	deployment, _, err := client.Apps.ResetDatabasePassword(ctx, testApp.ID, testApp.Spec.GetServices()[0].GetName())
+	require.NoError(t, err)
+	assert.Equal(t, &testDeployment, deployment)
+}
+
+func TestApps_ToggleDatabaseTrustedSource(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/components/%s/trusted_sources",
+		testApp.ID, testApp.Spec.GetServices()[0].GetName(),
+	), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		json.NewEncoder(w).Encode(&ToggleDatabaseTrustedSourceResponse{IsEnabled: true})
+	})
+
+	resp, _, err := client.Apps.ToggleDatabaseTrustedSource(
+		ctx,
+		testApp.ID,
+		testApp.Spec.GetServices()[0].GetName(),
+		ToggleDatabaseTrustedSourceOptions{Enable: true},
+	)
+	require.NoError(t, err)
+	assert.Equal(t, &ToggleDatabaseTrustedSourceResponse{IsEnabled: true}, resp)
 }
 
 func TestApps_ToURN(t *testing.T) {

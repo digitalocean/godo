@@ -542,14 +542,15 @@ func TestKubernetesClusters_Create(t *testing.T) {
 	defer teardown()
 
 	kubeSvc := client.Kubernetes
+	enabled := true
 
 	want := &KubernetesCluster{
 		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
 		Name:          "antoine-test-cluster",
 		RegionSlug:    "s2r1",
 		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
+		ClusterSubnet: "192.168.0.0/16",
+		ServiceSubnet: "192.169.0.0/16",
 		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		HA:            true,
@@ -568,15 +569,23 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			StartTime: "00:00",
 			Day:       KubernetesMaintenanceDayMonday,
 		},
+		ControlPlaneFirewall: &KubernetesControlPlaneFirewall{
+			Enabled: &enabled,
+			AllowedAddresses: []string{
+				"1.2.3.4/32",
+			},
+		},
 	}
 	createRequest := &KubernetesClusterCreateRequest{
-		Name:         want.Name,
-		RegionSlug:   want.RegionSlug,
-		VersionSlug:  want.VersionSlug,
-		Tags:         want.Tags,
-		VPCUUID:      want.VPCUUID,
-		SurgeUpgrade: true,
-		HA:           true,
+		Name:          want.Name,
+		RegionSlug:    want.RegionSlug,
+		VersionSlug:   want.VersionSlug,
+		Tags:          want.Tags,
+		VPCUUID:       want.VPCUUID,
+		ClusterSubnet: want.ClusterSubnet,
+		ServiceSubnet: want.ServiceSubnet,
+		SurgeUpgrade:  true,
+		HA:            true,
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			{
 				Size:      want.NodePools[0].Size,
@@ -599,8 +608,8 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		"name": "antoine-test-cluster",
 		"region": "s2r1",
 		"version": "1.10.0-gen0",
-		"cluster_subnet": "10.244.0.0/16",
-		"service_subnet": "10.245.0.0/16",
+		"cluster_subnet": "192.168.0.0/16",
+		"service_subnet": "192.169.0.0/16",
 		"tags": [
 			"cluster-tag-1",
 			"cluster-tag-2"
@@ -625,7 +634,13 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		"maintenance_policy": {
 			"start_time": "00:00",
 			"day": "monday"
-		}
+		},
+        "control_plane_firewall": {
+             "enabled": true,
+             "allowed_addresses": [
+                 "1.2.3.4/32"
+             ]
+        }
 	}
 }`
 
@@ -755,6 +770,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 	defer teardown()
 
 	kubeSvc := client.Kubernetes
+	enabled := true
 
 	want := &KubernetesCluster{
 		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
@@ -783,12 +799,24 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			StartTime: "00:00",
 			Day:       KubernetesMaintenanceDayMonday,
 		},
+		ControlPlaneFirewall: &KubernetesControlPlaneFirewall{
+			Enabled: &enabled,
+			AllowedAddresses: []string{
+				"1.2.3.4/32",
+			},
+		},
 	}
 	updateRequest := &KubernetesClusterUpdateRequest{
 		Name:              want.Name,
 		Tags:              want.Tags,
 		MaintenancePolicy: want.MaintenancePolicy,
 		SurgeUpgrade:      true,
+		ControlPlaneFirewall: &KubernetesControlPlaneFirewall{
+			Enabled: &enabled,
+			AllowedAddresses: []string{
+				"1.2.3.4/32",
+			},
+		},
 	}
 
 	jBlob := `
@@ -824,11 +852,17 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		"maintenance_policy": {
 			"start_time": "00:00",
 			"day": "monday"
-		}
+		},
+		"control_plane_firewall": {
+             "enabled": true,
+             "allowed_addresses": [
+                 "1.2.3.4/32"
+             ]
+        }
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
