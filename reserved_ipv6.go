@@ -14,8 +14,8 @@ const reservedIPV6sBasePath = "v2/reserved_ipv6"
 // endpoints of the Digital Ocean API.
 type ReservedIPV6sService interface {
 	List(context.Context, *ListOptions) (*ReservedIPV6List, *Response, error)
-	Get(context.Context, string) (*ReservedIPV6, *Response, error)
-	Create(context.Context, *ReservedIPV6CreateRequest) (*ReservedIPV6, *Response, error)
+	Get(context.Context, string) (*ReservedIPV6Resp, *Response, error)
+	Create(context.Context, *ReservedIPV6CreateRequest) (*ReservedIPV6Resp, *Response, error)
 	Delete(context.Context, string) (*Response, error)
 }
 
@@ -33,6 +33,9 @@ type ReservedIPV6 struct {
 	IP         string    `json:"ip"`
 	ReservedAt time.Time `json:"reserved_at"`
 	Droplet    *Droplet  `json:"droplet,omitempty"`
+}
+type ReservedIPV6Resp struct {
+	ReservedIPV6 *ReservedIPV6 `json:"reserved_ipv6"`
 }
 
 type ReservedIPV6List struct {
@@ -84,7 +87,7 @@ func (r *ReservedIPV6sServiceOp) List(ctx context.Context, opt *ListOptions) (*R
 }
 
 // Get an individual reserved IPv6.
-func (r *ReservedIPV6sServiceOp) Get(ctx context.Context, ip string) (*ReservedIPV6, *Response, error) {
+func (r *ReservedIPV6sServiceOp) Get(ctx context.Context, ip string) (*ReservedIPV6Resp, *Response, error) {
 	path := fmt.Sprintf("%s/%s", reservedIPV6sBasePath, ip)
 
 	req, err := r.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -92,7 +95,7 @@ func (r *ReservedIPV6sServiceOp) Get(ctx context.Context, ip string) (*ReservedI
 		return nil, nil, err
 	}
 
-	root := new(ReservedIPV6)
+	root := new(ReservedIPV6Resp)
 	resp, err := r.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -102,7 +105,7 @@ func (r *ReservedIPV6sServiceOp) Get(ctx context.Context, ip string) (*ReservedI
 }
 
 // Create a new IPv6
-func (r *ReservedIPV6sServiceOp) Create(ctx context.Context, reserveRequest *ReservedIPV6CreateRequest) (*ReservedIPV6, *Response, error) {
+func (r *ReservedIPV6sServiceOp) Create(ctx context.Context, reserveRequest *ReservedIPV6CreateRequest) (*ReservedIPV6Resp, *Response, error) {
 	path := reservedIPV6sBasePath
 
 	req, err := r.client.NewRequest(ctx, http.MethodPost, path, reserveRequest)
@@ -110,7 +113,7 @@ func (r *ReservedIPV6sServiceOp) Create(ctx context.Context, reserveRequest *Res
 		return nil, nil, err
 	}
 
-	root := new(ReservedIPV6)
+	root := new(ReservedIPV6Resp)
 	resp, err := r.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err

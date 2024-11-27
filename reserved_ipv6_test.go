@@ -30,7 +30,7 @@ func TestReservedIPV6s_Create(t *testing.T) {
 			t.Errorf("Request body = %+v, expected %+v", v, reserveRequest)
 		}
 
-		fmt.Fprint(w, `{"ip":"2604:a880:800:14::42c3:d000","region_slug":"nyc3","reserved_at":"`+nowTime.Format(time.RFC3339Nano)+`"}`)
+		fmt.Fprint(w, `{"reserved_ipv6":{"ip":"2604:a880:800:14::42c3:d000","region_slug":"nyc3","reserved_at":"`+nowTime.Format(time.RFC3339Nano)+`"}}`)
 	})
 
 	reservedIP, _, err := client.ReservedIPV6s.Create(ctx, reserveRequest)
@@ -38,10 +38,10 @@ func TestReservedIPV6s_Create(t *testing.T) {
 		t.Errorf("ReservedIPV6s.Create returned error: %v", err)
 	}
 
-	expected := &ReservedIPV6{RegionSlug: "nyc3", IP: "2604:a880:800:14::42c3:d000", ReservedAt: nowTime}
+	expected := &ReservedIPV6Resp{ReservedIPV6: &ReservedIPV6{RegionSlug: "nyc3", IP: "2604:a880:800:14::42c3:d000", ReservedAt: nowTime}}
 
-	if !equalReserveIPv6Objects(reservedIP, expected) {
-		t.Errorf("ReservedIPs.Create returned %+v, expected %+v", reservedIP, expected)
+	if !equalReserveIPv6Objects(reservedIP.ReservedIPV6, expected.ReservedIPV6) {
+		t.Errorf("ReservedIPV6s.Create returned %+v, expected %+v", reservedIP, expected)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestReservedIPV6s_Get(t *testing.T) {
 	nowTime := time.Now()
 	mux.HandleFunc("/v2/reserved_ipv6/2604:a880:800:14::42c3:d001", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"region_slug":"nyc3","droplet":{"id":1},"ip":"2604:a880:800:14::42c3:d001", "reserved_at":"`+nowTime.Format(time.RFC3339Nano)+`"}`)
+		fmt.Fprint(w, `{"reserved_ipv6":{"region_slug":"nyc3","droplet":{"id":1},"ip":"2604:a880:800:14::42c3:d001", "reserved_at":"`+nowTime.Format(time.RFC3339Nano)+`"}}`)
 	})
 
 	reservedIP, _, err := client.ReservedIPV6s.Get(ctx, "2604:a880:800:14::42c3:d001")
@@ -124,8 +124,8 @@ func TestReservedIPV6s_Get(t *testing.T) {
 		t.Errorf("ReservedIPV6s.Get returned error: %v", err)
 	}
 
-	expected := &ReservedIPV6{RegionSlug: "nyc3", Droplet: &Droplet{ID: 1}, IP: "2604:a880:800:14::42c3:d001", ReservedAt: nowTime}
-	if !equalReserveIPv6Objects(reservedIP, expected) {
+	expected := &ReservedIPV6Resp{ReservedIPV6: &ReservedIPV6{RegionSlug: "nyc3", Droplet: &Droplet{ID: 1}, IP: "2604:a880:800:14::42c3:d001", ReservedAt: nowTime}}
+	if !equalReserveIPv6Objects(reservedIP.ReservedIPV6, expected.ReservedIPV6) {
 		t.Errorf("ReservedIPV6s.Get returned %+v, expected %+v", reservedIP, expected)
 	}
 }
