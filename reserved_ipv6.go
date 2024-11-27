@@ -13,7 +13,7 @@ const reservedIPV6sBasePath = "v2/reserved_ipv6"
 // ReservedIPV6sService is an interface for interfacing with the reserved IPV6s
 // endpoints of the Digital Ocean API.
 type ReservedIPV6sService interface {
-	List(context.Context, *ListOptions) (*ReservedIPV6List, *Response, error)
+	List(context.Context, *ListOptions) ([]ReservedIPV6, *Response, error)
 	Get(context.Context, string) (*ReservedIPV6Resp, *Response, error)
 	Create(context.Context, *ReservedIPV6CreateRequest) (*ReservedIPV6Resp, *Response, error)
 	Delete(context.Context, string) (*Response, error)
@@ -59,7 +59,7 @@ type ReservedIPV6CreateRequest struct {
 }
 
 // List all reserved IPV6s.
-func (r *ReservedIPV6sServiceOp) List(ctx context.Context, opt *ListOptions) (*ReservedIPV6List, *Response, error) {
+func (r *ReservedIPV6sServiceOp) List(ctx context.Context, opt *ListOptions) ([]ReservedIPV6, *Response, error) {
 	path := reservedIPV6sBasePath
 	path, err := addOptions(path, opt)
 	if err != nil {
@@ -83,7 +83,7 @@ func (r *ReservedIPV6sServiceOp) List(ctx context.Context, opt *ListOptions) (*R
 		resp.Links = root.Links
 	}
 
-	return root, resp, err
+	return root.ReservedIPV6s, resp, err
 }
 
 // Get an individual reserved IPv6.

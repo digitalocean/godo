@@ -71,13 +71,12 @@ func TestReservedIPV6s_List(t *testing.T) {
 		t.Errorf("ReservedIPs.List returned error: %v", err)
 	}
 
-	expectedReservedIPs := ReservedIPV6List{
-		ReservedIPV6s: []ReservedIPV6{
-			{RegionSlug: "nyc3", Droplet: &Droplet{ID: 1}, IP: "2604:a880:800:14::42c3:d000"},
-			{RegionSlug: "nyc3", Droplet: &Droplet{ID: 2}, IP: "2604:a880:800:14::42c3:d001"},
-		},
+	expectedReservedIPs := []ReservedIPV6{
+		{RegionSlug: "nyc3", Droplet: &Droplet{ID: 1}, IP: "2604:a880:800:14::42c3:d000"},
+		{RegionSlug: "nyc3", Droplet: &Droplet{ID: 2}, IP: "2604:a880:800:14::42c3:d001"},
 	}
-	if !reflect.DeepEqual(reservedIPs.ReservedIPV6s, expectedReservedIPs.ReservedIPV6s) {
+
+	if !reflect.DeepEqual(reservedIPs, expectedReservedIPs) {
 		t.Errorf("ReservedIPV6s.List returned reserved IPs %+v, expected %+v", reservedIPs, expectedReservedIPs)
 	}
 
