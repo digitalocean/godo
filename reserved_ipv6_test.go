@@ -38,9 +38,9 @@ func TestReservedIPV6s_Create(t *testing.T) {
 		t.Errorf("ReservedIPV6s.Create returned error: %v", err)
 	}
 
-	expected := &ReservedIPV6Resp{ReservedIPV6: &ReservedIPV6{RegionSlug: "nyc3", IP: "2604:a880:800:14::42c3:d000", ReservedAt: nowTime}}
+	expected := &reservedIPV6Root{ReservedIPV6: &ReservedIPV6{RegionSlug: "nyc3", IP: "2604:a880:800:14::42c3:d000", ReservedAt: nowTime}}
 
-	if !equalReserveIPv6Objects(reservedIP.ReservedIPV6, expected.ReservedIPV6) {
+	if !equalReserveIPv6Objects(reservedIP, expected.ReservedIPV6) {
 		t.Errorf("ReservedIPV6s.Create returned %+v, expected %+v", reservedIP, expected)
 	}
 }
@@ -123,8 +123,8 @@ func TestReservedIPV6s_Get(t *testing.T) {
 		t.Errorf("ReservedIPV6s.Get returned error: %v", err)
 	}
 
-	expected := &ReservedIPV6Resp{ReservedIPV6: &ReservedIPV6{RegionSlug: "nyc3", Droplet: &Droplet{ID: 1}, IP: "2604:a880:800:14::42c3:d001", ReservedAt: nowTime}}
-	if !equalReserveIPv6Objects(reservedIP.ReservedIPV6, expected.ReservedIPV6) {
+	expected := &reservedIPV6Root{ReservedIPV6: &ReservedIPV6{RegionSlug: "nyc3", Droplet: &Droplet{ID: 1}, IP: "2604:a880:800:14::42c3:d001", ReservedAt: nowTime}}
+	if !equalReserveIPv6Objects(reservedIP, expected.ReservedIPV6) {
 		t.Errorf("ReservedIPV6s.Get returned %+v, expected %+v", reservedIP, expected)
 	}
 }
