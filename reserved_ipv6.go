@@ -13,7 +13,7 @@ const reservedIPV6sBasePath = "v2/reserved_ipv6"
 // ReservedIPV6sService is an interface for interfacing with the reserved IPV6s
 // endpoints of the Digital Ocean API.
 type ReservedIPV6sService interface {
-	List(context.Context, *ListOptions) ([]ReservedIPV6, *Response, error)
+	List(context.Context, *ListOptions) (*ReservedIPV6List, *Response, error)
 	Get(context.Context, string) (*ReservedIPV6, *Response, error)
 	Create(context.Context, *ReservedIPV6CreateRequest) (*ReservedIPV6, *Response, error)
 	Delete(context.Context, string) (*Response, error)
@@ -35,6 +35,12 @@ type ReservedIPV6 struct {
 	Droplet    *Droplet  `json:"droplet,omitempty"`
 }
 
+type ReservedIPV6List struct {
+	ReservedIPV6s []ReservedIPV6 `json:"reserved_ipv6s"`
+	Links         *Links         `json:"links"`
+	Meta          *Meta          `json:"meta"`
+}
+
 func (f ReservedIPV6) String() string {
 	return Stringify(f)
 }
@@ -44,19 +50,13 @@ func (f ReservedIPV6) URN() string {
 	return ToURN(resourceV6Type, f.IP)
 }
 
-type reservedIPV6sRoot struct {
-	ReservedIPs []ReservedIPV6 `json:"reserved_ips"`
-	Links       *Links         `json:"links"`
-	Meta        *Meta          `json:"meta"`
-}
-
 // ReservedIPV6CreateRequest represents a request to reserve a reserved IP.
 type ReservedIPV6CreateRequest struct {
 	Region string `json:"region_slug,omitempty"`
 }
 
 // List all reserved IPV6s.
-func (r *ReservedIPV6sServiceOp) List(ctx context.Context, opt *ListOptions) ([]ReservedIPV6, *Response, error) {
+func (r *ReservedIPV6sServiceOp) List(ctx context.Context, opt *ListOptions) (*ReservedIPV6List, *Response, error) {
 	path := reservedIPV6sBasePath
 	path, err := addOptions(path, opt)
 	if err != nil {
@@ -68,19 +68,19 @@ func (r *ReservedIPV6sServiceOp) List(ctx context.Context, opt *ListOptions) ([]
 		return nil, nil, err
 	}
 
-	root := new(reservedIPV6sRoot)
+	root := new(ReservedIPV6List)
 	resp, err := r.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, nil, err
 	}
-	if l := root.Links; l != nil {
-		resp.Links = l
+	if root.Meta != nil {
+		resp.Meta = root.Meta
 	}
-	if m := root.Meta; m != nil {
-		resp.Meta = m
+	if root.Links != nil {
+		resp.Links = root.Links
 	}
 
-	return root.ReservedIPs, resp, err
+	return root, resp, err
 }
 
 // Get an individual reserved IPv6.

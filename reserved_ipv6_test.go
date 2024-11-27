@@ -58,11 +58,11 @@ func TestReservedIPV6s_List(t *testing.T) {
 
 	mux.HandleFunc("/v2/reserved_ipv6", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"reserved_ips": [
+		fmt.Fprint(w, `{"reserved_ipv6s": [
 			{"region_slug":"nyc3","droplet":{"id":1},"ip":"2604:a880:800:14::42c3:d000"},
 			{"region_slug":"nyc3","droplet":{"id":2},"ip":"2604:a880:800:14::42c3:d001"}
 			],
-			"meta":{"total":2}
+			"meta": {"total": 2}
 		}`)
 	})
 
@@ -71,11 +71,13 @@ func TestReservedIPV6s_List(t *testing.T) {
 		t.Errorf("ReservedIPs.List returned error: %v", err)
 	}
 
-	expectedReservedIPs := []ReservedIPV6{
-		{RegionSlug: "nyc3", Droplet: &Droplet{ID: 1}, IP: "2604:a880:800:14::42c3:d000"},
-		{RegionSlug: "nyc3", Droplet: &Droplet{ID: 2}, IP: "2604:a880:800:14::42c3:d001"},
+	expectedReservedIPs := ReservedIPV6List{
+		ReservedIPV6s: []ReservedIPV6{
+			{RegionSlug: "nyc3", Droplet: &Droplet{ID: 1}, IP: "2604:a880:800:14::42c3:d000"},
+			{RegionSlug: "nyc3", Droplet: &Droplet{ID: 2}, IP: "2604:a880:800:14::42c3:d001"},
+		},
 	}
-	if !reflect.DeepEqual(reservedIPs, expectedReservedIPs) {
+	if !reflect.DeepEqual(reservedIPs.ReservedIPV6s, expectedReservedIPs.ReservedIPV6s) {
 		t.Errorf("ReservedIPV6s.List returned reserved IPs %+v, expected %+v", reservedIPs, expectedReservedIPs)
 	}
 
@@ -83,7 +85,7 @@ func TestReservedIPV6s_List(t *testing.T) {
 		Total: 2,
 	}
 	if !reflect.DeepEqual(resp.Meta, expectedMeta) {
-		t.Errorf("ReservedIPs.List returned meta %+v, expected %+v", resp.Meta, expectedMeta)
+		t.Errorf("ReservedIPV6s.List returned meta %+v, expected %+v", resp.Meta, expectedMeta)
 	}
 }
 
@@ -93,7 +95,7 @@ func TestReservedIPV6s_ListReservedIPsMultiplePages(t *testing.T) {
 
 	mux.HandleFunc("/v2/reserved_ipv6", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"reserved_ips": [
+		fmt.Fprint(w, `{"reserved_ipv6s": [
 			{"region_slug":"nyc3","droplet":{"id":1},"ip":"2604:a880:800:14::42c3:d001"},
 			{"region":{"slug":"nyc3"},"droplet":{"id":2},"ip":"2604:a880:800:14::42c3:d002"}],
 			"links":{"pages":{"next":"http://example.com/v2/reserved_ipv6/?page=2"}}}
