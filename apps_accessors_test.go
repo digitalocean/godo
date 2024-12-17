@@ -706,6 +706,13 @@ func TestAppFunctionsSpec_GetAlerts(tt *testing.T) {
 	a.GetAlerts()
 }
 
+func TestAppFunctionsSpec_GetBitbucket(tt *testing.T) {
+	a := &AppFunctionsSpec{}
+	a.GetBitbucket()
+	a = nil
+	a.GetBitbucket()
+}
+
 func TestAppFunctionsSpec_GetCORS(tt *testing.T) {
 	a := &AppFunctionsSpec{}
 	a.GetCORS()
@@ -998,6 +1005,13 @@ func TestAppJobSpec_GetAlerts(tt *testing.T) {
 	a.GetAlerts()
 	a = nil
 	a.GetAlerts()
+}
+
+func TestAppJobSpec_GetBitbucket(tt *testing.T) {
+	a := &AppJobSpec{}
+	a.GetBitbucket()
+	a = nil
+	a.GetBitbucket()
 }
 
 func TestAppJobSpec_GetBuildCommand(tt *testing.T) {
@@ -1441,6 +1455,13 @@ func TestAppServiceSpec_GetAutoscaling(tt *testing.T) {
 	a.GetAutoscaling()
 }
 
+func TestAppServiceSpec_GetBitbucket(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetBitbucket()
+	a = nil
+	a.GetBitbucket()
+}
+
 func TestAppServiceSpec_GetBuildCommand(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetBuildCommand()
@@ -1763,6 +1784,13 @@ func TestAppSpec_GetWorkers(tt *testing.T) {
 	a.GetWorkers()
 }
 
+func TestAppStaticSiteSpec_GetBitbucket(tt *testing.T) {
+	a := &AppStaticSiteSpec{}
+	a.GetBitbucket()
+	a = nil
+	a.GetBitbucket()
+}
+
 func TestAppStaticSiteSpec_GetBuildCommand(tt *testing.T) {
 	a := &AppStaticSiteSpec{}
 	a.GetBuildCommand()
@@ -1959,6 +1987,13 @@ func TestAppWorkerSpec_GetAutoscaling(tt *testing.T) {
 	a.GetAutoscaling()
 }
 
+func TestAppWorkerSpec_GetBitbucket(tt *testing.T) {
+	a := &AppWorkerSpec{}
+	a.GetBitbucket()
+	a = nil
+	a.GetBitbucket()
+}
+
 func TestAppWorkerSpec_GetBuildCommand(tt *testing.T) {
 	a := &AppWorkerSpec{}
 	a.GetBuildCommand()
@@ -2069,6 +2104,27 @@ func TestAppWorkerSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
 	a.GetGracePeriodSeconds()
 	a = nil
 	a.GetGracePeriodSeconds()
+}
+
+func TestBitbucketSourceSpec_GetBranch(tt *testing.T) {
+	b := &BitbucketSourceSpec{}
+	b.GetBranch()
+	b = nil
+	b.GetBranch()
+}
+
+func TestBitbucketSourceSpec_GetDeployOnPush(tt *testing.T) {
+	b := &BitbucketSourceSpec{}
+	b.GetDeployOnPush()
+	b = nil
+	b.GetDeployOnPush()
+}
+
+func TestBitbucketSourceSpec_GetRepo(tt *testing.T) {
+	b := &BitbucketSourceSpec{}
+	b.GetRepo()
+	b = nil
+	b.GetRepo()
 }
 
 func TestBuildpack_GetDescription(tt *testing.T) {
@@ -2363,6 +2419,13 @@ func TestDeploymentCauseDetailsDOCRPush_GetTag(tt *testing.T) {
 	d.GetTag()
 	d = nil
 	d.GetTag()
+}
+
+func TestDeploymentCauseDetailsGitPush_GetBitbucket(tt *testing.T) {
+	d := &DeploymentCauseDetailsGitPush{}
+	d.GetBitbucket()
+	d = nil
+	d.GetBitbucket()
 }
 
 func TestDeploymentCauseDetailsGitPush_GetCommitAuthor(tt *testing.T) {
@@ -2692,6 +2755,13 @@ func TestDeployTemplate_GetSpec(tt *testing.T) {
 	d.GetSpec()
 	d = nil
 	d.GetSpec()
+}
+
+func TestDetectRequest_GetBitbucket(tt *testing.T) {
+	d := &DetectRequest{}
+	d.GetBitbucket()
+	d = nil
+	d.GetBitbucket()
 }
 
 func TestDetectRequest_GetCommitSHA(tt *testing.T) {

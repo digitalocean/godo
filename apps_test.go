@@ -1016,6 +1016,7 @@ func TestApps_Interfaces(t *testing.T) {
 			&GitHubSourceSpec{},
 			&GitLabSourceSpec{},
 			&ImageSourceSpec{},
+			&BitbucketSourceSpec{},
 		} {
 			if _, ok := impl.(SourceSpec); !ok {
 				t.Fatalf("%T should match interface", impl)
@@ -1028,17 +1029,18 @@ func TestApps_Interfaces(t *testing.T) {
 			&GitSourceSpec{},
 			&GitHubSourceSpec{},
 			&GitLabSourceSpec{},
+			&BitbucketSourceSpec{},
 		} {
 			if _, ok := impl.(VCSSourceSpec); !ok {
 				t.Fatalf("%T should match interface", impl)
 			}
 		}
 		for impl, wantMatch := range map[any]bool{
-			&GitSourceSpec{}:    true,
-			&GitHubSourceSpec{}: true,
-			&GitLabSourceSpec{}: true,
-
-			&ImageSourceSpec{}: false,
+			&GitSourceSpec{}:       true,
+			&GitHubSourceSpec{}:    true,
+			&GitLabSourceSpec{}:    true,
+			&BitbucketSourceSpec{}: true,
+			&ImageSourceSpec{}:     false,
 		} {
 			_, ok := impl.(VCSSourceSpec)
 			if wantMatch && !ok {
