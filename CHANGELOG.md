@@ -1,5 +1,8 @@
 # Change Log
 
+##  [v1.132.0] - 2024-12-17
+- #764 - @greeshmapill - APPS-9365: Add bitbucket source to App Spec
+
 ##  [v1.131.1] - 2024-12-10
 - #762 - @imaskm - Updated list ipv6 response
 
