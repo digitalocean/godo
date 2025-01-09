@@ -315,7 +315,7 @@ var (
 
 // KubernetesMaintenanceToDay returns the appropriate KubernetesMaintenancePolicyDay for the given string.
 func KubernetesMaintenanceToDay(day string) (KubernetesMaintenancePolicyDay, error) {
-	d, ok := toDay[day]
+	d, ok := toDay[strings.ToLower(day)]
 	if !ok {
 		return 0, fmt.Errorf("unknown day: %q", day)
 	}
