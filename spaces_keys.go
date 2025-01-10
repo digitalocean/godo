@@ -10,10 +10,10 @@ const spacesKeysBasePath = "v2/spaces/keys"
 
 // SpacesKeysService is an interface for managing Spaces keys with the DigitalOcean API.
 type SpacesKeysService interface {
-	ListSpacesKeys(context.Context, *ListOptions) ([]*SpacesKey, *Response, error)
-	UpdateSpacesKey(context.Context, string, *SpacesKeyUpdateRequest) (*SpacesKey, *Response, error)
-	CreateSpacesKey(context.Context, *SpacesKeyCreateRequest) (*SpacesKey, *Response, error)
-	DeleteSpacesKey(context.Context, string) (*Response, error)
+	List(context.Context, *ListOptions) ([]*SpacesKey, *Response, error)
+	Update(context.Context, string, *SpacesKeyUpdateRequest) (*SpacesKey, *Response, error)
+	Create(context.Context, *SpacesKeyCreateRequest) (*SpacesKey, *Response, error)
+	Delete(context.Context, string) (*Response, error)
 }
 
 // SpacesKeysServiceOp handles communication with the Spaces key related methods of the
@@ -24,30 +24,31 @@ type SpacesKeysServiceOp struct {
 
 var _ SpacesKeysService = &SpacesKeysServiceOp{}
 
-// Permission represents a permission for a Spaces grant
-type Permission string
+// SpacesKeyPermission represents a permission for a Spaces grant
+type SpacesKeyPermission string
 
 const (
-	// PermissionRead grants read-only access to the Spaces bucket
-	PermissionRead Permission = "read"
-	// PermissionReadWrite grants read and write access to the Spaces bucket
-	PermissionReadWrite Permission = "readwrite"
-	// PermissionFullAccess grants full access to the Spaces bucket
-	PermissionFullAccess Permission = "fullaccess"
+	// SpacesKeyRead grants read-only access to the Spaces bucket
+	SpacesKeyRead SpacesKeyPermission = "read"
+	// SpacesKeyReadWrite grants read and write access to the Spaces bucket
+	SpacesKeyReadWrite SpacesKeyPermission = "readwrite"
+	// SpacesKeyFullAccess grants full access to the Spaces bucket
+	SpacesKeyFullAccess SpacesKeyPermission = "fullaccess"
 )
 
 // Grant represents a Grant for a Spaces key
 type Grant struct {
-	Bucket     string     `json:"bucket"`
-	Permission Permission `json:"permission"`
+	Bucket     string              `json:"bucket"`
+	Permission SpacesKeyPermission `json:"permission"`
 }
 
 // SpacesKey represents a DigitalOcean Spaces key
 type SpacesKey struct {
-	Name      string `json:"name"`
-	AccessKey string `json:"access_key"`
-	SecretKey string `json:"secret_key"`
-	CreatedAt string `json:"created_at"`
+	Name      string   `json:"name"`
+	AccessKey string   `json:"access_key"`
+	SecretKey string   `json:"secret_key"`
+	Grants    []*Grant `json:"grants"`
+	CreatedAt string   `json:"created_at"`
 }
 
 // SpacesKeyRoot represents a response from the DigitalOcean API
@@ -74,8 +75,8 @@ type spacesListKeysRoot struct {
 	Meta  *Meta        `json:"meta"`
 }
 
-// CreateSpacesKey implements SpacesKeysService.
-func (s *SpacesKeysServiceOp) CreateSpacesKey(ctx context.Context, createRequest *SpacesKeyCreateRequest) (*SpacesKey, *Response, error) {
+// Create creates a new Spaces key.
+func (s *SpacesKeysServiceOp) Create(ctx context.Context, createRequest *SpacesKeyCreateRequest) (*SpacesKey, *Response, error) {
 	if createRequest == nil {
 		return nil, nil, NewArgError("createRequest", "cannot be nil")
 	}
@@ -94,8 +95,8 @@ func (s *SpacesKeysServiceOp) CreateSpacesKey(ctx context.Context, createRequest
 	return root.Key, resp, nil
 }
 
-// DeleteSpacesKey implements SpacesKeysService.
-func (s *SpacesKeysServiceOp) DeleteSpacesKey(ctx context.Context, accessKey string) (*Response, error) {
+// Delete deletes a Spaces key.
+func (s *SpacesKeysServiceOp) Delete(ctx context.Context, accessKey string) (*Response, error) {
 	if accessKey == "" {
 		return nil, NewArgError("accessKey", "cannot be empty")
 	}
@@ -113,8 +114,8 @@ func (s *SpacesKeysServiceOp) DeleteSpacesKey(ctx context.Context, accessKey str
 	return resp, nil
 }
 
-// UpdateSpacesKey
-func (s *SpacesKeysServiceOp) UpdateSpacesKey(ctx context.Context, accessKey string, updateRequest *SpacesKeyUpdateRequest) (*SpacesKey, *Response, error) {
+// Update updates a Spaces key.
+func (s *SpacesKeysServiceOp) Update(ctx context.Context, accessKey string, updateRequest *SpacesKeyUpdateRequest) (*SpacesKey, *Response, error) {
 	if accessKey == "" {
 		return nil, nil, NewArgError("accessKey", "cannot be empty")
 	}
@@ -136,8 +137,8 @@ func (s *SpacesKeysServiceOp) UpdateSpacesKey(ctx context.Context, accessKey str
 	return root.Key, resp, nil
 }
 
-// ListSpacesKeys returns a list of Spaces keys.
-func (s *SpacesKeysServiceOp) ListSpacesKeys(ctx context.Context, opts *ListOptions) ([]*SpacesKey, *Response, error) {
+// List returns a list of Spaces keys.
+func (s *SpacesKeysServiceOp) List(ctx context.Context, opts *ListOptions) ([]*SpacesKey, *Response, error) {
 	path, err := addOptions(spacesKeysBasePath, opts)
 	if err != nil {
 		return nil, nil, err
