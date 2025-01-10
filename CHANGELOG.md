@@ -1,5 +1,9 @@
 # Change Log
 
+##  [v1.133.0] - 2025-01-10
+- #769 - @guptado - support partner interconnect attachment operations
+- #767 - @loosla - [kubernetes]: make kubernetes maintenance_policy day case insensitive
+
 ##  [v1.132.0] - 2024-12-17
 - #764 - @greeshmapill - APPS-9365: Add bitbucket source to App Spec
 
