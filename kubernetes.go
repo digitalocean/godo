@@ -223,6 +223,7 @@ func (kc KubernetesCluster) URN() string {
 
 // KubernetesClusterUser represents a Kubernetes cluster user.
 type KubernetesClusterUser struct {
+	ID       string   `json:"id,omitempty"`
 	Username string   `json:"username,omitempty"`
 	Groups   []string `json:"groups,omitempty"`
 }

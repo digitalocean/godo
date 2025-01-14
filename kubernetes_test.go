@@ -384,6 +384,7 @@ func TestKubernetesClusters_GetUser(t *testing.T) {
 	kubeSvc := client.Kubernetes
 	want := &KubernetesClusterUser{
 		Username: "foo@example.com",
+		ID:       "deadbeef-dead-beef-dead-deadbeef05e8",
 		Groups: []string{
 			"foo:bar",
 		},
@@ -392,6 +393,7 @@ func TestKubernetesClusters_GetUser(t *testing.T) {
 {
 	"kubernetes_cluster_user": {
 		"username": "foo@example.com",
+		"id": "deadbeef-dead-beef-dead-deadbeef05e8",
 		"groups": ["foo:bar"]
 	}
 }`
