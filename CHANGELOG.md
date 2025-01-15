@@ -1,5 +1,9 @@
 # Change Log
 
+##  [v1.134.0] - 2025-01-15
+- #771 - @d-honeybadger - add ID field to KubernetesClusterUser response
+- #768 - @lee-aaron - support Spaces Keys API
+
 ##  [v1.133.0] - 2025-01-10
 - #769 - @guptado - support partner interconnect attachment operations
 - #767 - @loosla - [kubernetes]: make kubernetes maintenance_policy day case insensitive
