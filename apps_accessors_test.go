@@ -1273,6 +1273,13 @@ func TestAppMaintenanceSpec_GetEnabled(tt *testing.T) {
 	a.GetEnabled()
 }
 
+func TestAppMaintenanceSpec_GetOfflinePageURL(tt *testing.T) {
+	a := &AppMaintenanceSpec{}
+	a.GetOfflinePageURL()
+	a = nil
+	a.GetOfflinePageURL()
+}
+
 func TestAppProposeRequest_GetAppID(tt *testing.T) {
 	a := &AppProposeRequest{}
 	a.GetAppID()
