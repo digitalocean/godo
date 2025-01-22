@@ -222,7 +222,8 @@ var lbCreateJSONResponse = `
             "8268a81c-fcf5-423e-a337-bbfe95817f24",
             "8268a81c-fcf6-423e-a337-bbfe95817f24"
         ],
-		"network": "INTERNAL"
+		"network": "INTERNAL",
+		"network_stack": "IPV4"
     }
 }
 `
@@ -234,6 +235,7 @@ var lbGetJSONResponse = `
         "name": "example-lb-01",
         "ip": "46.214.185.203",
         "ipv6": "fd53:616d:6d60::d2c:b001",
+		"network_stack": "DUALSTACK",
         "algorithm": "round_robin",
         "status": "active",
         "created_at": "2016-12-15T14:16:36Z",
@@ -437,13 +439,14 @@ func TestLoadBalancers_Get(t *testing.T) {
 	expectedTimeout := uint64(60)
 
 	expected := &LoadBalancer{
-		ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
-		Name:      "example-lb-01",
-		IP:        "46.214.185.203",
-		IPv6:      "fd53:616d:6d60::d2c:b001",
-		Algorithm: "round_robin",
-		Status:    "active",
-		Created:   "2016-12-15T14:16:36Z",
+		ID:           "37e6be88-01ec-4ec7-9bc6-a514d4719057",
+		Name:         "example-lb-01",
+		IP:           "46.214.185.203",
+		IPv6:         "fd53:616d:6d60::d2c:b001",
+		NetworkStack: LoadBalancerNetworkStackDualstack,
+		Algorithm:    "round_robin",
+		Status:       "active",
+		Created:      "2016-12-15T14:16:36Z",
 		ForwardingRules: []ForwardingRule{
 			{
 				EntryProtocol:  "https",
@@ -555,6 +558,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 		Network:               LoadBalancerNetworkTypeInternal,
+		NetworkStack:          LoadBalancerNetworkStackIPv4,
 	}
 
 	path := "/v2/load_balancers"
@@ -643,6 +647,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 		Network:               LoadBalancerNetworkTypeInternal,
+		NetworkStack:          LoadBalancerNetworkStackIPv4,
 	}
 
 	disableLetsEncryptDNSRecords := true
