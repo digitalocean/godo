@@ -545,6 +545,8 @@ func TestKubernetesClusters_Create(t *testing.T) {
 
 	kubeSvc := client.Kubernetes
 	enabled := true
+	scaleDownUtilizationThreshold := 0.5
+	scaleDownUnneededTime := "1m30s"
 
 	want := &KubernetesCluster{
 		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
@@ -577,6 +579,10 @@ func TestKubernetesClusters_Create(t *testing.T) {
 				"1.2.3.4/32",
 			},
 		},
+		ClusterAutoscalerConfiguration: &KubernetesClusterAutoscalerConfiguration{
+			ScaleDownUtilizationThreshold: &scaleDownUtilizationThreshold,
+			ScaleDownUnneededTime:         &scaleDownUnneededTime,
+		},
 	}
 	createRequest := &KubernetesClusterCreateRequest{
 		Name:          want.Name,
@@ -600,7 +606,8 @@ func TestKubernetesClusters_Create(t *testing.T) {
 				MaxNodes:  want.NodePools[0].MaxNodes,
 			},
 		},
-		MaintenancePolicy: want.MaintenancePolicy,
+		MaintenancePolicy:              want.MaintenancePolicy,
+		ClusterAutoscalerConfiguration: want.ClusterAutoscalerConfiguration,
 	}
 
 	jBlob := `
@@ -637,12 +644,16 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			"start_time": "00:00",
 			"day": "Monday"
 		},
-        "control_plane_firewall": {
-             "enabled": true,
-             "allowed_addresses": [
-                 "1.2.3.4/32"
-             ]
-        }
+		"control_plane_firewall": {
+			"enabled": true,
+			"allowed_addresses": [
+					"1.2.3.4/32"
+			]
+		},
+		"cluster_autoscaler_configuration": {
+      "scale_down_utilization_threshold": 0.5,
+      "scale_down_unneeded_time": "1m30s"
+    }
 	}
 }`
 
@@ -773,6 +784,8 @@ func TestKubernetesClusters_Update(t *testing.T) {
 
 	kubeSvc := client.Kubernetes
 	enabled := true
+	scaleDownUtilizationThreshold := 0.2
+	scaleDownUnneededTime := "1m27s"
 
 	want := &KubernetesCluster{
 		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
@@ -807,6 +820,10 @@ func TestKubernetesClusters_Update(t *testing.T) {
 				"1.2.3.4/32",
 			},
 		},
+		ClusterAutoscalerConfiguration: &KubernetesClusterAutoscalerConfiguration{
+			ScaleDownUtilizationThreshold: &scaleDownUtilizationThreshold,
+			ScaleDownUnneededTime:         &scaleDownUnneededTime,
+		},
 	}
 	updateRequest := &KubernetesClusterUpdateRequest{
 		Name:              want.Name,
@@ -818,6 +835,10 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			AllowedAddresses: []string{
 				"1.2.3.4/32",
 			},
+		},
+		ClusterAutoscalerConfiguration: &KubernetesClusterAutoscalerConfiguration{
+			ScaleDownUtilizationThreshold: &scaleDownUtilizationThreshold,
+			ScaleDownUnneededTime:         &scaleDownUnneededTime,
 		},
 	}
 
@@ -856,15 +877,19 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			"day": "Monday"
 		},
 		"control_plane_firewall": {
-             "enabled": true,
-             "allowed_addresses": [
-                 "1.2.3.4/32"
-             ]
-        }
+			"enabled": true,
+			"allowed_addresses": [
+					"1.2.3.4/32"
+			]
+		},	
+		"cluster_autoscaler_configuration": {
+      "scale_down_utilization_threshold": 0.2,
+      "scale_down_unneeded_time": "1m27s"
+    }
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s"}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
