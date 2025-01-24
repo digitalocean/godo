@@ -351,7 +351,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		],
 		"maintenance_policy": {
 			"start_time": "00:00",
-			"day": "monday"
+			"day": "Monday"
 		},
 		"created_at": "2018-06-15T07:10:23Z",
 		"updated_at": "2018-06-15T07:11:26Z"
@@ -384,6 +384,7 @@ func TestKubernetesClusters_GetUser(t *testing.T) {
 	kubeSvc := client.Kubernetes
 	want := &KubernetesClusterUser{
 		Username: "foo@example.com",
+		ID:       "deadbeef-dead-beef-dead-deadbeef05e8",
 		Groups: []string{
 			"foo:bar",
 		},
@@ -392,6 +393,7 @@ func TestKubernetesClusters_GetUser(t *testing.T) {
 {
 	"kubernetes_cluster_user": {
 		"username": "foo@example.com",
+		"id": "deadbeef-dead-beef-dead-deadbeef05e8",
 		"groups": ["foo:bar"]
 	}
 }`
@@ -640,7 +642,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		],
 		"maintenance_policy": {
 			"start_time": "00:00",
-			"day": "monday"
+			"day": "Monday"
 		},
 		"control_plane_firewall": {
 			"enabled": true,
@@ -754,7 +756,7 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 		],
 		"maintenance_policy": {
 			"start_time": "00:00",
-			"day": "monday"
+			"day": "Monday"
 		}
 	}
 }`
@@ -872,7 +874,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		],
 		"maintenance_policy": {
 			"start_time": "00:00",
-			"day": "monday"
+			"day": "Monday"
 		},
 		"control_plane_firewall": {
 			"enabled": true,
@@ -969,7 +971,7 @@ func TestKubernetesClusters_Update_FalseAutoUpgrade(t *testing.T) {
 		],
 		"maintenance_policy": {
 			"start_time": "00:00",
-			"day": "monday"
+			"day": "Monday"
 		}
 	}
 }`
