@@ -371,7 +371,7 @@ type DatabaseLogsink struct {
 	Config *DatabaseLogsinkConfig `json:"config,omitempty"`
 }
 
-// DatabaseOnlineMigrationStatus represents a online migration status
+// DatabaseOnlineMigrationStatus represents an online migration status
 type DatabaseOnlineMigrationStatus struct {
 	ID        string `json:"id"`
 	Status    string `json:"status"`
