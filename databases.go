@@ -563,7 +563,7 @@ type DatabaseLogsinkConfig struct {
 	Cert         string  `json:"cert,omitempty"`
 }
 
-// DatabaseOnlineMigrationConfig represents one of the configurable options (rsyslog_logsink, elasticsearch_logsink, or opensearch_logsink) for a logsink.
+// DatabaseOnlineMigrationConfig represents the configuration options for database online migrations.
 type DatabaseOnlineMigrationConfig struct {
 	Host         string `json:"host,omitempty"`
 	Port         int    `json:"port,omitempty"`
