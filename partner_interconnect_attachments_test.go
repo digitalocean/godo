@@ -18,7 +18,7 @@ var vInterconnectTestObj = &PartnerInterconnectAttachment{
 	Region:                    "NYC",
 	NaaSProvider:              "MEGAPORT",
 	VPCIDs:                    []string{"f5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
-	BGP: BGP{
+	BGP: &BGP{
 		LocalASN:      64532,
 		LocalRouterIP: "169.250.0.1",
 		PeerASN:       133937,
@@ -103,7 +103,7 @@ func TestPartnerInterconnectAttachments_Create(t *testing.T) {
 		Region:                    "NYC",
 		NaaSProvider:              "MEGAPORT",
 		VPCIDs:                    []string{"f5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
-		BGP: BGP{
+		BGP: &BGP{
 			LocalASN:      64532,
 			LocalRouterIP: "169.250.0.1",
 			PeerASN:       133937,

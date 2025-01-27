@@ -43,7 +43,7 @@ type PartnerInterconnectAttachmentCreateRequest struct {
 	// VPCIDs is the IDs of the VPCs to which the Partner Interconnect Attachment is connected
 	VPCIDs []string `json:"vpc_ids,omitempty"`
 	// BGP is the BGP configuration of the Partner Interconnect Attachment
-	BGP BGP `json:"bgp,omitempty"`
+	BGP *BGP `json:"bgp,omitempty"`
 }
 
 // PartnerInterconnectAttachmentUpdateRequest represents a request to update a Partner Interconnect Attachment.
@@ -101,7 +101,7 @@ type PartnerInterconnectAttachment struct {
 	// VPCIDs is the IDs of the VPCs to which the Partner Interconnect Attachment is connected
 	VPCIDs []string `json:"vpc_ids,omitempty"`
 	// BGP is the BGP configuration of the Partner Interconnect Attachment
-	BGP BGP `json:"bgp,omitempty"`
+	BGP *BGP `json:"bgp,omitempty"`
 	// CreatedAt is time when this Partner Interconnect Attachment was first created
 	CreatedAt time.Time `json:"created_at,omitempty"`
 }
