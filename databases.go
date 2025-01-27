@@ -530,8 +530,8 @@ type DatabaseFirewallRule struct {
 // DatabaseStartOnlineMigrationRequest is used to start an online migration for a database cluster
 type DatabaseStartOnlineMigrationRequest struct {
 	Source     *DatabaseOnlineMigrationConfig `json:"source"`
-	DisableSSL bool                           `json:"disable_ssl"`
-	IgnoreDBs  []string                       `json:"ignore_dbs"`
+	DisableSSL bool                           `json:"disable_ssl,omitempty"`
+	IgnoreDBs  []string                       `json:"ignore_dbs,omitempty"`
 }
 
 // DatabaseCreateLogsinkRequest is used to create logsink for a database cluster
