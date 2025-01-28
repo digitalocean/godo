@@ -4175,3 +4175,103 @@ func TestDatabases_DeleteLogsink(t *testing.T) {
 	_, err := client.Databases.DeleteLogsink(ctx, dbID, logsinkID)
 	require.NoError(t, err)
 }
+
+func TestDatabases_StartOnlineMigration(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
+	)
+
+	body := `{
+		"source": {
+			"host": "source-do-user-6607903-0.b.db.ondigitalocean.com",
+			"dbname": "defaultdb",
+			"port": 25060,
+			"username": "doadmin",
+			"password": "paakjnfe10rsrsmf"
+		},
+		"disable_ssl": false,
+		"ignore_dbs": [
+			"db0",
+			"db1"
+		]
+		}`
+
+	path := fmt.Sprintf("/v2/databases/%s/online-migration", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, body)
+	})
+
+	_, resp, err := client.Databases.StartOnlineMigration(ctx, dbID, &DatabaseStartOnlineMigrationRequest{
+		DisableSSL: false,
+
+		Source: &DatabaseOnlineMigrationConfig{
+			Host:         "https://user:passwd@192.168.0.1:25060",
+			DatabaseName: "defaultdb",
+			Port:         25060,
+			Username:     "doadmin",
+			Password:     "paakjnfe10rsrsmf",
+		},
+	})
+
+	require.NoError(t, err)
+
+	require.Equal(t, 200, resp.StatusCode)
+}
+
+func TestDatabases_GetOnlineMigrationStatus(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
+	)
+
+	body := `{
+		"source": {
+			"host": "source-do-user-6607903-0.b.db.ondigitalocean.com",
+			"dbname": "defaultdb",
+			"port": 25060,
+			"username": "doadmin",
+			"password": "paakjnfe10rsrsmf"
+		},
+		"disable_ssl": false,
+		"ignore_dbs": [
+			"db0",
+			"db1"
+		]
+		}`
+	path := fmt.Sprintf("/v2/databases/%s/online-migration", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	_, resp, err := client.Databases.GetOnlineMigrationStatus(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, 200, resp.StatusCode)
+}
+
+func TestDatabases_StopOnlineMigration(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID        = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		migrationID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
+
+	path := fmt.Sprintf("/v2/databases/%s/online-migration/%s", dbID, migrationID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Databases.StopOnlineMigration(ctx, dbID, migrationID)
+	require.NoError(t, err)
+}
