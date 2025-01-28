@@ -46,7 +46,6 @@ type PartnerInterconnectAttachmentCreateRequest struct {
 	BGP BGP `json:"bgp,omitempty"`
 }
 
-// PartnerInterconnectAttachmentCreateRequest represents a request to create a Partner Interconnect Attachment.
 type partnerInterconnectAttachmentRequestBody struct {
 	// Name is the name of the Partner Interconnect Attachment
 	Name string `json:"name,omitempty"`
@@ -62,8 +61,8 @@ type partnerInterconnectAttachmentRequestBody struct {
 	BGP *BGP `json:"bgp,omitempty"`
 }
 
-func (req *PartnerInterconnectAttachmentCreateRequest) buildReq() *PartnerInterconnectAttachmentRequestBody {
-	request := &PartnerInterconnectAttachmentRequestBody{
+func (req *PartnerInterconnectAttachmentCreateRequest) buildReq() *partnerInterconnectAttachmentRequestBody {
+	request := &partnerInterconnectAttachmentRequestBody{
 		Name:                      req.Name,
 		ConnectionBandwidthInMbps: req.ConnectionBandwidthInMbps,
 		Region:                    req.Region,

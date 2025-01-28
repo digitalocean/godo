@@ -2,6 +2,7 @@ package godo
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -27,6 +28,17 @@ var vInterconnectTestObj = &PartnerInterconnectAttachment{
 	CreatedAt: time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 }
 
+var vInterconnectNoBGPTestObj = &PartnerInterconnectAttachment{
+	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
+	Name:                      "my-new-partner-interconnect",
+	State:                     "ACTIVE",
+	ConnectionBandwidthInMbps: 50,
+	Region:                    "NYC",
+	NaaSProvider:              "MEGAPORT",
+	VPCIDs:                    []string{"f5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
+	CreatedAt:                 time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
+}
+
 var vInterconnectTestJSON = `
 	{
 		"id":"880b7f98-f062-404d-b33c-458d545696f6",
@@ -44,6 +56,22 @@ var vInterconnectTestJSON = `
 			},
 		"created_at":"2024-12-26T21:48:40.995304079Z"
 	}
+`
+
+var vInterconnectNoBGPTestJSON = `
+	{
+		"id":"880b7f98-f062-404d-b33c-458d545696f6",
+		"name":"my-new-partner-interconnect",
+		"state":"ACTIVE",
+		"connection_bandwidth_in_mbps":50,
+		"region":"NYC",
+		"naas_provider":"MEGAPORT",
+		"vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"],
+		"created_at":"2024-12-26T21:48:40.995304079Z"
+	}
+`
+
+const expectedCreateBodyNoBGP = `{"name":"my-new-partner-interconnect","connection_bandwidth_in_mbps":50,"region":"NYC","naas_provider":"MEGAPORT","vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"]}
 `
 
 func TestPartnerInterconnectAttachments_List(t *testing.T) {
@@ -120,6 +148,52 @@ func TestPartnerInterconnectAttachments_Create(t *testing.T) {
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
 		c := new(PartnerInterconnectAttachmentCreateRequest)
 		err := json.NewDecoder(r.Body).Decode(c)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, c, req)
+		w.Write([]byte(jsonBlob))
+	})
+
+	got, _, err := svc.Create(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestPartnerInterconnectAttachments_CreateNoBGP(t *testing.T) {
+	setup()
+	defer teardown()
+
+	svc := client.PartnerInterconnectAttachments
+	path := "/v2/partner_interconnect/attachments"
+	want := vInterconnectNoBGPTestObj
+	req := &PartnerInterconnectAttachmentCreateRequest{
+		Name:                      "my-new-partner-interconnect",
+		ConnectionBandwidthInMbps: 50,
+		Region:                    "NYC",
+		NaaSProvider:              "MEGAPORT",
+		VPCIDs:                    []string{"f5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
+	}
+	jsonBlob := `
+{
+	"partner_interconnect_attachment":
+` + vInterconnectNoBGPTestJSON + `
+}
+`
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer r.Body.Close()
+
+		require.Equal(t, expectedCreateBodyNoBGP, string(body))
+
+		c := new(PartnerInterconnectAttachmentCreateRequest)
+		err = json.Unmarshal(body, c)
 		if err != nil {
 			t.Fatal(err)
 		}
