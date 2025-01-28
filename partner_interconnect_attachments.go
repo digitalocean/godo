@@ -47,7 +47,7 @@ type PartnerInterconnectAttachmentCreateRequest struct {
 }
 
 // PartnerInterconnectAttachmentCreateRequest represents a request to create a Partner Interconnect Attachment.
-type PartnerInterconnectAttachmentRequestBody struct {
+type partnerInterconnectAttachmentRequestBody struct {
 	// Name is the name of the Partner Interconnect Attachment
 	Name string `json:"name,omitempty"`
 	// ConnectionBandwidthInMbps is the bandwidth of the connection in Mbps
