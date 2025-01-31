@@ -1298,6 +1298,61 @@ func TestKubernetesClusters_GetNodePool(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
+	setup()
+	defer teardown()
+	kubeSvc := client.Kubernetes
+	want := &KubernetesNodePoolTemplateResponse{
+		ClusterUUID: "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+		Name:        "pool-a",
+		Slug:        "s-1vcpu-2gb",
+		Template: &KubernetesNodePoolTemplate{
+			Labels: map[string]string{
+				"some-label": "some-value",
+			},
+			Capacity: &KubernetesNodePoolResources{
+				CPU:    1,
+				Memory: "2048Mi",
+				Pods:   110,
+			},
+			Allocatable: &KubernetesNodePoolResources{
+				CPU:    390,
+				Memory: "1024Mi",
+				Pods:   110,
+			}},
+	}
+	jBlob := `
+{
+   "cluster_uuid": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+   "name": "pool-a",
+   "slug": "s-1vcpu-2gb",
+   "template": {
+      "labels": {
+         "some-label": "some-value"
+      },
+      "capacity": {
+         "cpu": 1,
+         "memory": "2048Mi",
+         "pods": 110
+      },
+      "allocatable": {
+         "cpu": 390,
+         "memory": "1024Mi",
+         "pods": 110
+      }
+   }
+}
+`
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8a/node_pools_template/pool-a", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, jBlob)
+	})
+	got, _, err := kubeSvc.GetNodePoolTemplate(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8a", "pool-a")
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+
+}
+
 func TestKubernetesClusters_ListNodePools(t *testing.T) {
 	setup()
 	defer teardown()
