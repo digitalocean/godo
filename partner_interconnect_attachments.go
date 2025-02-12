@@ -97,7 +97,7 @@ type BGP struct {
 	// LocalRouterIP is the local router IP
 	LocalRouterIP string `json:"local_router_ip,omitempty"`
 	// PeerASN is the peer ASN
-	PeerASN int `json:"peer_asn,omitempty"`
+	PeerASN int `json:"peer_router_asn,omitempty"`
 	// PeerRouterIP is the peer router IP
 	PeerRouterIP string `json:"peer_router_ip,omitempty"`
 }
