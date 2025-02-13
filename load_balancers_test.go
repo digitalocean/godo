@@ -1015,6 +1015,176 @@ func TestLoadBalancers_List_Pagination(t *testing.T) {
 	assert.Equal(t, "http://localhost:3001/v2/load_balancers?page=3&per_page=1", resp.Links.Pages.Last)
 }
 
+func TestLoadBalancers_ListByNames(t *testing.T) {
+	setup()
+	defer teardown()
+
+	path := "/v2/load_balancers"
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		queryValues := r.URL.Query()
+		assert.Equal(t, []string{"example-lb-01", "example-lb-02"}, queryValues["names"])
+
+		fmt.Fprint(w, lbListJSONResponse)
+	})
+
+	loadBalancers, resp, err := client.LoadBalancers.ListByNames(ctx, []string{"example-lb-01", "example-lb-02"}, nil)
+
+	require.NoError(t, err)
+
+	expectedTimeout := uint64(60)
+	expectedLBs := []LoadBalancer{
+		{
+			ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
+			Name:      "example-lb-01",
+			IP:        "46.214.185.203",
+			Algorithm: "round_robin",
+			Status:    "active",
+			Created:   "2016-12-15T14:16:36Z",
+			ForwardingRules: []ForwardingRule{
+				{
+					EntryProtocol:  "https",
+					EntryPort:      443,
+					TargetProtocol: "http",
+					TargetPort:     80,
+					CertificateID:  "a-b-c",
+				},
+			},
+			HealthCheck: &HealthCheck{
+				Protocol:               "http",
+				Port:                   80,
+				Path:                   "/index.html",
+				CheckIntervalSeconds:   10,
+				ResponseTimeoutSeconds: 5,
+				HealthyThreshold:       5,
+				UnhealthyThreshold:     3,
+			},
+			StickySessions: &StickySessions{
+				Type:             "cookies",
+				CookieName:       "DO-LB",
+				CookieTtlSeconds: 5,
+			},
+			Region: &Region{
+				Slug:      "nyc1",
+				Name:      "New York 1",
+				Sizes:     []string{"512mb", "1gb", "2gb", "4gb", "8gb", "16gb"},
+				Available: true,
+				Features:  []string{"private_networking", "backups", "ipv6", "metadata", "storage"},
+			},
+			DropletIDs:             []int{2, 21},
+			ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
+			HTTPIdleTimeoutSeconds: &expectedTimeout,
+			Firewall: &LBFirewall{
+				Allow: []string{"ip:1.2.3.4"},
+				Deny:  []string{"cidr:1.2.0.0/16"},
+			},
+			Domains: []*LBDomain{
+				{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+				{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+			},
+			GLBSettings: &GLBSettings{
+				TargetProtocol: "HTTP",
+				TargetPort:     80,
+				CDN:            &CDNSettings{IsEnabled: true},
+			},
+			TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
+		},
+	}
+	disableLetsEncryptDNSRecords := true
+	expectedLBs[0].DisableLetsEncryptDNSRecords = &disableLetsEncryptDNSRecords
+
+	assert.Equal(t, expectedLBs, loadBalancers)
+
+	expectedMeta := &Meta{Total: 3}
+	assert.Equal(t, expectedMeta, resp.Meta)
+}
+
+func TestLoadBalancers_ListByUUIDs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	path := "/v2/load_balancers"
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		queryValues := r.URL.Query()
+		assert.Equal(t, []string{"37e6be88-01ec-4ec7-9bc6-a514d4719057", "c5474d32-7f6f-4149-9d14-0ceb7414d304"}, queryValues["uuids"])
+
+		fmt.Fprint(w, lbListJSONResponse)
+	})
+
+	loadBalancers, resp, err := client.LoadBalancers.ListByUUIDs(ctx, []string{"37e6be88-01ec-4ec7-9bc6-a514d4719057", "c5474d32-7f6f-4149-9d14-0ceb7414d304"}, nil)
+
+	require.NoError(t, err)
+
+	expectedTimeout := uint64(60)
+	expectedLBs := []LoadBalancer{
+		{
+			ID:        "37e6be88-01ec-4ec7-9bc6-a514d4719057",
+			Name:      "example-lb-01",
+			IP:        "46.214.185.203",
+			Algorithm: "round_robin",
+			Status:    "active",
+			Created:   "2016-12-15T14:16:36Z",
+			ForwardingRules: []ForwardingRule{
+				{
+					EntryProtocol:  "https",
+					EntryPort:      443,
+					TargetProtocol: "http",
+					TargetPort:     80,
+					CertificateID:  "a-b-c",
+				},
+			},
+			HealthCheck: &HealthCheck{
+				Protocol:               "http",
+				Port:                   80,
+				Path:                   "/index.html",
+				CheckIntervalSeconds:   10,
+				ResponseTimeoutSeconds: 5,
+				HealthyThreshold:       5,
+				UnhealthyThreshold:     3,
+			},
+			StickySessions: &StickySessions{
+				Type:             "cookies",
+				CookieName:       "DO-LB",
+				CookieTtlSeconds: 5,
+			},
+			Region: &Region{
+				Slug:      "nyc1",
+				Name:      "New York 1",
+				Sizes:     []string{"512mb", "1gb", "2gb", "4gb", "8gb", "16gb"},
+				Available: true,
+				Features:  []string{"private_networking", "backups", "ipv6", "metadata", "storage"},
+			},
+			DropletIDs:             []int{2, 21},
+			ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
+			HTTPIdleTimeoutSeconds: &expectedTimeout,
+			Firewall: &LBFirewall{
+				Allow: []string{"ip:1.2.3.4"},
+				Deny:  []string{"cidr:1.2.0.0/16"},
+			},
+			Domains: []*LBDomain{
+				{Name: "test-domain-1", CertificateID: "test-cert-id-1"},
+				{Name: "test-domain-2", IsManaged: true, CertificateID: "test-cert-id-2"},
+			},
+			GLBSettings: &GLBSettings{
+				TargetProtocol: "HTTP",
+				TargetPort:     80,
+				CDN:            &CDNSettings{IsEnabled: true},
+			},
+			TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
+		},
+	}
+	disableLetsEncryptDNSRecords := true
+	expectedLBs[0].DisableLetsEncryptDNSRecords = &disableLetsEncryptDNSRecords
+
+	assert.Equal(t, expectedLBs, loadBalancers)
+
+	expectedMeta := &Meta{Total: 3}
+	assert.Equal(t, expectedMeta, resp.Meta)
+}
+
 func TestLoadBalancers_Delete(t *testing.T) {
 	setup()
 	defer teardown()
