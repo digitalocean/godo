@@ -107,6 +107,7 @@ type BGP struct {
 // ServiceKey represents the service key of a Partner Interconnect Attachment.
 type ServiceKey struct {
 	ServiceKey string `json:"service_key,omitempty"`
+	State      string `json:"state,omitempty"`
 }
 
 // RemoteRoute represents a route for a Partner Interconnect Attachment.
