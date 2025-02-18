@@ -32,6 +32,9 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			Status: &KubernetesClusterStatus{
 				State: KubernetesClusterStatusRunning,
 			},
+			RoutingAgent: &KubernetesRoutingAgent{
+				Enabled: PtrTo(true),
+			},
 			NodePools: []*KubernetesNodePool{
 				{
 					ID:    "1a17a012-cb31-4886-a787-deadbeef1191",
@@ -121,6 +124,9 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
 			"status": {
 				"state": "running"
+			},
+			"routing_agent": {
+				"enabled": true
 			},
 			"node_pools": [
 				{
@@ -263,6 +269,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		Status: &KubernetesClusterStatus{
 			State: KubernetesClusterStatusRunning,
 		},
+		RoutingAgent: &KubernetesRoutingAgent{
+			Enabled: PtrTo(true),
+		},
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:    "deadbeef-dead-beef-dead-deadbeefb4b3",
@@ -313,6 +322,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
 		"status": {
 			"state": "running"
+		},
+		"routing_agent": {
+			"enabled": true
 		},
 		"node_pools": [
 			{
@@ -559,6 +571,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
 		HA:            true,
 		SurgeUpgrade:  true,
+		RoutingAgent: &KubernetesRoutingAgent{
+			Enabled: PtrTo(true),
+		},
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:     "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -594,6 +609,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		ServiceSubnet: want.ServiceSubnet,
 		SurgeUpgrade:  true,
 		HA:            true,
+		RoutingAgent: &KubernetesRoutingAgent{
+			Enabled: PtrTo(true),
+		},
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			{
 				Size:      want.NodePools[0].Size,
@@ -626,6 +644,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
 		"ha": true,
 		"surge_upgrade": true,
+		"routing_agent": {
+			"enabled": true
+		},
 		"node_pools": [
 			{
 				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -824,6 +845,9 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			ScaleDownUtilizationThreshold: &scaleDownUtilizationThreshold,
 			ScaleDownUnneededTime:         &scaleDownUnneededTime,
 		},
+		RoutingAgent: &KubernetesRoutingAgent{
+			Enabled: PtrTo(true),
+		},
 	}
 	updateRequest := &KubernetesClusterUpdateRequest{
 		Name:              want.Name,
@@ -839,6 +863,9 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		ClusterAutoscalerConfiguration: &KubernetesClusterAutoscalerConfiguration{
 			ScaleDownUtilizationThreshold: &scaleDownUtilizationThreshold,
 			ScaleDownUnneededTime:         &scaleDownUnneededTime,
+		},
+		RoutingAgent: &KubernetesRoutingAgent{
+			Enabled: PtrTo(true),
 		},
 	}
 
@@ -883,13 +910,16 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			]
 		},	
 		"cluster_autoscaler_configuration": {
-      "scale_down_utilization_threshold": 0.2,
-      "scale_down_unneeded_time": "1m27s"
-    }
+      		"scale_down_utilization_threshold": 0.2,
+      		"scale_down_unneeded_time": "1m27s"
+    	},
+		"routing_agent": {
+			"enabled": true
+		}
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s"}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s"},"routing_agent":{"enabled":true}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
