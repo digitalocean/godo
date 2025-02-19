@@ -1337,6 +1337,7 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 		Name:        "pool-a",
 		Slug:        "s-1vcpu-2gb",
 		Template: &KubernetesNodePoolTemplate{
+			Taints: []string{"some-key=some-value:NoSchedule"},
 			Labels: map[string]string{
 				"some-label": "some-value",
 			},
@@ -1360,6 +1361,7 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
       "labels": {
          "some-label": "some-value"
       },
+      "taints": ["some-key=some-value:NoSchedule"],
       "capacity": {
          "cpu": 1,
          "memory": "2048Mi",
