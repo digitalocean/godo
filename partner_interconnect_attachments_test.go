@@ -292,13 +292,17 @@ func TestPartnerInterconnectAttachment_GetServiceKey(t *testing.T) {
 	svc := client.PartnerInterconnectAttachments
 	path := "/v2/partner_interconnect/attachments"
 	want := &ServiceKey{
-		ServiceKey: "my-service-key",
+		Value:     "my-service-key",
+		State:     "ACTIVE",
+		CreatedAt: time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 	}
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 	jsonBlob := `
 {
 	"service_key": {
-		"service_key": "my-service-key"
+		"value": "my-service-key",
+		"state": "ACTIVE",
+		"created_at": "2024-12-26T21:48:40.995304079Z"
 	}
 }
 `
