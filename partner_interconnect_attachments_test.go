@@ -24,6 +24,7 @@ var vInterconnectTestObj = &PartnerInterconnectAttachment{
 		LocalRouterIP: "169.250.0.1",
 		PeerASN:       133937,
 		PeerRouterIP:  "169.250.0.6",
+		AuthKey:       "my-auth-key",
 	},
 	CreatedAt: time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 }
@@ -52,7 +53,8 @@ var vInterconnectTestJSON = `
 			"local_asn":64532,
 			"local_router_ip":"169.250.0.1",
 			"peer_router_asn":133937,
-			"peer_router_ip":"169.250.0.6"
+			"peer_router_ip":"169.250.0.6",
+			"auth_key":"my-auth-key"
 			},
 		"created_at":"2024-12-26T21:48:40.995304079Z"
 	}

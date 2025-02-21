@@ -102,6 +102,8 @@ type BGP struct {
 	PeerASN int `json:"peer_router_asn,omitempty"`
 	// PeerRouterIP is the peer router IP
 	PeerRouterIP string `json:"peer_router_ip,omitempty"`
+	// AuthKey is the authentication key
+	AuthKey string `json:"auth_key,omitempty"`
 }
 
 // ServiceKey represents the service key of a Partner Interconnect Attachment.
