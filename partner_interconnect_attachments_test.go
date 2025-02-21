@@ -294,13 +294,17 @@ func TestPartnerInterconnectAttachment_GetServiceKey(t *testing.T) {
 	svc := client.PartnerInterconnectAttachments
 	path := "/v2/partner_interconnect/attachments"
 	want := &ServiceKey{
-		ServiceKey: "my-service-key",
+		Value:     "my-service-key",
+		State:     "ACTIVE",
+		CreatedAt: time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 	}
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 	jsonBlob := `
 {
 	"service_key": {
-		"service_key": "my-service-key"
+		"value": "my-service-key",
+		"state": "ACTIVE",
+		"created_at": "2024-12-26T21:48:40.995304079Z"
 	}
 }
 `
@@ -412,4 +416,53 @@ func TestPartnerInterconnectAttachment_Set(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, tt.expectedUpdatedInterconnect, got)
 	}
+}
+
+func TestPartnerInterconnectAttachment_GetBGPAuthKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	svc := client.PartnerInterconnectAttachments
+	path := "/v2/partner_interconnect/attachments"
+	want := &BgpAuthKey{
+		Value: "bgp-auth-secret",
+	}
+	id := "880b7f98-f062-404d-b33c-458d545696f6"
+	jsonBlob := `
+{
+  "bgp_auth_key": {
+    "value": "bgp-auth-secret"
+  }
+}
+`
+
+	mux.HandleFunc(path+"/"+id+"/bgp_auth_key", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Write([]byte(jsonBlob))
+	})
+
+	got, _, err := svc.GetBGPAuthKey(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestPartnerInterconnectAttachment_RegenerateServiceKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	svc := client.PartnerInterconnectAttachments
+	path := "/v2/partner_interconnect/attachments"
+	id := "880b7f98-f062-404d-b33c-458d545696f6"
+	jsonBlob := `{}`
+
+	mux.HandleFunc(path+"/"+id+"/service_key", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.Write([]byte(jsonBlob))
+	})
+
+	got, _, err := svc.RegenerateServiceKey(ctx, id)
+	require.NoError(t, err)
+
+	expectedResponse := regenerateServiceKeyRoot{}
+	require.Equal(t, expectedResponse.RegenerateServiceKey, got)
 }
