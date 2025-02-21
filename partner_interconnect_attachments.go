@@ -95,7 +95,7 @@ type PartnerInterconnectAttachmentSetRoutesRequest struct {
 // BGP represents the BGP configuration of a Partner Interconnect Attachment.
 type BGP struct {
 	// LocalASN is the local ASN
-	LocalASN int `json:"local_router_asn,omitempty"`
+	LocalASN int `json:"local_asn,omitempty"`
 	// LocalRouterIP is the local router IP
 	LocalRouterIP string `json:"local_router_ip,omitempty"`
 	// PeerASN is the peer ASN

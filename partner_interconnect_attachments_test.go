@@ -50,7 +50,7 @@ var vInterconnectTestJSON = `
 		"naas_provider":"MEGAPORT",
 		"vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"],
 		"bgp":{
-			"local_router_asn":64532,
+			"local_asn":64532,
 			"local_router_ip":"169.250.0.1",
 			"peer_router_asn":133937,
 			"peer_router_ip":"169.250.0.6",
