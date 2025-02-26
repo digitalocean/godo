@@ -55,6 +55,8 @@ type KubernetesService interface {
 
 	RunClusterlint(ctx context.Context, clusterID string, req *KubernetesRunClusterlintRequest) (string, *Response, error)
 	GetClusterlintResults(ctx context.Context, clusterID string, req *KubernetesGetClusterlintRequest) ([]*ClusterlintDiagnostic, *Response, error)
+
+	GetClusterStatusMessages(ctx context.Context, clusterID string, req *KubernetesGetClusterStatusMessagesRequest) ([]*KubernetesClusterStatusMessage, *Response, error)
 }
 
 var _ KubernetesService = &KubernetesServiceOp{}
@@ -190,6 +192,19 @@ type KubernetesRunClusterlintRequest struct {
 
 type KubernetesGetClusterlintRequest struct {
 	RunId string `json:"run_id"`
+}
+
+type clusterStatusMessagesRoot struct {
+	Messages []*KubernetesClusterStatusMessage `json:"messages"`
+}
+
+type KubernetesClusterStatusMessage struct {
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+type KubernetesGetClusterStatusMessagesRequest struct {
+	Since *time.Time `json:"since"`
 }
 
 // KubernetesCluster represents a Kubernetes cluster.
@@ -1040,4 +1055,29 @@ func (svc *KubernetesServiceOp) GetClusterlintResults(ctx context.Context, clust
 		return nil, resp, err
 	}
 	return root.Diagnostics, resp, nil
+}
+
+func (svc *KubernetesServiceOp) GetClusterStatusMessages(ctx context.Context, clusterID string, req *KubernetesGetClusterStatusMessagesRequest) ([]*KubernetesClusterStatusMessage, *Response, error) {
+	path := fmt.Sprintf("%s/%s/status_messages", kubernetesClustersPath, clusterID)
+
+	if req != nil {
+		v := make(url.Values)
+		if req.Since != nil {
+			v.Set("since", req.Since.Format(time.RFC3339))
+		}
+		if query := v.Encode(); query != "" {
+			path = path + "?" + query
+		}
+	}
+
+	request, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(clusterStatusMessagesRoot)
+	resp, err := svc.client.Do(ctx, request, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Messages, resp, nil
 }

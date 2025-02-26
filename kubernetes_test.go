@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -1888,6 +1889,47 @@ func TestKubernetesRunClusterlint_WithoutRequestBody(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, want, runID)
 
+}
+
+func TestKubernetesClusterStatusMessages(t *testing.T) {
+	setup()
+	defer teardown()
+
+	since := time.Date(2019, 10, 30, 5, 34, 7, 0, time.UTC)
+	kubeSvc := client.Kubernetes
+
+	jBlob := `
+{
+	"messages": [
+		{
+			"message": "droplet limit exceeded, please contact support for an increase",
+			"timestamp": "2019-10-31T00:00:00Z"
+		}
+	]
+}`
+
+	want := []*KubernetesClusterStatusMessage{
+		{
+			Message:   "droplet limit exceeded, please contact support for an increase",
+			Timestamp: time.Date(2019, 10, 31, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/status_messages", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		// urls escape the colon character as %3A
+		sinceFormatted := since.Format(time.RFC3339)
+		urlEncodedSince := strings.ReplaceAll(sinceFormatted, ":", "%3A")
+
+		require.Equal(t, "since="+urlEncodedSince, r.URL.Query().Encode())
+		fmt.Fprint(w, jBlob)
+	})
+
+	messages, _, err := kubeSvc.GetClusterStatusMessages(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", &KubernetesGetClusterStatusMessagesRequest{
+		Since: &since,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, want, messages)
 }
 
 func TestKubernetesGetClusterlint_WithRunID(t *testing.T) {
