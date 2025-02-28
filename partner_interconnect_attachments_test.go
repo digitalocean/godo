@@ -52,7 +52,7 @@ var vInterconnectTestJSON = `
 		"bgp":{
 			"local_asn":64532,
 			"local_router_ip":"169.250.0.1",
-			"peer_router_asn":133937,
+			"peer_asn":133937,
 			"peer_router_ip":"169.250.0.6",
 			"auth_key":"my-auth-key"
 			},

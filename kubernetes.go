@@ -461,6 +461,7 @@ type KubernetesNodePoolTemplateResponse struct {
 // KubernetesNodePool represents the node pool template data for a given pool.
 type KubernetesNodePoolTemplate struct {
 	Labels      map[string]string            `json:"labels,omitempty"`
+	Taints      []string                     `json:"taints,omitempty"`
 	Capacity    *KubernetesNodePoolResources `json:"capacity,omitempty"`
 	Allocatable *KubernetesNodePoolResources `json:"allocatable,omitempty"`
 }
