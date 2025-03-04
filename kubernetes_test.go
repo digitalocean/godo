@@ -1332,12 +1332,12 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 	setup()
 	defer teardown()
 	kubeSvc := client.Kubernetes
-	want := &KubernetesNodePoolTemplateResponse{
-		ClusterUUID: "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
-		Name:        "pool-a",
-		Slug:        "s-1vcpu-2gb",
-		Template: &KubernetesNodePoolTemplate{
-			Taints: []string{"some-key=some-value:NoSchedule"},
+	want := &KubernetesNodePoolTemplate{
+		Template: &KubernetesNodeTemplate{
+			ClusterUUID: "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+			Name:        "pool-a",
+			Slug:        "s-1vcpu-2gb",
+			Taints:      []string{"some-key=some-value:NoSchedule"},
 			Labels: map[string]string{
 				"some-label": "some-value",
 			},
@@ -1350,29 +1350,30 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 				CPU:    390,
 				Memory: "1024Mi",
 				Pods:   110,
-			}},
+			},
+		},
 	}
 	jBlob := `
 {
-   "cluster_uuid": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
-   "name": "pool-a",
-   "slug": "s-1vcpu-2gb",
-   "template": {
-      "labels": {
-         "some-label": "some-value"
-      },
-      "taints": ["some-key=some-value:NoSchedule"],
-      "capacity": {
-         "cpu": 1,
-         "memory": "2048Mi",
-         "pods": 110
-      },
-      "allocatable": {
-         "cpu": 390,
-         "memory": "1024Mi",
-         "pods": 110
-      }
-   }
+  "template": {
+    "cluster_uuid": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+    "name": "pool-a",
+    "slug": "s-1vcpu-2gb",
+    "labels": {
+      "some-label": "some-value"
+    },
+    "taints": ["some-key=some-value:NoSchedule"],
+    "capacity": {
+      "cpu": 1,
+      "memory": "2048Mi",
+      "pods": 110
+    },
+    "allocatable": {
+      "cpu": 390,
+      "memory": "1024Mi",
+      "pods": 110
+    }
+  }
 }
 `
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8a/node_pools_template/pool-a", func(w http.ResponseWriter, r *http.Request) {
