@@ -94,6 +94,7 @@ type Client struct {
 	Tags                           TagsService
 	UptimeChecks                   UptimeChecksService
 	VPCs                           VPCsService
+	BYOIPs                         BYOIPsService
 	PartnerInterconnectAttachments PartnerInterconnectAttachmentsService
 
 	// Optional function called after every successful request made to the DO APIs
@@ -302,6 +303,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.ReservedIPV6s = &ReservedIPV6sServiceOp{client: c}
 	c.ReservedIPActions = &ReservedIPActionsServiceOp{client: c}
 	c.ReservedIPV6Actions = &ReservedIPV6ActionsServiceOp{client: c}
+	c.BYOIPs = &BYOIPServiceOp{client: c}
 	c.Sizes = &SizesServiceOp{client: c}
 	c.Snapshots = &SnapshotsServiceOp{client: c}
 	c.SpacesKeys = &SpacesKeysServiceOp{client: c}
