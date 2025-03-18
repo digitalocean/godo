@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var vInterconnectTestObj = &PartnerInterconnectAttachment{
+var vPartnerNetworkConnectTestObj = &PartnerNetworkConnect{
 	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
-	Name:                      "my-new-partner-interconnect",
+	Name:                      "my-new-partner-connect",
 	State:                     "ACTIVE",
 	ConnectionBandwidthInMbps: 50,
 	Region:                    "NYC",
@@ -29,9 +29,9 @@ var vInterconnectTestObj = &PartnerInterconnectAttachment{
 	CreatedAt: time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 }
 
-var vInterconnectNoBGPTestObj = &PartnerInterconnectAttachment{
+var vPartnerNetworkConnectNoBGPTestObj = &PartnerNetworkConnect{
 	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
-	Name:                      "my-new-partner-interconnect",
+	Name:                      "my-new-partner-connect",
 	State:                     "ACTIVE",
 	ConnectionBandwidthInMbps: 50,
 	Region:                    "NYC",
@@ -40,10 +40,10 @@ var vInterconnectNoBGPTestObj = &PartnerInterconnectAttachment{
 	CreatedAt:                 time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 }
 
-var vInterconnectTestJSON = `
+var vPartnerNetworkConnectTestJSON = `
 	{
 		"id":"880b7f98-f062-404d-b33c-458d545696f6",
-		"name":"my-new-partner-interconnect",
+		"name":"my-new-partner-connect",
 		"state":"ACTIVE",
 		"connection_bandwidth_in_mbps":50,
 		"region":"NYC",
@@ -60,10 +60,10 @@ var vInterconnectTestJSON = `
 	}
 `
 
-var vInterconnectNoBGPTestJSON = `
+var vPartnerNetworkConnectNoBGPTestJSON = `
 	{
 		"id":"880b7f98-f062-404d-b33c-458d545696f6",
-		"name":"my-new-partner-interconnect",
+		"name":"my-new-partner-connect",
 		"state":"ACTIVE",
 		"connection_bandwidth_in_mbps":50,
 		"region":"NYC",
@@ -73,22 +73,22 @@ var vInterconnectNoBGPTestJSON = `
 	}
 `
 
-const expectedCreateBodyNoBGP = `{"name":"my-new-partner-interconnect","connection_bandwidth_in_mbps":50,"region":"NYC","naas_provider":"MEGAPORT","vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"]}
+const expectedPartnerNetworkConnectCreateBodyNoBGP = `{"name":"my-new-partner-connect","connection_bandwidth_in_mbps":50,"region":"NYC","naas_provider":"MEGAPORT","vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"]}
 `
 
-func TestPartnerInterconnectAttachments_List(t *testing.T) {
+func TestPartnerNetworkConnects_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
-	want := []*PartnerInterconnectAttachment{
-		vInterconnectTestObj,
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
+	want := []*PartnerNetworkConnect{
+		vPartnerNetworkConnectTestObj,
 	}
 	links := &Links{
 		Pages: &Pages{
-			Last: "http://localhost/v2/partner_interconnect/attachments?page=3&per_page=1",
-			Next: "http://localhost/v2/partner_interconnect/attachments?page=2&per_page=1",
+			Last: "http://localhost/v2/partner_network_connect/attachments?page=3&per_page=1",
+			Next: "http://localhost/v2/partner_network_connect/attachments?page=2&per_page=1",
 		},
 	}
 	meta := &Meta{
@@ -96,13 +96,13 @@ func TestPartnerInterconnectAttachments_List(t *testing.T) {
 	}
 	jsonBlob := `
 {
-  "partner_interconnect_attachments": [
-` + vInterconnectTestJSON + `
+  "partner_network_connects": [
+` + vPartnerNetworkConnectTestJSON + `
   ],
   "links": {
     "pages": {
-      "last": "http://localhost/v2/partner_interconnect/attachments?page=3&per_page=1",
-      "next": "http://localhost/v2/partner_interconnect/attachments?page=2&per_page=1"
+      "last": "http://localhost/v2/partner_network_connect/attachments?page=3&per_page=1",
+      "next": "http://localhost/v2/partner_network_connect/attachments?page=2&per_page=1"
     }
   },
   "meta": {"total": 3}
@@ -120,15 +120,15 @@ func TestPartnerInterconnectAttachments_List(t *testing.T) {
 	assert.Equal(t, resp.Meta, meta)
 }
 
-func TestPartnerInterconnectAttachments_Create(t *testing.T) {
+func TestPartnerNetworkConnects_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
-	want := vInterconnectTestObj
-	req := &PartnerInterconnectAttachmentCreateRequest{
-		Name:                      "my-new-partner-interconnect",
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
+	want := vPartnerNetworkConnectTestObj
+	req := &PartnerNetworkConnectCreateRequest{
+		Name:                      "my-new-partner-connect",
 		ConnectionBandwidthInMbps: 50,
 		Region:                    "NYC",
 		NaaSProvider:              "MEGAPORT",
@@ -142,13 +142,13 @@ func TestPartnerInterconnectAttachments_Create(t *testing.T) {
 	}
 	jsonBlob := `
 {
-	"partner_interconnect_attachment":
-` + vInterconnectTestJSON + `
+	"partner_network_connect":
+` + vPartnerNetworkConnectTestJSON + `
 }
 `
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		c := new(PartnerInterconnectAttachmentCreateRequest)
+		c := new(PartnerNetworkConnectCreateRequest)
 		err := json.NewDecoder(r.Body).Decode(c)
 		if err != nil {
 			t.Fatal(err)
@@ -164,15 +164,15 @@ func TestPartnerInterconnectAttachments_Create(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerInterconnectAttachments_CreateNoBGP(t *testing.T) {
+func TestPartnerNetworkConnects_CreateNoBGP(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
-	want := vInterconnectNoBGPTestObj
-	req := &PartnerInterconnectAttachmentCreateRequest{
-		Name:                      "my-new-partner-interconnect",
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
+	want := vPartnerNetworkConnectNoBGPTestObj
+	req := &PartnerNetworkConnectCreateRequest{
+		Name:                      "my-new-partner-connect",
 		ConnectionBandwidthInMbps: 50,
 		Region:                    "NYC",
 		NaaSProvider:              "MEGAPORT",
@@ -180,8 +180,8 @@ func TestPartnerInterconnectAttachments_CreateNoBGP(t *testing.T) {
 	}
 	jsonBlob := `
 {
-	"partner_interconnect_attachment":
-` + vInterconnectNoBGPTestJSON + `
+	"partner_network_connect":
+` + vPartnerNetworkConnectNoBGPTestJSON + `
 }
 `
 
@@ -192,9 +192,9 @@ func TestPartnerInterconnectAttachments_CreateNoBGP(t *testing.T) {
 		}
 		defer r.Body.Close()
 
-		require.Equal(t, expectedCreateBodyNoBGP, string(body))
+		require.Equal(t, expectedPartnerNetworkConnectCreateBodyNoBGP, string(body))
 
-		c := new(PartnerInterconnectAttachmentCreateRequest)
+		c := new(PartnerNetworkConnectCreateRequest)
 		err = json.Unmarshal(body, c)
 		if err != nil {
 			t.Fatal(err)
@@ -210,18 +210,18 @@ func TestPartnerInterconnectAttachments_CreateNoBGP(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerInterconnectAttachments_Get(t *testing.T) {
+func TestPartnerNetworkConnects_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
-	want := vInterconnectTestObj
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
+	want := vPartnerNetworkConnectTestObj
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 	jsonBlob := `
 {
-	"partner_interconnect_attachment":
-` + vInterconnectTestJSON + `
+	"partner_network_connect":
+` + vPartnerNetworkConnectTestJSON + `
 }
 `
 
@@ -235,27 +235,27 @@ func TestPartnerInterconnectAttachments_Get(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerInterconnectAttachments_Update(t *testing.T) {
+func TestPartnerNetworkConnects_Update(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
-	want := vInterconnectTestObj
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
+	want := vPartnerNetworkConnectTestObj
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
-	req := &PartnerInterconnectAttachmentUpdateRequest{
-		Name:   "my-renamed-partner-interconnect",
+	req := &PartnerNetworkConnectUpdateRequest{
+		Name:   "my-renamed-partner-connect",
 		VPCIDs: []string{"g5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
 	}
 	jsonBlob := `
 {
-	"partner_interconnect_attachment":
-` + vInterconnectTestJSON + `
+	"partner_network_connect":
+` + vPartnerNetworkConnectTestJSON + `
 }
 `
 
 	mux.HandleFunc(path+"/"+id, func(w http.ResponseWriter, r *http.Request) {
-		v := new(PartnerInterconnectAttachmentUpdateRequest)
+		v := new(PartnerNetworkConnectUpdateRequest)
 		err := json.NewDecoder(r.Body).Decode(v)
 		if err != nil {
 			t.Fatal(err)
@@ -271,12 +271,12 @@ func TestPartnerInterconnectAttachments_Update(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerInterconnectAttachment_Delete(t *testing.T) {
+func TestPartnerNetworkConnect_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 
 	mux.HandleFunc(path+"/"+id, func(w http.ResponseWriter, r *http.Request) {
@@ -287,12 +287,12 @@ func TestPartnerInterconnectAttachment_Delete(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestPartnerInterconnectAttachment_GetServiceKey(t *testing.T) {
+func TestPartnerNetworkConnect_GetServiceKey(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
 	want := &ServiceKey{
 		Value:     "my-service-key",
 		State:     "ACTIVE",
@@ -319,12 +319,12 @@ func TestPartnerInterconnectAttachment_GetServiceKey(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerInterconnectAttachment_ListRoutes(t *testing.T) {
+func TestPartnerNetworkConnect_ListRoutes(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
 	want := []*RemoteRoute{
 		{
 			ID:   "a0eb6eb0-fa38-41a8-a5de-1a75524667fe",
@@ -333,8 +333,8 @@ func TestPartnerInterconnectAttachment_ListRoutes(t *testing.T) {
 	}
 	links := &Links{
 		Pages: &Pages{
-			Last: "http://localhost/v2/partner_interconnect/attachments?page=2&per_page=1",
-			Next: "http://localhost/v2/partner_interconnect/attachments?page=2&per_page=1",
+			Last: "http://localhost/v2/partner_network_connect/attachments?page=2&per_page=1",
+			Next: "http://localhost/v2/partner_network_connect/attachments?page=2&per_page=1",
 		},
 	}
 	meta := &Meta{
@@ -348,8 +348,8 @@ func TestPartnerInterconnectAttachment_ListRoutes(t *testing.T) {
   ],
   "links": {
     "pages": {
-      "last": "http://localhost/v2/partner_interconnect/attachments?page=2&per_page=1",
-      "next": "http://localhost/v2/partner_interconnect/attachments?page=2&per_page=1"
+      "last": "http://localhost/v2/partner_network_connect/attachments?page=2&per_page=1",
+      "next": "http://localhost/v2/partner_network_connect/attachments?page=2&per_page=1"
     }
   },
   "meta": {"total": 1}
@@ -368,37 +368,37 @@ func TestPartnerInterconnectAttachment_ListRoutes(t *testing.T) {
 	assert.Equal(t, resp.Meta, meta)
 }
 
-func TestPartnerInterconnectAttachment_Set(t *testing.T) {
+func TestPartnerNetworkConnect_Set(t *testing.T) {
 	tests := []struct {
 		desc                        string
 		id                          string
-		req                         *PartnerInterconnectAttachmentSetRoutesRequest
+		req                         *PartnerNetworkConnectSetRoutesRequest
 		mockResponse                string
 		expectedRequestBody         string
-		expectedUpdatedInterconnect *PartnerInterconnectAttachment
+		expectedUpdatedInterconnect *PartnerNetworkConnect
 	}{
 		{
 			desc: "set remote routes",
 			id:   "880b7f98-f062-404d-b33c-458d545696f6",
-			req: &PartnerInterconnectAttachmentSetRoutesRequest{
+			req: &PartnerNetworkConnectSetRoutesRequest{
 				Routes: []string{"169.250.0.1/29", "169.250.0.6/29"},
 			},
 			mockResponse: `
 {
-	"partner_interconnect_attachment":
-` + vInterconnectTestJSON + `
+	"partner_network_connect":
+` + vPartnerNetworkConnectTestJSON + `
 }
 			`,
 			expectedRequestBody:         `{"routes":["169.250.0.1/29", "169.250.0.6/29"]}`,
-			expectedUpdatedInterconnect: vInterconnectTestObj,
+			expectedUpdatedInterconnect: vPartnerNetworkConnectTestObj,
 		},
 	}
 
 	for _, tt := range tests {
 		setup()
 
-		mux.HandleFunc("/v2/partner_interconnect/attachments/"+tt.id+"/remote_routes", func(w http.ResponseWriter, r *http.Request) {
-			v := new(PartnerInterconnectAttachmentSetRoutesRequest)
+		mux.HandleFunc("/v2/partner_network_connect/attachments/"+tt.id+"/remote_routes", func(w http.ResponseWriter, r *http.Request) {
+			v := new(PartnerNetworkConnectSetRoutesRequest)
 			err := json.NewDecoder(r.Body).Decode(v)
 			if err != nil {
 				t.Fatal(err)
@@ -409,7 +409,7 @@ func TestPartnerInterconnectAttachment_Set(t *testing.T) {
 			w.Write([]byte(tt.mockResponse))
 		})
 
-		got, _, err := client.PartnerInterconnectAttachments.SetRoutes(ctx, tt.id, tt.req)
+		got, _, err := client.PartnerNetworkConnect.SetRoutes(ctx, tt.id, tt.req)
 
 		teardown()
 
@@ -418,12 +418,12 @@ func TestPartnerInterconnectAttachment_Set(t *testing.T) {
 	}
 }
 
-func TestPartnerInterconnectAttachment_GetBGPAuthKey(t *testing.T) {
+func TestPartnerNetworkConnect_GetBGPAuthKey(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
 	want := &BgpAuthKey{
 		Value: "bgp-auth-secret",
 	}
@@ -446,12 +446,12 @@ func TestPartnerInterconnectAttachment_GetBGPAuthKey(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerInterconnectAttachment_RegenerateServiceKey(t *testing.T) {
+func TestPartnerNetworkConnect_RegenerateServiceKey(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerInterconnectAttachments
-	path := "/v2/partner_interconnect/attachments"
+	svc := client.PartnerNetworkConnect
+	path := "/v2/partner_network_connect/attachments"
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 	jsonBlob := `{}`
 
