@@ -94,7 +94,7 @@ type Client struct {
 	Tags                TagsService
 	UptimeChecks        UptimeChecksService
 	VPCs                VPCsService
-	PartnerConnect      PartnerConnectService
+	PartnerNetworkConnect      PartnerNetworkConnectService
 
 	// Optional function called after every successful request made to the DO APIs
 	onRequestCompleted RequestCompletionCallback
@@ -310,7 +310,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Tags = &TagsServiceOp{client: c}
 	c.UptimeChecks = &UptimeChecksServiceOp{client: c}
 	c.VPCs = &VPCsServiceOp{client: c}
-	c.PartnerConnect = &PartnerConnectsServiceOp{client: c}
+	c.PartnerNetworkConnect = &PartnerNetworkConnectsServiceOp{client: c}
 
 	c.headers = make(map[string]string)
 
