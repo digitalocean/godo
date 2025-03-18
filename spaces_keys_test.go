@@ -143,3 +143,23 @@ func TestSpacesKeyList_Pagination(t *testing.T) {
 	assert.Equal(t, "test-bucket-2", keys[0].Grants[0].Bucket)
 	assert.Equal(t, SpacesKeyReadWrite, keys[0].Grants[0].Permission)
 }
+
+func TestSpacesKeyGet(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/spaces/keys/test-access-key", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"key":{"name":"test-key-1","access_key":"test-access-key","created_at":"2023-10-01T00:00:00Z","grants":[{"bucket":"test-bucket-1","permission":"read"}]}}`)
+	})
+
+	key, resp, err := client.SpacesKeys.Get(context.Background(), "test-access-key")
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "test-key-1", key.Name)
+	assert.Equal(t, "test-access-key", key.AccessKey)
+	assert.Len(t, key.Grants, 1)
+	assert.Equal(t, "test-bucket-1", key.Grants[0].Bucket)
+	assert.Equal(t, SpacesKeyRead, key.Grants[0].Permission)
+}
