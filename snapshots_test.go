@@ -55,7 +55,7 @@ func TestSnapshots_ListVolume(t *testing.T) {
 	}
 }
 
-func TestSnapshots_ListVolume_Regional(t *testing.T) {
+func TestSnapshots_ListVolumeSnapshotByRegion(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -104,7 +104,7 @@ func TestSnapshots_ListVolume_Regional(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	snapshots, _, err := client.Snapshots.ListVolume(ctx, &ListOptions{Region: "region1"})
+	snapshots, _, err := client.Snapshots.ListVolumeSnapshotByRegion(ctx, "region1", nil)
 	if err != nil {
 		t.Errorf("Snapshots.ListVolume returned error: %v", err)
 	}
@@ -113,25 +113,13 @@ func TestSnapshots_ListVolume_Regional(t *testing.T) {
 		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, region1Snapshots)
 	}
 
-	snapshots, _, err = client.Snapshots.ListVolume(ctx, &ListOptions{Region: "region2"})
+	snapshots, _, err = client.Snapshots.ListVolumeSnapshotByRegion(ctx, "region2", nil)
 	if err != nil {
 		t.Errorf("Snapshots.ListVolume returned error: %v", err)
 	}
 
 	if !reflect.DeepEqual(snapshots, region2Snapshots) {
 		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, region2Snapshots)
-	}
-
-	snapshots, _, err = client.Snapshots.ListVolume(ctx, nil)
-	if err != nil {
-		t.Errorf("Snapshots.ListVolume returned error: %v", err)
-	}
-
-	// Without region all snapshots should be returned
-	allSnapshots := append([]Snapshot{}, region1Snapshots...)
-	allSnapshots = append(allSnapshots, region2Snapshots...)
-	if !reflect.DeepEqual(snapshots, allSnapshots) {
-		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, allSnapshots)
 	}
 }
 
