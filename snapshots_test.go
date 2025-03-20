@@ -59,23 +59,23 @@ func TestSnapshots_ListVolume_Regional(t *testing.T) {
 	setup()
 	defer teardown()
 
-	s2r1Snapshots := []Snapshot{
+	region1Snapshots := []Snapshot{
 		{
 			ID:      "1",
 			Name:    "snapshot-1",
-			Regions: []string{"s2r1"},
+			Regions: []string{"region1"},
 		},
 		{
 			ID:      "2",
 			Name:    "snapshot-2",
-			Regions: []string{"s2r1"},
+			Regions: []string{"region1"},
 		},
 	}
 
-	s2r6Snapshots := []Snapshot{
+	region2Snapshots := []Snapshot{
 		{
 			ID:      "3",
-			Regions: []string{"s2r6"},
+			Regions: []string{"region2"},
 		},
 	}
 
@@ -91,12 +91,12 @@ func TestSnapshots_ListVolume_Regional(t *testing.T) {
 
 		region := r.URL.Query().Get("region")
 		if region == "" {
-			resultSnapshot = append(resultSnapshot, s2r1Snapshots...)
-			resultSnapshot = append(resultSnapshot, s2r6Snapshots...)
-		} else if region == "s2r6" {
-			resultSnapshot = append(resultSnapshot, s2r6Snapshots...)
-		} else if region == "s2r1" {
-			resultSnapshot = append(resultSnapshot, s2r1Snapshots...)
+			resultSnapshot = append(resultSnapshot, region1Snapshots...)
+			resultSnapshot = append(resultSnapshot, region2Snapshots...)
+		} else if region == "region1" {
+			resultSnapshot = append(resultSnapshot, region1Snapshots...)
+		} else if region == "region2" {
+			resultSnapshot = append(resultSnapshot, region2Snapshots...)
 		}
 
 		b, _ := json.Marshal(resultSnapshot)
@@ -104,22 +104,22 @@ func TestSnapshots_ListVolume_Regional(t *testing.T) {
 	})
 
 	ctx := context.Background()
-	snapshots, _, err := client.Snapshots.ListVolume(ctx, &ListOptions{Region: "s2r6"})
+	snapshots, _, err := client.Snapshots.ListVolume(ctx, &ListOptions{Region: "region1"})
 	if err != nil {
 		t.Errorf("Snapshots.ListVolume returned error: %v", err)
 	}
 
-	if !reflect.DeepEqual(snapshots, s2r6Snapshots) {
-		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, s2r6Snapshots)
+	if !reflect.DeepEqual(snapshots, region1Snapshots) {
+		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, region1Snapshots)
 	}
 
-	snapshots, _, err = client.Snapshots.ListVolume(ctx, &ListOptions{Region: "s2r1"})
+	snapshots, _, err = client.Snapshots.ListVolume(ctx, &ListOptions{Region: "region2"})
 	if err != nil {
 		t.Errorf("Snapshots.ListVolume returned error: %v", err)
 	}
 
-	if !reflect.DeepEqual(snapshots, s2r1Snapshots) {
-		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, s2r1Snapshots)
+	if !reflect.DeepEqual(snapshots, region2Snapshots) {
+		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, region2Snapshots)
 	}
 
 	snapshots, _, err = client.Snapshots.ListVolume(ctx, nil)
@@ -128,8 +128,8 @@ func TestSnapshots_ListVolume_Regional(t *testing.T) {
 	}
 
 	// Without region all snapshots should be returned
-	allSnapshots := append([]Snapshot{}, s2r1Snapshots...)
-	allSnapshots = append(allSnapshots, s2r6Snapshots...)
+	allSnapshots := append([]Snapshot{}, region1Snapshots...)
+	allSnapshots = append(allSnapshots, region2Snapshots...)
 	if !reflect.DeepEqual(snapshots, allSnapshots) {
 		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, allSnapshots)
 	}
