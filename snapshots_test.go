@@ -2,6 +2,7 @@ package godo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -51,6 +52,86 @@ func TestSnapshots_ListVolume(t *testing.T) {
 	expected := []Snapshot{{ID: "1"}, {ID: "2"}}
 	if !reflect.DeepEqual(snapshots, expected) {
 		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, expected)
+	}
+}
+
+func TestSnapshots_ListVolume_Regional(t *testing.T) {
+	setup()
+	defer teardown()
+
+	s2r1Snapshots := []Snapshot{
+		{
+			ID:      "1",
+			Name:    "snapshot-1",
+			Regions: []string{"s2r1"},
+		},
+		{
+			ID:      "2",
+			Name:    "snapshot-2",
+			Regions: []string{"s2r1"},
+		},
+	}
+
+	s2r6Snapshots := []Snapshot{
+		{
+			ID:      "3",
+			Regions: []string{"s2r6"},
+		},
+	}
+
+	mux.HandleFunc("/v2/snapshots", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		expected := "volume"
+		actual := r.URL.Query().Get("resource_type")
+		if actual != expected {
+			t.Errorf("'type' query = %v, expected %v", actual, expected)
+		}
+
+		var resultSnapshot []Snapshot
+
+		region := r.URL.Query().Get("region")
+		if region == "" {
+			resultSnapshot = append(resultSnapshot, s2r1Snapshots...)
+			resultSnapshot = append(resultSnapshot, s2r6Snapshots...)
+		} else if region == "s2r6" {
+			resultSnapshot = append(resultSnapshot, s2r6Snapshots...)
+		} else if region == "s2r1" {
+			resultSnapshot = append(resultSnapshot, s2r1Snapshots...)
+		}
+
+		b, _ := json.Marshal(resultSnapshot)
+		fmt.Fprint(w, fmt.Sprintf(`{"snapshots": %s}`, string(b)))
+	})
+
+	ctx := context.Background()
+	snapshots, _, err := client.Snapshots.ListVolume(ctx, &ListOptions{Region: "s2r6"})
+	if err != nil {
+		t.Errorf("Snapshots.ListVolume returned error: %v", err)
+	}
+
+	if !reflect.DeepEqual(snapshots, s2r6Snapshots) {
+		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, s2r6Snapshots)
+	}
+
+	snapshots, _, err = client.Snapshots.ListVolume(ctx, &ListOptions{Region: "s2r1"})
+	if err != nil {
+		t.Errorf("Snapshots.ListVolume returned error: %v", err)
+	}
+
+	if !reflect.DeepEqual(snapshots, s2r1Snapshots) {
+		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, s2r1Snapshots)
+	}
+
+	snapshots, _, err = client.Snapshots.ListVolume(ctx, nil)
+	if err != nil {
+		t.Errorf("Snapshots.ListVolume returned error: %v", err)
+	}
+
+	// Without region all snapshots should be returned
+	allSnapshots := append([]Snapshot{}, s2r1Snapshots...)
+	allSnapshots = append(allSnapshots, s2r6Snapshots...)
+	if !reflect.DeepEqual(snapshots, allSnapshots) {
+		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, allSnapshots)
 	}
 }
 

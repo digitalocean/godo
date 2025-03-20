@@ -144,6 +144,9 @@ type ListOptions struct {
 
 	// Whether App responses should include project_id fields. The field will be empty if false or if omitted. (ListApps)
 	WithProjects bool `url:"with_projects,omitempty"`
+
+	// Region can be used to list only snapshots from a given region
+	Region string `url:"region,omitempty"`
 }
 
 // TokenListOptions specifies the optional parameters to various List methods that support token pagination.
