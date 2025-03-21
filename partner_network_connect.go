@@ -14,13 +14,13 @@ const partnerNetworkConnectBasePath = "/v2/partner_network_connect/attachments"
 // DigitalOcean API.
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/PartnerNetworkConnect
 type PartnerNetworkConnectService interface {
-	List(context.Context, *ListOptions) ([]*Attachment, *Response, error)
-	Create(context.Context, *PartnerNetworkConnectCreateRequest) (*Attachment, *Response, error)
-	Get(context.Context, string) (*Attachment, *Response, error)
-	Update(context.Context, string, *PartnerNetworkConnectUpdateRequest) (*Attachment, *Response, error)
+	List(context.Context, *ListOptions) ([]*PartnerAttachment, *Response, error)
+	Create(context.Context, *PartnerNetworkConnectCreateRequest) (*PartnerAttachment, *Response, error)
+	Get(context.Context, string) (*PartnerAttachment, *Response, error)
+	Update(context.Context, string, *PartnerNetworkConnectUpdateRequest) (*PartnerAttachment, *Response, error)
 	Delete(context.Context, string) (*Response, error)
 	GetServiceKey(context.Context, string) (*ServiceKey, *Response, error)
-	SetRoutes(context.Context, string, *PartnerNetworkConnectSetRoutesRequest) (*Attachment, *Response, error)
+	SetRoutes(context.Context, string, *PartnerNetworkConnectSetRoutesRequest) (*PartnerAttachment, *Response, error)
 	ListRoutes(context.Context, string, *ListOptions) ([]*RemoteRoute, *Response, error)
 	GetBGPAuthKey(ctx context.Context, iaID string) (*BgpAuthKey, *Response, error)
 	RegenerateServiceKey(ctx context.Context, iaID string) (*RegenerateServiceKey, *Response, error)
@@ -171,8 +171,8 @@ type RemoteRoute struct {
 	Cidr string `json:"cidr,omitempty"`
 }
 
-// Attachment represents a DigitalOcean Partner Attachment.
-type Attachment struct {
+// PartnerAttachment represents a DigitalOcean Partner PartnerAttachment.
+type PartnerAttachment struct {
 	// ID is the generated ID of the Partner Attachment
 	ID string `json:"id,omitempty"`
 	// Name is the name of the Partner Attachment
@@ -194,39 +194,39 @@ type Attachment struct {
 }
 
 type partnerNetworkConnectAttachmentRoot struct {
-	Attachment *Attachment `json:"-"`
+	PartnerAttachment *PartnerAttachment `json:"-"`
 }
 
 func (r *partnerNetworkConnectAttachmentRoot) UnmarshalJSON(data []byte) error {
 	// auxiliary structure to capture both potential keys
 	var aux struct {
-		PartnerNetworkConnect *Attachment `json:"partner_network_connect"`
-		Attachment            *Attachment `json:"attachment"`
+		PartnerNetworkConnect *PartnerAttachment `json:"partner_network_connect"`
+		PartnerAttachment     *PartnerAttachment `json:"attachment"`
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
 
 	if aux.PartnerNetworkConnect != nil {
-		r.Attachment = aux.PartnerNetworkConnect
+		r.PartnerAttachment = aux.PartnerNetworkConnect
 	} else {
-		r.Attachment = aux.Attachment
+		r.PartnerAttachment = aux.PartnerAttachment
 	}
 	return nil
 }
 
 type partnerNetworkConnectAttachmentsRoot struct {
-	Attachments []*Attachment `json:"-"`
-	Links       *Links        `json:"links"`
-	Meta        *Meta         `json:"meta"`
+	PartnerAttachments []*PartnerAttachment `json:"-"`
+	Links              *Links               `json:"links"`
+	Meta               *Meta                `json:"meta"`
 }
 
 func (r *partnerNetworkConnectAttachmentsRoot) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		Attachments            []*Attachment `json:"attachments"`
-		PartnerNetworkConnects []*Attachment `json:"partner_network_connects"`
-		Links                  *Links        `json:"links"`
-		Meta                   *Meta         `json:"meta"`
+		PartnerAttachments     []*PartnerAttachment `json:"attachments"`
+		PartnerNetworkConnects []*PartnerAttachment `json:"partner_network_connects"`
+		Links                  *Links               `json:"links"`
+		Meta                   *Meta                `json:"meta"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -234,9 +234,9 @@ func (r *partnerNetworkConnectAttachmentsRoot) UnmarshalJSON(data []byte) error 
 	}
 
 	if aux.PartnerNetworkConnects != nil {
-		r.Attachments = aux.PartnerNetworkConnects
+		r.PartnerAttachments = aux.PartnerNetworkConnects
 	} else {
-		r.Attachments = aux.Attachments
+		r.PartnerAttachments = aux.PartnerAttachments
 	}
 
 	r.Links = aux.Links
@@ -271,7 +271,7 @@ type regenerateServiceKeyRoot struct {
 }
 
 // List returns a list of all Partner Attachment, with optional pagination.
-func (s *PartnerNetworkConnectsServiceOp) List(ctx context.Context, opt *ListOptions) ([]*Attachment, *Response, error) {
+func (s *PartnerNetworkConnectsServiceOp) List(ctx context.Context, opt *ListOptions) ([]*PartnerAttachment, *Response, error) {
 	path, err := addOptions(partnerNetworkConnectBasePath, opt)
 	if err != nil {
 		return nil, nil, err
@@ -292,11 +292,11 @@ func (s *PartnerNetworkConnectsServiceOp) List(ctx context.Context, opt *ListOpt
 	if m := root.Meta; m != nil {
 		resp.Meta = m
 	}
-	return root.Attachments, resp, nil
+	return root.PartnerAttachments, resp, nil
 }
 
 // Create creates a new Partner Attachment.
-func (s *PartnerNetworkConnectsServiceOp) Create(ctx context.Context, create *PartnerNetworkConnectCreateRequest) (*Attachment, *Response, error) {
+func (s *PartnerNetworkConnectsServiceOp) Create(ctx context.Context, create *PartnerNetworkConnectCreateRequest) (*PartnerAttachment, *Response, error) {
 	path := partnerNetworkConnectBasePath
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, create.buildReq())
@@ -310,11 +310,11 @@ func (s *PartnerNetworkConnectsServiceOp) Create(ctx context.Context, create *Pa
 		return nil, resp, err
 	}
 
-	return root.Attachment, resp, nil
+	return root.PartnerAttachment, resp, nil
 }
 
 // Get returns the details of a Partner Attachment.
-func (s *PartnerNetworkConnectsServiceOp) Get(ctx context.Context, id string) (*Attachment, *Response, error) {
+func (s *PartnerNetworkConnectsServiceOp) Get(ctx context.Context, id string) (*PartnerAttachment, *Response, error) {
 	path := fmt.Sprintf("%s/%s", partnerNetworkConnectBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -327,11 +327,11 @@ func (s *PartnerNetworkConnectsServiceOp) Get(ctx context.Context, id string) (*
 		return nil, resp, err
 	}
 
-	return root.Attachment, resp, nil
+	return root.PartnerAttachment, resp, nil
 }
 
 // Update updates a Partner Attachment properties.
-func (s *PartnerNetworkConnectsServiceOp) Update(ctx context.Context, id string, update *PartnerNetworkConnectUpdateRequest) (*Attachment, *Response, error) {
+func (s *PartnerNetworkConnectsServiceOp) Update(ctx context.Context, id string, update *PartnerNetworkConnectUpdateRequest) (*PartnerAttachment, *Response, error) {
 	path := fmt.Sprintf("%s/%s", partnerNetworkConnectBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, update)
 	if err != nil {
@@ -344,7 +344,7 @@ func (s *PartnerNetworkConnectsServiceOp) Update(ctx context.Context, id string,
 		return nil, resp, err
 	}
 
-	return root.Attachment, resp, nil
+	return root.PartnerAttachment, resp, nil
 }
 
 // Delete deletes a Partner Attachment.
@@ -406,7 +406,7 @@ func (s *PartnerNetworkConnectsServiceOp) ListRoutes(ctx context.Context, id str
 }
 
 // SetRoutes updates specific properties of a Partner Attachment.
-func (s *PartnerNetworkConnectsServiceOp) SetRoutes(ctx context.Context, id string, set *PartnerNetworkConnectSetRoutesRequest) (*Attachment, *Response, error) {
+func (s *PartnerNetworkConnectsServiceOp) SetRoutes(ctx context.Context, id string, set *PartnerNetworkConnectSetRoutesRequest) (*PartnerAttachment, *Response, error) {
 	path := fmt.Sprintf("%s/%s/remote_routes", partnerNetworkConnectBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, set)
 	if err != nil {
@@ -419,7 +419,7 @@ func (s *PartnerNetworkConnectsServiceOp) SetRoutes(ctx context.Context, id stri
 		return nil, resp, err
 	}
 
-	return root.Attachment, resp, nil
+	return root.PartnerAttachment, resp, nil
 }
 
 // GetBGPAuthKey returns Partner Attachment bgp auth key
