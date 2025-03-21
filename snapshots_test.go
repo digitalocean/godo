@@ -2,6 +2,7 @@ package godo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -51,6 +52,74 @@ func TestSnapshots_ListVolume(t *testing.T) {
 	expected := []Snapshot{{ID: "1"}, {ID: "2"}}
 	if !reflect.DeepEqual(snapshots, expected) {
 		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, expected)
+	}
+}
+
+func TestSnapshots_ListVolumeSnapshotByRegion(t *testing.T) {
+	setup()
+	defer teardown()
+
+	region1Snapshots := []Snapshot{
+		{
+			ID:      "1",
+			Name:    "snapshot-1",
+			Regions: []string{"region1"},
+		},
+		{
+			ID:      "2",
+			Name:    "snapshot-2",
+			Regions: []string{"region1"},
+		},
+	}
+
+	region2Snapshots := []Snapshot{
+		{
+			ID:      "3",
+			Regions: []string{"region2"},
+		},
+	}
+
+	mux.HandleFunc("/v2/snapshots", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		expected := "volume"
+		actual := r.URL.Query().Get("resource_type")
+		if actual != expected {
+			t.Errorf("'type' query = %v, expected %v", actual, expected)
+		}
+
+		var resultSnapshot []Snapshot
+
+		region := r.URL.Query().Get("region")
+		if region == "" {
+			resultSnapshot = append(resultSnapshot, region1Snapshots...)
+			resultSnapshot = append(resultSnapshot, region2Snapshots...)
+		} else if region == "region1" {
+			resultSnapshot = append(resultSnapshot, region1Snapshots...)
+		} else if region == "region2" {
+			resultSnapshot = append(resultSnapshot, region2Snapshots...)
+		}
+
+		b, _ := json.Marshal(resultSnapshot)
+		fmt.Fprint(w, fmt.Sprintf(`{"snapshots": %s}`, string(b)))
+	})
+
+	ctx := context.Background()
+	snapshots, _, err := client.Snapshots.ListVolumeSnapshotByRegion(ctx, "region1", nil)
+	if err != nil {
+		t.Errorf("Snapshots.ListVolume returned error: %v", err)
+	}
+
+	if !reflect.DeepEqual(snapshots, region1Snapshots) {
+		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, region1Snapshots)
+	}
+
+	snapshots, _, err = client.Snapshots.ListVolumeSnapshotByRegion(ctx, "region2", nil)
+	if err != nil {
+		t.Errorf("Snapshots.ListVolume returned error: %v", err)
+	}
+
+	if !reflect.DeepEqual(snapshots, region2Snapshots) {
+		t.Errorf("Snapshots.ListVolume returned %+v, expected %+v", snapshots, region2Snapshots)
 	}
 }
 
