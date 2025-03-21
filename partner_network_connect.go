@@ -10,7 +10,7 @@ import (
 
 const partnerNetworkConnectBasePath = "/v2/partner_network_connect/attachments"
 
-// PartnerNetworkConnectService is an interface for managing Partner Attachment with the
+// PartnerNetworkConnectService is an interface for managing Partner Attachments with the
 // DigitalOcean API.
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/PartnerNetworkConnect
 type PartnerNetworkConnectService interface {
