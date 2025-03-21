@@ -548,19 +548,22 @@ type DatabaseUpdateLogsinkRequest struct {
 
 // DatabaseLogsinkConfig represents one of the configurable options (rsyslog_logsink, elasticsearch_logsink, or opensearch_logsink) for a logsink.
 type DatabaseLogsinkConfig struct {
-	URL          string  `json:"url,omitempty"`
-	IndexPrefix  string  `json:"index_prefix,omitempty"`
-	IndexDaysMax int     `json:"index_days_max,omitempty"`
-	Timeout      float32 `json:"timeout,omitempty"`
-	Server       string  `json:"server,omitempty"`
-	Port         int     `json:"port,omitempty"`
-	TLS          bool    `json:"tls,omitempty"`
-	Format       string  `json:"format,omitempty"`
-	Logline      string  `json:"logline,omitempty"`
-	SD           string  `json:"sd,omitempty"`
-	CA           string  `json:"ca,omitempty"`
-	Key          string  `json:"key,omitempty"`
-	Cert         string  `json:"cert,omitempty"`
+	URL             string  `json:"url,omitempty"`
+	IndexPrefix     string  `json:"index_prefix,omitempty"`
+	IndexDaysMax    int     `json:"index_days_max,omitempty"`
+	Timeout         float32 `json:"timeout,omitempty"`
+	Server          string  `json:"server,omitempty"`
+	Port            int     `json:"port,omitempty"`
+	TLS             bool    `json:"tls,omitempty"`
+	Format          string  `json:"format,omitempty"`
+	Logline         string  `json:"logline,omitempty"`
+	SD              string  `json:"sd,omitempty"`
+	CA              string  `json:"ca,omitempty"`
+	Key             string  `json:"key,omitempty"`
+	Cert            string  `json:"cert,omitempty"`
+	DatadogAPIKey   string  `json:"datadog_api_key,omitempty"`
+	ExtraTagsPrefix string  `json:"extra_tags_prefix,omitempty"`
+	Site            string  `json:"site,omitempty"`
 }
 
 // DatabaseOnlineMigrationConfig represents the configuration options for database online migrations.
