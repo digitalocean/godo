@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var vPartnerNetworkConnectTestObj = &PartnerNetworkConnect{
+var vPartnerNetworkConnectTestObj = &PartnerAttachment{
 	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
 	Name:                      "my-new-partner-connect",
 	State:                     "ACTIVE",
@@ -29,7 +29,7 @@ var vPartnerNetworkConnectTestObj = &PartnerNetworkConnect{
 	CreatedAt: time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 }
 
-var vPartnerNetworkConnectNoBGPTestObj = &PartnerNetworkConnect{
+var vPartnerNetworkConnectNoBGPTestObj = &PartnerAttachment{
 	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
 	Name:                      "my-new-partner-connect",
 	State:                     "ACTIVE",
@@ -82,7 +82,7 @@ func TestPartnerNetworkConnects_List(t *testing.T) {
 
 	svc := client.PartnerNetworkConnect
 	path := "/v2/partner_network_connect/attachments"
-	want := []*PartnerNetworkConnect{
+	want := []*PartnerAttachment{
 		vPartnerNetworkConnectTestObj,
 	}
 	links := &Links{
@@ -96,7 +96,7 @@ func TestPartnerNetworkConnects_List(t *testing.T) {
 	}
 	jsonBlob := `
 {
-  "partner_network_connects": [
+  "attachments": [
 ` + vPartnerNetworkConnectTestJSON + `
   ],
   "links": {
@@ -142,7 +142,7 @@ func TestPartnerNetworkConnects_Create(t *testing.T) {
 	}
 	jsonBlob := `
 {
-	"partner_network_connect":
+	"attachment":
 ` + vPartnerNetworkConnectTestJSON + `
 }
 `
@@ -180,7 +180,7 @@ func TestPartnerNetworkConnects_CreateNoBGP(t *testing.T) {
 	}
 	jsonBlob := `
 {
-	"partner_network_connect":
+	"attachment":
 ` + vPartnerNetworkConnectNoBGPTestJSON + `
 }
 `
@@ -220,7 +220,7 @@ func TestPartnerNetworkConnects_Get(t *testing.T) {
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 	jsonBlob := `
 {
-	"partner_network_connect":
+	"attachment":
 ` + vPartnerNetworkConnectTestJSON + `
 }
 `
@@ -249,7 +249,7 @@ func TestPartnerNetworkConnects_Update(t *testing.T) {
 	}
 	jsonBlob := `
 {
-	"partner_network_connect":
+	"attachment":
 ` + vPartnerNetworkConnectTestJSON + `
 }
 `
@@ -375,7 +375,7 @@ func TestPartnerNetworkConnect_Set(t *testing.T) {
 		req                         *PartnerNetworkConnectSetRoutesRequest
 		mockResponse                string
 		expectedRequestBody         string
-		expectedUpdatedInterconnect *PartnerNetworkConnect
+		expectedUpdatedInterconnect *PartnerAttachment
 	}{
 		{
 			desc: "set remote routes",
@@ -385,7 +385,7 @@ func TestPartnerNetworkConnect_Set(t *testing.T) {
 			},
 			mockResponse: `
 {
-	"partner_network_connect":
+	"attachment":
 ` + vPartnerNetworkConnectTestJSON + `
 }
 			`,
