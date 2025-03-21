@@ -58,7 +58,7 @@ type partnerNetworkConnectRequestBody struct {
 	Region string `json:"region,omitempty"`
 	// NaaSProvider is the name of the Network as a Service provider
 	NaaSProvider string `json:"naas_provider,omitempty"`
-	// VPCIDs is the IDs of the VPCs to which the Partner Attachment is connected
+	// VPCIDs is the IDs of the VPCs to which the Partner Attachment is connected to
 	VPCIDs []string `json:"vpc_ids,omitempty"`
 	// BGP is the BGP configuration of the Partner Attachment
 	BGP *BGPInput `json:"bgp,omitempty"`
@@ -90,7 +90,7 @@ func (req *PartnerNetworkConnectCreateRequest) buildReq() *partnerNetworkConnect
 type PartnerNetworkConnectUpdateRequest struct {
 	// Name is the name of the Partner Attachment
 	Name string `json:"name,omitempty"`
-	//VPCIDs is the IDs of the VPCs to which the Partner Attachment is connected
+	//VPCIDs is the IDs of the VPCs to which the Partner Attachment is connected to
 	VPCIDs []string `json:"vpc_ids,omitempty"`
 }
 
@@ -185,7 +185,7 @@ type Attachment struct {
 	Region string `json:"region,omitempty"`
 	// NaaSProvider is the name of the Network as a Service provider
 	NaaSProvider string `json:"naas_provider,omitempty"`
-	// VPCIDs is the IDs of the VPCs to which the Partner Attachment is connected
+	// VPCIDs is the IDs of the VPCs to which the Partner Attachment is connected to
 	VPCIDs []string `json:"vpc_ids,omitempty"`
 	// BGP is the BGP configuration of the Partner Attachment
 	BGP BGP `json:"bgp,omitempty"`
