@@ -96,7 +96,7 @@ func TestPartnerNetworkConnects_List(t *testing.T) {
 	}
 	jsonBlob := `
 {
-  "attachments": [
+  "partner_attachments": [
 ` + vPartnerNetworkConnectTestJSON + `
   ],
   "links": {
@@ -142,7 +142,7 @@ func TestPartnerNetworkConnects_Create(t *testing.T) {
 	}
 	jsonBlob := `
 {
-	"attachment":
+	"partner_attachment":
 ` + vPartnerNetworkConnectTestJSON + `
 }
 `
@@ -180,7 +180,7 @@ func TestPartnerNetworkConnects_CreateNoBGP(t *testing.T) {
 	}
 	jsonBlob := `
 {
-	"attachment":
+	"partner_attachment":
 ` + vPartnerNetworkConnectNoBGPTestJSON + `
 }
 `
@@ -220,7 +220,7 @@ func TestPartnerNetworkConnects_Get(t *testing.T) {
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 	jsonBlob := `
 {
-	"attachment":
+	"partner_attachment":
 ` + vPartnerNetworkConnectTestJSON + `
 }
 `
@@ -249,7 +249,7 @@ func TestPartnerNetworkConnects_Update(t *testing.T) {
 	}
 	jsonBlob := `
 {
-	"attachment":
+	"partner_attachment":
 ` + vPartnerNetworkConnectTestJSON + `
 }
 `
@@ -385,7 +385,7 @@ func TestPartnerNetworkConnect_Set(t *testing.T) {
 			},
 			mockResponse: `
 {
-	"attachment":
+	"partner_attachment":
 ` + vPartnerNetworkConnectTestJSON + `
 }
 			`,

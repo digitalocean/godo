@@ -201,7 +201,7 @@ func (r *partnerNetworkConnectAttachmentRoot) UnmarshalJSON(data []byte) error {
 	// auxiliary structure to capture both potential keys
 	var aux struct {
 		PartnerNetworkConnect *PartnerAttachment `json:"partner_network_connect"`
-		PartnerAttachment     *PartnerAttachment `json:"attachment"`
+		PartnerAttachment     *PartnerAttachment `json:"partner_attachment"`
 	}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
@@ -223,7 +223,7 @@ type partnerNetworkConnectAttachmentsRoot struct {
 
 func (r *partnerNetworkConnectAttachmentsRoot) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		PartnerAttachments     []*PartnerAttachment `json:"attachments"`
+		PartnerAttachments     []*PartnerAttachment `json:"partner_attachments"`
 		PartnerNetworkConnects []*PartnerAttachment `json:"partner_network_connects"`
 		Links                  *Links               `json:"links"`
 		Meta                   *Meta                `json:"meta"`
