@@ -194,55 +194,13 @@ type PartnerAttachment struct {
 }
 
 type partnerNetworkConnectAttachmentRoot struct {
-	PartnerAttachment *PartnerAttachment `json:"-"`
-}
-
-func (r *partnerNetworkConnectAttachmentRoot) UnmarshalJSON(data []byte) error {
-	// auxiliary structure to capture both potential keys
-	var aux struct {
-		PartnerNetworkConnect *PartnerAttachment `json:"partner_network_connect"`
-		PartnerAttachment     *PartnerAttachment `json:"partner_attachment"`
-	}
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-
-	if aux.PartnerNetworkConnect != nil {
-		r.PartnerAttachment = aux.PartnerNetworkConnect
-	} else {
-		r.PartnerAttachment = aux.PartnerAttachment
-	}
-	return nil
+	PartnerAttachment *PartnerAttachment `json:"partner_attachment"`
 }
 
 type partnerNetworkConnectAttachmentsRoot struct {
-	PartnerAttachments []*PartnerAttachment `json:"-"`
+	PartnerAttachments []*PartnerAttachment `json:"partner_attachments"`
 	Links              *Links               `json:"links"`
 	Meta               *Meta                `json:"meta"`
-}
-
-func (r *partnerNetworkConnectAttachmentsRoot) UnmarshalJSON(data []byte) error {
-	var aux struct {
-		PartnerAttachments     []*PartnerAttachment `json:"partner_attachments"`
-		PartnerNetworkConnects []*PartnerAttachment `json:"partner_network_connects"`
-		Links                  *Links               `json:"links"`
-		Meta                   *Meta                `json:"meta"`
-	}
-
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-
-	if aux.PartnerNetworkConnects != nil {
-		r.PartnerAttachments = aux.PartnerNetworkConnects
-	} else {
-		r.PartnerAttachments = aux.PartnerAttachments
-	}
-
-	r.Links = aux.Links
-	r.Meta = aux.Meta
-
-	return nil
 }
 
 type serviceKeyRoot struct {
