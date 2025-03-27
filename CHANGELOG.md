@@ -2,6 +2,7 @@
 
 ## [v1.142.0] - 2025-03-27
 
+- #813 - @lfundaro-do - partner-network-connect: fix typo
 - #811 - @lfundaro-do - fix partner attachment rename
 - #810 - @apinonformoso - VPC-4359: remove custom unmarshaler for PNCs
 - #809 - @apinonformoso - hotfix: json field name
