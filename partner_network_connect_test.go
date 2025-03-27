@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var vPartnerNetworkConnectTestObj = &PartnerAttachment{
+var vPartnerAttachmentTestObj = &PartnerAttachment{
 	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
 	Name:                      "my-new-partner-connect",
 	State:                     "ACTIVE",
@@ -29,7 +29,7 @@ var vPartnerNetworkConnectTestObj = &PartnerAttachment{
 	CreatedAt: time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 }
 
-var vPartnerNetworkConnectNoBGPTestObj = &PartnerAttachment{
+var vPartnerAttachmentNoBGPTestObj = &PartnerAttachment{
 	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
 	Name:                      "my-new-partner-connect",
 	State:                     "ACTIVE",
@@ -40,7 +40,7 @@ var vPartnerNetworkConnectNoBGPTestObj = &PartnerAttachment{
 	CreatedAt:                 time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
 }
 
-var vPartnerNetworkConnectTestJSON = `
+var vPartnerAttachmentTestJSON = `
 	{
 		"id":"880b7f98-f062-404d-b33c-458d545696f6",
 		"name":"my-new-partner-connect",
@@ -60,7 +60,7 @@ var vPartnerNetworkConnectTestJSON = `
 	}
 `
 
-var vPartnerNetworkConnectNoBGPTestJSON = `
+var vPartnerAttachmentNoBGPTestJSON = `
 	{
 		"id":"880b7f98-f062-404d-b33c-458d545696f6",
 		"name":"my-new-partner-connect",
@@ -73,17 +73,17 @@ var vPartnerNetworkConnectNoBGPTestJSON = `
 	}
 `
 
-const expectedPartnerNetworkConnectCreateBodyNoBGP = `{"name":"my-new-partner-connect","connection_bandwidth_in_mbps":50,"region":"NYC","naas_provider":"MEGAPORT","vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"]}
+const expectedPartnerAttachmentCreateBodyNoBGP = `{"name":"my-new-partner-connect","connection_bandwidth_in_mbps":50,"region":"NYC","naas_provider":"MEGAPORT","vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"]}
 `
 
-func TestPartnerNetworkConnects_List(t *testing.T) {
+func TestPartnerAttachment_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
 	want := []*PartnerAttachment{
-		vPartnerNetworkConnectTestObj,
+		vPartnerAttachmentTestObj,
 	}
 	links := &Links{
 		Pages: &Pages{
@@ -97,7 +97,7 @@ func TestPartnerNetworkConnects_List(t *testing.T) {
 	jsonBlob := `
 {
   "partner_attachments": [
-` + vPartnerNetworkConnectTestJSON + `
+` + vPartnerAttachmentTestJSON + `
   ],
   "links": {
     "pages": {
@@ -120,14 +120,14 @@ func TestPartnerNetworkConnects_List(t *testing.T) {
 	assert.Equal(t, resp.Meta, meta)
 }
 
-func TestPartnerNetworkConnects_Create(t *testing.T) {
+func TestPartnerAttachment_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
-	want := vPartnerNetworkConnectTestObj
-	req := &PartnerNetworkConnectCreateRequest{
+	want := vPartnerAttachmentTestObj
+	req := &PartnerAtachmentCreateRequest{
 		Name:                      "my-new-partner-connect",
 		ConnectionBandwidthInMbps: 50,
 		Region:                    "NYC",
@@ -143,12 +143,12 @@ func TestPartnerNetworkConnects_Create(t *testing.T) {
 	jsonBlob := `
 {
 	"partner_attachment":
-` + vPartnerNetworkConnectTestJSON + `
+` + vPartnerAttachmentTestJSON + `
 }
 `
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		c := new(PartnerNetworkConnectCreateRequest)
+		c := new(PartnerAtachmentCreateRequest)
 		err := json.NewDecoder(r.Body).Decode(c)
 		if err != nil {
 			t.Fatal(err)
@@ -164,14 +164,14 @@ func TestPartnerNetworkConnects_Create(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnects_CreateNoBGP(t *testing.T) {
+func TestPartnerAttachment_CreateNoBGP(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
-	want := vPartnerNetworkConnectNoBGPTestObj
-	req := &PartnerNetworkConnectCreateRequest{
+	want := vPartnerAttachmentNoBGPTestObj
+	req := &PartnerAtachmentCreateRequest{
 		Name:                      "my-new-partner-connect",
 		ConnectionBandwidthInMbps: 50,
 		Region:                    "NYC",
@@ -181,7 +181,7 @@ func TestPartnerNetworkConnects_CreateNoBGP(t *testing.T) {
 	jsonBlob := `
 {
 	"partner_attachment":
-` + vPartnerNetworkConnectNoBGPTestJSON + `
+` + vPartnerAttachmentNoBGPTestJSON + `
 }
 `
 
@@ -192,9 +192,9 @@ func TestPartnerNetworkConnects_CreateNoBGP(t *testing.T) {
 		}
 		defer r.Body.Close()
 
-		require.Equal(t, expectedPartnerNetworkConnectCreateBodyNoBGP, string(body))
+		require.Equal(t, expectedPartnerAttachmentCreateBodyNoBGP, string(body))
 
-		c := new(PartnerNetworkConnectCreateRequest)
+		c := new(PartnerAtachmentCreateRequest)
 		err = json.Unmarshal(body, c)
 		if err != nil {
 			t.Fatal(err)
@@ -210,18 +210,18 @@ func TestPartnerNetworkConnects_CreateNoBGP(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnects_Get(t *testing.T) {
+func TestPartnerAttachment_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
-	want := vPartnerNetworkConnectTestObj
+	want := vPartnerAttachmentTestObj
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 	jsonBlob := `
 {
 	"partner_attachment":
-` + vPartnerNetworkConnectTestJSON + `
+` + vPartnerAttachmentTestJSON + `
 }
 `
 
@@ -235,27 +235,27 @@ func TestPartnerNetworkConnects_Get(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnects_Update(t *testing.T) {
+func TestPartnerAttachment_Update(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
-	want := vPartnerNetworkConnectTestObj
+	want := vPartnerAttachmentTestObj
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
-	req := &PartnerNetworkConnectUpdateRequest{
+	req := &PartnerAttachmentUpdateRequest{
 		Name:   "my-renamed-partner-connect",
 		VPCIDs: []string{"g5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
 	}
 	jsonBlob := `
 {
 	"partner_attachment":
-` + vPartnerNetworkConnectTestJSON + `
+` + vPartnerAttachmentTestJSON + `
 }
 `
 
 	mux.HandleFunc(path+"/"+id, func(w http.ResponseWriter, r *http.Request) {
-		v := new(PartnerNetworkConnectUpdateRequest)
+		v := new(PartnerAttachmentUpdateRequest)
 		err := json.NewDecoder(r.Body).Decode(v)
 		if err != nil {
 			t.Fatal(err)
@@ -271,11 +271,11 @@ func TestPartnerNetworkConnects_Update(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnect_Delete(t *testing.T) {
+func TestPartnerAttachment_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 
@@ -287,11 +287,11 @@ func TestPartnerNetworkConnect_Delete(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestPartnerNetworkConnect_GetServiceKey(t *testing.T) {
+func TestPartnerAttachment_GetServiceKey(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
 	want := &ServiceKey{
 		Value:     "my-service-key",
@@ -319,11 +319,11 @@ func TestPartnerNetworkConnect_GetServiceKey(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnect_ListRoutes(t *testing.T) {
+func TestPartnerAttachment_ListRoutes(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
 	want := []*RemoteRoute{
 		{
@@ -368,11 +368,11 @@ func TestPartnerNetworkConnect_ListRoutes(t *testing.T) {
 	assert.Equal(t, resp.Meta, meta)
 }
 
-func TestPartnerNetworkConnect_Set(t *testing.T) {
+func TestPartnerAttachment_Set(t *testing.T) {
 	tests := []struct {
 		desc                        string
 		id                          string
-		req                         *PartnerNetworkConnectSetRoutesRequest
+		req                         *PartnerAttachmentSetRoutesRequest
 		mockResponse                string
 		expectedRequestBody         string
 		expectedUpdatedInterconnect *PartnerAttachment
@@ -380,17 +380,17 @@ func TestPartnerNetworkConnect_Set(t *testing.T) {
 		{
 			desc: "set remote routes",
 			id:   "880b7f98-f062-404d-b33c-458d545696f6",
-			req: &PartnerNetworkConnectSetRoutesRequest{
+			req: &PartnerAttachmentSetRoutesRequest{
 				Routes: []string{"169.250.0.1/29", "169.250.0.6/29"},
 			},
 			mockResponse: `
 {
 	"partner_attachment":
-` + vPartnerNetworkConnectTestJSON + `
+` + vPartnerAttachmentTestJSON + `
 }
 			`,
 			expectedRequestBody:         `{"routes":["169.250.0.1/29", "169.250.0.6/29"]}`,
-			expectedUpdatedInterconnect: vPartnerNetworkConnectTestObj,
+			expectedUpdatedInterconnect: vPartnerAttachmentTestObj,
 		},
 	}
 
@@ -398,7 +398,7 @@ func TestPartnerNetworkConnect_Set(t *testing.T) {
 		setup()
 
 		mux.HandleFunc("/v2/partner_network_connect/attachments/"+tt.id+"/remote_routes", func(w http.ResponseWriter, r *http.Request) {
-			v := new(PartnerNetworkConnectSetRoutesRequest)
+			v := new(PartnerAttachmentSetRoutesRequest)
 			err := json.NewDecoder(r.Body).Decode(v)
 			if err != nil {
 				t.Fatal(err)
@@ -409,7 +409,7 @@ func TestPartnerNetworkConnect_Set(t *testing.T) {
 			w.Write([]byte(tt.mockResponse))
 		})
 
-		got, _, err := client.PartnerNetworkConnect.SetRoutes(ctx, tt.id, tt.req)
+		got, _, err := client.PartnerAttachment.SetRoutes(ctx, tt.id, tt.req)
 
 		teardown()
 
@@ -418,11 +418,11 @@ func TestPartnerNetworkConnect_Set(t *testing.T) {
 	}
 }
 
-func TestPartnerNetworkConnect_GetBGPAuthKey(t *testing.T) {
+func TestPartnerAttachment_GetBGPAuthKey(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
 	want := &BgpAuthKey{
 		Value: "bgp-auth-secret",
@@ -446,11 +446,11 @@ func TestPartnerNetworkConnect_GetBGPAuthKey(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnect_RegenerateServiceKey(t *testing.T) {
+func TestPartnerAttachment_RegenerateServiceKey(t *testing.T) {
 	setup()
 	defer teardown()
 
-	svc := client.PartnerNetworkConnect
+	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
 	id := "880b7f98-f062-404d-b33c-458d545696f6"
 	jsonBlob := `{}`
