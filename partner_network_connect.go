@@ -15,7 +15,7 @@ const partnerNetworkConnectBasePath = "/v2/partner_network_connect/attachments"
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/PartnerNetworkConnect
 type PartnerAttachmentService interface {
 	List(context.Context, *ListOptions) ([]*PartnerAttachment, *Response, error)
-	Create(context.Context, *PartnerAtachmentCreateRequest) (*PartnerAttachment, *Response, error)
+	Create(context.Context, *PartnerAttachmentCreateRequest) (*PartnerAttachment, *Response, error)
 	Get(context.Context, string) (*PartnerAttachment, *Response, error)
 	Update(context.Context, string, *PartnerAttachmentUpdateRequest) (*PartnerAttachment, *Response, error)
 	Delete(context.Context, string) (*Response, error)
@@ -33,8 +33,8 @@ type PartnerAttachmentServiceOp struct {
 	client *Client
 }
 
-// PartnerAtachmentCreateRequest represents a request to create a Partner Attachment.
-type PartnerAtachmentCreateRequest struct {
+// PartnerAttachmentCreateRequest represents a request to create a Partner Attachment.
+type PartnerAttachmentCreateRequest struct {
 	// Name is the name of the Partner Attachment
 	Name string `json:"name,omitempty"`
 	// ConnectionBandwidthInMbps is the bandwidth of the connection in Mbps
@@ -64,7 +64,7 @@ type partnerAttachmentRequestBody struct {
 	BGP *BGPInput `json:"bgp,omitempty"`
 }
 
-func (req *PartnerAtachmentCreateRequest) buildReq() *partnerAttachmentRequestBody {
+func (req *PartnerAttachmentCreateRequest) buildReq() *partnerAttachmentRequestBody {
 	request := &partnerAttachmentRequestBody{
 		Name:                      req.Name,
 		ConnectionBandwidthInMbps: req.ConnectionBandwidthInMbps,
@@ -254,7 +254,7 @@ func (s *PartnerAttachmentServiceOp) List(ctx context.Context, opt *ListOptions)
 }
 
 // Create creates a new Partner Attachment.
-func (s *PartnerAttachmentServiceOp) Create(ctx context.Context, create *PartnerAtachmentCreateRequest) (*PartnerAttachment, *Response, error) {
+func (s *PartnerAttachmentServiceOp) Create(ctx context.Context, create *PartnerAttachmentCreateRequest) (*PartnerAttachment, *Response, error) {
 	path := partnerNetworkConnectBasePath
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, create.buildReq())
