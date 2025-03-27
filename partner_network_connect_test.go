@@ -271,7 +271,7 @@ func TestPartnerAttachment_Update(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnect_Delete(t *testing.T) {
+func TestPartnerAttachment_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -287,7 +287,7 @@ func TestPartnerNetworkConnect_Delete(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestPartnerNetworkConnect_GetServiceKey(t *testing.T) {
+func TestPartnerAttachment_GetServiceKey(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -319,7 +319,7 @@ func TestPartnerNetworkConnect_GetServiceKey(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnect_ListRoutes(t *testing.T) {
+func TestPartnerAttachment_ListRoutes(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -368,7 +368,7 @@ func TestPartnerNetworkConnect_ListRoutes(t *testing.T) {
 	assert.Equal(t, resp.Meta, meta)
 }
 
-func TestPartnerNetworkConnect_Set(t *testing.T) {
+func TestPartnerAttachment_Set(t *testing.T) {
 	tests := []struct {
 		desc                        string
 		id                          string
@@ -418,7 +418,7 @@ func TestPartnerNetworkConnect_Set(t *testing.T) {
 	}
 }
 
-func TestPartnerNetworkConnect_GetBGPAuthKey(t *testing.T) {
+func TestPartnerAttachment_GetBGPAuthKey(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -446,7 +446,7 @@ func TestPartnerNetworkConnect_GetBGPAuthKey(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
-func TestPartnerNetworkConnect_RegenerateServiceKey(t *testing.T) {
+func TestPartnerAttachment_RegenerateServiceKey(t *testing.T) {
 	setup()
 	defer teardown()
 
