@@ -127,7 +127,7 @@ func TestPartnerAttachment_Create(t *testing.T) {
 	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
 	want := vPartnerAttachmentTestObj
-	req := &PartnerAtachmentCreateRequest{
+	req := &PartnerAttachmentCreateRequest{
 		Name:                      "my-new-partner-connect",
 		ConnectionBandwidthInMbps: 50,
 		Region:                    "NYC",
@@ -148,7 +148,7 @@ func TestPartnerAttachment_Create(t *testing.T) {
 `
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
-		c := new(PartnerAtachmentCreateRequest)
+		c := new(PartnerAttachmentCreateRequest)
 		err := json.NewDecoder(r.Body).Decode(c)
 		if err != nil {
 			t.Fatal(err)
@@ -171,7 +171,7 @@ func TestPartnerAttachment_CreateNoBGP(t *testing.T) {
 	svc := client.PartnerAttachment
 	path := "/v2/partner_network_connect/attachments"
 	want := vPartnerAttachmentNoBGPTestObj
-	req := &PartnerAtachmentCreateRequest{
+	req := &PartnerAttachmentCreateRequest{
 		Name:                      "my-new-partner-connect",
 		ConnectionBandwidthInMbps: 50,
 		Region:                    "NYC",
@@ -194,7 +194,7 @@ func TestPartnerAttachment_CreateNoBGP(t *testing.T) {
 
 		require.Equal(t, expectedPartnerAttachmentCreateBodyNoBGP, string(body))
 
-		c := new(PartnerAtachmentCreateRequest)
+		c := new(PartnerAttachmentCreateRequest)
 		err = json.Unmarshal(body, c)
 		if err != nil {
 			t.Fatal(err)
