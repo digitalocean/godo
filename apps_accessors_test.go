@@ -825,6 +825,13 @@ func TestAppIngressSpecRule_GetRedirect(tt *testing.T) {
 	a.GetRedirect()
 }
 
+func TestAppIngressSpecRuleMatch_GetAuthority(tt *testing.T) {
+	a := &AppIngressSpecRuleMatch{}
+	a.GetAuthority()
+	a = nil
+	a.GetAuthority()
+}
+
 func TestAppIngressSpecRuleMatch_GetPath(tt *testing.T) {
 	a := &AppIngressSpecRuleMatch{}
 	a.GetPath()
@@ -886,6 +893,13 @@ func TestAppIngressSpecRuleRoutingRedirect_GetUri(tt *testing.T) {
 	a.GetUri()
 	a = nil
 	a.GetUri()
+}
+
+func TestAppIngressSpecRuleStringMatch_GetExact(tt *testing.T) {
+	a := &AppIngressSpecRuleStringMatch{}
+	a.GetExact()
+	a = nil
+	a.GetExact()
 }
 
 func TestAppIngressSpecRuleStringMatch_GetPrefix(tt *testing.T) {
