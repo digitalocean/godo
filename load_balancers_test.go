@@ -223,7 +223,8 @@ var lbCreateJSONResponse = `
             "8268a81c-fcf6-423e-a337-bbfe95817f24"
         ],
 		"network": "INTERNAL",
-		"network_stack": "IPV4"
+		"network_stack": "IPV4",
+		"tls_cipher_policy": "DEFAULT"
     }
 }
 `
@@ -236,6 +237,7 @@ var lbGetJSONResponse = `
         "ip": "46.214.185.203",
         "ipv6": "fd53:616d:6d60::d2c:b001",
 		"network_stack": "DUALSTACK",
+		"tls_cipher_policy": "DEFAULT",
         "algorithm": "round_robin",
         "status": "active",
         "created_at": "2016-12-15T14:16:36Z",
@@ -334,6 +336,7 @@ var lbUpdateJSONResponse = `
         "status": "active",
         "size_unit": 2,
         "created_at": "2016-12-15T14:19:09Z",
+		"tls_cipher_policy": "STRONG",
         "forwarding_rules": [
             {
                 "entry_protocol": "http",
@@ -495,6 +498,7 @@ func TestLoadBalancers_Get(t *testing.T) {
 			CDN:            &CDNSettings{IsEnabled: true},
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
+		TLSCipherPolicy:       LoadBalancerTLSCipherPolicyDefault,
 	}
 
 	disableLetsEncryptDNSRecords := false
@@ -559,6 +563,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 		Network:               LoadBalancerNetworkTypeInternal,
 		NetworkStack:          LoadBalancerNetworkStackIPv4,
+		TLSCipherPolicy:       LoadBalancerTLSCipherPolicyDefault,
 	}
 
 	path := "/v2/load_balancers"
@@ -648,6 +653,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
 		Network:               LoadBalancerNetworkTypeInternal,
 		NetworkStack:          LoadBalancerNetworkStackIPv4,
+		TLSCipherPolicy:       LoadBalancerTLSCipherPolicyDefault,
 	}
 
 	disableLetsEncryptDNSRecords := true
@@ -826,6 +832,7 @@ func TestLoadBalancers_Update(t *testing.T) {
 			CDN:            &CDNSettings{IsEnabled: true},
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
+		TLSCipherPolicy:       LoadBalancerTLSCipherPolicyStrong,
 	}
 
 	path := "/v2/load_balancers"
@@ -909,6 +916,7 @@ func TestLoadBalancers_Update(t *testing.T) {
 			CDN:            &CDNSettings{IsEnabled: true},
 		},
 		TargetLoadBalancerIDs: []string{"8268a81c-fcf5-423e-a337-bbfe95817f24", "8268a81c-fcf6-423e-a337-bbfe95817f24"},
+		TLSCipherPolicy:       LoadBalancerTLSCipherPolicyStrong,
 	}
 
 	assert.Equal(t, expected, loadBalancer)
