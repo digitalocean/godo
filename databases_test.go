@@ -2366,6 +2366,31 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 						]
 					}
 				]
+			},
+			"valkey": {
+				"regions": [
+					"ams3",
+					"tor1"
+				],
+				"versions": [
+					"8"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"m-32vcpu-256gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"db-s-1vcpu-2gb",
+							"db-s-2vcpu-4gb",
+							"m-32vcpu-256gb"
+						]
+					}
+				]
 			}
 		}
 	} `
@@ -2381,24 +2406,28 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 	require.NotNil(t, options.MongoDBOptions)
 	require.NotNil(t, options.PostgresSQLOptions)
 	require.NotNil(t, options.RedisOptions)
+	require.NotNil(t, options.ValkeyOptions)
 	require.NotNil(t, options.MySQLOptions)
 	require.NotNil(t, options.KafkaOptions)
 	require.NotNil(t, options.OpensearchOptions)
 	require.Greater(t, len(options.MongoDBOptions.Regions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Regions), 0)
 	require.Greater(t, len(options.RedisOptions.Regions), 0)
+	require.Greater(t, len(options.ValkeyOptions.Regions), 0)
 	require.Greater(t, len(options.MySQLOptions.Regions), 0)
 	require.Greater(t, len(options.KafkaOptions.Regions), 0)
 	require.Greater(t, len(options.OpensearchOptions.Regions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Versions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Versions), 0)
 	require.Greater(t, len(options.RedisOptions.Versions), 0)
+	require.Greater(t, len(options.ValkeyOptions.Versions), 0)
 	require.Greater(t, len(options.MySQLOptions.Versions), 0)
 	require.Greater(t, len(options.KafkaOptions.Versions), 0)
 	require.Greater(t, len(options.OpensearchOptions.Versions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Layouts), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Layouts), 0)
 	require.Greater(t, len(options.RedisOptions.Layouts), 0)
+	require.Greater(t, len(options.ValkeyOptions.Layouts), 0)
 	require.Greater(t, len(options.MySQLOptions.Layouts), 0)
 	require.Greater(t, len(options.KafkaOptions.Layouts), 0)
 	require.Greater(t, len(options.OpensearchOptions.Layouts), 0)
