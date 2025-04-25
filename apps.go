@@ -41,7 +41,7 @@ type AppsService interface {
 	CreateDeployment(ctx context.Context, appID string, create ...*DeploymentCreateRequest) (*Deployment, *Response, error)
 
 	GetLogs(ctx context.Context, appID, deploymentID, component string, logType AppLogType, follow bool, tailLines int) (*AppLogs, *Response, error)
-	GetExec(ctx context.Context, appID, deploymentID, component string) (*AppExec, *Response, error)
+	GetExec(ctx context.Context, appID, deploymentID, component, instanceID string) (*AppExec, *Response, error)
 
 	ListRegions(ctx context.Context) ([]*AppRegion, *Response, error)
 
@@ -397,7 +397,7 @@ func (s *AppsServiceOp) GetLogs(ctx context.Context, appID, deploymentID, compon
 }
 
 // GetExec retrieves the websocket URL used for sending/receiving console input and output.
-func (s *AppsServiceOp) GetExec(ctx context.Context, appID, deploymentID, component string) (*AppExec, *Response, error) {
+func (s *AppsServiceOp) GetExec(ctx context.Context, appID, deploymentID, component, instanceID string) (*AppExec, *Response, error) {
 	var url string
 	if deploymentID == "" {
 		url = fmt.Sprintf("%s/%s/components/%s/exec", appsBasePath, appID, component)
@@ -405,7 +405,13 @@ func (s *AppsServiceOp) GetExec(ctx context.Context, appID, deploymentID, compon
 		url = fmt.Sprintf("%s/%s/deployments/%s/components/%s/exec", appsBasePath, appID, deploymentID, component)
 	}
 
-	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
+	type ExecRequestParams struct {
+		InstanceID string `json:"instance_id"`
+	}
+
+	params := ExecRequestParams{InstanceID: instanceID}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, url, params)
 	if err != nil {
 		return nil, nil, err
 	}

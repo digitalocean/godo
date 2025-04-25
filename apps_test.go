@@ -579,11 +579,15 @@ func TestApps_GetExec(t *testing.T) {
 		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url2"})
 	})
 
-	exec, _, err := client.Apps.GetExec(ctx, testApp.ID, testDeployment.ID, "service-name")
+	exec, _, err := client.Apps.GetExec(ctx, testApp.ID, testDeployment.ID, "service-name", "")
 	require.NoError(t, err)
 	assert.Equal(t, "https://exec.url1", exec.URL)
 
-	exec, _, err = client.Apps.GetExec(ctx, testApp.ID, "", "service-name")
+	exec, _, err = client.Apps.GetExec(ctx, testApp.ID, "", "service-name", "")
+	require.NoError(t, err)
+	assert.Equal(t, "https://exec.url2", exec.URL)
+
+	exec, _, err = client.Apps.GetExec(ctx, testApp.ID, "", "service-name", "app-instance-12345")
 	require.NoError(t, err)
 	assert.Equal(t, "https://exec.url2", exec.URL)
 }
