@@ -592,6 +592,52 @@ func TestApps_GetExec(t *testing.T) {
 	assert.Equal(t, "https://exec.url2", exec.URL)
 }
 
+func TestApps_GetExecWithOpts(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/components/%s/exec", testApp.ID, testDeployment.ID, "service-name"), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		_, hasComponent := r.URL.Query()["component_name"]
+		assert.False(t, hasComponent)
+
+		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url1"})
+	})
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/components/%s/exec", testApp.ID, "service-name"), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		_, hasComponent := r.URL.Query()["component_name"]
+		assert.False(t, hasComponent)
+
+		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url2"})
+	})
+
+	opts := &GetExecOptions{
+		DeploymentID: testDeployment.ID,
+		InstanceID:   "",
+		Component:    "service-name",
+	}
+
+	exec, _, err := client.Apps.GetExecWithOpts(ctx, testApp.ID, opts)
+	require.NoError(t, err)
+	assert.Equal(t, "https://exec.url1", exec.URL)
+
+	opts.DeploymentID = ""
+
+	exec, _, err = client.Apps.GetExecWithOpts(ctx, testApp.ID, opts)
+	require.NoError(t, err)
+	assert.Equal(t, "https://exec.url2", exec.URL)
+
+	opts.InstanceID = "app-instance-12345"
+
+	exec, _, err = client.Apps.GetExecWithOpts(ctx, testApp.ID, opts)
+	require.NoError(t, err)
+	assert.Equal(t, "https://exec.url2", exec.URL)
+}
+
 func TestApps_GetLogs_ActiveDeployment(t *testing.T) {
 	setup()
 	defer teardown()
