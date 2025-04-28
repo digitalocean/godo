@@ -586,10 +586,6 @@ func TestApps_GetExec(t *testing.T) {
 	exec, _, err = client.Apps.GetExec(ctx, testApp.ID, "", "service-name")
 	require.NoError(t, err)
 	assert.Equal(t, "https://exec.url2", exec.URL)
-
-	exec, _, err = client.Apps.GetExec(ctx, testApp.ID, "", "service-name")
-	require.NoError(t, err)
-	assert.Equal(t, "https://exec.url2", exec.URL)
 }
 
 func TestApps_GetExecWithOpts(t *testing.T) {
