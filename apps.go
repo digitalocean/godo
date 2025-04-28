@@ -47,6 +47,7 @@ type AppsService interface {
 	CreateDeployment(ctx context.Context, appID string, create ...*DeploymentCreateRequest) (*Deployment, *Response, error)
 
 	GetLogs(ctx context.Context, appID, deploymentID, component string, logType AppLogType, follow bool, tailLines int) (*AppLogs, *Response, error)
+	// Deprecated: Use GetExecWithOpts instead.
 	GetExec(ctx context.Context, appID, deploymentID, component, instanceID string) (*AppExec, *Response, error)
 	GetExecWithOpts(ctx context.Context, appID string, opts *GetExecOptions) (*AppExec, *Response, error)
 
@@ -404,6 +405,7 @@ func (s *AppsServiceOp) GetLogs(ctx context.Context, appID, deploymentID, compon
 }
 
 // GetExec retrieves the websocket URL used for sending/receiving console input and output.
+// Deprecated: Use GetExecWithOpts instead.
 func (s *AppsServiceOp) GetExec(ctx context.Context, appID, deploymentID, component, instanceID string) (*AppExec, *Response, error) {
 	var url string
 	if deploymentID == "" {
