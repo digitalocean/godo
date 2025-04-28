@@ -611,7 +611,7 @@ func TestApps_GetExecWithOpts(t *testing.T) {
 		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url2"})
 	})
 
-	opts := &GetExecOptions{
+	opts := &AppGetExecOptions{
 		DeploymentID: testDeployment.ID,
 		InstanceID:   "",
 		Component:    "service-name",
