@@ -25,6 +25,12 @@ const (
 	AppLogTypeRunRestarted AppLogType = "RUN_RESTARTED"
 )
 
+type GetExecOptions struct {
+	DeploymentID string `json:"deployment_id,omitempty"`
+	Component    string `json:"component,omitempty"`
+	InstanceID   string `json:"instance_id,omitempty"`
+}
+
 // AppsService is an interface for interfacing with the App Platform endpoints
 // of the DigitalOcean API.
 type AppsService interface {
@@ -42,6 +48,7 @@ type AppsService interface {
 
 	GetLogs(ctx context.Context, appID, deploymentID, component string, logType AppLogType, follow bool, tailLines int) (*AppLogs, *Response, error)
 	GetExec(ctx context.Context, appID, deploymentID, component, instanceID string) (*AppExec, *Response, error)
+	GetExecWithOpts(ctx context.Context, appID string, opts *GetExecOptions) (*AppExec, *Response, error)
 
 	ListRegions(ctx context.Context) ([]*AppRegion, *Response, error)
 
@@ -410,6 +417,33 @@ func (s *AppsServiceOp) GetExec(ctx context.Context, appID, deploymentID, compon
 	}
 
 	params := ExecRequestParams{InstanceID: instanceID}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, url, params)
+	if err != nil {
+		return nil, nil, err
+	}
+	logs := new(AppExec)
+	resp, err := s.client.Do(ctx, req, logs)
+	if err != nil {
+		return nil, resp, err
+	}
+	return logs, resp, nil
+}
+
+// GetExecWithOpts retrieves the websocket URL used for sending/receiving console input and output.
+func (s *AppsServiceOp) GetExecWithOpts(ctx context.Context, appID string, opts *GetExecOptions) (*AppExec, *Response, error) {
+	var url string
+	if opts.DeploymentID == "" {
+		url = fmt.Sprintf("%s/%s/components/%s/exec", appsBasePath, appID, opts.Component)
+	} else {
+		url = fmt.Sprintf("%s/%s/deployments/%s/components/%s/exec", appsBasePath, appID, opts.DeploymentID, opts.Component)
+	}
+
+	type ExecRequestParams struct {
+		InstanceID string `json:"instance_id"`
+	}
+
+	params := ExecRequestParams{InstanceID: opts.InstanceID}
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, url, params)
 	if err != nil {
