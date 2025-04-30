@@ -43,7 +43,7 @@ type AppsService interface {
 	GetLogs(ctx context.Context, appID, deploymentID, component string, logType AppLogType, follow bool, tailLines int) (*AppLogs, *Response, error)
 	// Deprecated: Use GetExecWithOpts instead.
 	GetExec(ctx context.Context, appID, deploymentID, component string) (*AppExec, *Response, error)
-	GetExecWithOpts(ctx context.Context, appID string, opts *AppGetExecOptions) (*AppExec, *Response, error)
+	GetExecWithOpts(ctx context.Context, appID, componentName string, opts *AppGetExecOptions) (*AppExec, *Response, error)
 
 	ListRegions(ctx context.Context) ([]*AppRegion, *Response, error)
 
@@ -96,7 +96,6 @@ type AppUpdateRequest struct {
 // GetExecOptions represents options for retrieving the websocket URL used for sending/receiving console input and output.
 type AppGetExecOptions struct {
 	DeploymentID string `json:"deployment_id,omitempty"`
-	Component    string `json:"component,omitempty"`
 	// InstanceID is the ID of the instance to connect to. It is an optional parameter.
 	// If not provided, the first available instance will be used.
 	InstanceID string `json:"instance_id,omitempty"`
@@ -430,12 +429,12 @@ func (s *AppsServiceOp) GetExec(ctx context.Context, appID, deploymentID, compon
 }
 
 // GetExecWithOpts retrieves the websocket URL used for sending/receiving console input and output.
-func (s *AppsServiceOp) GetExecWithOpts(ctx context.Context, appID string, opts *AppGetExecOptions) (*AppExec, *Response, error) {
+func (s *AppsServiceOp) GetExecWithOpts(ctx context.Context, appID, componentName string, opts *AppGetExecOptions) (*AppExec, *Response, error) {
 	var url string
 	if opts.DeploymentID == "" {
-		url = fmt.Sprintf("%s/%s/components/%s/exec", appsBasePath, appID, opts.Component)
+		url = fmt.Sprintf("%s/%s/components/%s/exec", appsBasePath, appID, componentName)
 	} else {
-		url = fmt.Sprintf("%s/%s/deployments/%s/components/%s/exec", appsBasePath, appID, opts.DeploymentID, opts.Component)
+		url = fmt.Sprintf("%s/%s/deployments/%s/components/%s/exec", appsBasePath, appID, opts.DeploymentID, componentName)
 	}
 
 	type ExecRequestParams struct {
