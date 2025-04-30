@@ -611,25 +611,25 @@ func TestApps_GetExecWithOpts(t *testing.T) {
 		json.NewEncoder(w).Encode(&AppExec{URL: "https://exec.url2"})
 	})
 
+	componentName := "service-name"
 	opts := &AppGetExecOptions{
 		DeploymentID: testDeployment.ID,
 		InstanceID:   "",
-		Component:    "service-name",
 	}
 
-	exec, _, err := client.Apps.GetExecWithOpts(ctx, testApp.ID, opts)
+	exec, _, err := client.Apps.GetExecWithOpts(ctx, testApp.ID, componentName, opts)
 	require.NoError(t, err)
 	assert.Equal(t, "https://exec.url1", exec.URL)
 
 	opts.DeploymentID = ""
 
-	exec, _, err = client.Apps.GetExecWithOpts(ctx, testApp.ID, opts)
+	exec, _, err = client.Apps.GetExecWithOpts(ctx, testApp.ID, componentName, opts)
 	require.NoError(t, err)
 	assert.Equal(t, "https://exec.url2", exec.URL)
 
 	opts.InstanceID = "app-instance-12345"
 
-	exec, _, err = client.Apps.GetExecWithOpts(ctx, testApp.ID, opts)
+	exec, _, err = client.Apps.GetExecWithOpts(ctx, testApp.ID, componentName, opts)
 	require.NoError(t, err)
 	assert.Equal(t, "https://exec.url2", exec.URL)
 }
