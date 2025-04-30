@@ -4,6 +4,7 @@
 ## [v1.145.0] - 2025-04-30
 
 - #821 - @greeshmapill - APPS-11076: Add support for VALKEY as a database engine option
+- #817 - @ZachEddy - Bring app spec changes for subdomain routing to godo
 
 ## [v1.144.0] - 2025-04-24
 
