@@ -223,6 +223,7 @@ const (
 	AppDatabaseSpecEngine_MongoDB    AppDatabaseSpecEngine = "MONGODB"
 	AppDatabaseSpecEngine_Kafka      AppDatabaseSpecEngine = "KAFKA"
 	AppDatabaseSpecEngine_Opensearch AppDatabaseSpecEngine = "OPENSEARCH"
+	AppDatabaseSpecEngine_Valkey     AppDatabaseSpecEngine = "VALKEY"
 )
 
 // AppDedicatedIp Represents a dedicated egress ip.
