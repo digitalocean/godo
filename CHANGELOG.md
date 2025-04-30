@@ -1,5 +1,10 @@
 # Change Log
 
+
+## [v1.145.0] - 2025-04-30
+
+- #821 - @greeshmapill - APPS-11076: Add support for VALKEY as a database engine option
+
 ## [v1.144.0] - 2025-04-24
 
 - #818 - @dweinshenker - Support Valkey in DatabaseOptions
