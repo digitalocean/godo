@@ -409,23 +409,9 @@ func (s *AppsServiceOp) GetLogs(ctx context.Context, appID, deploymentID, compon
 // GetExec retrieves the websocket URL used for sending/receiving console input and output.
 // Deprecated: Use GetExecWithOpts instead.
 func (s *AppsServiceOp) GetExec(ctx context.Context, appID, deploymentID, component string) (*AppExec, *Response, error) {
-	var url string
-	if deploymentID == "" {
-		url = fmt.Sprintf("%s/%s/components/%s/exec", appsBasePath, appID, component)
-	} else {
-		url = fmt.Sprintf("%s/%s/deployments/%s/components/%s/exec", appsBasePath, appID, deploymentID, component)
-	}
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	logs := new(AppExec)
-	resp, err := s.client.Do(ctx, req, logs)
-	if err != nil {
-		return nil, resp, err
-	}
-	return logs, resp, nil
+	return s.GetExecWithOpts(ctx, appID, component, &AppGetExecOptions{
+		DeploymentID: deploymentID,
+	})
 }
 
 // GetExecWithOpts retrieves the websocket URL used for sending/receiving console input and output.
