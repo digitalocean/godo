@@ -123,7 +123,7 @@ const (
 	AppAlertSpecOperator_LessThan            AppAlertSpecOperator = "LESS_THAN"
 )
 
-// AppAlertSpecRule  - CPU_UTILIZATION: Represents CPU for a given container instance. Only applicable at the component level.  - MEM_UTILIZATION: Represents RAM for a given container instance. Only applicable at the component level.  - RESTART_COUNT: Represents restart count for a given container instance. Only applicable at the component level.  - DEPLOYMENT_FAILED: Represents whether a deployment has failed. Only applicable at the app level.  - DEPLOYMENT_LIVE: Represents whether a deployment has succeeded. Only applicable at the app level.  - DEPLOYMENT_STARTED: Represents whether a deployment has started. Only applicable at the app level.  - DEPLOYMENT_CANCELED: Represents whether a deployment has been canceled. Only applicable at the app level.  - DOMAIN_FAILED: Represents whether a domain configuration has failed. Only applicable at the app level.  - DOMAIN_LIVE: Represents whether a domain configuration has succeeded. Only applicable at the app level.  - FUNCTIONS_ACTIVATION_COUNT: Represents an activation count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_DURATION_MS: Represents the average duration for function runtimes. Only applicable to functions components.  - FUNCTIONS_ERROR_RATE_PER_MINUTE: Represents an error rate per minute for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_WAIT_TIME_MS: Represents the average wait time for functions. Only applicable to functions components.  - FUNCTIONS_ERROR_COUNT: Represents an error count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_GB_RATE_PER_SECOND: Represents the rate of memory consumption (GB x seconds) for functions. Only applicable to functions components.
+// AppAlertSpecRule  - CPU_UTILIZATION: Represents CPU for a given container instance. Only applicable at the component level.  - MEM_UTILIZATION: Represents RAM for a given container instance. Only applicable at the component level.  - RESTART_COUNT: Represents restart count for a given container instance. Only applicable at the component level.  - DEPLOYMENT_FAILED: Represents whether a deployment has failed. Only applicable at the app level.  - DEPLOYMENT_LIVE: Represents whether a deployment has succeeded. Only applicable at the app level.  - DEPLOYMENT_STARTED: Represents whether a deployment has started. Only applicable at the app level.  - DEPLOYMENT_CANCELED: Represents whether a deployment has been canceled. Only applicable at the app level.  - DOMAIN_FAILED: Represents whether a domain configuration has failed. Only applicable at the app level.  - DOMAIN_LIVE: Represents whether a domain configuration has succeeded. Only applicable at the app level.  - AUTOSCALE_FAILED: Represents whether autoscaling has failed. Only applicable at the app level.  - FUNCTIONS_ACTIVATION_COUNT: Represents an activation count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_DURATION_MS: Represents the average duration for function runtimes. Only applicable to functions components.  - FUNCTIONS_ERROR_RATE_PER_MINUTE: Represents an error rate per minute for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_WAIT_TIME_MS: Represents the average wait time for functions. Only applicable to functions components.  - FUNCTIONS_ERROR_COUNT: Represents an error count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_GB_RATE_PER_SECOND: Represents the rate of memory consumption (GB x seconds) for functions. Only applicable to functions components.
 type AppAlertSpecRule string
 
 // List of AppAlertSpecRule
@@ -138,6 +138,7 @@ const (
 	AppAlertSpecRule_DeploymentCanceled          AppAlertSpecRule = "DEPLOYMENT_CANCELED"
 	AppAlertSpecRule_DomainFailed                AppAlertSpecRule = "DOMAIN_FAILED"
 	AppAlertSpecRule_DomainLive                  AppAlertSpecRule = "DOMAIN_LIVE"
+	AppAlertSpecRule_AutoscaleFailed             AppAlertSpecRule = "AUTOSCALE_FAILED"
 	AppAlertSpecRule_FunctionsActivationCount    AppAlertSpecRule = "FUNCTIONS_ACTIVATION_COUNT"
 	AppAlertSpecRule_FunctionsAverageDurationMS  AppAlertSpecRule = "FUNCTIONS_AVERAGE_DURATION_MS"
 	AppAlertSpecRule_FunctionsErrorRatePerMinute AppAlertSpecRule = "FUNCTIONS_ERROR_RATE_PER_MINUTE"
@@ -185,7 +186,7 @@ type AppBuildConfig struct {
 
 // AppBuildConfigCNBVersioning struct for AppBuildConfigCNBVersioning
 type AppBuildConfigCNBVersioning struct {
-	// List of versioned buildpacks used for the application.  Buildpacks are only versioned based on the major semver version, therefore exact versions will not be available at the app build config.
+	// List of versioned buildpacks used for the application. Buildpacks are only versioned based on the major semver version, therefore exact versions will not be available at the app build config.
 	Buildpacks []*Buildpack `json:"buildpacks,omitempty"`
 	// A version id that represents the underlying CNB stack. The version of the stack indicates what buildpacks are supported.
 	StackID string `json:"stack_id,omitempty"`
@@ -223,6 +224,7 @@ const (
 	AppDatabaseSpecEngine_MongoDB    AppDatabaseSpecEngine = "MONGODB"
 	AppDatabaseSpecEngine_Kafka      AppDatabaseSpecEngine = "KAFKA"
 	AppDatabaseSpecEngine_Opensearch AppDatabaseSpecEngine = "OPENSEARCH"
+	AppDatabaseSpecEngine_Valkey     AppDatabaseSpecEngine = "VALKEY"
 )
 
 // AppDedicatedIp Represents a dedicated egress ip.
@@ -900,7 +902,7 @@ type DeploymentTiming struct {
 	Pending string `json:"pending,omitempty"`
 	// BuildTotal describes total time between the start of the build and its completion.
 	BuildTotal string `json:"build_total,omitempty"`
-	// BuildBillable describes the time spent executing the build. As builds may run concurrently  this may be greater than the build total.
+	// BuildBillable describes the time spent executing the build. As builds may run concurrently this may be greater than the build total.
 	BuildBillable string `json:"build_billable,omitempty"`
 	// Components breaks down billable build time by component.
 	Components []*DeploymentTimingComponent `json:"components,omitempty"`
