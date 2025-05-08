@@ -96,9 +96,9 @@ type AppUpdateRequest struct {
 // GetExecOptions represents options for retrieving the websocket URL used for sending/receiving console input and output.
 type AppGetExecOptions struct {
 	DeploymentID string `json:"deployment_id,omitempty"`
-	// InstanceID is the ID of the instance to connect to. It is an optional parameter.
+	// InstanceName is the unique name of the instance to connect to. It is an optional parameter.
 	// If not provided, the first available instance will be used.
-	InstanceID string `json:"instance_id,omitempty"`
+	InstanceName string `json:"instance_name,omitempty"`
 }
 
 // DeploymentCreateRequest represents a request to create a deployment.
@@ -424,10 +424,10 @@ func (s *AppsServiceOp) GetExecWithOpts(ctx context.Context, appID, componentNam
 	}
 
 	type ExecRequestParams struct {
-		InstanceID string `json:"instance_id"`
+		InstanceName string `json:"instance_name"`
 	}
 
-	params := ExecRequestParams{InstanceID: opts.InstanceID}
+	params := ExecRequestParams{InstanceName: opts.InstanceName}
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, url, params)
 	if err != nil {

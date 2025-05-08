@@ -614,7 +614,7 @@ func TestApps_GetExecWithOpts(t *testing.T) {
 	componentName := "service-name"
 	opts := &AppGetExecOptions{
 		DeploymentID: testDeployment.ID,
-		InstanceID:   "",
+		InstanceName: "",
 	}
 
 	exec, _, err := client.Apps.GetExecWithOpts(ctx, testApp.ID, componentName, opts)
@@ -627,7 +627,7 @@ func TestApps_GetExecWithOpts(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "https://exec.url2", exec.URL)
 
-	opts.InstanceID = "app-instance-12345"
+	opts.InstanceName = "app-instance-12345"
 
 	exec, _, err = client.Apps.GetExecWithOpts(ctx, testApp.ID, componentName, opts)
 	require.NoError(t, err)
