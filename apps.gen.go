@@ -123,7 +123,7 @@ const (
 	AppAlertSpecOperator_LessThan            AppAlertSpecOperator = "LESS_THAN"
 )
 
-// AppAlertSpecRule  - CPU_UTILIZATION: Represents CPU for a given container instance. Only applicable at the component level.  - MEM_UTILIZATION: Represents RAM for a given container instance. Only applicable at the component level.  - RESTART_COUNT: Represents restart count for a given container instance. Only applicable at the component level.  - DEPLOYMENT_FAILED: Represents whether a deployment has failed. Only applicable at the app level.  - DEPLOYMENT_LIVE: Represents whether a deployment has succeeded. Only applicable at the app level.  - DEPLOYMENT_STARTED: Represents whether a deployment has started. Only applicable at the app level.  - DEPLOYMENT_CANCELED: Represents whether a deployment has been canceled. Only applicable at the app level.  - DOMAIN_FAILED: Represents whether a domain configuration has failed. Only applicable at the app level.  - DOMAIN_LIVE: Represents whether a domain configuration has succeeded. Only applicable at the app level.  - AUTOSCALE_FAILED: Represents whether autoscaling has failed. Only applicable at the app level.  - FUNCTIONS_ACTIVATION_COUNT: Represents an activation count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_DURATION_MS: Represents the average duration for function runtimes. Only applicable to functions components.  - FUNCTIONS_ERROR_RATE_PER_MINUTE: Represents an error rate per minute for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_WAIT_TIME_MS: Represents the average wait time for functions. Only applicable to functions components.  - FUNCTIONS_ERROR_COUNT: Represents an error count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_GB_RATE_PER_SECOND: Represents the rate of memory consumption (GB x seconds) for functions. Only applicable to functions components.
+// AppAlertSpecRule  - CPU_UTILIZATION: Represents CPU for a given container instance. Only applicable at the component level.  - MEM_UTILIZATION: Represents RAM for a given container instance. Only applicable at the component level.  - RESTART_COUNT: Represents restart count for a given container instance. Only applicable at the component level.  - DEPLOYMENT_FAILED: Represents whether a deployment has failed. Only applicable at the app level.  - DEPLOYMENT_LIVE: Represents whether a deployment has succeeded. Only applicable at the app level.  - DEPLOYMENT_STARTED: Represents whether a deployment has started. Only applicable at the app level.  - DEPLOYMENT_CANCELED: Represents whether a deployment has been canceled. Only applicable at the app level.  - DOMAIN_FAILED: Represents whether a domain configuration has failed. Only applicable at the app level.  - DOMAIN_LIVE: Represents whether a domain configuration has succeeded. Only applicable at the app level.  - FUNCTIONS_ACTIVATION_COUNT: Represents an activation count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_DURATION_MS: Represents the average duration for function runtimes. Only applicable to functions components.  - FUNCTIONS_ERROR_RATE_PER_MINUTE: Represents an error rate per minute for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_WAIT_TIME_MS: Represents the average wait time for functions. Only applicable to functions components.  - FUNCTIONS_ERROR_COUNT: Represents an error count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_GB_RATE_PER_SECOND: Represents the rate of memory consumption (GB x seconds) for functions. Only applicable to functions components.
 type AppAlertSpecRule string
 
 // List of AppAlertSpecRule
@@ -138,7 +138,6 @@ const (
 	AppAlertSpecRule_DeploymentCanceled          AppAlertSpecRule = "DEPLOYMENT_CANCELED"
 	AppAlertSpecRule_DomainFailed                AppAlertSpecRule = "DOMAIN_FAILED"
 	AppAlertSpecRule_DomainLive                  AppAlertSpecRule = "DOMAIN_LIVE"
-	AppAlertSpecRule_AutoscaleFailed             AppAlertSpecRule = "AUTOSCALE_FAILED"
 	AppAlertSpecRule_FunctionsActivationCount    AppAlertSpecRule = "FUNCTIONS_ACTIVATION_COUNT"
 	AppAlertSpecRule_FunctionsAverageDurationMS  AppAlertSpecRule = "FUNCTIONS_AVERAGE_DURATION_MS"
 	AppAlertSpecRule_FunctionsErrorRatePerMinute AppAlertSpecRule = "FUNCTIONS_ERROR_RATE_PER_MINUTE"
@@ -163,7 +162,7 @@ const (
 type AppAutoscalingSpec struct {
 	// The minimum amount of instances for this component.
 	MinInstanceCount int64 `json:"min_instance_count,omitempty"`
-	// The maximum amount of instances for this component.
+	// The maximum amount of instances for this component. Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
 	MaxInstanceCount int64                      `json:"max_instance_count,omitempty"`
 	Metrics          *AppAutoscalingSpecMetrics `json:"metrics,omitempty"`
 }
@@ -389,9 +388,11 @@ type AppJobSpec struct {
 	// A list of environment variables made available to the component.
 	Envs []*AppVariableDefinition `json:"envs,omitempty"`
 	// The instance size to use for this component.
-	InstanceSizeSlug string         `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64          `json:"instance_count,omitempty"`
-	Kind             AppJobSpecKind `json:"kind,omitempty"`
+	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
+	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
+	InstanceCount int64               `json:"instance_count,omitempty"`
+	Kind          AppJobSpecKind      `json:"kind,omitempty"`
+	Schedule      *AppJobSpecSchedule `json:"schedule,omitempty"`
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
@@ -399,7 +400,7 @@ type AppJobSpec struct {
 	Termination     *AppJobSpecTermination   `json:"termination,omitempty"`
 }
 
-// AppJobSpecKind  - UNSPECIFIED: Default job type, will auto-complete to POST_DEPLOY kind.  - PRE_DEPLOY: Indicates a job that runs before an app deployment.  - POST_DEPLOY: Indicates a job that runs after an app deployment.  - FAILED_DEPLOY: Indicates a job that runs after a component fails to deploy.
+// AppJobSpecKind the model 'AppJobSpecKind'
 type AppJobSpecKind string
 
 // List of AppJobSpecKind
@@ -408,7 +409,14 @@ const (
 	AppJobSpecKind_PreDeploy    AppJobSpecKind = "PRE_DEPLOY"
 	AppJobSpecKind_PostDeploy   AppJobSpecKind = "POST_DEPLOY"
 	AppJobSpecKind_FailedDeploy AppJobSpecKind = "FAILED_DEPLOY"
+	AppJobSpecKind_Scheduled    AppJobSpecKind = "SCHEDULED"
 )
+
+// AppJobSpecSchedule struct for AppJobSpecSchedule
+type AppJobSpecSchedule struct {
+	Cron     string `json:"cron,omitempty"`
+	TimeZone string `json:"time_zone,omitempty"`
+}
 
 // AppJobSpecTermination struct for AppJobSpecTermination
 type AppJobSpecTermination struct {
@@ -478,6 +486,12 @@ type AppMaintenanceSpec struct {
 	OfflinePageURL string `json:"offline_page_url,omitempty"`
 }
 
+// AppPeeredVpcSpec Configuration of the target VPC.
+type AppPeeredVpcSpec struct {
+	// The name of the VPC.
+	Name string `json:"name,omitempty"`
+}
+
 // AppRouteSpec struct for AppRouteSpec
 type AppRouteSpec struct {
 	// (Deprecated) An HTTP path prefix. Paths must start with / and must be unique across all components within an app.
@@ -508,7 +522,7 @@ type AppServiceSpec struct {
 	// A list of environment variables made available to the component.
 	Envs             []*AppVariableDefinition `json:"envs,omitempty"`
 	InstanceSizeSlug string                   `json:"instance_size_slug,omitempty"`
-	// The amount of instances that this component should be scaled to.
+	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
 	InstanceCount int64               `json:"instance_count,omitempty"`
 	Autoscaling   *AppAutoscalingSpec `json:"autoscaling,omitempty"`
 	// The internal port on which this service's run command will listen. Default: 8080 If there is not an environment variable with the name `PORT`, one will be automatically added with its value set to the value of this field.
@@ -523,28 +537,36 @@ type AppServiceSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations []*AppLogDestinationSpec   `json:"log_destinations,omitempty"`
-	Termination     *AppServiceSpecTermination `json:"termination,omitempty"`
+	LogDestinations     []*AppLogDestinationSpec       `json:"log_destinations,omitempty"`
+	Termination         *AppServiceSpecTermination     `json:"termination,omitempty"`
+	InactivitySleep     *AppServiceSpecInactivitySleep `json:"inactivity_sleep,omitempty"`
+	LivenessHealthCheck *AppServiceSpecHealthCheck     `json:"liveness_health_check,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
 type AppServiceSpecHealthCheck struct {
 	// Deprecated. Use http_path instead.
 	Path string `json:"path,omitempty"`
-	// The number of seconds to wait before beginning health checks. Default: 0 seconds, Minimum 0, Maximum 3600.
+	// The number of seconds to wait before beginning health checks. Default: 0 seconds, Minimum 0, Maximum 3600. When used in liveness_health_check, Default: 5 seconds, Minimum 0, Maximum 3600.
 	InitialDelaySeconds int32 `json:"initial_delay_seconds,omitempty"`
-	// The number of seconds to wait between health checks. Default: 10 seconds, Minimum 1, Maximum 300.
+	// The number of seconds to wait between health checks. Default: 10 seconds, Minimum 1, Maximum 300. When used in liveness_health_check, Default: 10 seconds, Minimum 1, Maximum 300.
 	PeriodSeconds int32 `json:"period_seconds,omitempty"`
 	// The number of seconds after which the check times out. Default: 1 second, Minimum 1, Maximum 120.
 	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
-	// The number of successful health checks before considered healthy. Default: 1, Minimum 1, Maximum 50.
+	// The number of successful health checks before considered healthy. Default: 1 second, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 1 second, Minimum 1, Maximum 1.
 	SuccessThreshold int32 `json:"success_threshold,omitempty"`
-	// The number of failed health checks before considered unhealthy. Default: 9, Minimum 1, Maximum 50.
+	// The number of failed health checks before considered unhealthy. Default: 9 seconds, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 18 seconds, Minimum 1, Maximum 50.
 	FailureThreshold int32 `json:"failure_threshold,omitempty"`
 	// The route path used for the HTTP health check ping. If not set, the HTTP health check will be disabled and a TCP health check used instead.
 	HTTPPath string `json:"http_path,omitempty"`
 	// The port on which the health check will be performed. If not set, the health check will be performed on the component's http_port.
 	Port int64 `json:"port,omitempty"`
+}
+
+// AppServiceSpecInactivitySleep struct for AppServiceSpecInactivitySleep
+type AppServiceSpecInactivitySleep struct {
+	// The number of seconds to wait before putting the service to sleep after it has been inactive. Minimum 120, Maximum 3600.
+	AfterSeconds int32 `json:"after_seconds,omitempty"`
 }
 
 // AppServiceSpecTermination struct for AppServiceSpecTermination
@@ -582,6 +604,11 @@ type AppSpec struct {
 	Egress      *AppEgressSpec      `json:"egress,omitempty"`
 	Features    []string            `json:"features,omitempty"`
 	Maintenance *AppMaintenanceSpec `json:"maintenance,omitempty"`
+	Vpc         *AppVpcSpec         `json:"vpc,omitempty"`
+	// Specification to disable edge (CDN) cache for all domains of the app. Note that this feature is in private preview.
+	DisableEdgeCache bool `json:"disable_edge_cache,omitempty"`
+	// Specification to disable email obfuscation.
+	DisableEmailObfuscation bool `json:"disable_email_obfuscation,omitempty"`
 }
 
 // AppStaticSiteSpec struct for AppStaticSiteSpec
@@ -624,6 +651,12 @@ type AppVariableDefinition struct {
 	Type  AppVariableType  `json:"type,omitempty"`
 }
 
+// AppVpcSpec Configuration of VPC peering.
+type AppVpcSpec struct {
+	// The list of target vpcs.
+	PeeredVpcs []*AppPeeredVpcSpec `json:"peered_vpcs,omitempty"`
+}
+
 // AppWorkerSpec struct for AppWorkerSpec
 type AppWorkerSpec struct {
 	// The name. Must be unique across all components within the same app.
@@ -646,9 +679,10 @@ type AppWorkerSpec struct {
 	// A list of environment variables made available to the component.
 	Envs []*AppVariableDefinition `json:"envs,omitempty"`
 	// The instance size to use for this component.
-	InstanceSizeSlug string              `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64               `json:"instance_count,omitempty"`
-	Autoscaling      *AppAutoscalingSpec `json:"autoscaling,omitempty"`
+	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
+	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
+	InstanceCount int64               `json:"instance_count,omitempty"`
+	Autoscaling   *AppAutoscalingSpec `json:"autoscaling,omitempty"`
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
@@ -1179,14 +1213,16 @@ const (
 
 // AppInstanceSize struct for AppInstanceSize
 type AppInstanceSize struct {
-	Name         string                 `json:"name,omitempty"`
-	Slug         string                 `json:"slug,omitempty"`
-	CPUType      AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
-	CPUs         string                 `json:"cpus,omitempty"`
-	MemoryBytes  string                 `json:"memory_bytes,omitempty"`
-	USDPerMonth  string                 `json:"usd_per_month,omitempty"`
-	USDPerSecond string                 `json:"usd_per_second,omitempty"`
-	TierSlug     string                 `json:"tier_slug,omitempty"`
+	Name             string                 `json:"name,omitempty"`
+	Slug             string                 `json:"slug,omitempty"`
+	CPUType          AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs             string                 `json:"cpus,omitempty"`
+	MemoryBytes      string                 `json:"memory_bytes,omitempty"`
+	USDPerMonth      string                 `json:"usd_per_month,omitempty"`
+	USDPerSecond     string                 `json:"usd_per_second,omitempty"`
+	IDleUSDPerMonth  string                 `json:"idle_usd_per_month,omitempty"`
+	IDleUSDPerSecond string                 `json:"idle_usd_per_second,omitempty"`
+	TierSlug         string                 `json:"tier_slug,omitempty"`
 	// (Deprecated) The slug of the corresponding upgradable instance size on the higher tier.
 	TierUpgradeTo string `json:"tier_upgrade_to,omitempty"`
 	// (Deprecated) The slug of the corresponding downgradable instance size on the lower tier.
