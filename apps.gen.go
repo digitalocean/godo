@@ -391,8 +391,8 @@ type AppJobSpec struct {
 	// The instance size to use for this component.
 	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
 	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
-	InstanceCount int64               `json:"instance_count,omitempty"`
-	Kind          AppJobSpecKind      `json:"kind,omitempty"`
+	InstanceCount int64          `json:"instance_count,omitempty"`
+	Kind          AppJobSpecKind `json:"kind,omitempty"`
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
@@ -524,9 +524,9 @@ type AppServiceSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations     []*AppLogDestinationSpec       `json:"log_destinations,omitempty"`
-	Termination         *AppServiceSpecTermination     `json:"termination,omitempty"`
-	LivenessHealthCheck *HealthCheckSpec               `json:"liveness_health_check,omitempty"`
+	LogDestinations     []*AppLogDestinationSpec   `json:"log_destinations,omitempty"`
+	Termination         *AppServiceSpecTermination `json:"termination,omitempty"`
+	LivenessHealthCheck *HealthCheckSpec           `json:"liveness_health_check,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
@@ -1201,14 +1201,14 @@ const (
 
 // AppInstanceSize struct for AppInstanceSize
 type AppInstanceSize struct {
-	Name             string                 `json:"name,omitempty"`
-	Slug             string                 `json:"slug,omitempty"`
-	CPUType          AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
-	CPUs             string                 `json:"cpus,omitempty"`
-	MemoryBytes      string                 `json:"memory_bytes,omitempty"`
-	USDPerMonth      string                 `json:"usd_per_month,omitempty"`
-	USDPerSecond     string                 `json:"usd_per_second,omitempty"`
-	TierSlug         string                 `json:"tier_slug,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Slug         string                 `json:"slug,omitempty"`
+	CPUType      AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs         string                 `json:"cpus,omitempty"`
+	MemoryBytes  string                 `json:"memory_bytes,omitempty"`
+	USDPerMonth  string                 `json:"usd_per_month,omitempty"`
+	USDPerSecond string                 `json:"usd_per_second,omitempty"`
+	TierSlug     string                 `json:"tier_slug,omitempty"`
 	// (Deprecated) The slug of the corresponding upgradable instance size on the higher tier.
 	TierUpgradeTo string `json:"tier_upgrade_to,omitempty"`
 	// (Deprecated) The slug of the corresponding downgradable instance size on the lower tier.
