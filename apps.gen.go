@@ -123,7 +123,7 @@ const (
 	AppAlertSpecOperator_LessThan            AppAlertSpecOperator = "LESS_THAN"
 )
 
-// AppAlertSpecRule  - CPU_UTILIZATION: Represents CPU for a given container instance. Only applicable at the component level.  - MEM_UTILIZATION: Represents RAM for a given container instance. Only applicable at the component level.  - RESTART_COUNT: Represents restart count for a given container instance. Only applicable at the component level.  - DEPLOYMENT_FAILED: Represents whether a deployment has failed. Only applicable at the app level.  - DEPLOYMENT_LIVE: Represents whether a deployment has succeeded. Only applicable at the app level.  - DEPLOYMENT_STARTED: Represents whether a deployment has started. Only applicable at the app level.  - DEPLOYMENT_CANCELED: Represents whether a deployment has been canceled. Only applicable at the app level.  - DOMAIN_FAILED: Represents whether a domain configuration has failed. Only applicable at the app level.  - DOMAIN_LIVE: Represents whether a domain configuration has succeeded. Only applicable at the app level.  - FUNCTIONS_ACTIVATION_COUNT: Represents an activation count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_DURATION_MS: Represents the average duration for function runtimes. Only applicable to functions components.  - FUNCTIONS_ERROR_RATE_PER_MINUTE: Represents an error rate per minute for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_WAIT_TIME_MS: Represents the average wait time for functions. Only applicable to functions components.  - FUNCTIONS_ERROR_COUNT: Represents an error count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_GB_RATE_PER_SECOND: Represents the rate of memory consumption (GB x seconds) for functions. Only applicable to functions components.
+// AppAlertSpecRule  - CPU_UTILIZATION: Represents CPU for a given container instance. Only applicable at the component level.  - MEM_UTILIZATION: Represents RAM for a given container instance. Only applicable at the component level.  - RESTART_COUNT: Represents restart count for a given container instance. Only applicable at the component level.  - DEPLOYMENT_FAILED: Represents whether a deployment has failed. Only applicable at the app level.  - DEPLOYMENT_LIVE: Represents whether a deployment has succeeded. Only applicable at the app level.  - DEPLOYMENT_STARTED: Represents whether a deployment has started. Only applicable at the app level.  - DEPLOYMENT_CANCELED: Represents whether a deployment has been canceled. Only applicable at the app level.  - DOMAIN_FAILED: Represents whether a domain configuration has failed. Only applicable at the app level.  - DOMAIN_LIVE: Represents whether a domain configuration has succeeded. Only applicable at the app level.  - AUTOSCALE_FAILED: Represents whether autoscaling has failed. Only applicable at the app level.  - FUNCTIONS_ACTIVATION_COUNT: Represents an activation count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_DURATION_MS: Represents the average duration for function runtimes. Only applicable to functions components.  - FUNCTIONS_ERROR_RATE_PER_MINUTE: Represents an error rate per minute for a given functions instance. Only applicable to functions components.  - FUNCTIONS_AVERAGE_WAIT_TIME_MS: Represents the average wait time for functions. Only applicable to functions components.  - FUNCTIONS_ERROR_COUNT: Represents an error count for a given functions instance. Only applicable to functions components.  - FUNCTIONS_GB_RATE_PER_SECOND: Represents the rate of memory consumption (GB x seconds) for functions. Only applicable to functions components.
 type AppAlertSpecRule string
 
 // List of AppAlertSpecRule
@@ -138,6 +138,7 @@ const (
 	AppAlertSpecRule_DeploymentCanceled          AppAlertSpecRule = "DEPLOYMENT_CANCELED"
 	AppAlertSpecRule_DomainFailed                AppAlertSpecRule = "DOMAIN_FAILED"
 	AppAlertSpecRule_DomainLive                  AppAlertSpecRule = "DOMAIN_LIVE"
+	AppAlertSpecRule_AutoscaleFailed             AppAlertSpecRule = "AUTOSCALE_FAILED"
 	AppAlertSpecRule_FunctionsActivationCount    AppAlertSpecRule = "FUNCTIONS_ACTIVATION_COUNT"
 	AppAlertSpecRule_FunctionsAverageDurationMS  AppAlertSpecRule = "FUNCTIONS_AVERAGE_DURATION_MS"
 	AppAlertSpecRule_FunctionsErrorRatePerMinute AppAlertSpecRule = "FUNCTIONS_ERROR_RATE_PER_MINUTE"
@@ -540,7 +541,7 @@ type AppServiceSpec struct {
 	LogDestinations     []*AppLogDestinationSpec       `json:"log_destinations,omitempty"`
 	Termination         *AppServiceSpecTermination     `json:"termination,omitempty"`
 	InactivitySleep     *AppServiceSpecInactivitySleep `json:"inactivity_sleep,omitempty"`
-	LivenessHealthCheck *AppServiceSpecHealthCheck     `json:"liveness_health_check,omitempty"`
+	LivenessHealthCheck *HealthCheckSpec               `json:"liveness_health_check,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
@@ -651,10 +652,12 @@ type AppVariableDefinition struct {
 	Type  AppVariableType  `json:"type,omitempty"`
 }
 
-// AppVpcSpec Configuration of VPC peering.
+// AppVpcSpec Configuration of VPC.
 type AppVpcSpec struct {
 	// The list of target vpcs.
 	PeeredVpcs []*AppPeeredVpcSpec `json:"peered_vpcs,omitempty"`
+	// The id of the target VPC, in UUID format.
+	ID string `json:"id,omitempty"`
 }
 
 // AppWorkerSpec struct for AppWorkerSpec
@@ -686,8 +689,9 @@ type AppWorkerSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations []*AppLogDestinationSpec  `json:"log_destinations,omitempty"`
-	Termination     *AppWorkerSpecTermination `json:"termination,omitempty"`
+	LogDestinations     []*AppLogDestinationSpec  `json:"log_destinations,omitempty"`
+	Termination         *AppWorkerSpecTermination `json:"termination,omitempty"`
+	LivenessHealthCheck *HealthCheckSpec          `json:"liveness_health_check,omitempty"`
 }
 
 // AppWorkerSpecTermination struct for AppWorkerSpecTermination
@@ -1176,6 +1180,24 @@ type GitLabSourceSpec struct {
 type GitSourceSpec struct {
 	RepoCloneURL string `json:"repo_clone_url,omitempty"`
 	Branch       string `json:"branch,omitempty"`
+}
+
+// HealthCheckSpec struct for HealthCheckSpec
+type HealthCheckSpec struct {
+	// The number of seconds to wait before beginning health checks. Default: 5 seconds, Minimum 0, Maximum 3600.
+	InitialDelaySeconds int32 `json:"initial_delay_seconds,omitempty"`
+	// The number of seconds to wait between health checks. Default: 10 seconds, Minimum 1, Maximum 300.
+	PeriodSeconds int32 `json:"period_seconds,omitempty"`
+	// The number of seconds after which the check times out. Default: 1 second, Minimum 1, Maximum 120.
+	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
+	// The number of successful health checks before considered healthy. Default: 1 second, Minimum 1, Maximum 1.
+	SuccessThreshold int32 `json:"success_threshold,omitempty"`
+	// The number of failed health checks before considered unhealthy. Default: 18 seconds, Minimum 1, Maximum 50.
+	FailureThreshold int32 `json:"failure_threshold,omitempty"`
+	// The route path used for the HTTP health check ping. If not set, the HTTP health check will be disabled and a TCP health check used instead.
+	HTTPPath string `json:"http_path,omitempty"`
+	// The port on which the health check will be performed.
+	Port int64 `json:"port,omitempty"`
 }
 
 // ImageSourceSpec struct for ImageSourceSpec
