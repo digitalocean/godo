@@ -163,7 +163,7 @@ const (
 type AppAutoscalingSpec struct {
 	// The minimum amount of instances for this component.
 	MinInstanceCount int64 `json:"min_instance_count,omitempty"`
-	// The maximum amount of instances for this component.
+	// The maximum amount of instances for this component. Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
 	MaxInstanceCount int64                      `json:"max_instance_count,omitempty"`
 	Metrics          *AppAutoscalingSpecMetrics `json:"metrics,omitempty"`
 }
@@ -389,9 +389,10 @@ type AppJobSpec struct {
 	// A list of environment variables made available to the component.
 	Envs []*AppVariableDefinition `json:"envs,omitempty"`
 	// The instance size to use for this component.
-	InstanceSizeSlug string         `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64          `json:"instance_count,omitempty"`
-	Kind             AppJobSpecKind `json:"kind,omitempty"`
+	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
+	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
+	InstanceCount int64               `json:"instance_count,omitempty"`
+	Kind          AppJobSpecKind      `json:"kind,omitempty"`
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
@@ -399,7 +400,7 @@ type AppJobSpec struct {
 	Termination     *AppJobSpecTermination   `json:"termination,omitempty"`
 }
 
-// AppJobSpecKind  - UNSPECIFIED: Default job type, will auto-complete to POST_DEPLOY kind.  - PRE_DEPLOY: Indicates a job that runs before an app deployment.  - POST_DEPLOY: Indicates a job that runs after an app deployment.  - FAILED_DEPLOY: Indicates a job that runs after a component fails to deploy.
+// AppJobSpecKind the model 'AppJobSpecKind'
 type AppJobSpecKind string
 
 // List of AppJobSpecKind
@@ -508,7 +509,7 @@ type AppServiceSpec struct {
 	// A list of environment variables made available to the component.
 	Envs             []*AppVariableDefinition `json:"envs,omitempty"`
 	InstanceSizeSlug string                   `json:"instance_size_slug,omitempty"`
-	// The amount of instances that this component should be scaled to.
+	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
 	InstanceCount int64               `json:"instance_count,omitempty"`
 	Autoscaling   *AppAutoscalingSpec `json:"autoscaling,omitempty"`
 	// The internal port on which this service's run command will listen. Default: 8080 If there is not an environment variable with the name `PORT`, one will be automatically added with its value set to the value of this field.
@@ -523,23 +524,24 @@ type AppServiceSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations []*AppLogDestinationSpec   `json:"log_destinations,omitempty"`
-	Termination     *AppServiceSpecTermination `json:"termination,omitempty"`
+	LogDestinations     []*AppLogDestinationSpec       `json:"log_destinations,omitempty"`
+	Termination         *AppServiceSpecTermination     `json:"termination,omitempty"`
+	LivenessHealthCheck *HealthCheckSpec               `json:"liveness_health_check,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
 type AppServiceSpecHealthCheck struct {
 	// Deprecated. Use http_path instead.
 	Path string `json:"path,omitempty"`
-	// The number of seconds to wait before beginning health checks. Default: 0 seconds, Minimum 0, Maximum 3600.
+	// The number of seconds to wait before beginning health checks. Default: 0 seconds, Minimum 0, Maximum 3600. When used in liveness_health_check, Default: 5 seconds, Minimum 0, Maximum 3600.
 	InitialDelaySeconds int32 `json:"initial_delay_seconds,omitempty"`
-	// The number of seconds to wait between health checks. Default: 10 seconds, Minimum 1, Maximum 300.
+	// The number of seconds to wait between health checks. Default: 10 seconds, Minimum 1, Maximum 300. When used in liveness_health_check, Default: 10 seconds, Minimum 1, Maximum 300.
 	PeriodSeconds int32 `json:"period_seconds,omitempty"`
 	// The number of seconds after which the check times out. Default: 1 second, Minimum 1, Maximum 120.
 	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
-	// The number of successful health checks before considered healthy. Default: 1, Minimum 1, Maximum 50.
+	// The number of successful health checks before considered healthy. Default: 1 second, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 1 second, Minimum 1, Maximum 1.
 	SuccessThreshold int32 `json:"success_threshold,omitempty"`
-	// The number of failed health checks before considered unhealthy. Default: 9, Minimum 1, Maximum 50.
+	// The number of failed health checks before considered unhealthy. Default: 9 seconds, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 18 seconds, Minimum 1, Maximum 50.
 	FailureThreshold int32 `json:"failure_threshold,omitempty"`
 	// The route path used for the HTTP health check ping. If not set, the HTTP health check will be disabled and a TCP health check used instead.
 	HTTPPath string `json:"http_path,omitempty"`
@@ -646,14 +648,16 @@ type AppWorkerSpec struct {
 	// A list of environment variables made available to the component.
 	Envs []*AppVariableDefinition `json:"envs,omitempty"`
 	// The instance size to use for this component.
-	InstanceSizeSlug string              `json:"instance_size_slug,omitempty"`
-	InstanceCount    int64               `json:"instance_count,omitempty"`
-	Autoscaling      *AppAutoscalingSpec `json:"autoscaling,omitempty"`
+	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
+	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
+	InstanceCount int64               `json:"instance_count,omitempty"`
+	Autoscaling   *AppAutoscalingSpec `json:"autoscaling,omitempty"`
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations []*AppLogDestinationSpec  `json:"log_destinations,omitempty"`
-	Termination     *AppWorkerSpecTermination `json:"termination,omitempty"`
+	LogDestinations     []*AppLogDestinationSpec  `json:"log_destinations,omitempty"`
+	Termination         *AppWorkerSpecTermination `json:"termination,omitempty"`
+	LivenessHealthCheck *HealthCheckSpec          `json:"liveness_health_check,omitempty"`
 }
 
 // AppWorkerSpecTermination struct for AppWorkerSpecTermination
@@ -1144,6 +1148,24 @@ type GitSourceSpec struct {
 	Branch       string `json:"branch,omitempty"`
 }
 
+// HealthCheckSpec struct for HealthCheckSpec
+type HealthCheckSpec struct {
+	// The number of seconds to wait before beginning health checks. Default: 5 seconds, Minimum 0, Maximum 3600.
+	InitialDelaySeconds int32 `json:"initial_delay_seconds,omitempty"`
+	// The number of seconds to wait between health checks. Default: 10 seconds, Minimum 1, Maximum 300.
+	PeriodSeconds int32 `json:"period_seconds,omitempty"`
+	// The number of seconds after which the check times out. Default: 1 second, Minimum 1, Maximum 120.
+	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
+	// The number of successful health checks before considered healthy. Default: 1 second, Minimum 1, Maximum 1.
+	SuccessThreshold int32 `json:"success_threshold,omitempty"`
+	// The number of failed health checks before considered unhealthy. Default: 18 seconds, Minimum 1, Maximum 50.
+	FailureThreshold int32 `json:"failure_threshold,omitempty"`
+	// The route path used for the HTTP health check ping. If not set, the HTTP health check will be disabled and a TCP health check used instead.
+	HTTPPath string `json:"http_path,omitempty"`
+	// The port on which the health check will be performed.
+	Port int64 `json:"port,omitempty"`
+}
+
 // ImageSourceSpec struct for ImageSourceSpec
 type ImageSourceSpec struct {
 	RegistryType ImageSourceSpecRegistryType `json:"registry_type,omitempty"`
@@ -1179,14 +1201,14 @@ const (
 
 // AppInstanceSize struct for AppInstanceSize
 type AppInstanceSize struct {
-	Name         string                 `json:"name,omitempty"`
-	Slug         string                 `json:"slug,omitempty"`
-	CPUType      AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
-	CPUs         string                 `json:"cpus,omitempty"`
-	MemoryBytes  string                 `json:"memory_bytes,omitempty"`
-	USDPerMonth  string                 `json:"usd_per_month,omitempty"`
-	USDPerSecond string                 `json:"usd_per_second,omitempty"`
-	TierSlug     string                 `json:"tier_slug,omitempty"`
+	Name             string                 `json:"name,omitempty"`
+	Slug             string                 `json:"slug,omitempty"`
+	CPUType          AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs             string                 `json:"cpus,omitempty"`
+	MemoryBytes      string                 `json:"memory_bytes,omitempty"`
+	USDPerMonth      string                 `json:"usd_per_month,omitempty"`
+	USDPerSecond     string                 `json:"usd_per_second,omitempty"`
+	TierSlug         string                 `json:"tier_slug,omitempty"`
 	// (Deprecated) The slug of the corresponding upgradable instance size on the higher tier.
 	TierUpgradeTo string `json:"tier_upgrade_to,omitempty"`
 	// (Deprecated) The slug of the corresponding downgradable instance size on the lower tier.
