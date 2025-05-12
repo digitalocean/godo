@@ -74,6 +74,8 @@ type AppsService interface {
 		*Response,
 		error,
 	)
+
+	GetAppInstances(ctx context.Context, appID string) ([]*AppInstance, *Response, error)
 }
 
 // AppLogs represent app logs.
@@ -663,6 +665,22 @@ func (s *AppsServiceOp) ToggleDatabaseTrustedSource(
 		return nil, resp, err
 	}
 	return root, resp, nil
+}
+
+// GetAppInstances returns a list of emphemeral compute instances of the current deployment for an app.
+func (s *AppsServiceOp) GetAppInstances(ctx context.Context, appID string) ([]*AppInstance, *Response, error) {
+	path := fmt.Sprintf("%s/%s/instances", appsBasePath, appID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(GetAppInstancesResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Instances, resp, nil
 }
 
 // AppComponentType is an app component type.
