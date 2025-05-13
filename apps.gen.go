@@ -663,7 +663,6 @@ type AppVariableDefinition struct {
 	Type  AppVariableType  `json:"type,omitempty"`
 }
 
-
 // AppWorkerSpec struct for AppWorkerSpec
 type AppWorkerSpec struct {
 	// The name. Must be unique across all components within the same app.
