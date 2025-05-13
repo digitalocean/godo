@@ -1101,22 +1101,6 @@ func (a *AppInstanceSize) GetFeaturePreview() bool {
 	return a.FeaturePreview
 }
 
-// GetIDleUSDPerMonth returns the IDleUSDPerMonth field.
-func (a *AppInstanceSize) GetIDleUSDPerMonth() string {
-	if a == nil {
-		return ""
-	}
-	return a.IDleUSDPerMonth
-}
-
-// GetIDleUSDPerSecond returns the IDleUSDPerSecond field.
-func (a *AppInstanceSize) GetIDleUSDPerSecond() string {
-	if a == nil {
-		return ""
-	}
-	return a.IDleUSDPerSecond
-}
-
 // GetMemoryBytes returns the MemoryBytes field.
 func (a *AppInstanceSize) GetMemoryBytes() string {
 	if a == nil {
@@ -1325,14 +1309,6 @@ func (a *AppJobSpec) GetRunCommand() string {
 	return a.RunCommand
 }
 
-// GetSchedule returns the Schedule field.
-func (a *AppJobSpec) GetSchedule() *AppJobSpecSchedule {
-	if a == nil {
-		return nil
-	}
-	return a.Schedule
-}
-
 // GetSourceDir returns the SourceDir field.
 func (a *AppJobSpec) GetSourceDir() string {
 	if a == nil {
@@ -1347,22 +1323,6 @@ func (a *AppJobSpec) GetTermination() *AppJobSpecTermination {
 		return nil
 	}
 	return a.Termination
-}
-
-// GetCron returns the Cron field.
-func (a *AppJobSpecSchedule) GetCron() string {
-	if a == nil {
-		return ""
-	}
-	return a.Cron
-}
-
-// GetTimeZone returns the TimeZone field.
-func (a *AppJobSpecSchedule) GetTimeZone() string {
-	if a == nil {
-		return ""
-	}
-	return a.TimeZone
 }
 
 // GetGracePeriodSeconds returns the GracePeriodSeconds field.
@@ -1845,14 +1805,6 @@ func (a *AppServiceSpec) GetImage() *ImageSourceSpec {
 	return a.Image
 }
 
-// GetInactivitySleep returns the InactivitySleep field.
-func (a *AppServiceSpec) GetInactivitySleep() *AppServiceSpecInactivitySleep {
-	if a == nil {
-		return nil
-	}
-	return a.InactivitySleep
-}
-
 // GetInstanceCount returns the InstanceCount field.
 func (a *AppServiceSpec) GetInstanceCount() int64 {
 	if a == nil {
@@ -1875,14 +1827,6 @@ func (a *AppServiceSpec) GetInternalPorts() []int64 {
 		return nil
 	}
 	return a.InternalPorts
-}
-
-// GetLivenessHealthCheck returns the LivenessHealthCheck field.
-func (a *AppServiceSpec) GetLivenessHealthCheck() *HealthCheckSpec {
-	if a == nil {
-		return nil
-	}
-	return a.LivenessHealthCheck
 }
 
 // GetLogDestinations returns the LogDestinations field.
@@ -2005,14 +1949,6 @@ func (a *AppServiceSpecHealthCheck) GetTimeoutSeconds() int32 {
 	return a.TimeoutSeconds
 }
 
-// GetAfterSeconds returns the AfterSeconds field.
-func (a *AppServiceSpecInactivitySleep) GetAfterSeconds() int32 {
-	if a == nil {
-		return 0
-	}
-	return a.AfterSeconds
-}
-
 // GetDrainSeconds returns the DrainSeconds field.
 func (a *AppServiceSpecTermination) GetDrainSeconds() int32 {
 	if a == nil {
@@ -2043,22 +1979,6 @@ func (a *AppSpec) GetDatabases() []*AppDatabaseSpec {
 		return nil
 	}
 	return a.Databases
-}
-
-// GetDisableEdgeCache returns the DisableEdgeCache field.
-func (a *AppSpec) GetDisableEdgeCache() bool {
-	if a == nil {
-		return false
-	}
-	return a.DisableEdgeCache
-}
-
-// GetDisableEmailObfuscation returns the DisableEmailObfuscation field.
-func (a *AppSpec) GetDisableEmailObfuscation() bool {
-	if a == nil {
-		return false
-	}
-	return a.DisableEmailObfuscation
 }
 
 // GetDomains returns the Domains field.
@@ -2485,14 +2405,6 @@ func (a *AppWorkerSpec) GetInstanceSizeSlug() string {
 	return a.InstanceSizeSlug
 }
 
-// GetLivenessHealthCheck returns the LivenessHealthCheck field.
-func (a *AppWorkerSpec) GetLivenessHealthCheck() *HealthCheckSpec {
-	if a == nil {
-		return nil
-	}
-	return a.LivenessHealthCheck
-}
-
 // GetLogDestinations returns the LogDestinations field.
 func (a *AppWorkerSpec) GetLogDestinations() []*AppLogDestinationSpec {
 	if a == nil {
@@ -2539,22 +2451,6 @@ func (a *AppWorkerSpecTermination) GetGracePeriodSeconds() int32 {
 		return 0
 	}
 	return a.GracePeriodSeconds
-}
-
-// GetFrom returns the From field.
-func (a *AutoscalerActionScaleChange) GetFrom() int64 {
-	if a == nil {
-		return 0
-	}
-	return a.From
-}
-
-// GetTo returns the To field.
-func (a *AutoscalerActionScaleChange) GetTo() int64 {
-	if a == nil {
-		return 0
-	}
-	return a.To
 }
 
 // GetBranch returns the Branch field.
@@ -2843,14 +2739,6 @@ func (d *DeploymentCauseDetailsAutoscalerAction) GetAutoscaled() bool {
 		return false
 	}
 	return d.Autoscaled
-}
-
-// GetScaledComponents returns the ScaledComponents map if it's non-nil, an empty map otherwise.
-func (d *DeploymentCauseDetailsAutoscalerAction) GetScaledComponents() map[string]AutoscalerActionScaleChange {
-	if d == nil || d.ScaledComponents == nil {
-		return map[string]AutoscalerActionScaleChange{}
-	}
-	return d.ScaledComponents
 }
 
 // GetEmail returns the Email field.
@@ -3573,14 +3461,6 @@ func (g *GetAppDatabaseConnectionDetailsResponse) GetConnectionDetails() []*GetD
 	return g.ConnectionDetails
 }
 
-// GetInstances returns the Instances field.
-func (g *GetAppInstancesResponse) GetInstances() []*AppInstance {
-	if g == nil {
-		return nil
-	}
-	return g.Instances
-}
-
 // GetComponentName returns the ComponentName field.
 func (g *GetDatabaseConnectionDetailsResponse) GetComponentName() string {
 	if g == nil {
@@ -3787,62 +3667,6 @@ func (g *GitSourceSpec) GetRepoCloneURL() string {
 		return ""
 	}
 	return g.RepoCloneURL
-}
-
-// GetFailureThreshold returns the FailureThreshold field.
-func (h *HealthCheckSpec) GetFailureThreshold() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.FailureThreshold
-}
-
-// GetHTTPPath returns the HTTPPath field.
-func (h *HealthCheckSpec) GetHTTPPath() string {
-	if h == nil {
-		return ""
-	}
-	return h.HTTPPath
-}
-
-// GetInitialDelaySeconds returns the InitialDelaySeconds field.
-func (h *HealthCheckSpec) GetInitialDelaySeconds() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.InitialDelaySeconds
-}
-
-// GetPeriodSeconds returns the PeriodSeconds field.
-func (h *HealthCheckSpec) GetPeriodSeconds() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.PeriodSeconds
-}
-
-// GetPort returns the Port field.
-func (h *HealthCheckSpec) GetPort() int64 {
-	if h == nil {
-		return 0
-	}
-	return h.Port
-}
-
-// GetSuccessThreshold returns the SuccessThreshold field.
-func (h *HealthCheckSpec) GetSuccessThreshold() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.SuccessThreshold
-}
-
-// GetTimeoutSeconds returns the TimeoutSeconds field.
-func (h *HealthCheckSpec) GetTimeoutSeconds() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.TimeoutSeconds
 }
 
 // GetDeployOnPush returns the DeployOnPush field.

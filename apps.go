@@ -194,7 +194,7 @@ type AppsServiceOp struct {
 }
 
 type GetAppInstancesOpts struct {
-	// Resevered for future use.
+	// reserved for future use.
 }
 
 // URN returns a URN identifier for the app

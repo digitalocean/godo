@@ -409,9 +409,8 @@ type AppJobSpec struct {
 	// The instance size to use for this component.
 	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
 	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
-	InstanceCount int64               `json:"instance_count,omitempty"`
-	Kind          AppJobSpecKind      `json:"kind,omitempty"`
-	Schedule      *AppJobSpecSchedule `json:"schedule,omitempty"`
+	InstanceCount int64          `json:"instance_count,omitempty"`
+	Kind          AppJobSpecKind `json:"kind,omitempty"`
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
@@ -428,14 +427,7 @@ const (
 	AppJobSpecKind_PreDeploy    AppJobSpecKind = "PRE_DEPLOY"
 	AppJobSpecKind_PostDeploy   AppJobSpecKind = "POST_DEPLOY"
 	AppJobSpecKind_FailedDeploy AppJobSpecKind = "FAILED_DEPLOY"
-	AppJobSpecKind_Scheduled    AppJobSpecKind = "SCHEDULED"
 )
-
-// AppJobSpecSchedule struct for AppJobSpecSchedule
-type AppJobSpecSchedule struct {
-	Cron     string `json:"cron,omitempty"`
-	TimeZone string `json:"time_zone,omitempty"`
-}
 
 // AppJobSpecTermination struct for AppJobSpecTermination
 type AppJobSpecTermination struct {
@@ -550,10 +542,9 @@ type AppServiceSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations     []*AppLogDestinationSpec       `json:"log_destinations,omitempty"`
-	Termination         *AppServiceSpecTermination     `json:"termination,omitempty"`
-	InactivitySleep     *AppServiceSpecInactivitySleep `json:"inactivity_sleep,omitempty"`
-	LivenessHealthCheck *HealthCheckSpec               `json:"liveness_health_check,omitempty"`
+	LogDestinations     []*AppLogDestinationSpec   `json:"log_destinations,omitempty"`
+	Termination         *AppServiceSpecTermination `json:"termination,omitempty"`
+	LivenessHealthCheck *HealthCheckSpec           `json:"liveness_health_check,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
@@ -574,12 +565,6 @@ type AppServiceSpecHealthCheck struct {
 	HTTPPath string `json:"http_path,omitempty"`
 	// The port on which the health check will be performed. If not set, the health check will be performed on the component's http_port.
 	Port int64 `json:"port,omitempty"`
-}
-
-// AppServiceSpecInactivitySleep struct for AppServiceSpecInactivitySleep
-type AppServiceSpecInactivitySleep struct {
-	// The number of seconds to wait before putting the service to sleep after it has been inactive. Minimum 120, Maximum 3600.
-	AfterSeconds int32 `json:"after_seconds,omitempty"`
 }
 
 // AppServiceSpecTermination struct for AppServiceSpecTermination
@@ -617,10 +602,6 @@ type AppSpec struct {
 	Egress      *AppEgressSpec      `json:"egress,omitempty"`
 	Features    []string            `json:"features,omitempty"`
 	Maintenance *AppMaintenanceSpec `json:"maintenance,omitempty"`
-	// Specification to disable edge (CDN) cache for all domains of the app. Note that this feature is in private preview.
-	DisableEdgeCache bool `json:"disable_edge_cache,omitempty"`
-	// Specification to disable email obfuscation.
-	DisableEmailObfuscation bool `json:"disable_email_obfuscation,omitempty"`
 }
 
 // AppStaticSiteSpec struct for AppStaticSiteSpec
@@ -703,12 +684,6 @@ type AppWorkerSpecTermination struct {
 	GracePeriodSeconds int32 `json:"grace_period_seconds,omitempty"`
 }
 
-// AutoscalerActionScaleChange struct for AutoscalerActionScaleChange
-type AutoscalerActionScaleChange struct {
-	From int64 `json:"from,omitempty"`
-	To   int64 `json:"to,omitempty"`
-}
-
 // BitbucketSourceSpec struct for BitbucketSourceSpec
 type BitbucketSourceSpec struct {
 	Repo         string `json:"repo,omitempty"`
@@ -736,8 +711,7 @@ type Buildpack struct {
 
 // DeploymentCauseDetailsAutoscalerAction struct for DeploymentCauseDetailsAutoscalerAction
 type DeploymentCauseDetailsAutoscalerAction struct {
-	Autoscaled       bool                                   `json:"autoscaled,omitempty"`
-	ScaledComponents map[string]AutoscalerActionScaleChange `json:"scaled_components,omitempty"`
+	Autoscaled bool `json:"autoscaled,omitempty"`
 }
 
 // DeploymentCauseDetailsDigitalOceanUser struct for DeploymentCauseDetailsDigitalOceanUser
@@ -1256,8 +1230,6 @@ type AppInstanceSize struct {
 	MemoryBytes      string                 `json:"memory_bytes,omitempty"`
 	USDPerMonth      string                 `json:"usd_per_month,omitempty"`
 	USDPerSecond     string                 `json:"usd_per_second,omitempty"`
-	IDleUSDPerMonth  string                 `json:"idle_usd_per_month,omitempty"`
-	IDleUSDPerSecond string                 `json:"idle_usd_per_second,omitempty"`
 	TierSlug         string                 `json:"tier_slug,omitempty"`
 	// (Deprecated) The slug of the corresponding upgradable instance size on the higher tier.
 	TierUpgradeTo string `json:"tier_upgrade_to,omitempty"`
