@@ -75,7 +75,7 @@ type AppsService interface {
 		error,
 	)
 
-	GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOptions) ([]*AppInstance, *Response, error)
+	GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOpts) ([]*AppInstance, *Response, error)
 }
 
 // AppLogs represent app logs.
@@ -193,7 +193,7 @@ type AppsServiceOp struct {
 	client *Client
 }
 
-type GetAppInstancesOptions struct {
+type GetAppInstancesOpts struct {
 	// Resevered for future use.
 }
 
@@ -673,7 +673,7 @@ func (s *AppsServiceOp) ToggleDatabaseTrustedSource(
 
 // GetAppInstances returns a list of emphemeral compute instances of the current deployment for an app.
 // opts is reserved for future use.
-func (s *AppsServiceOp) GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOptions) ([]*AppInstance, *Response, error) {
+func (s *AppsServiceOp) GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOpts) ([]*AppInstance, *Response, error) {
 	path := fmt.Sprintf("%s/%s/instances", appsBasePath, appID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
