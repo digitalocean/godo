@@ -505,12 +505,6 @@ type AppMaintenanceSpec struct {
 	OfflinePageURL string `json:"offline_page_url,omitempty"`
 }
 
-// AppPeeredVpcSpec Configuration of the target VPC.
-type AppPeeredVpcSpec struct {
-	// The name of the VPC.
-	Name string `json:"name,omitempty"`
-}
-
 // AppRouteSpec struct for AppRouteSpec
 type AppRouteSpec struct {
 	// (Deprecated) An HTTP path prefix. Paths must start with / and must be unique across all components within an app.
@@ -572,9 +566,9 @@ type AppServiceSpecHealthCheck struct {
 	PeriodSeconds int32 `json:"period_seconds,omitempty"`
 	// The number of seconds after which the check times out. Default: 1 second, Minimum 1, Maximum 120.
 	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
-	// The number of successful health checks before considered healthy. Default: 1, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 1, Minimum 1, Maximum 1.
+	// The number of successful health checks before considered healthy. Default: 1 second, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 1 second, Minimum 1, Maximum 1.
 	SuccessThreshold int32 `json:"success_threshold,omitempty"`
-	// The number of failed health checks before considered unhealthy. Default: 9, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 18, Minimum 1, Maximum 50.
+	// The number of failed health checks before considered unhealthy. Default: 9 seconds, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 18 seconds, Minimum 1, Maximum 50.
 	FailureThreshold int32 `json:"failure_threshold,omitempty"`
 	// The route path used for the HTTP health check ping. If not set, the HTTP health check will be disabled and a TCP health check used instead.
 	HTTPPath string `json:"http_path,omitempty"`
@@ -623,7 +617,6 @@ type AppSpec struct {
 	Egress      *AppEgressSpec      `json:"egress,omitempty"`
 	Features    []string            `json:"features,omitempty"`
 	Maintenance *AppMaintenanceSpec `json:"maintenance,omitempty"`
-	Vpc         *AppVpcSpec         `json:"vpc,omitempty"`
 	// Specification to disable edge (CDN) cache for all domains of the app. Note that this feature is in private preview.
 	DisableEdgeCache bool `json:"disable_edge_cache,omitempty"`
 	// Specification to disable email obfuscation.
@@ -670,13 +663,6 @@ type AppVariableDefinition struct {
 	Type  AppVariableType  `json:"type,omitempty"`
 }
 
-// AppVpcSpec Configuration of VPC.
-type AppVpcSpec struct {
-	// The list of target vpcs.
-	PeeredVpcs []*AppPeeredVpcSpec `json:"peered_vpcs,omitempty"`
-	// The id of the target VPC, in UUID format.
-	ID string `json:"id,omitempty"`
-}
 
 // AppWorkerSpec struct for AppWorkerSpec
 type AppWorkerSpec struct {
