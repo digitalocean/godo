@@ -1223,14 +1223,14 @@ const (
 
 // AppInstanceSize struct for AppInstanceSize
 type AppInstanceSize struct {
-	Name             string                 `json:"name,omitempty"`
-	Slug             string                 `json:"slug,omitempty"`
-	CPUType          AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
-	CPUs             string                 `json:"cpus,omitempty"`
-	MemoryBytes      string                 `json:"memory_bytes,omitempty"`
-	USDPerMonth      string                 `json:"usd_per_month,omitempty"`
-	USDPerSecond     string                 `json:"usd_per_second,omitempty"`
-	TierSlug         string                 `json:"tier_slug,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Slug         string                 `json:"slug,omitempty"`
+	CPUType      AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs         string                 `json:"cpus,omitempty"`
+	MemoryBytes  string                 `json:"memory_bytes,omitempty"`
+	USDPerMonth  string                 `json:"usd_per_month,omitempty"`
+	USDPerSecond string                 `json:"usd_per_second,omitempty"`
+	TierSlug     string                 `json:"tier_slug,omitempty"`
 	// (Deprecated) The slug of the corresponding upgradable instance size on the higher tier.
 	TierUpgradeTo string `json:"tier_upgrade_to,omitempty"`
 	// (Deprecated) The slug of the corresponding downgradable instance size on the lower tier.
