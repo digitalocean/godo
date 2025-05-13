@@ -1227,7 +1227,8 @@ func TestApps_GetAppInstances(t *testing.T) {
 		json.NewEncoder(w).Encode(&GetAppInstancesResponse{Instances: instances})
 	})
 
-	appInstances, _, err := client.Apps.GetAppInstances(ctx, testApp.ID)
+	opts := &GetAppInstancesOptions{}
+	appInstances, _, err := client.Apps.GetAppInstances(ctx, testApp.ID, opts)
 	require.NoError(t, err)
 	require.Len(t, appInstances, 3)
 

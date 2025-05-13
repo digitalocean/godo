@@ -75,7 +75,7 @@ type AppsService interface {
 		error,
 	)
 
-	GetAppInstances(ctx context.Context, appID string) ([]*AppInstance, *Response, error)
+	GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOptions) ([]*AppInstance, *Response, error)
 }
 
 // AppLogs represent app logs.
@@ -191,6 +191,10 @@ type buildpacksRoot struct {
 // AppsServiceOp handles communication with Apps methods of the DigitalOcean API.
 type AppsServiceOp struct {
 	client *Client
+}
+
+type GetAppInstancesOptions struct {
+	// Resevered for future use.
 }
 
 // URN returns a URN identifier for the app
@@ -668,7 +672,8 @@ func (s *AppsServiceOp) ToggleDatabaseTrustedSource(
 }
 
 // GetAppInstances returns a list of emphemeral compute instances of the current deployment for an app.
-func (s *AppsServiceOp) GetAppInstances(ctx context.Context, appID string) ([]*AppInstance, *Response, error) {
+// opts is reserved for future use.
+func (s *AppsServiceOp) GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOptions) ([]*AppInstance, *Response, error) {
 	path := fmt.Sprintf("%s/%s/instances", appsBasePath, appID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
