@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var natGatewayGetJSONResponse = `
+var egressGatewayGetJSONResponse = `
 {
-  "nat_gateway": {
+  "egress_gateway": {
     "id": "97c46619-1f53-493b-8638-00c899f30152",
-    "name": "test-nat-gateway-01",
+    "name": "test-egress-gateway-01",
     "type": "PUBLIC",
     "state": "STATE_ACTIVE",
     "region": "nyc3",
@@ -41,12 +41,12 @@ var natGatewayGetJSONResponse = `
 }
 `
 
-var natGatewayListJSONResponse = `
+var egressGatewayListJSONResponse = `
 {
-  "nat_gateways": [
+  "egress_gateways": [
     {
       "id": "97c46619-1f53-493b-8638-00c899f30152",
-      "name": "test-nat-gateway-01",
+      "name": "test-egress-gateway-01",
       "type": "PUBLIC",
       "state": "STATE_ACTIVE",
       "region": "nyc3",
@@ -71,7 +71,7 @@ var natGatewayListJSONResponse = `
     },
     {
       "id": "8e2fedf5-ce55-4ec3-82ca-e607be36ee08",
-      "name": "test-nat-gateway-02",
+      "name": "test-egress-gateway-02",
       "type": "PUBLIC",
       "state": "STATE_ACTIVE",
       "region": "nyc3",
@@ -102,11 +102,11 @@ var natGatewayListJSONResponse = `
 }
 `
 
-var natGatewayUpdateJSONResponse = `
+var egressGatewayUpdateJSONResponse = `
 {
-  "nat_gateway": {
+  "egress_gateway": {
     "id": "97c46619-1f53-493b-8638-00c899f30152",
-    "name": "test-nat-gateway-renamed-01",
+    "name": "test-egress-gateway-renamed-01",
     "type": "PUBLIC",
     "state": "STATE_ACTIVE",
     "region": "nyc3",
@@ -132,12 +132,12 @@ var natGatewayUpdateJSONResponse = `
 }
 `
 
-func TestNatGateway_Create(t *testing.T) {
+func TestEgressGateways_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	createReq := &NatGatewayRequest{
-		Name:   "test-nat-gateway-01",
+	createReq := &EgressGatewayRequest{
+		Name:   "test-egress-gateway-01",
 		Type:   "PUBLIC",
 		Region: "nyc3",
 		VPCs: []*IngressVPC{
@@ -148,20 +148,20 @@ func TestNatGateway_Create(t *testing.T) {
 		TCPTimeoutSeconds:  300,
 	}
 
-	mux.HandleFunc(natGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
-		req := new(NatGatewayRequest)
+	mux.HandleFunc(egressGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
+		req := new(EgressGatewayRequest)
 		err := json.NewDecoder(r.Body).Decode(req)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, createReq, req)
-		fmt.Fprintf(w, natGatewayGetJSONResponse)
+		fmt.Fprintf(w, egressGatewayGetJSONResponse)
 	})
 
-	expectedGatewayResp := &NatGateway{
+	expectedGatewayResp := &EgressGateway{
 		ID:     "97c46619-1f53-493b-8638-00c899f30152",
-		Name:   "test-nat-gateway-01",
+		Name:   "test-egress-gateway-01",
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
@@ -178,7 +178,7 @@ func TestNatGateway_Create(t *testing.T) {
 		TCPTimeoutSeconds:  300,
 	}
 
-	createGatewayResp, _, err := client.NatGateways.Create(ctx, createReq)
+	createGatewayResp, _, err := client.EgressGateways.Create(ctx, createReq)
 	require.NoError(t, err)
 	require.NotEmpty(t, createGatewayResp)
 	expectedGatewayResp.CreatedAt = createGatewayResp.CreatedAt
@@ -186,19 +186,19 @@ func TestNatGateway_Create(t *testing.T) {
 	assert.Equal(t, expectedGatewayResp, createGatewayResp)
 }
 
-func TestNatGateway_Get(t *testing.T) {
+func TestEgressGateways_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
 	gatewayID := "97c46619-1f53-493b-8638-00c899f30152"
-	mux.HandleFunc(fmt.Sprintf("%s/%s", natGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("%s/%s", egressGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprintf(w, natGatewayGetJSONResponse)
+		fmt.Fprintf(w, egressGatewayGetJSONResponse)
 	})
 
-	expectedGatewayResp := &NatGateway{
+	expectedGatewayResp := &EgressGateway{
 		ID:     "97c46619-1f53-493b-8638-00c899f30152",
-		Name:   "test-nat-gateway-01",
+		Name:   "test-egress-gateway-01",
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
@@ -215,7 +215,7 @@ func TestNatGateway_Get(t *testing.T) {
 		TCPTimeoutSeconds:  300,
 	}
 
-	getGatewayResp, _, err := client.NatGateways.Get(ctx, gatewayID)
+	getGatewayResp, _, err := client.EgressGateways.Get(ctx, gatewayID)
 	require.NoError(t, err)
 	require.NotNil(t, getGatewayResp)
 	expectedGatewayResp.CreatedAt = getGatewayResp.CreatedAt
@@ -223,19 +223,19 @@ func TestNatGateway_Get(t *testing.T) {
 	assert.Equal(t, expectedGatewayResp, getGatewayResp)
 }
 
-func TestNatGateway_List(t *testing.T) {
+func TestEgressGateways_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc(natGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(egressGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprintf(w, natGatewayListJSONResponse)
+		fmt.Fprintf(w, egressGatewayListJSONResponse)
 	})
 
-	expectedGatewaysResp := []*NatGateway{
+	expectedGatewaysResp := []*EgressGateway{
 		{
 			ID:     "97c46619-1f53-493b-8638-00c899f30152",
-			Name:   "test-nat-gateway-01",
+			Name:   "test-egress-gateway-01",
 			Type:   "PUBLIC",
 			State:  "STATE_ACTIVE",
 			Region: "nyc3",
@@ -253,7 +253,7 @@ func TestNatGateway_List(t *testing.T) {
 		},
 		{
 			ID:     "8e2fedf5-ce55-4ec3-82ca-e607be36ee08",
-			Name:   "test-nat-gateway-02",
+			Name:   "test-egress-gateway-02",
 			Type:   "PUBLIC",
 			State:  "STATE_ACTIVE",
 			Region: "nyc3",
@@ -271,7 +271,7 @@ func TestNatGateway_List(t *testing.T) {
 		},
 	}
 
-	listGatewaysResp, _, err := client.NatGateways.List(ctx, nil)
+	listGatewaysResp, _, err := client.EgressGateways.List(ctx, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, listGatewaysResp)
 	sort.SliceStable(listGatewaysResp, func(i, j int) bool {
@@ -284,12 +284,12 @@ func TestNatGateway_List(t *testing.T) {
 	assert.Equal(t, expectedGatewaysResp, listGatewaysResp)
 }
 
-func TestNatGateway_Update(t *testing.T) {
+func TestEgressGateways_Update(t *testing.T) {
 	setup()
 	defer teardown()
 
-	updateReq := &NatGatewayRequest{
-		Name:   "test-nat-gateway-renamed-01",
+	updateReq := &EgressGatewayRequest{
+		Name:   "test-egress-gateway-renamed-01",
 		Type:   "PUBLIC",
 		Region: "nyc3",
 		VPCs: []*IngressVPC{
@@ -301,20 +301,20 @@ func TestNatGateway_Update(t *testing.T) {
 	}
 
 	gatewayID := "97c46619-1f53-493b-8638-00c899f30152"
-	mux.HandleFunc(fmt.Sprintf("%s/%s", natGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
-		req := new(NatGatewayRequest)
+	mux.HandleFunc(fmt.Sprintf("%s/%s", egressGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
+		req := new(EgressGatewayRequest)
 		err := json.NewDecoder(r.Body).Decode(req)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testMethod(t, r, http.MethodPut)
 		assert.Equal(t, updateReq, req)
-		fmt.Fprintf(w, natGatewayUpdateJSONResponse)
+		fmt.Fprintf(w, egressGatewayUpdateJSONResponse)
 	})
 
-	expectedGatewayResp := &NatGateway{
+	expectedGatewayResp := &EgressGateway{
 		ID:     "97c46619-1f53-493b-8638-00c899f30152",
-		Name:   "test-nat-gateway-renamed-01",
+		Name:   "test-egress-gateway-renamed-01",
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
@@ -331,7 +331,7 @@ func TestNatGateway_Update(t *testing.T) {
 		TCPTimeoutSeconds:  300,
 	}
 
-	updateGatewayResp, _, err := client.NatGateways.Update(ctx, gatewayID, updateReq)
+	updateGatewayResp, _, err := client.EgressGateways.Update(ctx, gatewayID, updateReq)
 	require.NoError(t, err)
 	require.NotEmpty(t, updateGatewayResp)
 	expectedGatewayResp.CreatedAt = updateGatewayResp.CreatedAt
@@ -339,15 +339,15 @@ func TestNatGateway_Update(t *testing.T) {
 	assert.Equal(t, expectedGatewayResp, updateGatewayResp)
 }
 
-func TestNatGateway_Delete(t *testing.T) {
+func TestEgressGateways_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
 	gatewayID := "97c46619-1f53-493b-8638-00c899f30152"
-	mux.HandleFunc(fmt.Sprintf("%s/%s", natGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("%s/%s", egressGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 	})
 
-	_, err := client.NatGateways.Delete(ctx, gatewayID)
+	_, err := client.EgressGateways.Delete(ctx, gatewayID)
 	assert.NoError(t, err)
 }

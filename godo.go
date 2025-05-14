@@ -66,6 +66,7 @@ type Client struct {
 	Droplets            DropletsService
 	DropletActions      DropletActionsService
 	DropletAutoscale    DropletAutoscaleService
+	EgressGateways      EgressGatewaysService
 	Firewalls           FirewallsService
 	FloatingIPs         FloatingIPsService
 	FloatingIPActions   FloatingIPActionsService
@@ -77,7 +78,6 @@ type Client struct {
 	Kubernetes          KubernetesService
 	LoadBalancers       LoadBalancersService
 	Monitoring          MonitoringService
-	NatGateways         NatGatewaysService
 	OneClick            OneClickService
 	Projects            ProjectsService
 	Regions             RegionsService
@@ -294,7 +294,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Kubernetes = &KubernetesServiceOp{client: c}
 	c.LoadBalancers = &LoadBalancersServiceOp{client: c}
 	c.Monitoring = &MonitoringServiceOp{client: c}
-	c.NatGateways = &NatGatewaysServiceOp{client: c}
+	c.EgressGateways = &EgressGatewaysServiceOp{client: c}
 	c.OneClick = &OneClickServiceOp{client: c}
 	c.Projects = &ProjectsServiceOp{client: c}
 	c.Regions = &RegionsServiceOp{client: c}
