@@ -3330,3 +3330,24 @@ func TestUpgradeBuildpackResponse_GetDeployment(tt *testing.T) {
 	u = nil
 	u.GetDeployment()
 }
+
+func TestAppInstance_GetComponentName(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetComponentName()
+	a = nil
+	a.GetComponentName()
+}
+
+func TestAppInstance_GetComponentType(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetComponentType()
+	a = nil
+	a.GetComponentType()
+}
+
+func TestAppInstance_GetInstanceName(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetInstanceName()
+	a = nil
+	a.GetInstanceName()
+}
