@@ -95,7 +95,7 @@ type Client struct {
 	UptimeChecks        UptimeChecksService
 	VPCs                VPCsService
 	PartnerAttachment   PartnerAttachmentService
-	GenAI               AgentService
+	GenAI               GenAIService
 
 	// Optional function called after every successful request made to the DO APIs
 	onRequestCompleted RequestCompletionCallback
@@ -159,18 +159,6 @@ type TokenListOptions struct {
 	// of results in order to retrieve the next set of results. This is expected to be faster
 	// than incrementing or decrementing the page number.
 	Token string `url:"page_token,omitempty"`
-}
-
-// AgentListOptions specifies the optional parameters to various List methods that support agents pagination.
-type AgentListOptions struct {
-	// For paginated result sets, page of results to retrieve.
-	Page int `url:"page,omitempty"`
-
-	// For paginated result sets, the number of results to include per page.
-	PerPage int `url:"per_page,omitempty"`
-
-	// This parameter is used to only list agents that are deployed in the response.
-	Deployed bool `url:"only_deployed,omitempty"`
 }
 
 // Response is a DigitalOcean response. This wraps the standard http.Response returned from DigitalOcean.
@@ -324,7 +312,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.UptimeChecks = &UptimeChecksServiceOp{client: c}
 	c.VPCs = &VPCsServiceOp{client: c}
 	c.PartnerAttachment = &PartnerAttachmentServiceOp{client: c}
-	c.GenAI = &AgentServiceOp{client: c}
+	c.GenAI = &GenAIServiceOp{client: c}
 
 	c.headers = make(map[string]string)
 

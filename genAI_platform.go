@@ -4,13 +4,19 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 )
 
-const agentConnectBasePath = "/v2/gen-ai/agents"
+const genAIBasePath = "/v2/gen-ai/agents"
 
-type AgentService interface {
-	List(context.Context, *AgentListOptions) ([]*Agent, *Response, error)
+type GenAIService interface {
+	List(context.Context, *ListOptions) ([]*Agent, *Response, error)
 	Create(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
+	ListAPIKeys(context.Context, string) ([]*AgentAPIKeyInfo, *Response, error)
+	CreateAPIKey(context.Context, string, *AgentCreateAPIRequest) (*AgentAPIKeyInfo, *Response, error)
+	UpdateAPIKey(context.Context, string, string, *AgentUpdateAPIRequest) (*AgentAPIKeyInfo, *Response, error)
+	DeleteAPIKey(context.Context, string, string) (*AgentAPIKeyInfo, *Response, error)
+	RegenerateAPIKey(context.Context, string, string) (*AgentAPIKeyInfo, *Response, error)
 	Get(context.Context, string) (*Agent, *Response, error)
 	Update(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
 	Delete(context.Context, string) (*Agent, *Response, error)
@@ -19,9 +25,9 @@ type AgentService interface {
 	UpdateVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
 }
 
-var _ AgentService = &AgentServiceOp{}
+var _ GenAIService = &GenAIServiceOp{}
 
-type AgentServiceOp struct {
+type GenAIServiceOp struct {
 	client *Client
 }
 
@@ -46,8 +52,8 @@ type genAIAgentsVersionRoot struct {
 }
 
 type Agent struct {
-	AnthropicApiKey    *Info                `json:"anthropic_api_key,omitempty"`
-	ApiKeyInfos        *Info                `json:"api_key_infos,omitempty"`
+	AnthropicApiKey    *AgentAPIKeyInfo     `json:"anthropic_api_key,omitempty"`
+	ApiKeyInfos        *AgentAPIKeyInfo     `json:"api_key_infos,omitempty"`
 	ApiKeys            []*ApiKeys           `json:"api_keys,omitempty"`
 	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
 	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
@@ -132,15 +138,6 @@ type AttachedKnowledgebases struct {
 
 type ApiKeys struct {
 	ApiKey string `json:"api_key,omitempty"`
-}
-
-type Info struct {
-	CreatedAt string `json:"created_at,omitempty"`
-	CreatedBy string `json:"created_by,omitempty"`
-	DeletedAt string `json:"deleted_at,omitempty"`
-	Name      string `json:"name,omitempty"`
-	UpdatedAt string `json:"updated_at,omitempty"`
-	Uuid      string `json:"uuid,omitempty"`
 }
 
 type AgentVisibilityUpdateRequest struct {
@@ -297,9 +294,39 @@ type AuditHeader struct {
 	UserUuid          string `json:"user_uuid,omitempty"`
 }
 
-func (s *AgentServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Agent, *Response, error) {
+type agentAPIKeyRoot struct {
+	APIKeys []*AgentAPIKeyInfo `json:"api_key_infos,omitempty"`
+	Links   *Links             `json:"links,omitempty"`
+	Meta    *Meta              `json:"meta,omitempty"`
+}
+
+type AgentAPIKeyInfo struct {
+	UUID      string    `json:"uuid,omitempty"`
+	Name      string    `json:"name,,omitempty"`
+	SecretKey string    `json:"secret_key,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	CreatedBy string    `json:"created_by,omitempty"`
+	DeletedAt time.Time `json:"deleted_at,omitempty"`
+}
+
+type AgentCreateAPIRequest struct {
+	AgentUUID string `json:"agent_uuid,omitempty"`
+	Name      string `json:"name,omitempty"`
+}
+
+type agentAPIKeyResponse struct {
+	APIKey *AgentAPIKeyInfo `json:"api_key_info,omitempty"`
+}
+
+type AgentUpdateAPIRequest struct {
+	AgentUUID  string `json:"agent_uuid,omitempty"`
+	APIKeyUUID string `json:"api_key_uuid,omitempty"`
+	Name       string `json:"name,omitempty"`
+}
+
+func (s *GenAIServiceOp) List(ctx context.Context, opt *ListOptions) ([]*Agent, *Response, error) {
 	fmt.Println("Added options")
-	path, err := addOptions(agentConnectBasePath, opt)
+	path, err := addOptions(genAIBasePath, opt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -323,8 +350,8 @@ func (s *AgentServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Ag
 	return root.Agents, resp, nil
 }
 
-func (s *AgentServiceOp) Create(ctx context.Context, create *AgentCreateRequest) (*Agent, *Response, error) {
-	path := agentConnectBasePath
+func (s *GenAIServiceOp) Create(ctx context.Context, create *AgentCreateRequest) (*Agent, *Response, error) {
+	path := genAIBasePath
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, create)
 	if err != nil {
@@ -341,9 +368,104 @@ func (s *AgentServiceOp) Create(ctx context.Context, create *AgentCreateRequest)
 	return root.Agent, resp, nil
 }
 
+// ListAPIKeys retrieves list of API Keys associated with the specified GenAI agent
+func (s *GenAIServiceOp) ListAPIKeys(ctx context.Context, id string) ([]*AgentAPIKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys", genAIBasePath, id)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.APIKeys, resp, nil
+}
+
+// CreateAPIKey creates a new API key for the specified GenAI agent
+func (s *GenAIServiceOp) CreateAPIKey(ctx context.Context, id string, createRequest *AgentCreateAPIRequest) (*AgentAPIKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys", genAIBasePath, id)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.APIKey, resp, err
+}
+
+// UpdateAPIKey updates an existing API key for the specified GenAI agent
+func (s *GenAIServiceOp) UpdateAPIKey(ctx context.Context, id, apiKeyID string, updateRequest *AgentUpdateAPIRequest) (*AgentAPIKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys/%s", genAIBasePath, id, apiKeyID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.APIKey, resp, nil
+}
+
+// DeleteAPIKey deletes an existing API key for the specified GenAI agent
+func (s *GenAIServiceOp) DeleteAPIKey(ctx context.Context, id, apiKeyID string) (*AgentAPIKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys/%s", genAIBasePath, id, apiKeyID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.APIKey, resp, nil
+}
+
+// RegenerateAPIKey regenerates an API key for the specified GenAI agent
+func (s *GenAIServiceOp) RegenerateAPIKey(ctx context.Context, id, apiKeyID string) (*AgentAPIKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys/%s/regenerate", genAIBasePath, id, apiKeyID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.APIKey, resp, nil
+}
+
 // Get returns the details of a Gen AI Agent.
-func (s *AgentServiceOp) Get(ctx context.Context, id string) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
+func (s *GenAIServiceOp) Get(ctx context.Context, id string) (*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s", genAIBasePath, id)
 	fmt.Println(path)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -360,8 +482,8 @@ func (s *AgentServiceOp) Get(ctx context.Context, id string) (*Agent, *Response,
 }
 
 // Update updates a Gen AI Agent properties.
-func (s *AgentServiceOp) Update(ctx context.Context, id string, update *AgentUpdateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s/", agentConnectBasePath, id)
+func (s *GenAIServiceOp) Update(ctx context.Context, id string, update *AgentUpdateRequest) (*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s/", genAIBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -377,8 +499,8 @@ func (s *AgentServiceOp) Update(ctx context.Context, id string, update *AgentUpd
 }
 
 // Delete deletes a Gen AI Agent.
-func (s *AgentServiceOp) Delete(ctx context.Context, id string) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
+func (s *GenAIServiceOp) Delete(ctx context.Context, id string) (*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s", genAIBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -393,10 +515,10 @@ func (s *AgentServiceOp) Delete(ctx context.Context, id string) (*Agent, *Respon
 	return root.Agent, resp, nil
 }
 
-func (s *AgentServiceOp) ListVersions(ctx context.Context, id string, opt *ListOptions) ([]*AgentVersions, *Response, error) {
-	path := fmt.Sprintf("%s/%s/versions", agentConnectBasePath, id)
+func (s *GenAIServiceOp) ListVersions(ctx context.Context, id string, opt *ListOptions) ([]*AgentVersions, *Response, error) {
+	path := fmt.Sprintf("%s/%s/versions", genAIBasePath, id)
 	fmt.Println(path)
-	path, err := addOptions(agentConnectBasePath, opt)
+	path, err := addOptions(genAIBasePath, opt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -419,8 +541,8 @@ func (s *AgentServiceOp) ListVersions(ctx context.Context, id string, opt *ListO
 	return root.AgentVersions, resp, nil
 }
 
-func (s *AgentServiceOp) UpdateVersion(ctx context.Context, id string, update *AgentVersionUpdateRequest) (*AgentVersionUpdateResponse, *Response, error) {
-	path := fmt.Sprintf("%s/%s/versions", agentConnectBasePath, id)
+func (s *GenAIServiceOp) UpdateVersion(ctx context.Context, id string, update *AgentVersionUpdateRequest) (*AgentVersionUpdateResponse, *Response, error) {
+	path := fmt.Sprintf("%s/%s/versions", genAIBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -436,8 +558,8 @@ func (s *AgentServiceOp) UpdateVersion(ctx context.Context, id string, update *A
 }
 
 // Update updates a Gen AI Agent status by changing visibility to public or private.
-func (s *AgentServiceOp) UpdateVisibility(ctx context.Context, id string, update *AgentVisibilityUpdateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s/deployment_visibility", agentConnectBasePath, id)
+func (s *GenAIServiceOp) UpdateVisibility(ctx context.Context, id string, update *AgentVisibilityUpdateRequest) (*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s/deployment_visibility", genAIBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
