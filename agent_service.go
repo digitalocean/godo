@@ -9,7 +9,7 @@ import (
 const agentConnectBasePath = "/v2/gen-ai/agents"
 
 type AgentService interface {
-	List(context.Context, *AgentListOptions) ([]*Agent, *Response, error)
+	List(context.Context, *AgentListOptions) ([]*Agents, *Response, error)
 	Create(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
 	Get(context.Context, string) (*Agent, *Response, error)
 	Update(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
@@ -26,13 +26,13 @@ type AgentServiceOp struct {
 }
 
 type genAIAgentsRoot struct {
-	Agents []*Agent `json:"agents"`
-	Links  *Links   `json:"links"`
-	Meta   *Meta    `json:"meta"`
+	Agents []*Agents `json:"agents"`
+	Links  *Links    `json:"links"`
+	Meta   *Meta     `json:"meta"`
 }
 
 type genAIAgentRoot struct {
-	Agent *Agent `json:"agents"`
+	Agent *Agent `json:"agent"`
 }
 
 type genAIAgentAuditRoot struct {
@@ -49,6 +49,39 @@ type Agent struct {
 	AnthropicApiKey    *Info                `json:"anthropic_api_key,omitempty"`
 	ApiKeyInfos        *Info                `json:"api_key_infos,omitempty"`
 	ApiKeys            []*ApiKeys           `json:"api_keys,omitempty"`
+	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
+	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
+	CreatedAt          string               `json:"created_at,omitempty"`
+	Deployment         *AgentDeployment     `json:"deployment,omitempty"`
+	Descripton         string               `json:"description,omitempty"`
+	UpdateAt           string               `json:"updated_at,omitempty"`
+	Functions          []*Functions         `json:"functions,omitempty"`
+	Guardrails         []*Guardrails        `json:"guardrails,omitempty"`
+	IfCase             string               `json:"if_case,omitempty"`
+	Instruction        string               `json:"instruction,omitempty"`
+	K                  int                  `json:"k,omitempty"`
+	KnowledgeBases     []*KnowledgeBase     `json:"knowledge_bases,omitempty"`
+	MaxToken           int                  `json:"max_tokens,omitempty"`
+	Model              *Model               `json:"model,omitempty"`
+	Name               string               `json:"name,omitempty"`
+	OpenAiApiKey       *OpenAiApiKey        `json:"open_ai_api_key,omitempty"`
+	ProjectId          string               `json:"project_id,omitempty"`
+	Region             string               `json:"region,omitempty"`
+	RetrievalMethod    string               `json:"retrieval_method,omitempty"`
+	RouteCreatedAt     string               `json:"route_created_at,omitempty"`
+	RouteCreatedBy     string               `json:"route_created_by,omitempty"`
+	RouteUuid          string               `json:"route_uuid,omitempty"`
+	RouteName          string               `json:"route_name,omitempty"`
+	Tags               []string             `json:"tags,omitempty"`
+	Template           *AgentTemplate       `json:"template,omitempty"`
+	Temperature        float64              `json:"temperature,omitempty"`
+	TopP               float64              `json:"top_p,omitempty"`
+	Url                string               `json:"url,omitempty"`
+	UserId             string               `json:"user_id,omitempty"`
+	Uuid               string               `json:"uuid,omitempty"`
+}
+
+type Agents struct {
 	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
 	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
 	Name               string               `json:"name,omitempty"`
@@ -75,6 +108,35 @@ type Agent struct {
 	Url                string               `json:"url,omitempty"`
 	UserId             string               `json:"user_id,omitempty"`
 	Uuid               string               `json:"uuid,omitempty"`
+}
+
+type Functions struct {
+	ApiKey        string `json:"api_key,omitempty"`
+	CreatedAt     string `json:"created_at,omitempty"`
+	Description   string `json:"description,omitempty"`
+	GuardrailUuid string `json:"guardrail_uuid,omitempty"`
+	FaasName      bool   `json:"faas_name,omitempty"`
+	FaasNamespace bool   `json:"faas_namespace,omitempty"`
+	Name          string `json:"name,omitempty"`
+	Type          string `json:"type,omitempty"`
+	UpdatedAt     string `json:"updated_at,omitempty"`
+	Url           string `json:"url,omitempty"`
+	Uuid          string `json:"uuid,omitempty"`
+}
+
+type Guardrails struct {
+	AgentUuid       string `json:"agent_uuid,omitempty"`
+	CreatedAt       string `json:"created_at,omitempty"`
+	DefaultResponse string `json:"default_response,omitempty"`
+	Description     string `json:"description,omitempty"`
+	GuardrailUuid   string `json:"guardrail_uuid,omitempty"`
+	IsAttached      bool   `json:"is_attached,omitempty"`
+	IsDefault       bool   `json:"is_default,omitempty"`
+	Name            string `json:"name,omitempty"`
+	Priority        int    `json:"priority,omitempty"`
+	Type            string `json:"type,omitempty"`
+	UpdatedAt       string `json:"updated_at,omitempty"`
+	Uuid            string `json:"uuid,omitempty"`
 }
 
 type AgentVersions struct {
@@ -143,27 +205,37 @@ type Info struct {
 	Uuid      string `json:"uuid,omitempty"`
 }
 
+type OpenAiApiKey struct {
+	CreatedAt string   `json:"created_at,omitempty"`
+	CreatedBy string   `json:"created_by,omitempty"`
+	DeletedAt string   `json:"deleted_at,omitempty"`
+	Models    []string `json:"models,omitempty"`
+	Name      string   `json:"name,omitempty"`
+	UpdatedAt string   `json:"updated_at,omitempty"`
+	Uuid      string   `json:"uuid,omitempty"`
+}
+
 type AgentVisibilityUpdateRequest struct {
 	Uuid       string `json:"uuid,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
 }
 
 type AgentTemplate struct {
-	CreatedAt      string            `json:"created_at,omitempty"`
-	Instruction    string            `json:"instruction,omitempty"`
-	Descripton     string            `json:"description,omitempty"`
-	K              int               `json:"k,omitempty"`
-	KnowledgeBases []*KnowledgeBases `json:"knowledge_bases,omitempty"`
-	MaxToken       int               `json:"max_tokens,omitempty"`
-	Model          *Model            `json:"model,omitempty"`
-	Name           string            `json:"name,omitempty"`
-	Temperature    float64           `json:"temperature,omitempty"`
-	TopP           float64           `json:"top_p,omitempty"`
-	UpdateAt       string            `json:"updated_at,omitempty"`
-	Uuid           string            `json:"uuid,omitempty"`
+	CreatedAt      string           `json:"created_at,omitempty"`
+	Instruction    string           `json:"instruction,omitempty"`
+	Descripton     string           `json:"description,omitempty"`
+	K              int              `json:"k,omitempty"`
+	KnowledgeBases []*KnowledgeBase `json:"knowledge_bases,omitempty"`
+	MaxToken       int              `json:"max_tokens,omitempty"`
+	Model          *Model           `json:"model,omitempty"`
+	Name           string           `json:"name,omitempty"`
+	Temperature    float64          `json:"temperature,omitempty"`
+	TopP           float64          `json:"top_p,omitempty"`
+	UpdateAt       string           `json:"updated_at,omitempty"`
+	Uuid           string           `json:"uuid,omitempty"`
 }
 
-type KnowledgeBases struct {
+type KnowledgeBase struct {
 	AddedToAgentAt     string           `json:"added_to_agent_at,omitempty"`
 	CreatedAt          string           `json:"created_at,omitempty"`
 	DatabaseId         string           `json:"database_id,omitempty"`
@@ -188,7 +260,7 @@ type LastIndexingJob struct {
 	Phase                string   `json:"phase,omitempty"`
 	StartedAt            string   `json:"started_at,omitempty"`
 	Tokens               int      `json:"tokens,omitempty"`
-	TotalDatasources     string   `json:"total_datasources,omitempty"`
+	TotalDatasources     int      `json:"total_datasources,omitempty"`
 	UpdatedAt            string   `json:"updated_at,omitempty"`
 	Uuid                 string   `json:"uuid,omitempty"`
 }
@@ -222,16 +294,15 @@ type Model struct {
 	InferenceName    string     `json:"inference_name,omitempty"`
 	InferenceVersion string     `json:"inference_version,omitempty"`
 	IsFoundational   bool       `json:"is_foundational,omitempty"`
-	// Metadata         string    `json:"metadata,omitempty"` doubt
-	Name           string   `json:"name,omitempty"`
-	ParentUuid     string   `json:"parent_uuid,omitempty"`
-	Provider       string   `json:"provider,omitempty"`
-	UpdatedAt      string   `json:"updated_at,omitempty"`
-	UploadComplete bool     `json:"upload_complete,omitempty"`
-	Url            string   `json:"url,omitempty"`
-	Usecases       []string `json:"usecases,omitempty"`
-	Uuid           string   `json:"uuid,omitempty"`
-	Version        *Version `json:"version,omitempty"`
+	Name             string     `json:"name,omitempty"`
+	ParentUuid       string     `json:"parent_uuid,omitempty"`
+	Provider         string     `json:"provider,omitempty"`
+	UpdatedAt        string     `json:"updated_at,omitempty"`
+	UploadComplete   bool       `json:"upload_complete,omitempty"`
+	Url              string     `json:"url,omitempty"`
+	Usecases         []string   `json:"usecases,omitempty"`
+	Uuid             string     `json:"uuid,omitempty"`
+	Version          *Version   `json:"version,omitempty"`
 }
 
 type Agreement struct {
@@ -256,7 +327,7 @@ type AgentCreateRequest struct {
 	Name              string   `json:"name,omitempty"`
 	OpenAiKeyUuid     string   `json:"open_ai_key_uuid,omitempty"`
 	ProjectId         string   `json:"project_id,omitempty"`
-	RetrievalMethod   string   `json:"retrieval_method,omitempty"`
+	Region            string   `json:"region,omitempty"`
 	Tags              []string `json:"tags,omitempty"`
 }
 
@@ -297,17 +368,17 @@ type AuditHeader struct {
 	UserUuid          string `json:"user_uuid,omitempty"`
 }
 
-func (s *AgentServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Agent, *Response, error) {
-	fmt.Println("Added options")
+func (s *AgentServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Agents, *Response, error) {
 	path, err := addOptions(agentConnectBasePath, opt)
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Println("Created a new request")
+
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	root := new(genAIAgentsRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
@@ -319,7 +390,6 @@ func (s *AgentServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Ag
 	if m := root.Meta; m != nil {
 		resp.Meta = m
 	}
-	fmt.Println("Response :- ")
 	return root.Agents, resp, nil
 }
 
@@ -344,7 +414,7 @@ func (s *AgentServiceOp) Create(ctx context.Context, create *AgentCreateRequest)
 // Get returns the details of a Gen AI Agent.
 func (s *AgentServiceOp) Get(ctx context.Context, id string) (*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
-	fmt.Println(path)
+
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -395,8 +465,7 @@ func (s *AgentServiceOp) Delete(ctx context.Context, id string) (*Agent, *Respon
 
 func (s *AgentServiceOp) ListVersions(ctx context.Context, id string, opt *ListOptions) ([]*AgentVersions, *Response, error) {
 	path := fmt.Sprintf("%s/%s/versions", agentConnectBasePath, id)
-	fmt.Println(path)
-	path, err := addOptions(agentConnectBasePath, opt)
+	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -405,6 +474,7 @@ func (s *AgentServiceOp) ListVersions(ctx context.Context, id string, opt *ListO
 	if err != nil {
 		return nil, nil, err
 	}
+
 	root := new(genAIAgentsVersionRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
