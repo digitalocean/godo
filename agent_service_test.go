@@ -309,7 +309,8 @@ func TestListAgents(t *testing.T) {
 	}
 
 	assert.Equal(t, 34, resp.Meta.Total)
-
+	expectedString := fmt.Sprintf("%v", agents[0])
+	assert.Equal(t, expectedString, agents[0].String())
 	assert.Equal(t, agent.K, agents[0].K)
 }
 
@@ -329,6 +330,8 @@ func TestGetAgent(t *testing.T) {
 
 	assert.Equal(t, res.Name, "testing-godo")
 	assert.Equal(t, resp.Response.StatusCode, 200)
+	expectedString := fmt.Sprintf("%v", res)
+	assert.Equal(t, expectedString, res.String())
 }
 
 func TestCreateAgent(t *testing.T) {

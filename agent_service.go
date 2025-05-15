@@ -73,7 +73,7 @@ type Agents struct {
 	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
 	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
 	Name               string               `json:"name,omitempty"`
-	CreatedAt          string               `json:"created_at,omitempty"`
+	CreatedAt          *Timestamp           `json:"created_at,omitempty"`
 	UpdateAt           string               `json:"updated_at,omitempty"`
 	Instruction        string               `json:"instruction,omitempty"`
 	Descripton         string               `json:"description,omitempty"`
@@ -434,4 +434,12 @@ func (s *AgentServiceOp) UpdateVisibility(ctx context.Context, id string, update
 	}
 
 	return root.Agent, resp, nil
+}
+
+func (a Agents) String() string {
+	return Stringify(a)
+}
+
+func (a Agent) String() string {
+	return Stringify(a)
 }
