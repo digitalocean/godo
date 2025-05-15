@@ -96,6 +96,7 @@ type Client struct {
 	UptimeChecks        UptimeChecksService
 	VPCs                VPCsService
 	PartnerAttachment   PartnerAttachmentService
+	GenAI               AgentService
 
 	// Optional function called after every successful request made to the DO APIs
 	onRequestCompleted RequestCompletionCallback
@@ -145,6 +146,9 @@ type ListOptions struct {
 
 	// Whether App responses should include project_id fields. The field will be empty if false or if omitted. (ListApps)
 	WithProjects bool `url:"with_projects,omitempty"`
+
+	// This parameter is used to only list agents that are deployed in the response.
+	Deployed bool `url:"only_deployed,omitempty"`
 }
 
 // TokenListOptions specifies the optional parameters to various List methods that support token pagination.
@@ -313,6 +317,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.UptimeChecks = &UptimeChecksServiceOp{client: c}
 	c.VPCs = &VPCsServiceOp{client: c}
 	c.PartnerAttachment = &PartnerAttachmentServiceOp{client: c}
+	c.GenAI = &AgentServiceOp{client: c}
 
 	c.headers = make(map[string]string)
 
