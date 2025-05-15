@@ -145,6 +145,9 @@ type ListOptions struct {
 
 	// Whether App responses should include project_id fields. The field will be empty if false or if omitted. (ListApps)
 	WithProjects bool `url:"with_projects,omitempty"`
+
+	// This parameter is used to only list agents that are deployed in the response.
+	Deployed bool `url:"only_deployed,omitempty"`
 }
 
 // TokenListOptions specifies the optional parameters to various List methods that support token pagination.
@@ -159,18 +162,6 @@ type TokenListOptions struct {
 	// of results in order to retrieve the next set of results. This is expected to be faster
 	// than incrementing or decrementing the page number.
 	Token string `url:"page_token,omitempty"`
-}
-
-// AgentListOptions specifies the optional parameters to various List methods that support agents pagination.
-type AgentListOptions struct {
-	// For paginated result sets, page of results to retrieve.
-	Page int `url:"page,omitempty"`
-
-	// For paginated result sets, the number of results to include per page.
-	PerPage int `url:"per_page,omitempty"`
-
-	// This parameter is used to only list agents that are deployed in the response.
-	Deployed bool `url:"only_deployed,omitempty"`
 }
 
 // Response is a DigitalOcean response. This wraps the standard http.Response returned from DigitalOcean.

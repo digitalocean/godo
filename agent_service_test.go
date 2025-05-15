@@ -292,7 +292,7 @@ func TestListAgents(t *testing.T) {
 		fmt.Fprint(w, listAgentResponse)
 	})
 
-	req := &AgentListOptions{
+	req := &ListOptions{
 		Page:    1,
 		PerPage: 1,
 	}

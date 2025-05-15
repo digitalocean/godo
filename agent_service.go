@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 const agentConnectBasePath = "/v2/gen-ai/agents"
 
 type AgentService interface {
-	List(context.Context, *AgentListOptions) ([]*Agents, *Response, error)
+	List(context.Context, *ListOptions) ([]*Agents, *Response, error)
 	Create(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
 	Get(context.Context, string) (*Agent, *Response, error)
 	Update(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
@@ -35,14 +36,14 @@ type genAIAgentRoot struct {
 
 type Agent struct {
 	AnthropicApiKey    *Info                `json:"anthropic_api_key,omitempty"`
-	ApiKeyInfos        *Info                `json:"api_key_infos,omitempty"`
+	ApiKeyInfos        []*Info              `json:"api_key_infos,omitempty"`
 	ApiKeys            []*ApiKeys           `json:"api_keys,omitempty"`
 	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
 	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
-	CreatedAt          string               `json:"created_at,omitempty"`
+	CreatedAt          time.Time            `json:"created_at,omitempty"`
 	Deployment         *AgentDeployment     `json:"deployment,omitempty"`
 	Descripton         string               `json:"description,omitempty"`
-	UpdateAt           string               `json:"updated_at,omitempty"`
+	UpdateAt           time.Time            `json:"updated_at,omitempty"`
 	Functions          []*Functions         `json:"functions,omitempty"`
 	Guardrails         []*Guardrails        `json:"guardrails,omitempty"`
 	IfCase             string               `json:"if_case,omitempty"`
@@ -56,7 +57,7 @@ type Agent struct {
 	ProjectId          string               `json:"project_id,omitempty"`
 	Region             string               `json:"region,omitempty"`
 	RetrievalMethod    string               `json:"retrieval_method,omitempty"`
-	RouteCreatedAt     string               `json:"route_created_at,omitempty"`
+	RouteCreatedAt     time.Time            `json:"route_created_at,omitempty"`
 	RouteCreatedBy     string               `json:"route_created_by,omitempty"`
 	RouteUuid          string               `json:"route_uuid,omitempty"`
 	RouteName          string               `json:"route_name,omitempty"`
@@ -73,8 +74,8 @@ type Agents struct {
 	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
 	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
 	Name               string               `json:"name,omitempty"`
-	CreatedAt          *Timestamp           `json:"created_at,omitempty"`
-	UpdateAt           string               `json:"updated_at,omitempty"`
+	CreatedAt          time.Time            `json:"created_at,omitempty"`
+	UpdateAt           time.Time            `json:"updated_at,omitempty"`
 	Instruction        string               `json:"instruction,omitempty"`
 	Descripton         string               `json:"description,omitempty"`
 	IfCase             string               `json:"if_case,omitempty"`
@@ -83,7 +84,7 @@ type Agents struct {
 	ProjectId          string               `json:"project_id,omitempty"`
 	Region             string               `json:"region,omitempty"`
 	RetrievalMethod    string               `json:"retrieval_method,omitempty"`
-	RouteCreatedAt     string               `json:"route_created_at,omitempty"`
+	RouteCreatedAt     time.Time            `json:"route_created_at,omitempty"`
 	RouteCreatedBy     string               `json:"route_created_by,omitempty"`
 	RouteUuid          string               `json:"route_uuid,omitempty"`
 	RouteName          string               `json:"route_name,omitempty"`
@@ -99,32 +100,32 @@ type Agents struct {
 }
 
 type Functions struct {
-	ApiKey        string `json:"api_key,omitempty"`
-	CreatedAt     string `json:"created_at,omitempty"`
-	Description   string `json:"description,omitempty"`
-	GuardrailUuid string `json:"guardrail_uuid,omitempty"`
-	FaasName      bool   `json:"faas_name,omitempty"`
-	FaasNamespace bool   `json:"faas_namespace,omitempty"`
-	Name          string `json:"name,omitempty"`
-	Type          string `json:"type,omitempty"`
-	UpdatedAt     string `json:"updated_at,omitempty"`
-	Url           string `json:"url,omitempty"`
-	Uuid          string `json:"uuid,omitempty"`
+	ApiKey        string    `json:"api_key,omitempty"`
+	CreatedAt     string    `json:"created_at,omitempty"`
+	Description   string    `json:"description,omitempty"`
+	GuardrailUuid string    `json:"guardrail_uuid,omitempty"`
+	FaasName      bool      `json:"faas_name,omitempty"`
+	FaasNamespace bool      `json:"faas_namespace,omitempty"`
+	Name          string    `json:"name,omitempty"`
+	Type          string    `json:"type,omitempty"`
+	UpdatedAt     time.Time `json:"updated_at,omitempty"`
+	Url           string    `json:"url,omitempty"`
+	Uuid          string    `json:"uuid,omitempty"`
 }
 
 type Guardrails struct {
-	AgentUuid       string `json:"agent_uuid,omitempty"`
-	CreatedAt       string `json:"created_at,omitempty"`
-	DefaultResponse string `json:"default_response,omitempty"`
-	Description     string `json:"description,omitempty"`
-	GuardrailUuid   string `json:"guardrail_uuid,omitempty"`
-	IsAttached      bool   `json:"is_attached,omitempty"`
-	IsDefault       bool   `json:"is_default,omitempty"`
-	Name            string `json:"name,omitempty"`
-	Priority        int    `json:"priority,omitempty"`
-	Type            string `json:"type,omitempty"`
-	UpdatedAt       string `json:"updated_at,omitempty"`
-	Uuid            string `json:"uuid,omitempty"`
+	AgentUuid       string    `json:"agent_uuid,omitempty"`
+	CreatedAt       string    `json:"created_at,omitempty"`
+	DefaultResponse string    `json:"default_response,omitempty"`
+	Description     string    `json:"description,omitempty"`
+	GuardrailUuid   string    `json:"guardrail_uuid,omitempty"`
+	IsAttached      bool      `json:"is_attached,omitempty"`
+	IsDefault       bool      `json:"is_default,omitempty"`
+	Name            string    `json:"name,omitempty"`
+	Priority        int       `json:"priority,omitempty"`
+	Type            string    `json:"type,omitempty"`
+	UpdatedAt       time.Time `json:"updated_at,omitempty"`
+	Uuid            string    `json:"uuid,omitempty"`
 }
 
 type AttachedChildAgents struct {
@@ -161,22 +162,23 @@ type ApiKeys struct {
 }
 
 type Info struct {
-	CreatedAt string `json:"created_at,omitempty"`
-	CreatedBy string `json:"created_by,omitempty"`
-	DeletedAt string `json:"deleted_at,omitempty"`
-	Name      string `json:"name,omitempty"`
-	UpdatedAt string `json:"updated_at,omitempty"`
-	Uuid      string `json:"uuid,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	CreatedBy string    `json:"created_by,omitempty"`
+	DeletedAt time.Time `json:"deleted_at,omitempty"`
+	Name      string    `json:"name,omitempty"`
+	SecretKey string    `json:"secret_key,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	Uuid      string    `json:"uuid,omitempty"`
 }
 
 type OpenAiApiKey struct {
-	CreatedAt string   `json:"created_at,omitempty"`
-	CreatedBy string   `json:"created_by,omitempty"`
-	DeletedAt string   `json:"deleted_at,omitempty"`
-	Models    []string `json:"models,omitempty"`
-	Name      string   `json:"name,omitempty"`
-	UpdatedAt string   `json:"updated_at,omitempty"`
-	Uuid      string   `json:"uuid,omitempty"`
+	CreatedAt string    `json:"created_at,omitempty"`
+	CreatedBy string    `json:"created_by,omitempty"`
+	DeletedAt string    `json:"deleted_at,omitempty"`
+	Models    []string  `json:"models,omitempty"`
+	Name      string    `json:"name,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	Uuid      string    `json:"uuid,omitempty"`
 }
 
 type AgentVisibilityUpdateRequest struct {
@@ -185,7 +187,7 @@ type AgentVisibilityUpdateRequest struct {
 }
 
 type AgentTemplate struct {
-	CreatedAt      string           `json:"created_at,omitempty"`
+	CreatedAt      time.Time        `json:"created_at,omitempty"`
 	Instruction    string           `json:"instruction,omitempty"`
 	Descripton     string           `json:"description,omitempty"`
 	K              int              `json:"k,omitempty"`
@@ -195,13 +197,13 @@ type AgentTemplate struct {
 	Name           string           `json:"name,omitempty"`
 	Temperature    float64          `json:"temperature,omitempty"`
 	TopP           float64          `json:"top_p,omitempty"`
-	UpdateAt       string           `json:"updated_at,omitempty"`
+	UpdateAt       time.Time        `json:"updated_at,omitempty"`
 	Uuid           string           `json:"uuid,omitempty"`
 }
 
 type KnowledgeBase struct {
 	AddedToAgentAt     string           `json:"added_to_agent_at,omitempty"`
-	CreatedAt          string           `json:"created_at,omitempty"`
+	CreatedAt          time.Time        `json:"created_at,omitempty"`
 	DatabaseId         string           `json:"database_id,omitempty"`
 	EmbeddingModelUuid string           `json:"embedding_model_uuid,omitempty"`
 	IsPublic           bool             `json:"is_public,omitempty"`
@@ -210,7 +212,7 @@ type KnowledgeBase struct {
 	ProjectId          string           `json:"project_id,omitempty"`
 	Region             string           `json:"region,omitempty"`
 	Tags               []string         `json:"tags,omitempty"`
-	UpdateAt           string           `json:"updated_at,omitempty"`
+	UpdateAt           time.Time        `json:"updated_at,omitempty"`
 	UserId             string           `json:"user_id,omitempty"`
 	Uuid               string           `json:"uuid,omitempty"`
 }
@@ -234,13 +236,13 @@ type ChatbotIdentifiers struct {
 }
 
 type AgentDeployment struct {
-	CreatedAt  string `json:"created_at,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Status     string `json:"status,omitempty"`
-	UpdatedAt  string `json:"updated_at,omitempty"`
-	Url        string `json:"url,omitempty"`
-	Uuid       string `json:"uuid,omitempty"`
-	Visibility string `json:"visibility,omitempty"`
+	CreatedAt  string    `json:"created_at,omitempty"`
+	Name       string    `json:"name,omitempty"`
+	Status     string    `json:"status,omitempty"`
+	UpdatedAt  time.Time `json:"updated_at,omitempty"`
+	Url        string    `json:"url,omitempty"`
+	Uuid       string    `json:"uuid,omitempty"`
+	Visibility string    `json:"visibility,omitempty"`
 }
 
 type ChatBot struct {
@@ -254,14 +256,14 @@ type ChatBot struct {
 
 type Model struct {
 	Agreement        *Agreement `json:"agreement,omitempty"`
-	CreatedAt        string     `json:"created_at,omitempty"`
+	CreatedAt        time.Time  `json:"created_at,omitempty"`
 	InferenceName    string     `json:"inference_name,omitempty"`
 	InferenceVersion string     `json:"inference_version,omitempty"`
 	IsFoundational   bool       `json:"is_foundational,omitempty"`
 	Name             string     `json:"name,omitempty"`
 	ParentUuid       string     `json:"parent_uuid,omitempty"`
 	Provider         string     `json:"provider,omitempty"`
-	UpdatedAt        string     `json:"updated_at,omitempty"`
+	UpdatedAt        time.Time  `json:"updated_at,omitempty"`
 	UploadComplete   bool       `json:"upload_complete,omitempty"`
 	Url              string     `json:"url,omitempty"`
 	Usecases         []string   `json:"usecases,omitempty"`
@@ -323,7 +325,7 @@ type AuditHeader struct {
 }
 
 // List returns a list of Gen AI Agents
-func (s *AgentServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Agents, *Response, error) {
+func (s *AgentServiceOp) List(ctx context.Context, opt *ListOptions) ([]*Agents, *Response, error) {
 	path, err := addOptions(agentConnectBasePath, opt)
 	if err != nil {
 		return nil, nil, err
