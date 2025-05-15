@@ -367,6 +367,24 @@ type AppIngressSpecRuleStringMatch struct {
 	Exact  string `json:"exact,omitempty"`
 }
 
+// AppInstance struct for AppInstance
+type AppInstance struct {
+	ComponentName string                   `json:"component_name,omitempty"`
+	InstanceName  string                   `json:"instance_name,omitempty"`
+	ComponentType AppInstanceComponentType `json:"component_type,omitempty"`
+}
+
+// AppInstanceComponentType the model 'AppInstanceComponentType'
+type AppInstanceComponentType string
+
+// List of AppInstanceComponentType
+const (
+	APPINSTANCECOMPONENTTYPE_Unknown AppInstanceComponentType = "UNKNOWN"
+	APPINSTANCECOMPONENTTYPE_Service AppInstanceComponentType = "SERVICE"
+	APPINSTANCECOMPONENTTYPE_Worker  AppInstanceComponentType = "WORKER"
+	APPINSTANCECOMPONENTTYPE_Job     AppInstanceComponentType = "JOB"
+)
+
 // AppJobSpec struct for AppJobSpec
 type AppJobSpec struct {
 	// The name. Must be unique across all components within the same app.
@@ -693,7 +711,6 @@ type Buildpack struct {
 
 // DeploymentCauseDetailsAutoscalerAction struct for DeploymentCauseDetailsAutoscalerAction
 type DeploymentCauseDetailsAutoscalerAction struct {
-	// Marker for the deployment being autoscaled. Necessary because the generation tooling can't handle empty messages.
 	Autoscaled bool `json:"autoscaled,omitempty"`
 }
 
@@ -1096,6 +1113,11 @@ type AppDomainValidation struct {
 // GetAppDatabaseConnectionDetailsResponse struct for GetAppDatabaseConnectionDetailsResponse
 type GetAppDatabaseConnectionDetailsResponse struct {
 	ConnectionDetails []*GetDatabaseConnectionDetailsResponse `json:"connection_details,omitempty"`
+}
+
+// GetAppInstancesResponse struct for GetAppInstancesResponse
+type GetAppInstancesResponse struct {
+	Instances []*AppInstance `json:"instances,omitempty"`
 }
 
 // GetDatabaseConnectionDetailsResponse struct for GetDatabaseConnectionDetailsResponse
