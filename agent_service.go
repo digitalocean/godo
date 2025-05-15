@@ -14,8 +14,6 @@ type AgentService interface {
 	Get(context.Context, string) (*Agent, *Response, error)
 	Update(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
 	Delete(context.Context, string) (*Agent, *Response, error)
-	ListVersions(context.Context, string, *ListOptions) ([]*AgentVersions, *Response, error)
-	UpdateVersion(context.Context, string, *AgentVersionUpdateRequest) (*AgentVersionUpdateResponse, *Response, error)
 	UpdateVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
 }
 
@@ -33,16 +31,6 @@ type genAIAgentsRoot struct {
 
 type genAIAgentRoot struct {
 	Agent *Agent `json:"agent"`
-}
-
-type genAIAgentAuditRoot struct {
-	AgentVersion *AgentVersionUpdateResponse `json:"agent_version"`
-}
-
-type genAIAgentsVersionRoot struct {
-	AgentVersions []*AgentVersions `json:"agent_versions"`
-	Links         *Links           `json:"links"`
-	Meta          *Meta            `json:"meta"`
 }
 
 type Agent struct {
@@ -137,30 +125,6 @@ type Guardrails struct {
 	Type            string `json:"type,omitempty"`
 	UpdatedAt       string `json:"updated_at,omitempty"`
 	Uuid            string `json:"uuid,omitempty"`
-}
-
-type AgentVersions struct {
-	AgentUuid              string                    `json:"agent_uuid,omitempty"`
-	AttachedChildAgents    []*AttachedChildAgents    `json:"attached_child_agents,omitempty"`
-	AttachedFunctions      []*AttachedFunctions      `json:"attached_functions,omitempty"`
-	AttachedGuardRails     []*AttachedGuardRails     `json:"attached_guardrails,omitempty"`
-	AttachedKnowledgebases []*AttachedKnowledgebases `json:"attached_knowledgebases,omitempty"`
-	CreatedAt              string                    `json:"created_at,omitempty"`
-	CreatingUserEmail      string                    `json:"creating_user_email,omitempty"`
-	CurrentlyApplied       bool                      `json:"currently_applied,omitempty"`
-	Id                     string                    `json:"id,omitempty"`
-	Descripton             string                    `json:"description,omitempty"`
-	Instruction            string                    `json:"instruction,omitempty"`
-	K                      int                       `json:"k,omitempty"`
-	MaxToken               int                       `json:"max_tokens,omitempty"`
-	ModelName              string                    `json:"model_name,omitempty"`
-	Name                   string                    `json:"name,omitempty"`
-	RetrievalMethod        string                    `json:"retrieval_method,omitempty"`
-	Tags                   []string                  `json:"tags,omitempty"`
-	Temperature            float64                   `json:"temperature,omitempty"`
-	TopP                   float64                   `json:"top_p,omitempty"`
-	TriggerAction          string                    `json:"trigger_action,omitempty"`
-	VersionHash            string                    `json:"version_hash,omitempty"`
 }
 
 type AttachedChildAgents struct {
@@ -348,16 +312,6 @@ type AgentUpdateRequest struct {
 	Uuid             string   `json:"uuid,omitempty"`
 }
 
-type AgentVersionUpdateRequest struct {
-	Uuid        string `json:"uuid,omitempty"`
-	VersionHash string `json:"version_hash,omitempty"`
-}
-
-type AgentVersionUpdateResponse struct {
-	AuditHeader *AuditHeader `json:"audit_header,omitempty"`
-	VersionHash string       `json:"version_hash,omitempty"`
-}
-
 type AuditHeader struct {
 	ActorId           string `json:"actor_id,omitempty"`
 	ActorIp           string `json:"actor_ip,omitempty"`
@@ -368,6 +322,7 @@ type AuditHeader struct {
 	UserUuid          string `json:"user_uuid,omitempty"`
 }
 
+// List returns a list of Gen AI Agents
 func (s *AgentServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Agents, *Response, error) {
 	path, err := addOptions(agentConnectBasePath, opt)
 	if err != nil {
@@ -393,6 +348,7 @@ func (s *AgentServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Ag
 	return root.Agents, resp, nil
 }
 
+// Create creates a new Gen AI Agent by providing the AgentCreateRequest object
 func (s *AgentServiceOp) Create(ctx context.Context, create *AgentCreateRequest) (*Agent, *Response, error) {
 	path := agentConnectBasePath
 
@@ -411,7 +367,7 @@ func (s *AgentServiceOp) Create(ctx context.Context, create *AgentCreateRequest)
 	return root.Agent, resp, nil
 }
 
-// Get returns the details of a Gen AI Agent.
+// Get returns the details of a Gen AI Agent based on the Agent UUID
 func (s *AgentServiceOp) Get(ctx context.Context, id string) (*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
 
@@ -429,10 +385,10 @@ func (s *AgentServiceOp) Get(ctx context.Context, id string) (*Agent, *Response,
 	return root.Agent, resp, nil
 }
 
-// Update updates a Gen AI Agent properties.
+// Update function updates a Gen AI Agent properties for the given UUID
 func (s *AgentServiceOp) Update(ctx context.Context, id string, update *AgentUpdateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s/", agentConnectBasePath, id)
-	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, update)
+	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -446,7 +402,7 @@ func (s *AgentServiceOp) Update(ctx context.Context, id string, update *AgentUpd
 	return root.Agent, resp, nil
 }
 
-// Delete deletes a Gen AI Agent.
+// Delete function deletes a Gen AI Agent by its corresponding UUID
 func (s *AgentServiceOp) Delete(ctx context.Context, id string) (*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
@@ -463,49 +419,7 @@ func (s *AgentServiceOp) Delete(ctx context.Context, id string) (*Agent, *Respon
 	return root.Agent, resp, nil
 }
 
-func (s *AgentServiceOp) ListVersions(ctx context.Context, id string, opt *ListOptions) ([]*AgentVersions, *Response, error) {
-	path := fmt.Sprintf("%s/%s/versions", agentConnectBasePath, id)
-	path, err := addOptions(path, opt)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(genAIAgentsVersionRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	if l := root.Links; l != nil {
-		resp.Links = l
-	}
-	if m := root.Meta; m != nil {
-		resp.Meta = m
-	}
-	return root.AgentVersions, resp, nil
-}
-
-func (s *AgentServiceOp) UpdateVersion(ctx context.Context, id string, update *AgentVersionUpdateRequest) (*AgentVersionUpdateResponse, *Response, error) {
-	path := fmt.Sprintf("%s/%s/versions", agentConnectBasePath, id)
-	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(genAIAgentAuditRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root.AgentVersion, resp, nil
-}
-
-// Update updates a Gen AI Agent status by changing visibility to public or private.
+// Update function updates a Gen AI Agent status by changing visibility to public or private.
 func (s *AgentServiceOp) UpdateVisibility(ctx context.Context, id string, update *AgentVisibilityUpdateRequest) (*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s/deployment_visibility", agentConnectBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
