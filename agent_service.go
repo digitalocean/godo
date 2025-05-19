@@ -35,85 +35,84 @@ type genAIAgentRoot struct {
 }
 
 type Agent struct {
-	AnthropicApiKey    *AnthropicApiKeyInfo `json:"anthropic_api_key,omitempty"`
-	ApiKeyInfos        []*ApiKeyInfo        `json:"api_key_infos,omitempty"`
-	ApiKeys            []*ApiKeys           `json:"api_keys,omitempty"`
-	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
-	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
-	CreatedAt          time.Time            `json:"created_at,omitempty"`
-	Deployment         *AgentDeployment     `json:"deployment,omitempty"`
-	Descripton         string               `json:"description,omitempty"`
-	UpdateAt           time.Time            `json:"updated_at,omitempty"`
-	Functions          []*AgentFunctions    `json:"functions,omitempty"`
-	Guardrails         []*Guardrails        `json:"guardrails,omitempty"`
-	IfCase             string               `json:"if_case,omitempty"`
-	Instruction        string               `json:"instruction,omitempty"`
-	K                  int                  `json:"k,omitempty"`
-	KnowledgeBases     []*KnowledgeBase     `json:"knowledge_bases,omitempty"`
-	MaxToken           int                  `json:"max_tokens,omitempty"`
-	Model              *Model               `json:"model,omitempty"`
-	Name               string               `json:"name,omitempty"`
-	OpenAiApiKey       *OpenAiApiKey        `json:"open_ai_api_key,omitempty"`
-	ProjectId          string               `json:"project_id,omitempty"`
-	Region             string               `json:"region,omitempty"`
-	RetrievalMethod    string               `json:"retrieval_method,omitempty"`
-	RouteCreatedAt     time.Time            `json:"route_created_at,omitempty"`
-	RouteCreatedBy     string               `json:"route_created_by,omitempty"`
-	RouteUuid          string               `json:"route_uuid,omitempty"`
-	RouteName          string               `json:"route_name,omitempty"`
-	Tags               []string             `json:"tags,omitempty"`
-	Template           *AgentTemplate       `json:"template,omitempty"`
-	Temperature        float64              `json:"temperature,omitempty"`
-	TopP               float64              `json:"top_p,omitempty"`
-	Url                string               `json:"url,omitempty"`
-	UserId             string               `json:"user_id,omitempty"`
-	Uuid               string               `json:"uuid,omitempty"`
+	AnthropicApiKey   *AnthropicApiKeyInfo     `json:"anthropic_api_key,omitempty"`
+	ApiKeyInfos       []*ApiKeyInfo            `json:"api_key_infos,omitempty"`
+	ApiKeys           []*ApiKey                `json:"api_keys,omitempty"`
+	ChatBot           *ChatBot                 `json:"chatbot,omitempty"`
+	ChatbotIdentifier []AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
+	CreatedAt         time.Time                `json:"created_at,omitempty"`
+	Deployment        *AgentDeployment         `json:"deployment,omitempty"`
+	Descripton        string                   `json:"description,omitempty"`
+	UpdatedAt         time.Time                `json:"updated_at,omitempty"`
+	Functions         []*AgentFunction         `json:"functions,omitempty"`
+	Guardrails        []*AgentGuardrail        `json:"guardrails,omitempty"`
+	IfCase            string                   `json:"if_case,omitempty"`
+	Instruction       string                   `json:"instruction,omitempty"`
+	K                 int                      `json:"k,omitempty"`
+	KnowledgeBases    []*KnowledgeBase         `json:"knowledge_bases,omitempty"`
+	MaxToken          int                      `json:"max_tokens,omitempty"`
+	Model             *Model                   `json:"model,omitempty"`
+	Name              string                   `json:"name,omitempty"`
+	OpenAiApiKey      *OpenAiApiKey            `json:"open_ai_api_key,omitempty"`
+	ProjectId         string                   `json:"project_id,omitempty"`
+	Region            string                   `json:"region,omitempty"`
+	RetrievalMethod   string                   `json:"retrieval_method,omitempty"`
+	RouteCreatedAt    time.Time                `json:"route_created_at,omitempty"`
+	RouteCreatedBy    string                   `json:"route_created_by,omitempty"`
+	RouteUuid         string                   `json:"route_uuid,omitempty"`
+	RouteName         string                   `json:"route_name,omitempty"`
+	Tags              []string                 `json:"tags,omitempty"`
+	Template          *AgentTemplate           `json:"template,omitempty"`
+	Temperature       float64                  `json:"temperature,omitempty"`
+	TopP              float64                  `json:"top_p,omitempty"`
+	Url               string                   `json:"url,omitempty"`
+	UserId            string                   `json:"user_id,omitempty"`
+	Uuid              string                   `json:"uuid,omitempty"`
 }
 
 type Agents struct {
-	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
-	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
-	Name               string               `json:"name,omitempty"`
-	CreatedAt          time.Time            `json:"created_at,omitempty"`
-	UpdateAt           time.Time            `json:"updated_at,omitempty"`
-	Instruction        string               `json:"instruction,omitempty"`
-	Descripton         string               `json:"description,omitempty"`
-	IfCase             string               `json:"if_case,omitempty"`
-	K                  int                  `json:"k,omitempty"`
-	MaxToken           int                  `json:"max_tokens,omitempty"`
-	ProjectId          string               `json:"project_id,omitempty"`
-	Region             string               `json:"region,omitempty"`
-	RetrievalMethod    string               `json:"retrieval_method,omitempty"`
-	RouteCreatedAt     time.Time            `json:"route_created_at,omitempty"`
-	RouteCreatedBy     string               `json:"route_created_by,omitempty"`
-	RouteUuid          string               `json:"route_uuid,omitempty"`
-	RouteName          string               `json:"route_name,omitempty"`
-	Model              *Model               `json:"model,omitempty"`
-	Deployment         *AgentDeployment     `json:"deployment,omitempty"`
-	Tags               []string             `json:"tags,omitempty"`
-	Template           *AgentTemplate       `json:"template,omitempty"`
-	Temperature        float64              `json:"temperature,omitempty"`
-	TopP               float64              `json:"top_p,omitempty"`
-	Url                string               `json:"url,omitempty"`
-	UserId             string               `json:"user_id,omitempty"`
-	Uuid               string               `json:"uuid,omitempty"`
+	ChatBot            *ChatBot                 `json:"chatbot,omitempty"`
+	ChatbotIdentifiers []AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
+	Name               string                   `json:"name,omitempty"`
+	CreatedAt          time.Time                `json:"created_at,omitempty"`
+	UpdateAt           time.Time                `json:"updated_at,omitempty"`
+	Instruction        string                   `json:"instruction,omitempty"`
+	Descripton         string                   `json:"description,omitempty"`
+	IfCase             string                   `json:"if_case,omitempty"`
+	K                  int                      `json:"k,omitempty"`
+	MaxToken           int                      `json:"max_tokens,omitempty"`
+	ProjectId          string                   `json:"project_id,omitempty"`
+	Region             string                   `json:"region,omitempty"`
+	RetrievalMethod    string                   `json:"retrieval_method,omitempty"`
+	RouteCreatedAt     time.Time                `json:"route_created_at,omitempty"`
+	RouteCreatedBy     string                   `json:"route_created_by,omitempty"`
+	RouteUuid          string                   `json:"route_uuid,omitempty"`
+	RouteName          string                   `json:"route_name,omitempty"`
+	Model              *Model                   `json:"model,omitempty"`
+	Deployment         *AgentDeployment         `json:"deployment,omitempty"`
+	Tags               []string                 `json:"tags,omitempty"`
+	Template           *AgentTemplate           `json:"template,omitempty"`
+	Temperature        float64                  `json:"temperature,omitempty"`
+	TopP               float64                  `json:"top_p,omitempty"`
+	Url                string                   `json:"url,omitempty"`
+	UserId             string                   `json:"user_id,omitempty"`
+	Uuid               string                   `json:"uuid,omitempty"`
 }
 
-type AgentFunctions struct {
+type AgentFunction struct {
 	ApiKey        string    `json:"api_key,omitempty"`
-	CreatedAt     string    `json:"created_at,omitempty"`
+	CreatedAt     time.Time `json:"created_at,omitempty"`
 	Description   string    `json:"description,omitempty"`
 	GuardrailUuid string    `json:"guardrail_uuid,omitempty"`
-	FaasName      bool      `json:"faas_name,omitempty"`
-	FaasNamespace bool      `json:"faas_namespace,omitempty"`
+	FaasName      string    `json:"faas_name,omitempty"`
+	FaasNamespace string    `json:"faas_namespace,omitempty"`
 	Name          string    `json:"name,omitempty"`
-	Type          string    `json:"type,omitempty"`
 	UpdatedAt     time.Time `json:"updated_at,omitempty"`
 	Url           string    `json:"url,omitempty"`
 	Uuid          string    `json:"uuid,omitempty"`
 }
 
-type Guardrails struct {
+type AgentGuardrail struct {
 	AgentUuid       string    `json:"agent_uuid,omitempty"`
 	CreatedAt       string    `json:"created_at,omitempty"`
 	DefaultResponse string    `json:"default_response,omitempty"`
@@ -128,36 +127,7 @@ type Guardrails struct {
 	Uuid            string    `json:"uuid,omitempty"`
 }
 
-type AttachedChildAgents struct {
-	AgentName      string `json:"agent_name,omitempty"`
-	ChildAgentUuid string `json:"child_agent_uuid,omitempty"`
-	IfCase         string `json:"if_case,omitempty"`
-	IsDeleted      bool   `json:"is_deleted,omitempty"`
-	RouteName      string `json:"route_name,omitempty"`
-}
-
-type AttachedFunctions struct {
-	Description   string `json:"description,omitempty"`
-	FaasName      string `json:"faas_name,omitempty"`
-	FaasNamespace string `json:"faas_namespace,omitempty"`
-	IsDeleted     bool   `json:"is_deleted,omitempty"`
-	Name          string `json:"name,omitempty"`
-}
-
-type AttachedGuardRails struct {
-	IsDeleted bool   `json:"is_deleted,omitempty"`
-	Name      string `json:"name,omitempty"`
-	Priority  string `json:"priority,omitempty"`
-	Uuid      string `json:"uuid,omitempty"`
-}
-
-type AttachedKnowledgebases struct {
-	IsDeleted bool   `json:"is_deleted,omitempty"`
-	Name      string `json:"name,omitempty"`
-	Uuid      string `json:"uuid,omitempty"`
-}
-
-type ApiKeys struct {
+type ApiKey struct {
 	ApiKey string `json:"api_key,omitempty"`
 }
 
@@ -183,7 +153,7 @@ type OpenAiApiKey struct {
 	CreatedAt string    `json:"created_at,omitempty"`
 	CreatedBy string    `json:"created_by,omitempty"`
 	DeletedAt string    `json:"deleted_at,omitempty"`
-	Models    []string  `json:"models,omitempty"`
+	Models    []*Model  `json:"models,omitempty"`
 	Name      string    `json:"name,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	Uuid      string    `json:"uuid,omitempty"`
@@ -197,7 +167,7 @@ type AgentVisibilityUpdateRequest struct {
 type AgentTemplate struct {
 	CreatedAt      time.Time        `json:"created_at,omitempty"`
 	Instruction    string           `json:"instruction,omitempty"`
-	Descripton     string           `json:"description,omitempty"`
+	Description    string           `json:"description,omitempty"`
 	K              int              `json:"k,omitempty"`
 	KnowledgeBases []*KnowledgeBase `json:"knowledge_bases,omitempty"`
 	MaxToken       int              `json:"max_tokens,omitempty"`
@@ -205,7 +175,7 @@ type AgentTemplate struct {
 	Name           string           `json:"name,omitempty"`
 	Temperature    float64          `json:"temperature,omitempty"`
 	TopP           float64          `json:"top_p,omitempty"`
-	UpdateAt       time.Time        `json:"updated_at,omitempty"`
+	UpdatedAt      time.Time        `json:"updated_at,omitempty"`
 	Uuid           string           `json:"uuid,omitempty"`
 }
 
@@ -239,12 +209,12 @@ type LastIndexingJob struct {
 	Uuid                 string   `json:"uuid,omitempty"`
 }
 
-type ChatbotIdentifiers struct {
+type AgentChatbotIdentifier struct {
 	AgentChatbotIdentifier string `json:"agent_chatbot_identifier,omitempty"`
 }
 
 type AgentDeployment struct {
-	CreatedAt  string    `json:"created_at,omitempty"`
+	CreatedAt  time.Time `json:"created_at,omitempty"`
 	Name       string    `json:"name,omitempty"`
 	Status     string    `json:"status,omitempty"`
 	UpdatedAt  time.Time `json:"updated_at,omitempty"`
@@ -263,20 +233,20 @@ type ChatBot struct {
 }
 
 type Model struct {
-	Agreement        *Agreement `json:"agreement,omitempty"`
-	CreatedAt        time.Time  `json:"created_at,omitempty"`
-	InferenceName    string     `json:"inference_name,omitempty"`
-	InferenceVersion string     `json:"inference_version,omitempty"`
-	IsFoundational   bool       `json:"is_foundational,omitempty"`
-	Name             string     `json:"name,omitempty"`
-	ParentUuid       string     `json:"parent_uuid,omitempty"`
-	Provider         string     `json:"provider,omitempty"`
-	UpdatedAt        time.Time  `json:"updated_at,omitempty"`
-	UploadComplete   bool       `json:"upload_complete,omitempty"`
-	Url              string     `json:"url,omitempty"`
-	Usecases         []string   `json:"usecases,omitempty"`
-	Uuid             string     `json:"uuid,omitempty"`
-	Version          *Version   `json:"version,omitempty"`
+	Agreement        *Agreement    `json:"agreement,omitempty"`
+	CreatedAt        time.Time     `json:"created_at,omitempty"`
+	InferenceName    string        `json:"inference_name,omitempty"`
+	InferenceVersion string        `json:"inference_version,omitempty"`
+	IsFoundational   bool          `json:"is_foundational,omitempty"`
+	Name             string        `json:"name,omitempty"`
+	ParentUuid       string        `json:"parent_uuid,omitempty"`
+	Provider         string        `json:"provider,omitempty"`
+	UpdatedAt        time.Time     `json:"updated_at,omitempty"`
+	UploadComplete   bool          `json:"upload_complete,omitempty"`
+	Url              string        `json:"url,omitempty"`
+	Usecases         []string      `json:"usecases,omitempty"`
+	Uuid             string        `json:"uuid,omitempty"`
+	Version          *ModelVersion `json:"version,omitempty"`
 }
 
 type Agreement struct {
@@ -286,7 +256,7 @@ type Agreement struct {
 	Uuid        string `json:"uuid,omitempty"`
 }
 
-type Version struct {
+type ModelVersion struct {
 	Major int `json:"major,omitempty"`
 	Minor int `json:"minor,omitempty"`
 	Patch int `json:"patch,omitempty"`
@@ -320,16 +290,6 @@ type AgentUpdateRequest struct {
 	Temperature      float64  `json:"temperature,omitempty"`
 	TopP             float64  `json:"top_p,omitempty"`
 	Uuid             string   `json:"uuid,omitempty"`
-}
-
-type AuditHeader struct {
-	ActorId           string `json:"actor_id,omitempty"`
-	ActorIp           string `json:"actor_ip,omitempty"`
-	ActorUuid         string `json:"actor_uuid,omitempty"`
-	ContextUrn        string `json:"context_urn,omitempty"`
-	OriginApplication string `json:"origin_application,omitempty"`
-	UserId            string `json:"user_id,omitempty"`
-	UserUuid          string `json:"user_uuid,omitempty"`
 }
 
 // List returns a list of Gen AI Agents
