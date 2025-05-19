@@ -35,8 +35,8 @@ type genAIAgentRoot struct {
 }
 
 type Agent struct {
-	AnthropicApiKey    *Info                `json:"anthropic_api_key,omitempty"`
-	ApiKeyInfos        []*Info              `json:"api_key_infos,omitempty"`
+	AnthropicApiKey    *AnthropicApiKeyInfo `json:"anthropic_api_key,omitempty"`
+	ApiKeyInfos        []*ApiKeyInfo        `json:"api_key_infos,omitempty"`
 	ApiKeys            []*ApiKeys           `json:"api_keys,omitempty"`
 	ChatBot            *ChatBot             `json:"chatbot,omitempty"`
 	ChatbotIdentifiers []ChatbotIdentifiers `json:"chatbot_identifiers,omitempty"`
@@ -161,13 +161,21 @@ type ApiKeys struct {
 	ApiKey string `json:"api_key,omitempty"`
 }
 
-type Info struct {
+type AnthropicApiKeyInfo struct {
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	CreatedBy string    `json:"created_by,omitempty"`
+	DeletedAt time.Time `json:"deleted_at,omitempty"`
+	Name      string    `json:"name,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	Uuid      string    `json:"uuid,omitempty"`
+}
+
+type ApiKeyInfo struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	CreatedBy string    `json:"created_by,omitempty"`
 	DeletedAt time.Time `json:"deleted_at,omitempty"`
 	Name      string    `json:"name,omitempty"`
 	SecretKey string    `json:"secret_key,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	Uuid      string    `json:"uuid,omitempty"`
 }
 
