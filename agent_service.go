@@ -44,7 +44,7 @@ type Agent struct {
 	Deployment         *AgentDeployment     `json:"deployment,omitempty"`
 	Descripton         string               `json:"description,omitempty"`
 	UpdateAt           time.Time            `json:"updated_at,omitempty"`
-	Functions          []*Functions         `json:"functions,omitempty"`
+	Functions          []*AgentFunctions    `json:"functions,omitempty"`
 	Guardrails         []*Guardrails        `json:"guardrails,omitempty"`
 	IfCase             string               `json:"if_case,omitempty"`
 	Instruction        string               `json:"instruction,omitempty"`
@@ -99,7 +99,7 @@ type Agents struct {
 	Uuid               string               `json:"uuid,omitempty"`
 }
 
-type Functions struct {
+type AgentFunctions struct {
 	ApiKey        string    `json:"api_key,omitempty"`
 	CreatedAt     string    `json:"created_at,omitempty"`
 	Description   string    `json:"description,omitempty"`
