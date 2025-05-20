@@ -169,7 +169,7 @@ type AgentTemplate struct {
 	Description    string           `json:"description,omitempty"`
 	K              int              `json:"k,omitempty"`
 	KnowledgeBases []*KnowledgeBase `json:"knowledge_bases,omitempty"`
-	MaxToken       int              `json:"max_tokens,omitempty"`
+	MaxTokens       int              `json:"max_tokens,omitempty"`
 	Model          *Model           `json:"model,omitempty"`
 	Name           string           `json:"name,omitempty"`
 	Temperature    float64          `json:"temperature,omitempty"`
