@@ -67,10 +67,10 @@ type PublicGateway struct {
 // EgressGatewaysListOptions define custom options for listing Egress Gateways
 type EgressGatewaysListOptions struct {
 	ListOptions
-	State  []string `json:"state,omitempty"`
-	Region []string `json:"region,omitempty"`
-	Type   []string `json:"type,omitempty"`
-	Name   []string `json:"name,omitempty"`
+	State  []string `url:"state,omitempty"`
+	Region []string `url:"region,omitempty"`
+	Type   []string `url:"type,omitempty"`
+	Name   []string `url:"name,omitempty"`
 }
 
 type egressGatewayRoot struct {
