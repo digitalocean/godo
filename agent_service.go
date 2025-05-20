@@ -74,7 +74,7 @@ type Agents struct {
 	ChatbotIdentifiers []AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
 	Name               string                   `json:"name,omitempty"`
 	CreatedAt          *Timestamp               `json:"created_at,omitempty"`
-	UpdateAt           *Timestamp               `json:"updated_at,omitempty"`
+	UpdatedAt           *Timestamp               `json:"updated_at,omitempty"`
 	Instruction        string                   `json:"instruction,omitempty"`
 	Descripton         string                   `json:"description,omitempty"`
 	IfCase             string                   `json:"if_case,omitempty"`
