@@ -279,7 +279,7 @@ type AgentUpdateRequest struct {
 	Description      string   `json:"description,omitempty"`
 	Instruction      string   `json:"instruction,omitempty"`
 	K                int      `json:"k,omitempty"`
-	MaxToken         int      `json:"max_tokens,omitempty"`
+	MaxTokens         int      `json:"max_tokens,omitempty"`
 	ModelUuid        string   `json:"model_uuid,omitempty"`
 	Name             string   `json:"name,omitempty"`
 	OpenAiKeyUuid    string   `json:"open_ai_key_uuid,omitempty"`
