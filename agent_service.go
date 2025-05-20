@@ -41,7 +41,7 @@ type Agent struct {
 	ChatbotIdentifier []AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
 	CreatedAt         *Timestamp               `json:"created_at,omitempty"`
 	Deployment        *AgentDeployment         `json:"deployment,omitempty"`
-	Descripton        string                   `json:"description,omitempty"`
+	Description        string                   `json:"description,omitempty"`
 	UpdatedAt         *Timestamp               `json:"updated_at,omitempty"`
 	Functions         []*AgentFunction         `json:"functions,omitempty"`
 	Guardrails        []*AgentGuardrail        `json:"guardrails,omitempty"`
