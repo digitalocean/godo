@@ -360,7 +360,7 @@ func TestCreateAgent(t *testing.T) {
 	}
 
 	assert.Equal(t, res.Name, req.Name)
-	assert.Equal(t, res.Descripton, req.Description)
+	assert.Equal(t, res.Description, req.Description)
 }
 
 func TestDeleteAgent(t *testing.T) {
