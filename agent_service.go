@@ -189,7 +189,7 @@ type KnowledgeBase struct {
 	ProjectId          string           `json:"project_id,omitempty"`
 	Region             string           `json:"region,omitempty"`
 	Tags               []string         `json:"tags,omitempty"`
-	UpdateAt           *Timestamp       `json:"updated_at,omitempty"`
+	UpdatedAt           *Timestamp       `json:"updated_at,omitempty"`
 	UserId             string           `json:"user_id,omitempty"`
 	Uuid               string           `json:"uuid,omitempty"`
 }
