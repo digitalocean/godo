@@ -12,7 +12,7 @@ const genAIBasePath = "/v2/gen-ai/agents"
 type GenAIService interface {
 	List(context.Context, *ListOptions) ([]*Agent, *Response, error)
 	Create(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
-	ListAPIKeys(context.Context, string) ([]*AgentAPIKeyInfo, *Response, error)
+	ListAPIKeys(context.Context, string, *ListOptions) ([]*AgentAPIKeyInfo, *Response, error)
 	CreateAPIKey(context.Context, string, *AgentCreateAPIRequest) (*AgentAPIKeyInfo, *Response, error)
 	UpdateAPIKey(context.Context, string, string, *AgentUpdateAPIRequest) (*AgentAPIKeyInfo, *Response, error)
 	DeleteAPIKey(context.Context, string, string) (*AgentAPIKeyInfo, *Response, error)
@@ -369,7 +369,7 @@ func (s *GenAIServiceOp) Create(ctx context.Context, create *AgentCreateRequest)
 }
 
 // ListAPIKeys retrieves list of API Keys associated with the specified GenAI agent
-func (s *GenAIServiceOp) ListAPIKeys(ctx context.Context, id string) ([]*AgentAPIKeyInfo, *Response, error) {
+func (s *GenAIServiceOp) ListAPIKeys(ctx context.Context, id string, opt *ListOptions) ([]*AgentAPIKeyInfo, *Response, error) {
 	path := fmt.Sprintf("%s/%s/api_keys", genAIBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -381,6 +381,7 @@ func (s *GenAIServiceOp) ListAPIKeys(ctx context.Context, id string) ([]*AgentAP
 	if err != nil {
 		return nil, resp, err
 	}
+
 	if l := root.Links; l != nil {
 		resp.Links = l
 	}
@@ -573,3 +574,11 @@ func (s *GenAIServiceOp) UpdateVisibility(ctx context.Context, id string, update
 
 	return root.Agent, resp, nil
 }
+
+// func (a AgentAPIKeyInfo) String() string {
+// 	return Stringify(a)
+// }
+
+// func (a ApiKeys) String() string {
+// 	return Stringify(a)
+// }
