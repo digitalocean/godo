@@ -79,7 +79,7 @@ type Agents struct {
 	Descripton         string                   `json:"description,omitempty"`
 	IfCase             string                   `json:"if_case,omitempty"`
 	K                  int                      `json:"k,omitempty"`
-	MaxToken           int                      `json:"max_tokens,omitempty"`
+	MaxTokens           int                      `json:"max_tokens,omitempty"`
 	ProjectId          string                   `json:"project_id,omitempty"`
 	Region             string                   `json:"region,omitempty"`
 	RetrievalMethod    string                   `json:"retrieval_method,omitempty"`
