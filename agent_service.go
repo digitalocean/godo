@@ -9,7 +9,7 @@ import (
 const agentConnectBasePath = "/v2/gen-ai/agents"
 
 type AgentService interface {
-	List(context.Context, *ListOptions) ([]*Agents, *Response, error)
+	List(context.Context, *ListOptions) ([]*Agent, *Response, error)
 	Create(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
 	Get(context.Context, string) (*Agent, *Response, error)
 	Update(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
@@ -24,9 +24,9 @@ type AgentServiceOp struct {
 }
 
 type genAIAgentsRoot struct {
-	Agents []*Agents `json:"agents"`
-	Links  *Links    `json:"links"`
-	Meta   *Meta     `json:"meta"`
+	Agents []*Agent `json:"agents"`
+	Links  *Links   `json:"links"`
+	Meta   *Meta    `json:"meta"`
 }
 
 type genAIAgentRoot struct {
@@ -41,7 +41,7 @@ type Agent struct {
 	ChatbotIdentifier []AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
 	CreatedAt         *Timestamp               `json:"created_at,omitempty"`
 	Deployment        *AgentDeployment         `json:"deployment,omitempty"`
-	Description        string                   `json:"description,omitempty"`
+	Description       string                   `json:"description,omitempty"`
 	UpdatedAt         *Timestamp               `json:"updated_at,omitempty"`
 	Functions         []*AgentFunction         `json:"functions,omitempty"`
 	Guardrails        []*AgentGuardrail        `json:"guardrails,omitempty"`
@@ -49,7 +49,7 @@ type Agent struct {
 	Instruction       string                   `json:"instruction,omitempty"`
 	K                 int                      `json:"k,omitempty"`
 	KnowledgeBases    []*KnowledgeBase         `json:"knowledge_bases,omitempty"`
-	MaxTokens          int                      `json:"max_tokens,omitempty"`
+	MaxTokens         int                      `json:"max_tokens,omitempty"`
 	Model             *Model                   `json:"model,omitempty"`
 	Name              string                   `json:"name,omitempty"`
 	OpenAiApiKey      *OpenAiApiKey            `json:"open_ai_api_key,omitempty"`
@@ -67,35 +67,6 @@ type Agent struct {
 	Url               string                   `json:"url,omitempty"`
 	UserId            string                   `json:"user_id,omitempty"`
 	Uuid              string                   `json:"uuid,omitempty"`
-}
-
-type Agents struct {
-	ChatBot            *ChatBot                 `json:"chatbot,omitempty"`
-	ChatbotIdentifiers []AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
-	Name               string                   `json:"name,omitempty"`
-	CreatedAt          *Timestamp               `json:"created_at,omitempty"`
-	UpdatedAt           *Timestamp               `json:"updated_at,omitempty"`
-	Instruction        string                   `json:"instruction,omitempty"`
-	Descripton         string                   `json:"description,omitempty"`
-	IfCase             string                   `json:"if_case,omitempty"`
-	K                  int                      `json:"k,omitempty"`
-	MaxTokens           int                      `json:"max_tokens,omitempty"`
-	ProjectId          string                   `json:"project_id,omitempty"`
-	Region             string                   `json:"region,omitempty"`
-	RetrievalMethod    string                   `json:"retrieval_method,omitempty"`
-	RouteCreatedAt     *Timestamp               `json:"route_created_at,omitempty"`
-	RouteCreatedBy     string                   `json:"route_created_by,omitempty"`
-	RouteUuid          string                   `json:"route_uuid,omitempty"`
-	RouteName          string                   `json:"route_name,omitempty"`
-	Model              *Model                   `json:"model,omitempty"`
-	Deployment         *AgentDeployment         `json:"deployment,omitempty"`
-	Tags               []string                 `json:"tags,omitempty"`
-	Template           *AgentTemplate           `json:"template,omitempty"`
-	Temperature        float64                  `json:"temperature,omitempty"`
-	TopP               float64                  `json:"top_p,omitempty"`
-	Url                string                   `json:"url,omitempty"`
-	UserId             string                   `json:"user_id,omitempty"`
-	Uuid               string                   `json:"uuid,omitempty"`
 }
 
 type AgentFunction struct {
@@ -169,7 +140,7 @@ type AgentTemplate struct {
 	Description    string           `json:"description,omitempty"`
 	K              int              `json:"k,omitempty"`
 	KnowledgeBases []*KnowledgeBase `json:"knowledge_bases,omitempty"`
-	MaxTokens       int              `json:"max_tokens,omitempty"`
+	MaxTokens      int              `json:"max_tokens,omitempty"`
 	Model          *Model           `json:"model,omitempty"`
 	Name           string           `json:"name,omitempty"`
 	Temperature    float64          `json:"temperature,omitempty"`
@@ -189,7 +160,7 @@ type KnowledgeBase struct {
 	ProjectId          string           `json:"project_id,omitempty"`
 	Region             string           `json:"region,omitempty"`
 	Tags               []string         `json:"tags,omitempty"`
-	UpdatedAt           *Timestamp       `json:"updated_at,omitempty"`
+	UpdatedAt          *Timestamp       `json:"updated_at,omitempty"`
 	UserId             string           `json:"user_id,omitempty"`
 	Uuid               string           `json:"uuid,omitempty"`
 }
@@ -279,11 +250,12 @@ type AgentUpdateRequest struct {
 	Description      string   `json:"description,omitempty"`
 	Instruction      string   `json:"instruction,omitempty"`
 	K                int      `json:"k,omitempty"`
-	MaxTokens         int      `json:"max_tokens,omitempty"`
+	MaxTokens        int      `json:"max_tokens,omitempty"`
 	ModelUuid        string   `json:"model_uuid,omitempty"`
 	Name             string   `json:"name,omitempty"`
 	OpenAiKeyUuid    string   `json:"open_ai_key_uuid,omitempty"`
 	ProjectId        string   `json:"project_id,omitempty"`
+	RetrievalMethod  string   `json:"retrieval_method,omitempty"`
 	Region           string   `json:"region,omitempty"`
 	Tags             []string `json:"tags,omitempty"`
 	Temperature      float64  `json:"temperature,omitempty"`
@@ -292,7 +264,7 @@ type AgentUpdateRequest struct {
 }
 
 // List returns a list of Gen AI Agents
-func (s *AgentServiceOp) List(ctx context.Context, opt *ListOptions) ([]*Agents, *Response, error) {
+func (s *AgentServiceOp) List(ctx context.Context, opt *ListOptions) ([]*Agent, *Response, error) {
 	path, err := addOptions(agentConnectBasePath, opt)
 	if err != nil {
 		return nil, nil, err
@@ -403,10 +375,6 @@ func (s *AgentServiceOp) UpdateVisibility(ctx context.Context, id string, update
 	}
 
 	return root.Agent, resp, nil
-}
-
-func (a Agents) String() string {
-	return Stringify(a)
 }
 
 func (a Agent) String() string {
