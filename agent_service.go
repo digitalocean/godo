@@ -49,7 +49,7 @@ type Agent struct {
 	Instruction       string                   `json:"instruction,omitempty"`
 	K                 int                      `json:"k,omitempty"`
 	KnowledgeBases    []*KnowledgeBase         `json:"knowledge_bases,omitempty"`
-	MaxToken          int                      `json:"max_tokens,omitempty"`
+	MaxTokens          int                      `json:"max_tokens,omitempty"`
 	Model             *Model                   `json:"model,omitempty"`
 	Name              string                   `json:"name,omitempty"`
 	OpenAiApiKey      *OpenAiApiKey            `json:"open_ai_api_key,omitempty"`
