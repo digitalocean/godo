@@ -297,7 +297,7 @@ func TestListAgents(t *testing.T) {
 		PerPage: 1,
 	}
 
-	agents, resp, err := client.GenAI.List(ctx, req)
+	agents, resp, err := client.GenAI.ListAgents(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListAgents returned error: %v", err)
 	}
@@ -323,7 +323,7 @@ func TestGetAgent(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.Get(ctx, "00000000-0000-0000-0000-000000000000")
+	res, resp, err := client.GenAI.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
 	if err != nil {
 		t.Errorf("GenAI.Get returned error: %v", err)
 	}
@@ -354,7 +354,7 @@ func TestCreateAgent(t *testing.T) {
 		Tags:              []string{"string"},
 	}
 
-	res, _, err := client.GenAI.Create(ctx, req)
+	res, _, err := client.GenAI.CreateAgent(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.Create returned error: %v", err)
 	}
@@ -372,7 +372,7 @@ func TestDeleteAgent(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.Delete(ctx, "def5d52c-30c5-11f0-bf8f-4e013e2ddde4")
+	res, resp, err := client.GenAI.DeleteAgent(ctx, "def5d52c-30c5-11f0-bf8f-4e013e2ddde4")
 	if err != nil {
 		t.Errorf("GenAI.Delete returned error: %v", err)
 	}
@@ -394,7 +394,7 @@ func TestUpdateAgent(t *testing.T) {
 		Tags: []string{"updated", "example"},
 	}
 
-	res, resp, err := client.GenAI.Update(ctx, "00000000-0000-0000-0000-000000000000", req)
+	res, resp, err := client.GenAI.UpdateAgent(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.Update returned error: %v", err)
 	}
@@ -417,7 +417,7 @@ func TestUpdateAgentVisibility(t *testing.T) {
 		Visibility: "VISIBILITY_PRIVATE",
 	}
 
-	res, resp, err := client.GenAI.UpdateVisibility(ctx, "00000000-0000-0000-0000-000000000000", req)
+	res, resp, err := client.GenAI.UpdateAgentVisibility(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateVisibility returned error: %v", err)
 	}

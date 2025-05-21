@@ -9,12 +9,12 @@ import (
 const agentConnectBasePath = "/v2/gen-ai/agents"
 
 type AgentService interface {
-	List(context.Context, *ListOptions) ([]*Agent, *Response, error)
-	Create(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
-	Get(context.Context, string) (*Agent, *Response, error)
-	Update(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
-	Delete(context.Context, string) (*Agent, *Response, error)
-	UpdateVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
+	ListAgents(context.Context, *ListOptions) ([]*Agent, *Response, error)
+	CreateAgent(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
+	GetAgent(context.Context, string) (*Agent, *Response, error)
+	UpdateAgent(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
+	DeleteAgent(context.Context, string) (*Agent, *Response, error)
+	UpdateAgentVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
 }
 
 var _ AgentService = &AgentServiceOp{}
@@ -34,39 +34,39 @@ type genAIAgentRoot struct {
 }
 
 type Agent struct {
-	AnthropicApiKey   *AnthropicApiKeyInfo     `json:"anthropic_api_key,omitempty"`
-	ApiKeyInfos       []*ApiKeyInfo            `json:"api_key_infos,omitempty"`
-	ApiKeys           []*ApiKey                `json:"api_keys,omitempty"`
-	ChatBot           *ChatBot                 `json:"chatbot,omitempty"`
-	ChatbotIdentifier []AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
-	CreatedAt         *Timestamp               `json:"created_at,omitempty"`
-	Deployment        *AgentDeployment         `json:"deployment,omitempty"`
-	Description       string                   `json:"description,omitempty"`
-	UpdatedAt         *Timestamp               `json:"updated_at,omitempty"`
-	Functions         []*AgentFunction         `json:"functions,omitempty"`
-	Guardrails        []*AgentGuardrail        `json:"guardrails,omitempty"`
-	IfCase            string                   `json:"if_case,omitempty"`
-	Instruction       string                   `json:"instruction,omitempty"`
-	K                 int                      `json:"k,omitempty"`
-	KnowledgeBases    []*KnowledgeBase         `json:"knowledge_bases,omitempty"`
-	MaxTokens         int                      `json:"max_tokens,omitempty"`
-	Model             *Model                   `json:"model,omitempty"`
-	Name              string                   `json:"name,omitempty"`
-	OpenAiApiKey      *OpenAiApiKey            `json:"open_ai_api_key,omitempty"`
-	ProjectId         string                   `json:"project_id,omitempty"`
-	Region            string                   `json:"region,omitempty"`
-	RetrievalMethod   string                   `json:"retrieval_method,omitempty"`
-	RouteCreatedAt    *Timestamp               `json:"route_created_at,omitempty"`
-	RouteCreatedBy    string                   `json:"route_created_by,omitempty"`
-	RouteUuid         string                   `json:"route_uuid,omitempty"`
-	RouteName         string                   `json:"route_name,omitempty"`
-	Tags              []string                 `json:"tags,omitempty"`
-	Template          *AgentTemplate           `json:"template,omitempty"`
-	Temperature       float64                  `json:"temperature,omitempty"`
-	TopP              float64                  `json:"top_p,omitempty"`
-	Url               string                   `json:"url,omitempty"`
-	UserId            string                   `json:"user_id,omitempty"`
-	Uuid              string                   `json:"uuid,omitempty"`
+	AnthropicApiKey    *AnthropicApiKeyInfo      `json:"anthropic_api_key,omitempty"`
+	ApiKeyInfos        []*ApiKeyInfo             `json:"api_key_infos,omitempty"`
+	ApiKeys            []*ApiKey                 `json:"api_keys,omitempty"`
+	ChatBot            *ChatBot                  `json:"chatbot,omitempty"`
+	ChatbotIdentifiers []*AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
+	CreatedAt          *Timestamp                `json:"created_at,omitempty"`
+	Deployment         *AgentDeployment          `json:"deployment,omitempty"`
+	Description        string                    `json:"description,omitempty"`
+	UpdatedAt          *Timestamp                `json:"updated_at,omitempty"`
+	Functions          []*AgentFunction          `json:"functions,omitempty"`
+	Guardrails         []*AgentGuardrail         `json:"guardrails,omitempty"`
+	IfCase             string                    `json:"if_case,omitempty"`
+	Instruction        string                    `json:"instruction,omitempty"`
+	K                  int                       `json:"k,omitempty"`
+	KnowledgeBases     []*KnowledgeBase          `json:"knowledge_bases,omitempty"`
+	MaxTokens          int                       `json:"max_tokens,omitempty"`
+	Model              *Model                    `json:"model,omitempty"`
+	Name               string                    `json:"name,omitempty"`
+	OpenAiApiKey       *OpenAiApiKey             `json:"open_ai_api_key,omitempty"`
+	ProjectId          string                    `json:"project_id,omitempty"`
+	Region             string                    `json:"region,omitempty"`
+	RetrievalMethod    string                    `json:"retrieval_method,omitempty"`
+	RouteCreatedAt     *Timestamp                `json:"route_created_at,omitempty"`
+	RouteCreatedBy     string                    `json:"route_created_by,omitempty"`
+	RouteUuid          string                    `json:"route_uuid,omitempty"`
+	RouteName          string                    `json:"route_name,omitempty"`
+	Tags               []string                  `json:"tags,omitempty"`
+	Template           *AgentTemplate            `json:"template,omitempty"`
+	Temperature        float64                   `json:"temperature,omitempty"`
+	TopP               float64                   `json:"top_p,omitempty"`
+	Url                string                    `json:"url,omitempty"`
+	UserId             string                    `json:"user_id,omitempty"`
+	Uuid               string                    `json:"uuid,omitempty"`
 }
 
 type AgentFunction struct {
@@ -264,7 +264,7 @@ type AgentUpdateRequest struct {
 }
 
 // List returns a list of Gen AI Agents
-func (s *AgentServiceOp) List(ctx context.Context, opt *ListOptions) ([]*Agent, *Response, error) {
+func (s *AgentServiceOp) ListAgents(ctx context.Context, opt *ListOptions) ([]*Agent, *Response, error) {
 	path, err := addOptions(agentConnectBasePath, opt)
 	if err != nil {
 		return nil, nil, err
@@ -290,7 +290,7 @@ func (s *AgentServiceOp) List(ctx context.Context, opt *ListOptions) ([]*Agent, 
 }
 
 // Create creates a new Gen AI Agent by providing the AgentCreateRequest object
-func (s *AgentServiceOp) Create(ctx context.Context, create *AgentCreateRequest) (*Agent, *Response, error) {
+func (s *AgentServiceOp) CreateAgent(ctx context.Context, create *AgentCreateRequest) (*Agent, *Response, error) {
 	path := agentConnectBasePath
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, create)
@@ -309,7 +309,7 @@ func (s *AgentServiceOp) Create(ctx context.Context, create *AgentCreateRequest)
 }
 
 // Get returns the details of a Gen AI Agent based on the Agent UUID
-func (s *AgentServiceOp) Get(ctx context.Context, id string) (*Agent, *Response, error) {
+func (s *AgentServiceOp) GetAgent(ctx context.Context, id string) (*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -327,7 +327,7 @@ func (s *AgentServiceOp) Get(ctx context.Context, id string) (*Agent, *Response,
 }
 
 // Update function updates a Gen AI Agent properties for the given UUID
-func (s *AgentServiceOp) Update(ctx context.Context, id string, update *AgentUpdateRequest) (*Agent, *Response, error) {
+func (s *AgentServiceOp) UpdateAgent(ctx context.Context, id string, update *AgentUpdateRequest) (*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
@@ -344,7 +344,7 @@ func (s *AgentServiceOp) Update(ctx context.Context, id string, update *AgentUpd
 }
 
 // Delete function deletes a Gen AI Agent by its corresponding UUID
-func (s *AgentServiceOp) Delete(ctx context.Context, id string) (*Agent, *Response, error) {
+func (s *AgentServiceOp) DeleteAgent(ctx context.Context, id string) (*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -361,7 +361,7 @@ func (s *AgentServiceOp) Delete(ctx context.Context, id string) (*Agent, *Respon
 }
 
 // Update function updates a Gen AI Agent status by changing visibility to public or private.
-func (s *AgentServiceOp) UpdateVisibility(ctx context.Context, id string, update *AgentVisibilityUpdateRequest) (*Agent, *Response, error) {
+func (s *AgentServiceOp) UpdateAgentVisibility(ctx context.Context, id string, update *AgentVisibilityUpdateRequest) (*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s/deployment_visibility", agentConnectBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
