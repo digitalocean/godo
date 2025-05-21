@@ -227,7 +227,22 @@ func TestEgressGateways_List(t *testing.T) {
 	setup()
 	defer teardown()
 
+	stateOpts := []string{"STATE_NEW", "STATE_ACTIVE"}
+	regionOpts := []string{"nyc3", "ams3"}
+	typeOpts := []string{"public"}
+	nameOpts := []string{"test-ngw-01", "test-ngw-02"}
+
 	mux.HandleFunc(egressGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
+		queryParams := r.URL.Query()
+		assert.True(t, queryParams.Has("state"))
+		assert.ElementsMatch(t, stateOpts, queryParams["state"])
+		assert.True(t, queryParams.Has("region"))
+		assert.ElementsMatch(t, regionOpts, queryParams["region"])
+		assert.True(t, queryParams.Has("type"))
+		assert.ElementsMatch(t, typeOpts, queryParams["type"])
+		assert.True(t, queryParams.Has("name"))
+		assert.ElementsMatch(t, nameOpts, queryParams["name"])
+
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, egressGatewayListJSONResponse)
 	})
@@ -271,7 +286,13 @@ func TestEgressGateways_List(t *testing.T) {
 		},
 	}
 
-	listGatewaysResp, _, err := client.EgressGateways.List(ctx, nil)
+	listGatewaysResp, _, err := client.EgressGateways.List(ctx, &EgressGatewaysListOptions{
+		ListOptions: ListOptions{Page: 1},
+		State:       stateOpts,
+		Region:      regionOpts,
+		Type:        typeOpts,
+		Name:        nameOpts,
+	})
 	require.NoError(t, err)
 	require.NotEmpty(t, listGatewaysResp)
 	sort.SliceStable(listGatewaysResp, func(i, j int) bool {
