@@ -55,6 +55,7 @@ type Agent struct {
 	ChatBot            *ChatBot                  `json:"chatbot,omitempty"`
 	ChatbotIdentifiers []*AgentChatbotIdentifier `json:"chatbot_identifiers,omitempty"`
 	CreatedAt          *Timestamp                `json:"created_at,omitempty"`
+	ChildAgents        []*Agent                  `json:"child_agents,omitempty"`
 	Deployment         *AgentDeployment          `json:"deployment,omitempty"`
 	Description        string                    `json:"description,omitempty"`
 	UpdatedAt          *Timestamp                `json:"updated_at,omitempty"`
@@ -68,6 +69,7 @@ type Agent struct {
 	Model              *Model                    `json:"model,omitempty"`
 	Name               string                    `json:"name,omitempty"`
 	OpenAiApiKey       *OpenAiApiKey             `json:"open_ai_api_key,omitempty"`
+	ParentAgents       []*Agent                  `json:"parent_agents,omitempty"`
 	ProjectId          string                    `json:"project_id,omitempty"`
 	Region             string                    `json:"region,omitempty"`
 	RetrievalMethod    string                    `json:"retrieval_method,omitempty"`
