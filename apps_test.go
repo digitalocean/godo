@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -1194,4 +1195,52 @@ func TestGetAppSpecComponent(t *testing.T) {
 		require.EqualError(t, err, "component 404 not found")
 		require.Nil(t, db)
 	})
+}
+
+func TestApps_GetAppInstances(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/instances", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		instances := []*AppInstance{
+			{
+				ComponentName: "service-name",
+				InstanceName:  "service-name-64fcd65687-mmmfr",
+				ComponentType: APPINSTANCECOMPONENTTYPE_Service,
+			},
+			{
+				ComponentName: "worker-name",
+				InstanceName:  "worker-name-767c6b49c4-dkgpt",
+				ComponentType: APPINSTANCECOMPONENTTYPE_Worker,
+			},
+			{
+				ComponentName: "job-name",
+				InstanceName:  "job-name-321d5c49b4-bcgqr",
+				ComponentType: APPINSTANCECOMPONENTTYPE_Job,
+			},
+		}
+
+		json.NewEncoder(w).Encode(&GetAppInstancesResponse{Instances: instances})
+	})
+
+	opts := &GetAppInstancesOpts{}
+	appInstances, _, err := client.Apps.GetAppInstances(ctx, testApp.ID, opts)
+	require.NoError(t, err)
+	require.Len(t, appInstances, 3)
+
+	assert.Equal(t, "service-name", appInstances[0].ComponentName)
+	assert.True(t, strings.HasPrefix(appInstances[0].InstanceName, "service-name-"))
+	assert.Equal(t, APPINSTANCECOMPONENTTYPE_Service, appInstances[0].ComponentType)
+
+	assert.Equal(t, "worker-name", appInstances[1].ComponentName)
+	assert.True(t, strings.HasPrefix(appInstances[1].InstanceName, "worker-name-"))
+	assert.Equal(t, APPINSTANCECOMPONENTTYPE_Worker, appInstances[1].ComponentType)
+
+	assert.Equal(t, "job-name", appInstances[2].ComponentName)
+	assert.True(t, strings.HasPrefix(appInstances[2].InstanceName, "job-name-"))
+	assert.Equal(t, APPINSTANCECOMPONENTTYPE_Job, appInstances[2].ComponentType)
 }
