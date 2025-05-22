@@ -292,7 +292,21 @@ func (s *AgentServiceOp) ListAgents(ctx context.Context, opt *ListOptions) ([]*A
 // Create creates a new Gen AI Agent by providing the AgentCreateRequest object
 func (s *AgentServiceOp) CreateAgent(ctx context.Context, create *AgentCreateRequest) (*Agent, *Response, error) {
 	path := agentConnectBasePath
-
+	if create.ProjectId == "" {
+		return nil, nil, fmt.Errorf("Project ID is required")
+	}
+	if create.Region == "" {
+		return nil, nil, fmt.Errorf("Region is required")
+	}
+	if create.Instruction == "" {
+		return nil, nil, fmt.Errorf("Instruction is required")
+	}
+	if create.ModelUuid == "" {
+		return nil, nil, fmt.Errorf("ModelUuid is required")
+	}
+	if create.Name == "" {
+		return nil, nil, fmt.Errorf("Name is required")
+	}
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, create)
 	if err != nil {
 		return nil, nil, err
