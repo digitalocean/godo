@@ -6,8 +6,14 @@ import (
 	"net/http"
 )
 
-const agentConnectBasePath = "/v2/gen-ai/agents"
+const (
+	agentConnectBasePath = "/v2/gen-ai/agents"
+	agentModelBasePath   = "/v2/gen-ai/models"
+)
 
+// AgentService is an interface for interfacing with the Gen AI Agent endpoints
+// of the DigitalOcean API.
+// See https://docs.digitalocean.com/reference/api/digitalocean/#tag/GenAI-Platform-(Public-Preview) for more details.
 type AgentService interface {
 	ListAgents(context.Context, *ListOptions) ([]*Agent, *Response, error)
 	CreateAgent(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
@@ -15,10 +21,12 @@ type AgentService interface {
 	UpdateAgent(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
 	DeleteAgent(context.Context, string) (*Agent, *Response, error)
 	UpdateAgentVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
+	ListModels(context.Context, *ListOptions) ([]*Model, *Response, error)
 }
 
 var _ AgentService = &AgentServiceOp{}
 
+// AgentServiceOp interfaces with the Agent Service endpoints in the DigitalOcean API.
 type AgentServiceOp struct {
 	client *Client
 }
@@ -33,6 +41,13 @@ type genAIAgentRoot struct {
 	Agent *Agent `json:"agent"`
 }
 
+type genAiModelsRoot struct {
+	Models []*Model `json:"models"`
+	Links  *Links   `json:"links"`
+	Meta   *Meta    `json:"meta"`
+}
+
+// Agent represents a Gen AI Agent
 type Agent struct {
 	AnthropicApiKey    *AnthropicApiKeyInfo      `json:"anthropic_api_key,omitempty"`
 	ApiKeyInfos        []*ApiKeyInfo             `json:"api_key_infos,omitempty"`
@@ -69,6 +84,7 @@ type Agent struct {
 	Uuid               string                    `json:"uuid,omitempty"`
 }
 
+// AgentFunction represents a Gen AI Agent Function
 type AgentFunction struct {
 	ApiKey        string     `json:"api_key,omitempty"`
 	CreatedAt     *Timestamp `json:"created_at,omitempty"`
@@ -82,6 +98,7 @@ type AgentFunction struct {
 	Uuid          string     `json:"uuid,omitempty"`
 }
 
+// AgentGuardrail represents a Guardrail attached to Gen AI Agent
 type AgentGuardrail struct {
 	AgentUuid       string     `json:"agent_uuid,omitempty"`
 	CreatedAt       *Timestamp `json:"created_at,omitempty"`
@@ -101,6 +118,7 @@ type ApiKey struct {
 	ApiKey string `json:"api_key,omitempty"`
 }
 
+// AnthropicApiKeyInfo represents the Anthropic API Key information
 type AnthropicApiKeyInfo struct {
 	CreatedAt *Timestamp `json:"created_at,omitempty"`
 	CreatedBy string     `json:"created_by,omitempty"`
@@ -110,6 +128,7 @@ type AnthropicApiKeyInfo struct {
 	Uuid      string     `json:"uuid,omitempty"`
 }
 
+// ApiKeyInfo represents the information of an API key
 type ApiKeyInfo struct {
 	CreatedAt *Timestamp `json:"created_at,omitempty"`
 	CreatedBy string     `json:"created_by,omitempty"`
@@ -119,6 +138,7 @@ type ApiKeyInfo struct {
 	Uuid      string     `json:"uuid,omitempty"`
 }
 
+// OpenAiApiKey represents the OpenAI API Key information
 type OpenAiApiKey struct {
 	CreatedAt *Timestamp `json:"created_at,omitempty"`
 	CreatedBy string     `json:"created_by,omitempty"`
@@ -129,11 +149,13 @@ type OpenAiApiKey struct {
 	Uuid      string     `json:"uuid,omitempty"`
 }
 
+// AgentVersionUpdateRequest represents the request to update the version of an agent
 type AgentVisibilityUpdateRequest struct {
 	Uuid       string `json:"uuid,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
 }
 
+// AgentTemplate represents the template of a Gen AI Agent
 type AgentTemplate struct {
 	CreatedAt      *Timestamp       `json:"created_at,omitempty"`
 	Instruction    string           `json:"instruction,omitempty"`
@@ -149,6 +171,7 @@ type AgentTemplate struct {
 	Uuid           string           `json:"uuid,omitempty"`
 }
 
+// KnowledgeBase represents a Gen AI Knowledge Base
 type KnowledgeBase struct {
 	AddedToAgentAt     *Timestamp       `json:"added_to_agent_at,omitempty"`
 	CreatedAt          *Timestamp       `json:"created_at,omitempty"`
@@ -165,6 +188,7 @@ type KnowledgeBase struct {
 	Uuid               string           `json:"uuid,omitempty"`
 }
 
+// LastIndexingJob represents the last indexing job description of a Gen AI Knowledge Base
 type LastIndexingJob struct {
 	CompletedDatasources int        `json:"completed_datasources,omitempty"`
 	CreatedAt            *Timestamp `json:"created_at,omitempty"`
@@ -183,6 +207,7 @@ type AgentChatbotIdentifier struct {
 	AgentChatbotIdentifier string `json:"agent_chatbot_identifier,omitempty"`
 }
 
+// AgentDeployment represents the deployment information of a Gen AI Agent
 type AgentDeployment struct {
 	CreatedAt  *Timestamp `json:"created_at,omitempty"`
 	Name       string     `json:"name,omitempty"`
@@ -193,6 +218,7 @@ type AgentDeployment struct {
 	Visibility string     `json:"visibility,omitempty"`
 }
 
+// ChatBot represents the chatbot information of a Gen AI Agent
 type ChatBot struct {
 	ButtonBackgroundColor string `json:"button_background_color,omitempty"`
 	Logo                  string `json:"logo,omitempty"`
@@ -202,6 +228,7 @@ type ChatBot struct {
 	StartingMessage       string `json:"starting_message,omitempty"`
 }
 
+// Model represents a Gen AI Model
 type Model struct {
 	Agreement        *Agreement    `json:"agreement,omitempty"`
 	CreatedAt        *Timestamp    `json:"created_at,omitempty"`
@@ -219,6 +246,7 @@ type Model struct {
 	Version          *ModelVersion `json:"version,omitempty"`
 }
 
+// Agreement represents the agreement information of a Gen AI Model
 type Agreement struct {
 	Description string `json:"description,omitempty"`
 	Name        string `json:"name,omitempty"`
@@ -232,6 +260,7 @@ type ModelVersion struct {
 	Patch int `json:"patch,omitempty"`
 }
 
+// AgentCreateRequest represents the request to create a new Gen AI Agent
 type AgentCreateRequest struct {
 	AnthropicKeyUuid  string   `json:"anthropic_key_uuid,omitempty"`
 	Description       string   `json:"description,omitempty"`
@@ -245,6 +274,7 @@ type AgentCreateRequest struct {
 	Tags              []string `json:"tags,omitempty"`
 }
 
+// AgentUpdateRequest represents the request to update an existing Gen AI Agent
 type AgentUpdateRequest struct {
 	AnthropicKeyUuid string   `json:"anthropic_key_uuid,omitempty"`
 	Description      string   `json:"description,omitempty"`
@@ -391,6 +421,33 @@ func (s *AgentServiceOp) UpdateAgentVisibility(ctx context.Context, id string, u
 	return root.Agent, resp, nil
 }
 
+// ListModels function returns a list of Gen AI Models
+func (s *AgentServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*Model, *Response, error) {
+	path, err := addOptions(agentModelBasePath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(genAiModelsRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+
+	return root.Models, resp, nil
+}
+
 func (a Agent) String() string {
 	return Stringify(a)
+}
+
+func (m Model) String() string {
+	return Stringify(m)
 }

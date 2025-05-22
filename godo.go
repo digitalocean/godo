@@ -149,6 +149,12 @@ type ListOptions struct {
 
 	// This parameter is used to only list agents that are deployed in the response.
 	Deployed bool `url:"only_deployed,omitempty"`
+
+	// This parameter is used to include models that are publicly available.
+	PublicOnly bool `url:"public_only,omitempty"`
+
+	// This parameter is used to include models according to the use cases.
+	Usecases []string `url:"usecases,omitempty"`
 }
 
 // TokenListOptions specifies the optional parameters to various List methods that support token pagination.

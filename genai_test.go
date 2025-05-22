@@ -278,6 +278,43 @@ var agentUpdateResponse = `
 }
 `
 
+var agentModelsResponse = `
+{
+	"models": [
+		{
+			"uuid": "00000000-0000-0000-0000-000000000000",
+			"name": "Llama 3.3 Instruct (70B)",
+			"version": {
+				"major": 1
+			},
+			"is_foundational": true,
+			"upload_complete": true,
+			"created_at": "2025-01-13T20:56:20Z",
+			"updated_at": "2025-05-13T15:16:21Z",
+			"parent_uuid": "00000000-0000-0000-0000-000000000000",
+			"agreement": {
+				"uuid": "00000000-0000-0000-0000-000000000000",
+				"name": "Meta Llama 3.3 Community License",
+				"description": "Meta Llama 3.3 is licensed under the Meta Llama 3.3 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved. By purchasing, deploying, accessing, or using this model, you agree to comply with the",
+				"url": "https://www.llama.com/llama3_3/license/"
+			}
+		}
+	],
+	"links": {
+		"pages": {
+			"first": "https://api.digitalocean.com/v2/gen-ai/models?page=1&per_page=1",
+			"next": "https://api.digitalocean.com/v2/gen-ai/models?page=2&per_page=1",
+			"last": "https://api.digitalocean.com/v2/gen-ai/models?page=15&per_page=1"
+		}
+	},
+	"meta": {
+		"total": 15,
+		"page": 1,
+		"pages": 15
+	}
+}
+`
+
 func TestListAgents(t *testing.T) {
 	setup()
 	defer teardown()
@@ -425,4 +462,34 @@ func TestUpdateAgentVisibility(t *testing.T) {
 	assert.Equal(t, res.Uuid, req.Uuid)
 	assert.Equal(t, res.Name, "My Agent")
 	assert.Equal(t, resp.Response.StatusCode, 200)
+}
+
+func TestListModels(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "1",
+		})
+
+		fmt.Fprint(w, agentModelsResponse)
+	})
+
+	req := &ListOptions{
+		Page:    1,
+		PerPage: 1,
+	}
+
+	models, resp, err := client.GenAI.ListModels(ctx, req)
+	if err != nil {
+		t.Errorf("GenAI ListModels returned error: %v", err)
+	}
+
+	assert.Equal(t, models[0].Name, "Llama 3.3 Instruct (70B)")
+	expectedString := fmt.Sprintf("%v", models[0])
+	assert.Equal(t, resp.Response.StatusCode, 200)
+	assert.Equal(t, expectedString, models[0].String())
 }
