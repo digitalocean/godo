@@ -171,18 +171,6 @@ type TokenListOptions struct {
 	Token string `url:"page_token,omitempty"`
 }
 
-// AgentListOptions specifies the optional parameters to various List methods that support agents pagination.
-type AgentListOptions struct {
-	// For paginated result sets, page of results to retrieve.
-	Page int `url:"page,omitempty"`
-
-	// For paginated result sets, the number of results to include per page.
-	PerPage int `url:"per_page,omitempty"`
-
-	// This parameter is used to only list agents that are deployed in the response.
-	Deployed bool `url:"only_deployed,omitempty"`
-}
-
 // Response is a DigitalOcean response. This wraps the standard http.Response returned from DigitalOcean.
 type Response struct {
 	*http.Response
