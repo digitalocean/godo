@@ -291,7 +291,7 @@ type AgentCreateRequest struct {
 	Tags              []string `json:"tags,omitempty"`
 }
 
-// AgentCreateAPIRequest represents the request to create a new Gen AI Agent API Key
+// AgentCreateAPIKeyRequest represents the request to create a new Gen AI Agent API Key
 type AgentCreateAPIKeyRequest struct {
 	AgentUuid string `json:"agent_uuid,omitempty"`
 	Name      string `json:"name,omitempty"`
@@ -316,7 +316,7 @@ type AgentUpdateRequest struct {
 	Uuid             string   `json:"uuid,omitempty"`
 }
 
-// AgentUpdateAPIRequest represents the request to update an existing Gen AI Agent API Key
+// AgentUpdateAPIKeyRequest represents the request to update an existing Gen AI Agent API Key
 type AgentUpdateAPIKeyRequest struct {
 	AgentUuid  string `json:"agent_uuid,omitempty"`
 	APIKeyUuid string `json:"api_key_uuid,omitempty"`
@@ -581,10 +581,6 @@ func (a Agent) String() string {
 func (a ApiKeyInfo) String() string {
 	return Stringify(a)
 }
-
-// func (a ApiKey) String() string {
-// 	return Stringify(a)
-// }
 
 func (m Model) String() string {
 	return Stringify(m)
