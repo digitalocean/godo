@@ -11,14 +11,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var egressGatewayGetJSONResponse = `
+var vpcNatGatewayGetJSONResponse = `
 {
-  "egress_gateway": {
+  "vpc_nat_gateway": {
     "id": "97c46619-1f53-493b-8638-00c899f30152",
     "name": "test-egress-gateway-01",
     "type": "PUBLIC",
     "state": "STATE_ACTIVE",
     "region": "nyc3",
+    "size": 1,
     "vpcs": [
       {
         "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
@@ -41,15 +42,16 @@ var egressGatewayGetJSONResponse = `
 }
 `
 
-var egressGatewayListJSONResponse = `
+var vpcNatGatewayListJSONResponse = `
 {
-  "egress_gateways": [
+  "vpc_nat_gateways": [
     {
       "id": "97c46619-1f53-493b-8638-00c899f30152",
       "name": "test-egress-gateway-01",
       "type": "PUBLIC",
       "state": "STATE_ACTIVE",
       "region": "nyc3",
+      "size": 1,
       "vpcs": [
         {
           "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
@@ -75,6 +77,7 @@ var egressGatewayListJSONResponse = `
       "type": "PUBLIC",
       "state": "STATE_ACTIVE",
       "region": "nyc3",
+      "size": 1,
       "vpcs": [
         {
           "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
@@ -102,14 +105,15 @@ var egressGatewayListJSONResponse = `
 }
 `
 
-var egressGatewayUpdateJSONResponse = `
+var vpcNatGatewayUpdateJSONResponse = `
 {
-  "egress_gateway": {
+  "vpc_nat_gateway": {
     "id": "97c46619-1f53-493b-8638-00c899f30152",
     "name": "test-egress-gateway-renamed-01",
     "type": "PUBLIC",
     "state": "STATE_ACTIVE",
     "region": "nyc3",
+    "size": 1,
     "vpcs": [
       {
         "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
@@ -132,14 +136,15 @@ var egressGatewayUpdateJSONResponse = `
 }
 `
 
-func TestEgressGateways_Create(t *testing.T) {
+func TestVPCNATGateways_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	createReq := &EgressGatewayRequest{
+	createReq := &VPCNATGatewayRequest{
 		Name:   "test-egress-gateway-01",
 		Type:   "PUBLIC",
 		Region: "nyc3",
+		Size:   1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3"},
 		},
@@ -148,23 +153,24 @@ func TestEgressGateways_Create(t *testing.T) {
 		TCPTimeoutSeconds:  300,
 	}
 
-	mux.HandleFunc(egressGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
-		req := new(EgressGatewayRequest)
+	mux.HandleFunc(vpcNatGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
+		req := new(VPCNATGatewayRequest)
 		err := json.NewDecoder(r.Body).Decode(req)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, createReq, req)
-		fmt.Fprintf(w, egressGatewayGetJSONResponse)
+		fmt.Fprintf(w, vpcNatGatewayGetJSONResponse)
 	})
 
-	expectedGatewayResp := &EgressGateway{
+	expectedGatewayResp := &VPCNATGateway{
 		ID:     "97c46619-1f53-493b-8638-00c899f30152",
 		Name:   "test-egress-gateway-01",
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
+		Size:   1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 		},
@@ -178,7 +184,7 @@ func TestEgressGateways_Create(t *testing.T) {
 		TCPTimeoutSeconds:  300,
 	}
 
-	createGatewayResp, _, err := client.EgressGateways.Create(ctx, createReq)
+	createGatewayResp, _, err := client.VPCNATGateways.Create(ctx, createReq)
 	require.NoError(t, err)
 	require.NotEmpty(t, createGatewayResp)
 	expectedGatewayResp.CreatedAt = createGatewayResp.CreatedAt
@@ -186,22 +192,23 @@ func TestEgressGateways_Create(t *testing.T) {
 	assert.Equal(t, expectedGatewayResp, createGatewayResp)
 }
 
-func TestEgressGateways_Get(t *testing.T) {
+func TestVPCNATGateways_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
 	gatewayID := "97c46619-1f53-493b-8638-00c899f30152"
-	mux.HandleFunc(fmt.Sprintf("%s/%s", egressGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprintf(w, egressGatewayGetJSONResponse)
+		fmt.Fprintf(w, vpcNatGatewayGetJSONResponse)
 	})
 
-	expectedGatewayResp := &EgressGateway{
+	expectedGatewayResp := &VPCNATGateway{
 		ID:     "97c46619-1f53-493b-8638-00c899f30152",
 		Name:   "test-egress-gateway-01",
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
+		Size:   1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 		},
@@ -215,7 +222,7 @@ func TestEgressGateways_Get(t *testing.T) {
 		TCPTimeoutSeconds:  300,
 	}
 
-	getGatewayResp, _, err := client.EgressGateways.Get(ctx, gatewayID)
+	getGatewayResp, _, err := client.VPCNATGateways.Get(ctx, gatewayID)
 	require.NoError(t, err)
 	require.NotNil(t, getGatewayResp)
 	expectedGatewayResp.CreatedAt = getGatewayResp.CreatedAt
@@ -223,7 +230,7 @@ func TestEgressGateways_Get(t *testing.T) {
 	assert.Equal(t, expectedGatewayResp, getGatewayResp)
 }
 
-func TestEgressGateways_List(t *testing.T) {
+func TestVPCNATGateways_List(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -232,7 +239,7 @@ func TestEgressGateways_List(t *testing.T) {
 	typeOpts := []string{"public"}
 	nameOpts := []string{"test-ngw-01", "test-ngw-02"}
 
-	mux.HandleFunc(egressGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(vpcNatGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
 		queryParams := r.URL.Query()
 		assert.True(t, queryParams.Has("state"))
 		assert.ElementsMatch(t, stateOpts, queryParams["state"])
@@ -244,16 +251,17 @@ func TestEgressGateways_List(t *testing.T) {
 		assert.ElementsMatch(t, nameOpts, queryParams["name"])
 
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprintf(w, egressGatewayListJSONResponse)
+		fmt.Fprintf(w, vpcNatGatewayListJSONResponse)
 	})
 
-	expectedGatewaysResp := []*EgressGateway{
+	expectedGatewaysResp := []*VPCNATGateway{
 		{
 			ID:     "97c46619-1f53-493b-8638-00c899f30152",
 			Name:   "test-egress-gateway-01",
 			Type:   "PUBLIC",
 			State:  "STATE_ACTIVE",
 			Region: "nyc3",
+			Size:   1,
 			VPCs: []*IngressVPC{
 				{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 			},
@@ -272,6 +280,7 @@ func TestEgressGateways_List(t *testing.T) {
 			Type:   "PUBLIC",
 			State:  "STATE_ACTIVE",
 			Region: "nyc3",
+			Size:   1,
 			VPCs: []*IngressVPC{
 				{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.106"},
 			},
@@ -286,7 +295,7 @@ func TestEgressGateways_List(t *testing.T) {
 		},
 	}
 
-	listGatewaysResp, _, err := client.EgressGateways.List(ctx, &EgressGatewaysListOptions{
+	listGatewaysResp, _, err := client.VPCNATGateways.List(ctx, &VPCNATGatewaysListOptions{
 		ListOptions: ListOptions{Page: 1},
 		State:       stateOpts,
 		Region:      regionOpts,
@@ -305,11 +314,11 @@ func TestEgressGateways_List(t *testing.T) {
 	assert.Equal(t, expectedGatewaysResp, listGatewaysResp)
 }
 
-func TestEgressGateways_Update(t *testing.T) {
+func TestVPCNATGateways_Update(t *testing.T) {
 	setup()
 	defer teardown()
 
-	updateReq := &EgressGatewayRequest{
+	updateReq := &VPCNATGatewayRequest{
 		Name:   "test-egress-gateway-renamed-01",
 		Type:   "PUBLIC",
 		Region: "nyc3",
@@ -322,23 +331,24 @@ func TestEgressGateways_Update(t *testing.T) {
 	}
 
 	gatewayID := "97c46619-1f53-493b-8638-00c899f30152"
-	mux.HandleFunc(fmt.Sprintf("%s/%s", egressGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
-		req := new(EgressGatewayRequest)
+	mux.HandleFunc(fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
+		req := new(VPCNATGatewayRequest)
 		err := json.NewDecoder(r.Body).Decode(req)
 		if err != nil {
 			t.Fatal(err)
 		}
 		testMethod(t, r, http.MethodPut)
 		assert.Equal(t, updateReq, req)
-		fmt.Fprintf(w, egressGatewayUpdateJSONResponse)
+		fmt.Fprintf(w, vpcNatGatewayUpdateJSONResponse)
 	})
 
-	expectedGatewayResp := &EgressGateway{
+	expectedGatewayResp := &VPCNATGateway{
 		ID:     "97c46619-1f53-493b-8638-00c899f30152",
 		Name:   "test-egress-gateway-renamed-01",
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
+		Size:   1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 		},
@@ -352,7 +362,7 @@ func TestEgressGateways_Update(t *testing.T) {
 		TCPTimeoutSeconds:  300,
 	}
 
-	updateGatewayResp, _, err := client.EgressGateways.Update(ctx, gatewayID, updateReq)
+	updateGatewayResp, _, err := client.VPCNATGateways.Update(ctx, gatewayID, updateReq)
 	require.NoError(t, err)
 	require.NotEmpty(t, updateGatewayResp)
 	expectedGatewayResp.CreatedAt = updateGatewayResp.CreatedAt
@@ -360,15 +370,15 @@ func TestEgressGateways_Update(t *testing.T) {
 	assert.Equal(t, expectedGatewayResp, updateGatewayResp)
 }
 
-func TestEgressGateways_Delete(t *testing.T) {
+func TestVPCNATGateways_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
 	gatewayID := "97c46619-1f53-493b-8638-00c899f30152"
-	mux.HandleFunc(fmt.Sprintf("%s/%s", egressGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, gatewayID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 	})
 
-	_, err := client.EgressGateways.Delete(ctx, gatewayID)
+	_, err := client.VPCNATGateways.Delete(ctx, gatewayID)
 	assert.NoError(t, err)
 }
