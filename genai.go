@@ -7,16 +7,21 @@ import (
 )
 
 const (
-	agentConnectBasePath = "/v2/gen-ai/agents"
-	agentModelBasePath   = "/v2/gen-ai/models"
+	genAIBasePath      = "/v2/gen-ai/agents"
+	agentModelBasePath = "/v2/gen-ai/models"
 )
 
-// AgentService is an interface for interfacing with the Gen AI Agent endpoints
+// GenAIService is an interface for interfacing with the Gen AI Agent endpoints
 // of the DigitalOcean API.
 // See https://docs.digitalocean.com/reference/api/digitalocean/#tag/GenAI-Platform-(Public-Preview) for more details.
-type AgentService interface {
+type GenAIService interface {
 	ListAgents(context.Context, *ListOptions) ([]*Agent, *Response, error)
 	CreateAgent(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
+	ListAPIKeys(context.Context, string, *ListOptions) ([]*ApiKeyInfo, *Response, error)
+	CreateAPIKey(context.Context, string, *AgentCreateAPIKeyRequest) (*ApiKeyInfo, *Response, error)
+	UpdateAPIKey(context.Context, string, string, *AgentUpdateAPIKeyRequest) (*ApiKeyInfo, *Response, error)
+	DeleteAPIKey(context.Context, string, string) (*ApiKeyInfo, *Response, error)
+	RegenerateAPIKey(context.Context, string, string) (*ApiKeyInfo, *Response, error)
 	GetAgent(context.Context, string) (*Agent, *Response, error)
 	UpdateAgent(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
 	DeleteAgent(context.Context, string) (*Agent, *Response, error)
@@ -24,10 +29,10 @@ type AgentService interface {
 	ListModels(context.Context, *ListOptions) ([]*Model, *Response, error)
 }
 
-var _ AgentService = &AgentServiceOp{}
+var _ GenAIService = &GenAIServiceOp{}
 
-// AgentServiceOp interfaces with the Agent Service endpoints in the DigitalOcean API.
-type AgentServiceOp struct {
+// GenAIServiceOp interfaces with the Agent Service endpoints in the DigitalOcean API.
+type GenAIServiceOp struct {
 	client *Client
 }
 
@@ -41,10 +46,20 @@ type genAIAgentRoot struct {
 	Agent *Agent `json:"agent"`
 }
 
-type genAiModelsRoot struct {
+type genAIModelsRoot struct {
 	Models []*Model `json:"models"`
 	Links  *Links   `json:"links"`
 	Meta   *Meta    `json:"meta"`
+}
+
+type agentAPIKeysRoot struct {
+	ApiKeys []*ApiKeyInfo `json:"api_key_infos"`
+	Links   *Links        `json:"links"`
+	Meta    *Meta         `json:"meta"`
+}
+
+type agentAPIKeyRoot struct {
+	ApiKey *ApiKeyInfo `json:"api_key_info,omitempty"`
 }
 
 // Agent represents a Gen AI Agent
@@ -276,6 +291,12 @@ type AgentCreateRequest struct {
 	Tags              []string `json:"tags,omitempty"`
 }
 
+// AgentCreateAPIRequest represents the request to create a new Gen AI Agent API Key
+type AgentCreateAPIKeyRequest struct {
+	AgentUuid string `json:"agent_uuid,omitempty"`
+	Name      string `json:"name,omitempty"`
+}
+
 // AgentUpdateRequest represents the request to update an existing Gen AI Agent
 type AgentUpdateRequest struct {
 	AnthropicKeyUuid string   `json:"anthropic_key_uuid,omitempty"`
@@ -295,9 +316,16 @@ type AgentUpdateRequest struct {
 	Uuid             string   `json:"uuid,omitempty"`
 }
 
+// AgentUpdateAPIRequest represents the request to update an existing Gen AI Agent API Key
+type AgentUpdateAPIKeyRequest struct {
+	AgentUuid  string `json:"agent_uuid,omitempty"`
+	APIKeyUuid string `json:"api_key_uuid,omitempty"`
+	Name       string `json:"name,omitempty"`
+}
+
 // List returns a list of Gen AI Agents
-func (s *AgentServiceOp) ListAgents(ctx context.Context, opt *ListOptions) ([]*Agent, *Response, error) {
-	path, err := addOptions(agentConnectBasePath, opt)
+func (s *GenAIServiceOp) ListAgents(ctx context.Context, opt *ListOptions) ([]*Agent, *Response, error) {
+	path, err := addOptions(genAIBasePath, opt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -322,8 +350,8 @@ func (s *AgentServiceOp) ListAgents(ctx context.Context, opt *ListOptions) ([]*A
 }
 
 // Create creates a new Gen AI Agent by providing the AgentCreateRequest object
-func (s *AgentServiceOp) CreateAgent(ctx context.Context, create *AgentCreateRequest) (*Agent, *Response, error) {
-	path := agentConnectBasePath
+func (s *GenAIServiceOp) CreateAgent(ctx context.Context, create *AgentCreateRequest) (*Agent, *Response, error) {
+	path := genAIBasePath
 	if create.ProjectId == "" {
 		return nil, nil, fmt.Errorf("Project ID is required")
 	}
@@ -354,9 +382,109 @@ func (s *AgentServiceOp) CreateAgent(ctx context.Context, create *AgentCreateReq
 	return root.Agent, resp, nil
 }
 
+// ListAPIKeys retrieves list of API Keys associated with the specified GenAI agent
+func (s *GenAIServiceOp) ListAPIKeys(ctx context.Context, agentId string, opt *ListOptions) ([]*ApiKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys", genAIBasePath, agentId)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeysRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.ApiKeys, resp, nil
+}
+
+// CreateAPIKey creates a new API key for the specified GenAI agent
+func (s *GenAIServiceOp) CreateAPIKey(ctx context.Context, agentId string, create *AgentCreateAPIKeyRequest) (*ApiKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys", genAIBasePath, agentId)
+
+	if create.AgentUuid == "" {
+		return nil, nil, fmt.Errorf("Agent UUID is required")
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, create)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.ApiKey, resp, err
+}
+
+// UpdateAPIKey updates an existing API key for the specified GenAI agent
+func (s *GenAIServiceOp) UpdateAPIKey(ctx context.Context, agentId, apiKeyId string, updateRequest *AgentUpdateAPIKeyRequest) (*ApiKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys/%s", genAIBasePath, agentId, apiKeyId)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.ApiKey, resp, nil
+}
+
+// DeleteAPIKey deletes an existing API key for the specified GenAI agent
+func (s *GenAIServiceOp) DeleteAPIKey(ctx context.Context, agentId, apiKeyId string) (*ApiKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys/%s", genAIBasePath, agentId, apiKeyId)
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.ApiKey, resp, nil
+}
+
+// RegenerateAPIKey regenerates an API key for the specified GenAI agent
+func (s *GenAIServiceOp) RegenerateAPIKey(ctx context.Context, agentId, apiKeyId string) (*ApiKeyInfo, *Response, error) {
+	path := fmt.Sprintf("%s/%s/api_keys/%s/regenerate", genAIBasePath, agentId, apiKeyId)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(agentAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.ApiKey, resp, nil
+}
+
 // Get returns the details of a Gen AI Agent based on the Agent UUID
-func (s *AgentServiceOp) GetAgent(ctx context.Context, id string) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
+func (s *GenAIServiceOp) GetAgent(ctx context.Context, id string) (*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s", genAIBasePath, id)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -373,8 +501,8 @@ func (s *AgentServiceOp) GetAgent(ctx context.Context, id string) (*Agent, *Resp
 }
 
 // Update function updates a Gen AI Agent properties for the given UUID
-func (s *AgentServiceOp) UpdateAgent(ctx context.Context, id string, update *AgentUpdateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
+func (s *GenAIServiceOp) UpdateAgent(ctx context.Context, id string, update *AgentUpdateRequest) (*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s", genAIBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -390,8 +518,8 @@ func (s *AgentServiceOp) UpdateAgent(ctx context.Context, id string, update *Age
 }
 
 // Delete function deletes a Gen AI Agent by its corresponding UUID
-func (s *AgentServiceOp) DeleteAgent(ctx context.Context, id string) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", agentConnectBasePath, id)
+func (s *GenAIServiceOp) DeleteAgent(ctx context.Context, id string) (*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s", genAIBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -407,8 +535,8 @@ func (s *AgentServiceOp) DeleteAgent(ctx context.Context, id string) (*Agent, *R
 }
 
 // Update function updates a Gen AI Agent status by changing visibility to public or private.
-func (s *AgentServiceOp) UpdateAgentVisibility(ctx context.Context, id string, update *AgentVisibilityUpdateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s/deployment_visibility", agentConnectBasePath, id)
+func (s *GenAIServiceOp) UpdateAgentVisibility(ctx context.Context, id string, update *AgentVisibilityUpdateRequest) (*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s/deployment_visibility", genAIBasePath, id)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -424,7 +552,7 @@ func (s *AgentServiceOp) UpdateAgentVisibility(ctx context.Context, id string, u
 }
 
 // ListModels function returns a list of Gen AI Models
-func (s *AgentServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*Model, *Response, error) {
+func (s *GenAIServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*Model, *Response, error) {
 	path, err := addOptions(agentModelBasePath, opt)
 	if err != nil {
 		return nil, nil, err
@@ -434,7 +562,7 @@ func (s *AgentServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*M
 	if err != nil {
 		return nil, nil, err
 	}
-	root := new(genAiModelsRoot)
+	root := new(genAIModelsRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -449,6 +577,14 @@ func (s *AgentServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*M
 func (a Agent) String() string {
 	return Stringify(a)
 }
+
+func (a ApiKeyInfo) String() string {
+	return Stringify(a)
+}
+
+// func (a ApiKey) String() string {
+// 	return Stringify(a)
+// }
 
 func (m Model) String() string {
 	return Stringify(m)
