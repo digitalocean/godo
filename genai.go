@@ -7,9 +7,9 @@ import (
 )
 
 const (
+	GenAIConnectBasePath         = "/v2/gen-ai"
 	agentConnectBasePath         = "/v2/gen-ai/agents"
 	agentModelBasePath           = "/v2/gen-ai/models"
-	GenAIConnectBasePath         = "/v2/gen-ai"
 	KnowledgeBasePath            = GenAIConnectBasePath + "/knowledge_bases"
 	KnowledgeBaseDataSourcesPath = KnowledgeBasePath + "/%s/data_sources"
 	GetKnowledgeBaseByIDPath     = KnowledgeBasePath + "/%s"
@@ -395,6 +395,7 @@ type LastIndexingJob struct {
 	UUID                 string     `json:"uuid,omitempty"`
 }
 
+// KnowledgeBaseDataSource represents a Gen AI Knowledge Base Data Source
 type KnowledgeBaseDataSource struct {
 	BucketName           string                `json:"bucket_name,omitempty"`
 	CreatedAt            *Timestamp            `json:"created_at,omitempty"`
@@ -408,18 +409,21 @@ type KnowledgeBaseDataSource struct {
 	WebCrawlerDataSource *WebCrawlerDataSource `json:"web_crawler_data_source,omitempty"`
 }
 
+// WebCrawlerDataSource represents the web crawler data source information
 type WebCrawlerDataSource struct {
 	BaseUrl        string `json:"base_url"`
 	CrawlingOption string `json:"crawling_option"`
 	EmbedMedia     bool   `json:"embed_media"`
 }
 
+// SpacesDataSource represents the spaces data source information
 type SpacesDataSource struct {
 	BucketName string `json:"bucket_name"`
 	ItemPath   string `json:"item_path"`
 	Region     string `json:"region"`
 }
 
+// FileUploadDataSource represents the file upload data source information
 type FileUploadDataSource struct {
 	OriginalFileName string `json:"original_file_name"`
 	Size             string `json:"size_in_bytes"`
@@ -446,12 +450,6 @@ type knowledgebaseRoot struct {
 	KnowledgeBase  *KnowledgeBase `json:"knowledge_base"`
 	DatabaseStatus string         `json:"database_status,omitempty"`
 }
-
-// - updated by adding omitempty above
-// type knowledgebaseRoots struct {
-// 	DatabaseStatus string         `json:"database_status"`
-// 	KnowledgeBase  *KnowledgeBase `json:"knowledge_base"`
-// }
 
 type KnowledgeBaseCreateRequest struct {
 	DatabaseID         string                    `json:"database_id"`
@@ -674,7 +672,7 @@ func (s *GenAIServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*M
 	return root.Models, resp, nil
 }
 
-func (s *GenAIServiceOp) List(ctx context.Context, opt *AgentListOptions) ([]*Agent, *Response, error) {
+func (s *GenAIServiceOp) List(ctx context.Context, opt *ListOptions) ([]*Agent, *Response, error) {
 	fmt.Println("Added options")
 	path, err := addOptions(GenAIConnectBasePath, opt)
 	if err != nil {
@@ -859,8 +857,9 @@ func (s *GenAIServiceOp) ListKnowledgeBases(ctx context.Context, opt *ListOption
 
 // Create a knowledge base
 func (s *GenAIServiceOp) CreateKnowledgeBase(ctx context.Context, KnowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error) {
-	///v2/gen-ai/knowledge_bases.
+
 	path := KnowledgeBasePath
+
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, KnowledgeBaseCreate)
 	if err != nil {
 		return nil, nil, err
@@ -917,7 +916,6 @@ func (s *GenAIServiceOp) AddDataSource(ctx context.Context, knowledgeBaseID stri
 }
 
 // Delete data source from a knowledge base
-// confirm if strings are required in response arguments
 func (s *GenAIServiceOp) DeleteDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error) {
 
 	path := fmt.Sprintf(DeleteDataSourcePath, knowledgeBaseID, DataSourceID)
@@ -990,8 +988,8 @@ func (s *GenAIServiceOp) DeleteKnowledgeBase(ctx context.Context, knowledgeBaseI
 
 // Attach a knowledge base to an agent
 func (s *GenAIServiceOp) AttachKnowledgBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error) {
+
 	path := fmt.Sprintf(AgentKnowledgBasePath, AgentID, knowledgeBaseID)
-	fmt.Println(path)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1008,8 +1006,8 @@ func (s *GenAIServiceOp) AttachKnowledgBase(ctx context.Context, AgentID string,
 
 // Detach a knowledge base from an agent
 func (s *GenAIServiceOp) DetachKnowledgBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error) {
+
 	path := fmt.Sprintf(AgentKnowledgBasePath, AgentID, knowledgeBaseID)
-	fmt.Println("Constructed Path:", path)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1053,4 +1051,27 @@ func (a KnowledgeBaseDataSource) String() string {
 // 	}
 
 // 	return root.Agent, resp, nil
+// }
+
+// if KnowledgeBaseCreate.DatabaseID == "" {
+// 	return nil, nil, fmt.Errorf("DatabaseID is required")
+// }
+// if KnowledgeBaseCreate.EmbeddingModelUUID == "" {
+// 	return nil, nil, fmt.Errorf("EmbeddingModelUUID is required")
+// }
+// if KnowledgeBaseCreate.Name == "" {
+// 	return nil, nil, fmt.Errorf("Name is required")
+// }
+// if KnowledgeBaseCreate.ProjectID == "" {
+// 	return nil, nil, fmt.Errorf("ProjectID is required")
+// }
+// if KnowledgeBaseCreate.Region == "" {
+// 	return nil, nil, fmt.Errorf("Region is required")
+// }
+// if KnowledgeBaseCreate.VPCUUIUD == "" {
+// 	return nil, nil, fmt.Errorf("VPCUUIUD is required")
+// }
+
+// if KnowledgeBaseCreate.Region == "" {
+// 	return nil, nil, fmt.Errorf("Region is required")
 // }
