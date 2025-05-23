@@ -96,7 +96,7 @@ type Client struct {
 	UptimeChecks        UptimeChecksService
 	VPCs                VPCsService
 	PartnerAttachment   PartnerAttachmentService
-	GenAI               AgentService
+	GenAI               GenAIService
 
 	// Optional function called after every successful request made to the DO APIs
 	onRequestCompleted RequestCompletionCallback
@@ -323,7 +323,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.UptimeChecks = &UptimeChecksServiceOp{client: c}
 	c.VPCs = &VPCsServiceOp{client: c}
 	c.PartnerAttachment = &PartnerAttachmentServiceOp{client: c}
-	c.GenAI = &AgentServiceOp{client: c}
+	c.GenAI = &GenAIServiceOp{client: c}
 
 	c.headers = make(map[string]string)
 
