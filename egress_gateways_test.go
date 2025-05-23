@@ -19,6 +19,7 @@ var egressGatewayGetJSONResponse = `
     "type": "PUBLIC",
     "state": "STATE_ACTIVE",
     "region": "nyc3",
+    "size": 1,
     "vpcs": [
       {
         "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
@@ -50,6 +51,7 @@ var egressGatewayListJSONResponse = `
       "type": "PUBLIC",
       "state": "STATE_ACTIVE",
       "region": "nyc3",
+      "size": 1,
       "vpcs": [
         {
           "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
@@ -75,6 +77,7 @@ var egressGatewayListJSONResponse = `
       "type": "PUBLIC",
       "state": "STATE_ACTIVE",
       "region": "nyc3",
+      "size": 1,
       "vpcs": [
         {
           "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
@@ -110,6 +113,7 @@ var egressGatewayUpdateJSONResponse = `
     "type": "PUBLIC",
     "state": "STATE_ACTIVE",
     "region": "nyc3",
+    "size": 1,
     "vpcs": [
       {
         "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
@@ -140,6 +144,7 @@ func TestEgressGateways_Create(t *testing.T) {
 		Name:   "test-egress-gateway-01",
 		Type:   "PUBLIC",
 		Region: "nyc3",
+		Size:   1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3"},
 		},
@@ -165,6 +170,7 @@ func TestEgressGateways_Create(t *testing.T) {
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
+		Size:   1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 		},
@@ -202,6 +208,7 @@ func TestEgressGateways_Get(t *testing.T) {
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
+		Size:   1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 		},
@@ -254,6 +261,7 @@ func TestEgressGateways_List(t *testing.T) {
 			Type:   "PUBLIC",
 			State:  "STATE_ACTIVE",
 			Region: "nyc3",
+			Size:   1,
 			VPCs: []*IngressVPC{
 				{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 			},
@@ -272,6 +280,7 @@ func TestEgressGateways_List(t *testing.T) {
 			Type:   "PUBLIC",
 			State:  "STATE_ACTIVE",
 			Region: "nyc3",
+			Size:   1,
 			VPCs: []*IngressVPC{
 				{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.106"},
 			},
@@ -339,6 +348,7 @@ func TestEgressGateways_Update(t *testing.T) {
 		Type:   "PUBLIC",
 		State:  "STATE_ACTIVE",
 		Region: "nyc3",
+		Size:   1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 		},
