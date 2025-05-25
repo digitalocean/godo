@@ -25,6 +25,7 @@ type EgressGatewayRequest struct {
 	Name               string        `json:"name"`
 	Type               string        `json:"type"`
 	Region             string        `json:"region"`
+	Size               uint32        `json:"size"`
 	VPCs               []*IngressVPC `json:"vpcs"`
 	UDPTimeoutSeconds  uint32        `json:"udp_timeout_seconds,omitempty"`
 	ICMPTimeoutSeconds uint32        `json:"icmp_timeout_seconds,omitempty"`
@@ -38,6 +39,7 @@ type EgressGateway struct {
 	Type               string        `json:"type"`
 	State              string        `json:"state"`
 	Region             string        `json:"region"`
+	Size               uint32        `json:"size"`
 	VPCs               []*IngressVPC `json:"vpcs"`
 	Egresses           *Egresses     `json:"egresses,omitempty"`
 	UDPTimeoutSeconds  uint32        `json:"udp_timeout_seconds,omitempty"`
