@@ -1,5 +1,13 @@
 # Change Log
 
+## [v1.149.0] - 2025-05-27
+
+- #841 - @d-honeybadger - expose custom Kubernetes CA expanders
+- #840 - @wez470 - Add redundancy_zone field to Partner Network Connect
+- #836 - @asaha2 - Support gateway size config
+- #835 - @asaha2 - Fix url opts encoding for egress-gateways
+- #834 - @anup-deka - GenAI Agent Service
+
 ## [v1.148.0] - 2025-05-14
 
 - #824 - @asaha2 - Introduce egress-gateway service api
