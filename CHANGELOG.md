@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.149.0] - 2025-05-27
+
+- #839 - @asaha2 - Rename as vpc nat gateways
+
 ## [v1.148.0] - 2025-05-14
 
 - #824 - @asaha2 - Introduce egress-gateway service api
