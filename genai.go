@@ -314,6 +314,7 @@ type AgentUpdateRequest struct {
 	Temperature      float64  `json:"temperature,omitempty"`
 	TopP             float64  `json:"top_p,omitempty"`
 	Uuid             string   `json:"uuid,omitempty"`
+	ProvideCitations bool     `json:"provide_citations,omitempty"`
 }
 
 // AgentUpdateAPIKeyRequest represents the request to update an existing Gen AI Agent API Key
