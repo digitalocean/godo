@@ -638,7 +638,6 @@ type RegistriesService interface {
 	Create(context.Context, *RegistryCreateRequest) (*Registry, *Response, error)
 	Delete(context.Context, string) (*Response, error)
 	DockerCredentials(context.Context, string, *RegistryDockerCredentialsRequest) (*DockerCredentials, *Response, error)
-	ListRepositories(context.Context, string, *ListOptions) ([]*Repository, *Response, error)
 	ListRepositoriesV2(context.Context, string, *TokenListOptions) ([]*RepositoryV2, *Response, error)
 	ListRepositoryTags(context.Context, string, string, *ListOptions) ([]*RepositoryTag, *Response, error)
 	DeleteTag(context.Context, string, string, string) (*Response, error)
@@ -743,34 +742,6 @@ func (svc *RegistriesServiceOp) DockerCredentials(ctx context.Context, registry 
 		DockerConfigJSON: buf.Bytes(),
 	}
 	return dc, resp, nil
-}
-
-// ListRepositories returns a list of repositories
-func (svc *RegistriesServiceOp) ListRepositories(ctx context.Context, registry string, opts *ListOptions) ([]*Repository, *Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories", registriesPath, registry)
-	path, err := addOptions(path, opts)
-	if err != nil {
-		return nil, nil, err
-	}
-	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	root := new(repositoriesRoot)
-
-	resp, err := svc.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	if l := root.Links; l != nil {
-		resp.Links = l
-	}
-	if m := root.Meta; m != nil {
-		resp.Meta = m
-	}
-
-	return root.Repositories, resp, nil
 }
 
 // ListRepositoriesV2 returns a list of repositories in V2 format
