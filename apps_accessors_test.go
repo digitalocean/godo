@@ -3345,6 +3345,13 @@ func TestUpgradeBuildpackResponse_GetAffectedComponents(tt *testing.T) {
 	u.GetAffectedComponents()
 }
 
+func TestUpgradeBuildpackResponse_GetDeployment(tt *testing.T) {
+	u := &UpgradeBuildpackResponse{}
+	u.GetDeployment()
+	u = nil
+	u.GetDeployment()
+}
+
 func TestAppInstance_GetComponentName(tt *testing.T) {
 	a := &AppInstance{}
 	a.GetComponentName()
@@ -3364,11 +3371,4 @@ func TestAppInstance_GetInstanceName(tt *testing.T) {
 	a.GetInstanceName()
 	a = nil
 	a.GetInstanceName()
-}
-
-func TestUpgradeBuildpackResponse_GetDeployment(tt *testing.T) {
-	u := &UpgradeBuildpackResponse{}
-	u.GetDeployment()
-	u = nil
-	u.GetDeployment()
 }
