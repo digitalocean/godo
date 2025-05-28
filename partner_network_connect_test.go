@@ -26,7 +26,8 @@ var vPartnerAttachmentTestObj = &PartnerAttachment{
 		PeerRouterIP:  "169.250.0.6",
 		AuthKey:       "my-auth-key",
 	},
-	CreatedAt: time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
+	CreatedAt:      time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
+	RedundancyZone: "MEGAPORT_RED",
 }
 
 var vPartnerAttachmentNoBGPTestObj = &PartnerAttachment{
@@ -38,6 +39,7 @@ var vPartnerAttachmentNoBGPTestObj = &PartnerAttachment{
 	NaaSProvider:              "MEGAPORT",
 	VPCIDs:                    []string{"f5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
 	CreatedAt:                 time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
+	RedundancyZone:            "MEGAPORT_RED",
 }
 
 var vPartnerAttachmentTestJSON = `
@@ -56,7 +58,8 @@ var vPartnerAttachmentTestJSON = `
 			"peer_router_ip":"169.250.0.6",
 			"auth_key":"my-auth-key"
 			},
-		"created_at":"2024-12-26T21:48:40.995304079Z"
+		"created_at":"2024-12-26T21:48:40.995304079Z",
+		"redundancy_zone": "MEGAPORT_RED"
 	}
 `
 
@@ -69,7 +72,8 @@ var vPartnerAttachmentNoBGPTestJSON = `
 		"region":"NYC",
 		"naas_provider":"MEGAPORT",
 		"vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"],
-		"created_at":"2024-12-26T21:48:40.995304079Z"
+		"created_at":"2024-12-26T21:48:40.995304079Z",
+		"redundancy_zone": "MEGAPORT_RED"
 	}
 `
 
@@ -139,6 +143,7 @@ func TestPartnerAttachment_Create(t *testing.T) {
 			PeerASN:       133937,
 			PeerRouterIP:  "169.250.0.6",
 		},
+		RedundancyZone: "MEGAPORT_BLUE",
 	}
 	jsonBlob := `
 {
