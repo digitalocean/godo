@@ -421,7 +421,7 @@ func TestListAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GenAI.ListAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	keys, resp, err := client.GenAI.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -440,12 +440,12 @@ func TestCreateAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	req := &AgentCreateAPIKeyRequest{
+	req := &AgentAPIKeyCreateRequest{
 		AgentUuid: "00000000-0000-0000-0000-000000000000",
 		Name:      "Key One",
 	}
 
-	key, resp, err := client.GenAI.CreateAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
+	key, resp, err := client.GenAI.CreateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -461,13 +461,13 @@ func TestUpdateAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	req := &AgentUpdateAPIKeyRequest{
+	req := &AgentAPIKeyUpdateRequest{
 		AgentUuid:  "00000000-0000-0000-0000-000000000000",
 		APIKeyUuid: "00000000-0000-0000-0000-000000000000",
 		Name:       "Key One",
 	}
 
-	key, resp, err := client.GenAI.UpdateAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	key, resp, err := client.GenAI.UpdateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -483,7 +483,7 @@ func TestDeleteAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.DeleteAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	key, resp, err := client.GenAI.DeleteAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -499,7 +499,7 @@ func TestRegenerateAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.RegenerateAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	key, resp, err := client.GenAI.RegenerateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
