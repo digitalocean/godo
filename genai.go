@@ -8,14 +8,13 @@ import (
 
 const (
 	genAIBasePath                = "/v2/gen-ai/agents"
-	agentConnectBasePath         = "/v2/gen-ai/agents"
 	agentModelBasePath           = "/v2/gen-ai/models"
-	KnowledgeBasePath            = genAIBasePath + "/knowledge_bases"
+	KnowledgeBasePath            = "/v2/gen-ai/knowledge_bases"
 	KnowledgeBaseDataSourcesPath = KnowledgeBasePath + "/%s/data_sources"
 	GetKnowledgeBaseByIDPath     = KnowledgeBasePath + "/%s"
 	UpdateKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
 	DeleteKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
-	AgentKnowledgBasePath        = genAIBasePath + "/agents" + "/%s/knowledge_bases/%s"
+	AgentKnowledgBasePath        = "/v2/gen-ai/agents" + "/%s/knowledge_bases/%s"
 	DeleteDataSourcePath         = KnowledgeBasePath + "/%s/data_sources/%s"
 )
 
@@ -35,7 +34,6 @@ type GenAIService interface {
 	DeleteAgent(context.Context, string) (*Agent, *Response, error)
 	UpdateAgentVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
 	ListModels(context.Context, *ListOptions) ([]*Model, *Response, error)
-
 	ListKnowledgeBases(ctx context.Context, opt *ListOptions) ([]KnowledgeBase, *Response, error)
 	CreateKnowledgeBase(ctx context.Context, KnowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error)
 	ListDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
@@ -343,6 +341,17 @@ type AgentAPIKeyUpdateRequest struct {
 	Name       string `json:"name,omitempty"`
 }
 
+type KnowledgeBaseCreateRequest struct {
+	DatabaseID         string                    `json:"database_id"`
+	DataSources        []KnowledgeBaseDataSource `json:"datasources"`
+	EmbeddingModelUUID string                    `json:"embedding_model_uuid"`
+	Name               string                    `json:"name"`
+	ProjectID          string                    `json:"project_id"`
+	Region             string                    `json:"region"`
+	Tags               []string                  `json:"tags"`
+	VPCUUIUD           string                    `json:"vpc_uuid"`
+}
+
 // KnowledgeBaseDataSource represents a Gen AI Knowledge Base Data Source
 type KnowledgeBaseDataSource struct {
 	BucketName           string                `json:"bucket_name,omitempty"`
@@ -378,10 +387,6 @@ type FileUploadDataSource struct {
 	StoredObjectKey  string `json:"stored_object_key"`
 }
 
-type genAIAgentKBRoot struct {
-	Agent *Agent `json:"agent"`
-}
-
 type KnowledgeBaseDataSourcesRoot struct {
 	KnowledgeBaseDatasources []KnowledgeBaseDataSource `json:"knowledge_base_data_sources"`
 	Links                    *Links                    `json:"links"`
@@ -401,18 +406,6 @@ type knowledgebasesRoot struct {
 type knowledgebaseRoot struct {
 	KnowledgeBase  *KnowledgeBase `json:"knowledge_base"`
 	DatabaseStatus string         `json:"database_status,omitempty"`
-}
-
-// KnowledgeBaseCreateRequest represents the request to create a new Gen AI Knowledge Base
-type KnowledgeBaseCreateRequest struct {
-	DatabaseID         string                    `json:"database_id"`
-	DataSources        []KnowledgeBaseDataSource `json:"datasources"`
-	EmbeddingModelUUID string                    `json:"embedding_model_uuid"`
-	Name               string                    `json:"name"`
-	ProjectID          string                    `json:"project_id"`
-	Region             string                    `json:"region"`
-	Tags               []string                  `json:"tags"`
-	VPCUUIUD           string                    `json:"vpc_uuid"`
 }
 
 type DeleteDataSourceRoot struct {
@@ -442,6 +435,10 @@ type UpdateKnowledgeBaseRequest struct {
 	ProjectID          string   `json:"project_id"`
 	Tags               []string `json:"tags"`
 	UUID               string   `json:"uuid"`
+}
+
+type genAIAgentKBRoot struct {
+	Agent *Agent `json:"agent"`
 }
 
 // ListAgents returns a list of Gen AI Agents
@@ -888,6 +885,14 @@ func (s *GenAIServiceOp) DetachKnowledgBase(ctx context.Context, AgentID string,
 	return root.Agent, resp, nil
 }
 
+func (a Agent) String() string {
+	return Stringify(a)
+}
+
+func (m Model) String() string {
+	return Stringify(m)
+}
+
 func (a KnowledgeBase) String() string {
 	return Stringify(a)
 }
@@ -896,14 +901,6 @@ func (a KnowledgeBaseDataSource) String() string {
 	return Stringify(a)
 }
 
-func (a Agent) String() string {
-	return Stringify(a)
-}
-
 func (a ApiKeyInfo) String() string {
 	return Stringify(a)
-}
-
-func (m Model) String() string {
-	return Stringify(m)
 }
