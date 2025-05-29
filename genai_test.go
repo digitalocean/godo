@@ -314,6 +314,38 @@ var agentModelsResponse = `
 	}
 }
 `
+var listAPIKeysResponse = `
+{
+    "api_key_infos": [
+        {
+            "uuid": "00000000-0000-0000-0000-000000000000",
+            "name": "Key One",
+            "secret_key": "1000000",
+            "created_at": "2025-05-14T13:18:05Z",
+            "created_by": "12345678"
+        },
+        {
+            "uuid": "00000000-0000-0000-0000-000000000000",
+            "name": "Key Two",
+            "secret_key": "1000000",
+            "created_at": "2025-05-15T13:18:05Z",
+            "created_by": "12345678"
+        }
+    ]
+}
+`
+
+var apiKeyInfoResponse = `
+{
+    "api_key_info": {
+        "uuid": "00000000-0000-0000-0000-000000000000",
+        "name": "Key One",
+        "secret_key": "1000000",
+        "created_at": "2025-05-14T13:18:05Z",
+        "created_by": "12345678"
+    }
+}
+`
 
 func TestListAgents(t *testing.T) {
 	setup()
@@ -351,26 +383,6 @@ func TestListAgents(t *testing.T) {
 	assert.Equal(t, agent.K, agents[0].K)
 }
 
-func TestGetAgent(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, agentResponse)
-	})
-
-	res, resp, err := client.GenAI.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
-	if err != nil {
-		t.Errorf("GenAI.Get returned error: %v", err)
-	}
-
-	assert.Equal(t, res.Name, "testing-godo")
-	assert.Equal(t, resp.Response.StatusCode, 200)
-	expectedString := fmt.Sprintf("%v", res)
-	assert.Equal(t, expectedString, res.String())
-}
-
 func TestCreateAgent(t *testing.T) {
 	setup()
 	defer teardown()
@@ -398,6 +410,120 @@ func TestCreateAgent(t *testing.T) {
 
 	assert.Equal(t, res.Name, req.Name)
 	assert.Equal(t, res.Description, req.Description)
+}
+
+func TestListAPIKeys(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/api_keys", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAPIKeysResponse)
+	})
+
+	keys, resp, err := client.GenAI.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, 2, len(keys))
+	assert.Equal(t, "Key One", keys[0].Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", keys[0].Uuid)
+	assert.Equal(t, "Key Two", keys[1].Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", keys[1].Uuid)
+}
+
+func TestCreateAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/api_keys", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, apiKeyInfoResponse)
+	})
+
+	req := &AgentAPIKeyCreateRequest{
+		AgentUuid: "00000000-0000-0000-0000-000000000000",
+		Name:      "Key One",
+	}
+
+	key, resp, err := client.GenAI.CreateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "Key One", key.Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", key.Uuid)
+}
+
+func TestUpdateAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/api_keys/00000000-0000-0000-0000-000000000000", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, apiKeyInfoResponse)
+	})
+
+	req := &AgentAPIKeyUpdateRequest{
+		AgentUuid:  "00000000-0000-0000-0000-000000000000",
+		APIKeyUuid: "00000000-0000-0000-0000-000000000000",
+		Name:       "Key One",
+	}
+
+	key, resp, err := client.GenAI.UpdateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "Key One", key.Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", key.Uuid)
+}
+
+func TestDeleteAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/api_keys/00000000-0000-0000-0000-000000000000", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, apiKeyInfoResponse)
+	})
+
+	key, resp, err := client.GenAI.DeleteAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "Key One", key.Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", key.Uuid)
+}
+
+func TestRegenerateAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/api_keys/00000000-0000-0000-0000-000000000000/regenerate", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, apiKeyInfoResponse)
+	})
+
+	key, resp, err := client.GenAI.RegenerateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "Key One", key.Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", key.Uuid)
+}
+
+func TestGetAgent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, agentResponse)
+	})
+
+	res, resp, err := client.GenAI.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
+	if err != nil {
+		t.Errorf("GenAI.Get returned error: %v", err)
+	}
+
+	assert.Equal(t, res.Name, "testing-godo")
+	assert.Equal(t, resp.Response.StatusCode, 200)
+	expectedString := fmt.Sprintf("%v", res)
+	assert.Equal(t, expectedString, res.String())
 }
 
 func TestDeleteAgent(t *testing.T) {
