@@ -178,7 +178,7 @@ var agentResponse = `
 				"MODEL_USECASE_SERVERLESS"
 			]
 		},
-		"deployment": {
+		"deploymen": {
 			"uuid": "00000000-0000-0000-0000-000000000000",
 			"status": "STATUS_WAITING_FOR_DEPLOYMENT",
 			"visibility": "VISIBILITY_PRIVATE",
@@ -792,7 +792,7 @@ func TestListKnowledgeBases(t *testing.T) {
 	assert.Equal(t, "Test Knowledge Base", knowledgeBases[0].Name)
 }
 
-func TestCreateKnowledgeBase(t *testing.T) { //works
+func TestCreateKnowledgeBase(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -818,7 +818,7 @@ func TestCreateKnowledgeBase(t *testing.T) { //works
 	assert.Equal(t, res.ProjectId, req.ProjectID)
 }
 
-func TestListDataSources(t *testing.T) { //works
+func TestListDataSources(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -846,7 +846,7 @@ func TestListDataSources(t *testing.T) { //works
 	assert.Equal(t, "test-bucket", dataSources[0].BucketName)
 }
 
-func TestAddDataSource(t *testing.T) { //works
+func TestAddDataSource(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -873,7 +873,7 @@ func TestAddDataSource(t *testing.T) { //works
 	assert.Equal(t, "/docs/test.pdf", res.ItemPath)
 }
 
-func TestDeleteDataSource(t *testing.T) { //works
+func TestDeleteDataSource(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -892,7 +892,7 @@ func TestDeleteDataSource(t *testing.T) { //works
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
 
-func TestGetKnowledgeBase(t *testing.T) { //works
+func TestGetKnowledgeBase(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -910,7 +910,7 @@ func TestGetKnowledgeBase(t *testing.T) { //works
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
 
-func TestUpdateKnowledgeBase(t *testing.T) { //works
+func TestUpdateKnowledgeBase(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -933,7 +933,7 @@ func TestUpdateKnowledgeBase(t *testing.T) { //works
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
 
-func TestDeleteKnowledgeBase(t *testing.T) { //works
+func TestDeleteKnowledgeBase(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -951,7 +951,7 @@ func TestDeleteKnowledgeBase(t *testing.T) { //works
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
 
-func TestAttachKnowledgeBase(t *testing.T) { //fail
+func TestAttachKnowledgeBase(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -973,13 +973,11 @@ func TestDetachKnowledgeBase(t *testing.T) {
 	setup()
 	defer teardown()
 
-	// Mock the expected API endpoint
 	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/knowledge_bases/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
-		fmt.Fprint(w, agentResponse) // Mock response
+		fmt.Fprint(w, agentResponse)
 	})
 
-	// Call the method
 	res, resp, err := client.GenAI.DetachKnowledgBase(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	fmt.Print(res)
 	fmt.Print(resp)
@@ -988,11 +986,10 @@ func TestDetachKnowledgeBase(t *testing.T) {
 		t.Fatalf("GenAI.DetachKnowledgBase returned error: %v", err)
 	}
 
-	// Validate the response
 	if res == nil {
 		t.Fatalf("GenAI.DetachKnowledgBase returned nil response or result")
 	}
 
-	assert.Equal(t, "testing-godo", res.Name)      // Validate the agent name
-	assert.Equal(t, 200, resp.Response.StatusCode) // Validate the HTTP status code
+	assert.Equal(t, "testing-godo", res.Name)
+	assert.Equal(t, 200, resp.Response.StatusCode)
 }
