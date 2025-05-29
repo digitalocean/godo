@@ -178,7 +178,7 @@ var agentResponse = `
 				"MODEL_USECASE_SERVERLESS"
 			]
 		},
-		"deploymen": {
+		"deployment": {
 			"uuid": "00000000-0000-0000-0000-000000000000",
 			"status": "STATUS_WAITING_FOR_DEPLOYMENT",
 			"visibility": "VISIBILITY_PRIVATE",
