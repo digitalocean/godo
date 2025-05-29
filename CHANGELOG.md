@@ -1,6 +1,6 @@
 # Change Log
 
-## [v1.159.0] - 2025-05-29
+## [v1.150.0] - 2025-05-29
 
 - #844 - @thearyanahmed - Add App Platform Edge Control settings
 
