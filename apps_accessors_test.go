@@ -1714,6 +1714,20 @@ func TestAppSpec_GetDatabases(tt *testing.T) {
 	a.GetDatabases()
 }
 
+func TestAppSpec_GetDisableEdgeCache(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetDisableEdgeCache()
+	a = nil
+	a.GetDisableEdgeCache()
+}
+
+func TestAppSpec_GetDisableEmailObfuscation(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetDisableEmailObfuscation()
+	a = nil
+	a.GetDisableEmailObfuscation()
+}
+
 func TestAppSpec_GetDomains(tt *testing.T) {
 	a := &AppSpec{}
 	a.GetDomains()
@@ -1726,6 +1740,13 @@ func TestAppSpec_GetEgress(tt *testing.T) {
 	a.GetEgress()
 	a = nil
 	a.GetEgress()
+}
+
+func TestAppSpec_GetEnhancedThreatControlEnabled(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetEnhancedThreatControlEnabled()
+	a = nil
+	a.GetEnhancedThreatControlEnabled()
 }
 
 func TestAppSpec_GetEnvs(tt *testing.T) {
