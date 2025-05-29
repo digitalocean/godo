@@ -7,8 +7,15 @@ import (
 )
 
 const (
-	genAIBasePath      = "/v2/gen-ai/agents"
-	agentModelBasePath = "/v2/gen-ai/models"
+	genAIBasePath                = "/v2/gen-ai/agents"
+	agentModelBasePath           = "/v2/gen-ai/models"
+	KnowledgeBasePath            = "/v2/gen-ai/knowledge_bases"
+	KnowledgeBaseDataSourcesPath = KnowledgeBasePath + "/%s/data_sources"
+	GetKnowledgeBaseByIDPath     = KnowledgeBasePath + "/%s"
+	UpdateKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
+	DeleteKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
+	AgentKnowledgBasePath        = "/v2/gen-ai/agents" + "/%s/knowledge_bases/%s"
+	DeleteDataSourcePath         = KnowledgeBasePath + "/%s/data_sources/%s"
 )
 
 // GenAIService is an interface for interfacing with the Gen AI Agent endpoints
@@ -27,6 +34,16 @@ type GenAIService interface {
 	DeleteAgent(context.Context, string) (*Agent, *Response, error)
 	UpdateAgentVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
 	ListModels(context.Context, *ListOptions) ([]*Model, *Response, error)
+	ListKnowledgeBases(ctx context.Context, opt *ListOptions) ([]KnowledgeBase, *Response, error)
+	CreateKnowledgeBase(ctx context.Context, KnowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error)
+	ListDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
+	AddDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error)
+	DeleteDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error)
+	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, *Response, error)
+	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
+	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
+	AttachKnowledgBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error)
+	DetachKnowledgBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -324,6 +341,106 @@ type AgentAPIKeyUpdateRequest struct {
 	Name       string `json:"name,omitempty"`
 }
 
+type KnowledgeBaseCreateRequest struct {
+	DatabaseID         string                    `json:"database_id"`
+	DataSources        []KnowledgeBaseDataSource `json:"datasources"`
+	EmbeddingModelUUID string                    `json:"embedding_model_uuid"`
+	Name               string                    `json:"name"`
+	ProjectID          string                    `json:"project_id"`
+	Region             string                    `json:"region"`
+	Tags               []string                  `json:"tags"`
+	VPCUUIUD           string                    `json:"vpc_uuid"`
+}
+
+// KnowledgeBaseDataSource represents a Gen AI Knowledge Base Data Source
+type KnowledgeBaseDataSource struct {
+	BucketName           string                `json:"bucket_name,omitempty"`
+	CreatedAt            *Timestamp            `json:"created_at,omitempty"`
+	FileUploadDataSource *FileUploadDataSource `json:"file_upload_data_source,omitempty"`
+	ItemPath             string                `json:"item_path,omitempty"`
+	LastIndexingJob      *LastIndexingJob      `json:"last_indexing_job,omitempty"`
+	Region               string                `json:"region,omitempty"`
+	SpacesDataSource     *SpacesDataSource     `json:"spaces_data_source,omitempty"`
+	UpdatedAt            *Timestamp            `json:"updated_at,omitempty"`
+	UUID                 string                `json:"uuid,omitempty"`
+	WebCrawlerDataSource *WebCrawlerDataSource `json:"web_crawler_data_source,omitempty"`
+}
+
+// WebCrawlerDataSource represents the web crawler data source information
+type WebCrawlerDataSource struct {
+	BaseUrl        string `json:"base_url"`
+	CrawlingOption string `json:"crawling_option"`
+	EmbedMedia     bool   `json:"embed_media"`
+}
+
+// SpacesDataSource represents the spaces data source information
+type SpacesDataSource struct {
+	BucketName string `json:"bucket_name"`
+	ItemPath   string `json:"item_path"`
+	Region     string `json:"region"`
+}
+
+// FileUploadDataSource represents the file upload data source information
+type FileUploadDataSource struct {
+	OriginalFileName string `json:"original_file_name"`
+	Size             string `json:"size_in_bytes"`
+	StoredObjectKey  string `json:"stored_object_key"`
+}
+
+type KnowledgeBaseDataSourcesRoot struct {
+	KnowledgeBaseDatasources []KnowledgeBaseDataSource `json:"knowledge_base_data_sources"`
+	Links                    *Links                    `json:"links"`
+	Meta                     *Meta                     `json:"meta"`
+}
+type SingleKnowledgeBaseDataSourceRoot struct {
+	KnowledgeBaseDatasource *KnowledgeBaseDataSource `json:"knowledge_base_data_source"`
+	Links                   *Links                   `json:"links"`
+	Meta                    *Meta                    `json:"meta"`
+}
+type knowledgebasesRoot struct {
+	KnowledgeBases []KnowledgeBase `json:"knowledge_bases"`
+	Links          *Links          `json:"links"`
+	Meta           *Meta           `json:"meta"`
+}
+
+type knowledgebaseRoot struct {
+	KnowledgeBase  *KnowledgeBase `json:"knowledge_base"`
+	DatabaseStatus string         `json:"database_status,omitempty"`
+}
+
+type DeleteDataSourceRoot struct {
+	DataSourceUUID    string `json:"data_source_uuid"`
+	KnowledgeBaseUUID string `json:"knowledge_base_uuid"`
+}
+
+type DeleteKnowledgeBaseRoot struct {
+	KnowledgeBaseUUID string `json:"uuid"`
+}
+
+type DeletedKnowledgeBaseResponse struct {
+	DataSourceUUID    string `json:"data_source_uuid"`
+	KnowledgeBaseUUID string `json:"knowledge_base_uuid"`
+}
+
+type AddDataSourceRequest struct {
+	KnowledgeBaseUUID    string                `json:"knowledge_base_uuid"`
+	SpacesDataSource     *SpacesDataSource     `json:"spaces_data_source"`
+	WebCrawlerDataSource *WebCrawlerDataSource `json:"web_crawler_data_source"`
+}
+
+type UpdateKnowledgeBaseRequest struct {
+	DatabaseID         string   `json:"database_id"`
+	EmbeddingModelUUID string   `json:"embedding_model_uuid"`
+	Name               string   `json:"name"`
+	ProjectID          string   `json:"project_id"`
+	Tags               []string `json:"tags"`
+	UUID               string   `json:"uuid"`
+}
+
+type genAIAgentKBRoot struct {
+	Agent *Agent `json:"agent"`
+}
+
 // ListAgents returns a list of Gen AI Agents
 func (s *GenAIServiceOp) ListAgents(ctx context.Context, opt *ListOptions) ([]*Agent, *Response, error) {
 	path, err := addOptions(genAIBasePath, opt)
@@ -575,14 +692,215 @@ func (s *GenAIServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*M
 	return root.Models, resp, nil
 }
 
-func (a Agent) String() string {
-	return Stringify(a)
+// List all knowledge bases
+func (s *GenAIServiceOp) ListKnowledgeBases(ctx context.Context, opt *ListOptions) ([]KnowledgeBase, *Response, error) {
+
+	path := KnowledgeBasePath
+	path, err := addOptions(path, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(knowledgebasesRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+	return root.KnowledgeBases, resp, err
 }
 
-func (a ApiKeyInfo) String() string {
+// Create a knowledge base
+func (s *GenAIServiceOp) CreateKnowledgeBase(ctx context.Context, KnowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error) {
+
+	path := KnowledgeBasePath
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, KnowledgeBaseCreate)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(knowledgebaseRoot)
+	resp, err := s.client.Do(ctx, req, root)
+
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.KnowledgeBase, resp, err
+}
+
+// List Data Sources for a Knowledge Base
+func (s *GenAIServiceOp) ListDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error) {
+
+	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
+	path, err := addOptions(path, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(KnowledgeBaseDataSourcesRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, nil, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+	return root.KnowledgeBaseDatasources, resp, err
+}
+
+// Add Data Source to a Knowledge Base
+func (s *GenAIServiceOp) AddDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error) {
+	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, addDataSource)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(SingleKnowledgeBaseDataSourceRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.KnowledgeBaseDatasource, resp, err
+}
+
+// Delete data source from a knowledge base
+func (s *GenAIServiceOp) DeleteDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error) {
+
+	path := fmt.Sprintf(DeleteDataSourcePath, knowledgeBaseID, DataSourceID)
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+
+	if err != nil {
+		return "", "", nil, err
+	}
+
+	root := new(DeleteDataSourceRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return "", "", resp, err
+
+	}
+	return root.KnowledgeBaseUUID, root.DataSourceUUID, resp, nil
+}
+
+// Get a KnowledgeBase
+func (s *GenAIServiceOp) GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, *Response, error) {
+	path := fmt.Sprintf(GetKnowledgeBaseByIDPath, knowledgeBaseID)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(knowledgebaseRoot)
+	resp, err := s.client.Do(ctx, req, root)
+
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.KnowledgeBase, resp, nil
+}
+
+// Update a knowledge base
+func (s *GenAIServiceOp) UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error) {
+	path := fmt.Sprintf(UpdateKnowledgeBaseByIDPath, knowledgeBaseID)
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(knowledgebaseRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.KnowledgeBase, resp, nil
+}
+
+// Delete a knowledge base
+func (s *GenAIServiceOp) DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error) {
+
+	path := fmt.Sprintf(DeleteKnowledgeBaseByIDPath, knowledgeBaseID)
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	fmt.Print(path)
+	if err != nil {
+		return "", nil, err
+	}
+	root := new(DeleteKnowledgeBaseRoot)
+	resp, err := s.client.Do(ctx, req, root)
+
+	if err != nil {
+		return "", resp, err
+	}
+	return root.KnowledgeBaseUUID, resp, nil
+}
+
+// Attach a knowledge base to an agent
+func (s *GenAIServiceOp) AttachKnowledgBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error) {
+
+	path := fmt.Sprintf(AgentKnowledgBasePath, AgentID, knowledgeBaseID)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIAgentKBRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Agent, resp, nil
+}
+
+// Detach a knowledge base from an agent
+func (s *GenAIServiceOp) DetachKnowledgBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error) {
+
+	path := fmt.Sprintf(AgentKnowledgBasePath, AgentID, knowledgeBaseID)
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(genAIAgentKBRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Agent, resp, nil
+}
+
+func (a Agent) String() string {
 	return Stringify(a)
 }
 
 func (m Model) String() string {
 	return Stringify(m)
+}
+
+func (a KnowledgeBase) String() string {
+	return Stringify(a)
+}
+
+func (a KnowledgeBaseDataSource) String() string {
+	return Stringify(a)
+}
+
+func (a ApiKeyInfo) String() string {
+	return Stringify(a)
 }
