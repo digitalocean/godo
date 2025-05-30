@@ -14,7 +14,7 @@ const (
 	GetKnowledgeBaseByIDPath     = KnowledgeBasePath + "/%s"
 	UpdateKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
 	DeleteKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
-	AgentKnowledgBasePath        = "/v2/gen-ai/agents" + "/%s/knowledge_bases/%s"
+	AgentKnowledgeBasePath       = "/v2/gen-ai/agents" + "/%s/knowledge_bases/%s"
 	DeleteDataSourcePath         = KnowledgeBasePath + "/%s/data_sources/%s"
 )
 
@@ -349,7 +349,7 @@ type KnowledgeBaseCreateRequest struct {
 	ProjectID          string                    `json:"project_id"`
 	Region             string                    `json:"region"`
 	Tags               []string                  `json:"tags"`
-	VPCUUIUD           string                    `json:"vpc_uuid"`
+	VPCUUID            string                    `json:"vpc_uuid"`
 }
 
 // KnowledgeBaseDataSource represents a Gen AI Knowledge Base Data Source
@@ -368,23 +368,23 @@ type KnowledgeBaseDataSource struct {
 
 // WebCrawlerDataSource represents the web crawler data source information
 type WebCrawlerDataSource struct {
-	BaseUrl        string `json:"base_url"`
-	CrawlingOption string `json:"crawling_option"`
-	EmbedMedia     bool   `json:"embed_media"`
+	BaseUrl        string `json:"base_url,omitempty"`
+	CrawlingOption string `json:"crawling_option,omitempty"`
+	EmbedMedia     bool   `json:"embed_media,omitempty"`
 }
 
 // SpacesDataSource represents the spaces data source information
 type SpacesDataSource struct {
-	BucketName string `json:"bucket_name"`
-	ItemPath   string `json:"item_path"`
-	Region     string `json:"region"`
+	BucketName string `json:"bucket_name,omitempty"`
+	ItemPath   string `json:"item_path,omitempty"`
+	Region     string `json:"region,omitempty"`
 }
 
 // FileUploadDataSource represents the file upload data source information
 type FileUploadDataSource struct {
-	OriginalFileName string `json:"original_file_name"`
-	Size             string `json:"size_in_bytes"`
-	StoredObjectKey  string `json:"stored_object_key"`
+	OriginalFileName string `json:"original_file_name,omitempty"`
+	Size             string `json:"size_in_bytes,omitempty"`
+	StoredObjectKey  string `json:"stored_object_key,omitempty"`
 }
 
 type KnowledgeBaseDataSourcesRoot struct {
@@ -854,7 +854,7 @@ func (s *GenAIServiceOp) DeleteKnowledgeBase(ctx context.Context, knowledgeBaseI
 // Attach a knowledge base to an agent
 func (s *GenAIServiceOp) AttachKnowledgeBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
-	path := fmt.Sprintf(AgentKnowledgBasePath, AgentID, knowledgeBaseID)
+	path := fmt.Sprintf(AgentKnowledgeBasePath, AgentID, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -872,7 +872,7 @@ func (s *GenAIServiceOp) AttachKnowledgeBase(ctx context.Context, AgentID string
 // Detach a knowledge base from an agent
 func (s *GenAIServiceOp) DetachKnowledgeBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
-	path := fmt.Sprintf(AgentKnowledgBasePath, AgentID, knowledgeBaseID)
+	path := fmt.Sprintf(AgentKnowledgeBasePath, AgentID, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
