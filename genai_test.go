@@ -960,7 +960,7 @@ func TestAttachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.AttachKnowledgBase(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.GenAI.AttachKnowledgeBase(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.AttachKnowledgBase returned error: %v", err)
 	}
@@ -978,7 +978,7 @@ func TestDetachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.DetachKnowledgBase(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.GenAI.DetachKnowledgeBase(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	fmt.Print(res)
 	fmt.Print(resp)
 
