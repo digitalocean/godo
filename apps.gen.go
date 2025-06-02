@@ -100,6 +100,7 @@ type App struct {
 	ProjectID string `json:"project_id,omitempty"`
 	// The dedicated egress ip addresses associated with the app.
 	DedicatedIps []*AppDedicatedIp `json:"dedicated_ips,omitempty"`
+	VPC          *AppVPC           `json:"vpc,omitempty"`
 }
 
 // AppAlertSpec Configuration of an alert for the app or a individual component.
@@ -369,9 +370,13 @@ type AppIngressSpecRuleStringMatch struct {
 
 // AppInstance struct for AppInstance
 type AppInstance struct {
-	ComponentName string                   `json:"component_name,omitempty"`
+	// The name of the component this instance belongs to.
+	ComponentName string `json:"component_name,omitempty"`
+	// The unique name identifying this specific instance.
 	InstanceName  string                   `json:"instance_name,omitempty"`
 	ComponentType AppInstanceComponentType `json:"component_type,omitempty"`
+	// An optional alias for the instance, used for display or identification.
+	InstanceAlias string `json:"instance_alias,omitempty"`
 }
 
 // AppInstanceComponentType the model 'AppInstanceComponentType'
@@ -409,8 +414,9 @@ type AppJobSpec struct {
 	// The instance size to use for this component.
 	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
 	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
-	InstanceCount int64          `json:"instance_count,omitempty"`
-	Kind          AppJobSpecKind `json:"kind,omitempty"`
+	InstanceCount int64               `json:"instance_count,omitempty"`
+	Kind          AppJobSpecKind      `json:"kind,omitempty"`
+	Schedule      *AppJobSpecSchedule `json:"schedule,omitempty"`
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
@@ -427,7 +433,14 @@ const (
 	AppJobSpecKind_PreDeploy    AppJobSpecKind = "PRE_DEPLOY"
 	AppJobSpecKind_PostDeploy   AppJobSpecKind = "POST_DEPLOY"
 	AppJobSpecKind_FailedDeploy AppJobSpecKind = "FAILED_DEPLOY"
+	AppJobSpecKind_Scheduled    AppJobSpecKind = "SCHEDULED"
 )
+
+// AppJobSpecSchedule struct for AppJobSpecSchedule
+type AppJobSpecSchedule struct {
+	Cron     string `json:"cron,omitempty"`
+	TimeZone string `json:"time_zone,omitempty"`
+}
 
 // AppJobSpecTermination struct for AppJobSpecTermination
 type AppJobSpecTermination struct {
@@ -497,6 +510,12 @@ type AppMaintenanceSpec struct {
 	OfflinePageURL string `json:"offline_page_url,omitempty"`
 }
 
+// AppPeeredVpcSpec Configuration of the target VPC.
+type AppPeeredVpcSpec struct {
+	// The name of the VPC.
+	Name string `json:"name,omitempty"`
+}
+
 // AppRouteSpec struct for AppRouteSpec
 type AppRouteSpec struct {
 	// (Deprecated) An HTTP path prefix. Paths must start with / and must be unique across all components within an app.
@@ -542,9 +561,10 @@ type AppServiceSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations     []*AppLogDestinationSpec   `json:"log_destinations,omitempty"`
-	Termination         *AppServiceSpecTermination `json:"termination,omitempty"`
-	LivenessHealthCheck *HealthCheckSpec           `json:"liveness_health_check,omitempty"`
+	LogDestinations     []*AppLogDestinationSpec       `json:"log_destinations,omitempty"`
+	Termination         *AppServiceSpecTermination     `json:"termination,omitempty"`
+	InactivitySleep     *AppServiceSpecInactivitySleep `json:"inactivity_sleep,omitempty"`
+	LivenessHealthCheck *HealthCheckSpec               `json:"liveness_health_check,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
@@ -557,14 +577,20 @@ type AppServiceSpecHealthCheck struct {
 	PeriodSeconds int32 `json:"period_seconds,omitempty"`
 	// The number of seconds after which the check times out. Default: 1 second, Minimum 1, Maximum 120.
 	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
-	// The number of successful health checks before considered healthy. Default: 1, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 1, Minimum 1, Maximum 1.
+	// The number of successful health checks before considered healthy. Default: 1 second, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 1 second, Minimum 1, Maximum 1.
 	SuccessThreshold int32 `json:"success_threshold,omitempty"`
-	// The number of failed health checks before considered unhealthy. Default: 9, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 18, Minimum 1, Maximum 50.
+	// The number of failed health checks before considered unhealthy. Default: 9 seconds, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 18 seconds, Minimum 1, Maximum 50.
 	FailureThreshold int32 `json:"failure_threshold,omitempty"`
 	// The route path used for the HTTP health check ping. If not set, the HTTP health check will be disabled and a TCP health check used instead.
 	HTTPPath string `json:"http_path,omitempty"`
 	// The port on which the health check will be performed. If not set, the health check will be performed on the component's http_port.
 	Port int64 `json:"port,omitempty"`
+}
+
+// AppServiceSpecInactivitySleep struct for AppServiceSpecInactivitySleep
+type AppServiceSpecInactivitySleep struct {
+	// The number of seconds to wait before putting the service to sleep after it has been inactive. Minimum 120, Maximum 3600.
+	AfterSeconds int32 `json:"after_seconds,omitempty"`
 }
 
 // AppServiceSpecTermination struct for AppServiceSpecTermination
@@ -602,6 +628,7 @@ type AppSpec struct {
 	Egress      *AppEgressSpec      `json:"egress,omitempty"`
 	Features    []string            `json:"features,omitempty"`
 	Maintenance *AppMaintenanceSpec `json:"maintenance,omitempty"`
+	Vpc         *AppVpcSpec         `json:"vpc,omitempty"`
 	// Specification to disable edge (CDN) cache for all domains of the app. Note that this feature is in private preview.
 	DisableEdgeCache bool `json:"disable_edge_cache,omitempty"`
 	// Specification to disable email obfuscation.
@@ -650,6 +677,27 @@ type AppVariableDefinition struct {
 	Type  AppVariableType  `json:"type,omitempty"`
 }
 
+// AppVPC The VPC configuration for the app.
+type AppVPC struct {
+	// The ID of the VPC (derived from the app spec).
+	ID string `json:"id,omitempty"`
+	// The private IP addresses allocated for the app in the customer's VPC.
+	EgressIPs []*AppVPCEgressIP `json:"egress_ips,omitempty"`
+}
+
+// AppVPCEgressIP struct for AppVPCEgressIP
+type AppVPCEgressIP struct {
+	IP string `json:"ip,omitempty"`
+}
+
+// AppVpcSpec Configuration of VPC.
+type AppVpcSpec struct {
+	// The list of target vpcs.
+	PeeredVpcs []*AppPeeredVpcSpec `json:"peered_vpcs,omitempty"`
+	// The id of the target VPC, in UUID format.
+	ID string `json:"id,omitempty"`
+}
+
 // AppWorkerSpec struct for AppWorkerSpec
 type AppWorkerSpec struct {
 	// The name. Must be unique across all components within the same app.
@@ -690,6 +738,12 @@ type AppWorkerSpecTermination struct {
 	GracePeriodSeconds int32 `json:"grace_period_seconds,omitempty"`
 }
 
+// AutoscalerActionScaleChange struct for AutoscalerActionScaleChange
+type AutoscalerActionScaleChange struct {
+	From int64 `json:"from,omitempty"`
+	To   int64 `json:"to,omitempty"`
+}
+
 // BitbucketSourceSpec struct for BitbucketSourceSpec
 type BitbucketSourceSpec struct {
 	Repo         string `json:"repo,omitempty"`
@@ -717,7 +771,8 @@ type Buildpack struct {
 
 // DeploymentCauseDetailsAutoscalerAction struct for DeploymentCauseDetailsAutoscalerAction
 type DeploymentCauseDetailsAutoscalerAction struct {
-	Autoscaled bool `json:"autoscaled,omitempty"`
+	Autoscaled       bool                                   `json:"autoscaled,omitempty"`
+	ScaledComponents map[string]AutoscalerActionScaleChange `json:"scaled_components,omitempty"`
 }
 
 // DeploymentCauseDetailsDigitalOceanUser struct for DeploymentCauseDetailsDigitalOceanUser
@@ -1229,14 +1284,16 @@ const (
 
 // AppInstanceSize struct for AppInstanceSize
 type AppInstanceSize struct {
-	Name         string                 `json:"name,omitempty"`
-	Slug         string                 `json:"slug,omitempty"`
-	CPUType      AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
-	CPUs         string                 `json:"cpus,omitempty"`
-	MemoryBytes  string                 `json:"memory_bytes,omitempty"`
-	USDPerMonth  string                 `json:"usd_per_month,omitempty"`
-	USDPerSecond string                 `json:"usd_per_second,omitempty"`
-	TierSlug     string                 `json:"tier_slug,omitempty"`
+	Name             string                 `json:"name,omitempty"`
+	Slug             string                 `json:"slug,omitempty"`
+	CPUType          AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs             string                 `json:"cpus,omitempty"`
+	MemoryBytes      string                 `json:"memory_bytes,omitempty"`
+	USDPerMonth      string                 `json:"usd_per_month,omitempty"`
+	USDPerSecond     string                 `json:"usd_per_second,omitempty"`
+	IDleUSDPerMonth  string                 `json:"idle_usd_per_month,omitempty"`
+	IDleUSDPerSecond string                 `json:"idle_usd_per_second,omitempty"`
+	TierSlug         string                 `json:"tier_slug,omitempty"`
 	// (Deprecated) The slug of the corresponding upgradable instance size on the higher tier.
 	TierUpgradeTo string `json:"tier_upgrade_to,omitempty"`
 	// (Deprecated) The slug of the corresponding downgradable instance size on the lower tier.
