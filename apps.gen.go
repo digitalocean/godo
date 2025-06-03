@@ -413,8 +413,8 @@ type AppJobSpec struct {
 	// The instance size to use for this component.
 	InstanceSizeSlug string `json:"instance_size_slug,omitempty"`
 	// The amount of instances that this component should be scaled to. Default 1, Minimum 1, Maximum 250. Consider using a larger instance size if your application requires more than 250 instances.
-	InstanceCount int64               `json:"instance_count,omitempty"`
-	Kind          AppJobSpecKind      `json:"kind,omitempty"`
+	InstanceCount int64          `json:"instance_count,omitempty"`
+	Kind          AppJobSpecKind `json:"kind,omitempty"`
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
@@ -546,9 +546,9 @@ type AppServiceSpec struct {
 	// A list of configured alerts which apply to the component.
 	Alerts []*AppAlertSpec `json:"alerts,omitempty"`
 	// A list of configured log forwarding destinations.
-	LogDestinations     []*AppLogDestinationSpec       `json:"log_destinations,omitempty"`
-	Termination         *AppServiceSpecTermination     `json:"termination,omitempty"`
-	LivenessHealthCheck *HealthCheckSpec               `json:"liveness_health_check,omitempty"`
+	LogDestinations     []*AppLogDestinationSpec   `json:"log_destinations,omitempty"`
+	Termination         *AppServiceSpecTermination `json:"termination,omitempty"`
+	LivenessHealthCheck *HealthCheckSpec           `json:"liveness_health_check,omitempty"`
 }
 
 // AppServiceSpecHealthCheck struct for AppServiceSpecHealthCheck
@@ -559,9 +559,9 @@ type AppServiceSpecHealthCheck struct {
 	InitialDelaySeconds int32 `json:"initial_delay_seconds,omitempty"`
 	// The number of seconds to wait between health checks. Default: 10 seconds, Minimum 1, Maximum 300. When used in liveness_health_check, Default: 10 seconds, Minimum 1, Maximum 300.
 	PeriodSeconds int32 `json:"period_seconds,omitempty"`
-	// The number of seconds after which the check times out. Default: 1 second, Minimum 1, Maximum 120.
+	// The number of seconds after which the check times out. Default: 1, Minimum 1, Maximum 120.
 	TimeoutSeconds int32 `json:"timeout_seconds,omitempty"`
-	// The number of successful health checks before considered healthy. Default: 1 second, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 1 second, Minimum 1, Maximum 1.
+	// The number of successful health checks before considered healthy. Default: 1, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 1, Minimum 1, Maximum 1.
 	SuccessThreshold int32 `json:"success_threshold,omitempty"`
 	// The number of failed health checks before considered unhealthy. Default: 9 seconds, Minimum 1, Maximum 50. When used in liveness_health_check, Default: 18 seconds, Minimum 1, Maximum 50.
 	FailureThreshold int32 `json:"failure_threshold,omitempty"`
@@ -721,7 +721,7 @@ type Buildpack struct {
 
 // DeploymentCauseDetailsAutoscalerAction struct for DeploymentCauseDetailsAutoscalerAction
 type DeploymentCauseDetailsAutoscalerAction struct {
-	Autoscaled       bool                                   `json:"autoscaled,omitempty"`
+	Autoscaled bool `json:"autoscaled,omitempty"`
 }
 
 // DeploymentCauseDetailsDigitalOceanUser struct for DeploymentCauseDetailsDigitalOceanUser
@@ -1233,14 +1233,14 @@ const (
 
 // AppInstanceSize struct for AppInstanceSize
 type AppInstanceSize struct {
-	Name             string                 `json:"name,omitempty"`
-	Slug             string                 `json:"slug,omitempty"`
-	CPUType          AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
-	CPUs             string                 `json:"cpus,omitempty"`
-	MemoryBytes      string                 `json:"memory_bytes,omitempty"`
-	USDPerMonth      string                 `json:"usd_per_month,omitempty"`
-	USDPerSecond     string                 `json:"usd_per_second,omitempty"`
-	TierSlug         string                 `json:"tier_slug,omitempty"`
+	Name         string                 `json:"name,omitempty"`
+	Slug         string                 `json:"slug,omitempty"`
+	CPUType      AppInstanceSizeCPUType `json:"cpu_type,omitempty"`
+	CPUs         string                 `json:"cpus,omitempty"`
+	MemoryBytes  string                 `json:"memory_bytes,omitempty"`
+	USDPerMonth  string                 `json:"usd_per_month,omitempty"`
+	USDPerSecond string                 `json:"usd_per_second,omitempty"`
+	TierSlug     string                 `json:"tier_slug,omitempty"`
 	// (Deprecated) The slug of the corresponding upgradable instance size on the higher tier.
 	TierUpgradeTo string `json:"tier_upgrade_to,omitempty"`
 	// (Deprecated) The slug of the corresponding downgradable instance size on the lower tier.
