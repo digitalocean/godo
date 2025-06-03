@@ -160,13 +160,6 @@ func TestApp_GetUpdatedAt(tt *testing.T) {
 	a.GetUpdatedAt()
 }
 
-func TestApp_GetVPC(tt *testing.T) {
-	a := &App{}
-	a.GetVPC()
-	a = nil
-	a.GetVPC()
-}
-
 func TestAppAlert_GetComponentName(tt *testing.T) {
 	a := &AppAlert{}
 	a.GetComponentName()
@@ -979,20 +972,6 @@ func TestAppInstanceSize_GetFeaturePreview(tt *testing.T) {
 	a.GetFeaturePreview()
 }
 
-func TestAppInstanceSize_GetIDleUSDPerMonth(tt *testing.T) {
-	a := &AppInstanceSize{}
-	a.GetIDleUSDPerMonth()
-	a = nil
-	a.GetIDleUSDPerMonth()
-}
-
-func TestAppInstanceSize_GetIDleUSDPerSecond(tt *testing.T) {
-	a := &AppInstanceSize{}
-	a.GetIDleUSDPerSecond()
-	a = nil
-	a.GetIDleUSDPerSecond()
-}
-
 func TestAppInstanceSize_GetMemoryBytes(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetMemoryBytes()
@@ -1175,13 +1154,6 @@ func TestAppJobSpec_GetRunCommand(tt *testing.T) {
 	a.GetRunCommand()
 }
 
-func TestAppJobSpec_GetSchedule(tt *testing.T) {
-	a := &AppJobSpec{}
-	a.GetSchedule()
-	a = nil
-	a.GetSchedule()
-}
-
 func TestAppJobSpec_GetSourceDir(tt *testing.T) {
 	a := &AppJobSpec{}
 	a.GetSourceDir()
@@ -1194,20 +1166,6 @@ func TestAppJobSpec_GetTermination(tt *testing.T) {
 	a.GetTermination()
 	a = nil
 	a.GetTermination()
-}
-
-func TestAppJobSpecSchedule_GetCron(tt *testing.T) {
-	a := &AppJobSpecSchedule{}
-	a.GetCron()
-	a = nil
-	a.GetCron()
-}
-
-func TestAppJobSpecSchedule_GetTimeZone(tt *testing.T) {
-	a := &AppJobSpecSchedule{}
-	a.GetTimeZone()
-	a = nil
-	a.GetTimeZone()
 }
 
 func TestAppJobSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
@@ -1336,6 +1294,20 @@ func TestAppLogDestinationSpecOpenSearch_GetIndexName(tt *testing.T) {
 	a.GetIndexName()
 }
 
+func TestAppProposeRequest_GetAppID(tt *testing.T) {
+	a := &AppProposeRequest{}
+	a.GetAppID()
+	a = nil
+	a.GetAppID()
+}
+
+func TestAppProposeRequest_GetSpec(tt *testing.T) {
+	a := &AppProposeRequest{}
+	a.GetSpec()
+	a = nil
+	a.GetSpec()
+}
+
 func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
 	a := &AppLogDestinationSpecPapertrail{}
 	a.GetEndpoint()
@@ -1362,27 +1334,6 @@ func TestAppMaintenanceSpec_GetOfflinePageURL(tt *testing.T) {
 	a.GetOfflinePageURL()
 	a = nil
 	a.GetOfflinePageURL()
-}
-
-func TestAppPeeredVpcSpec_GetName(tt *testing.T) {
-	a := &AppPeeredVpcSpec{}
-	a.GetName()
-	a = nil
-	a.GetName()
-}
-
-func TestAppProposeRequest_GetAppID(tt *testing.T) {
-	a := &AppProposeRequest{}
-	a.GetAppID()
-	a = nil
-	a.GetAppID()
-}
-
-func TestAppProposeRequest_GetSpec(tt *testing.T) {
-	a := &AppProposeRequest{}
-	a.GetSpec()
-	a = nil
-	a.GetSpec()
 }
 
 func TestAppProposeResponse_GetAppCost(tt *testing.T) {
@@ -1637,13 +1588,6 @@ func TestAppServiceSpec_GetImage(tt *testing.T) {
 	a.GetImage()
 }
 
-func TestAppServiceSpec_GetInactivitySleep(tt *testing.T) {
-	a := &AppServiceSpec{}
-	a.GetInactivitySleep()
-	a = nil
-	a.GetInactivitySleep()
-}
-
 func TestAppServiceSpec_GetInstanceCount(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetInstanceCount()
@@ -1663,13 +1607,6 @@ func TestAppServiceSpec_GetInternalPorts(tt *testing.T) {
 	a.GetInternalPorts()
 	a = nil
 	a.GetInternalPorts()
-}
-
-func TestAppServiceSpec_GetLivenessHealthCheck(tt *testing.T) {
-	a := &AppServiceSpec{}
-	a.GetLivenessHealthCheck()
-	a = nil
-	a.GetLivenessHealthCheck()
 }
 
 func TestAppServiceSpec_GetLogDestinations(tt *testing.T) {
@@ -1775,13 +1712,6 @@ func TestAppServiceSpecHealthCheck_GetTimeoutSeconds(tt *testing.T) {
 	a.GetTimeoutSeconds()
 	a = nil
 	a.GetTimeoutSeconds()
-}
-
-func TestAppServiceSpecInactivitySleep_GetAfterSeconds(tt *testing.T) {
-	a := &AppServiceSpecInactivitySleep{}
-	a.GetAfterSeconds()
-	a = nil
-	a.GetAfterSeconds()
 }
 
 func TestAppServiceSpecTermination_GetDrainSeconds(tt *testing.T) {
@@ -1915,13 +1845,6 @@ func TestAppSpec_GetStaticSites(tt *testing.T) {
 	a.GetStaticSites()
 	a = nil
 	a.GetStaticSites()
-}
-
-func TestAppSpec_GetVpc(tt *testing.T) {
-	a := &AppSpec{}
-	a.GetVpc()
-	a = nil
-	a.GetVpc()
 }
 
 func TestAppSpec_GetWorkers(tt *testing.T) {
@@ -2120,41 +2043,6 @@ func TestAppVariableDefinition_GetValue(tt *testing.T) {
 	a.GetValue()
 }
 
-func TestAppVPC_GetEgressIPs(tt *testing.T) {
-	a := &AppVPC{}
-	a.GetEgressIPs()
-	a = nil
-	a.GetEgressIPs()
-}
-
-func TestAppVPC_GetID(tt *testing.T) {
-	a := &AppVPC{}
-	a.GetID()
-	a = nil
-	a.GetID()
-}
-
-func TestAppVPCEgressIP_GetIP(tt *testing.T) {
-	a := &AppVPCEgressIP{}
-	a.GetIP()
-	a = nil
-	a.GetIP()
-}
-
-func TestAppVpcSpec_GetID(tt *testing.T) {
-	a := &AppVpcSpec{}
-	a.GetID()
-	a = nil
-	a.GetID()
-}
-
-func TestAppVpcSpec_GetPeeredVpcs(tt *testing.T) {
-	a := &AppVpcSpec{}
-	a.GetPeeredVpcs()
-	a = nil
-	a.GetPeeredVpcs()
-}
-
 func TestAppWorkerSpec_GetAlerts(tt *testing.T) {
 	a := &AppWorkerSpec{}
 	a.GetAlerts()
@@ -2246,13 +2134,6 @@ func TestAppWorkerSpec_GetInstanceSizeSlug(tt *testing.T) {
 	a.GetInstanceSizeSlug()
 }
 
-func TestAppWorkerSpec_GetLivenessHealthCheck(tt *testing.T) {
-	a := &AppWorkerSpec{}
-	a.GetLivenessHealthCheck()
-	a = nil
-	a.GetLivenessHealthCheck()
-}
-
 func TestAppWorkerSpec_GetLogDestinations(tt *testing.T) {
 	a := &AppWorkerSpec{}
 	a.GetLogDestinations()
@@ -2293,20 +2174,6 @@ func TestAppWorkerSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
 	a.GetGracePeriodSeconds()
 	a = nil
 	a.GetGracePeriodSeconds()
-}
-
-func TestAutoscalerActionScaleChange_GetFrom(tt *testing.T) {
-	a := &AutoscalerActionScaleChange{}
-	a.GetFrom()
-	a = nil
-	a.GetFrom()
-}
-
-func TestAutoscalerActionScaleChange_GetTo(tt *testing.T) {
-	a := &AutoscalerActionScaleChange{}
-	a.GetTo()
-	a = nil
-	a.GetTo()
 }
 
 func TestBitbucketSourceSpec_GetBranch(tt *testing.T) {
@@ -2559,16 +2426,6 @@ func TestDeploymentCauseDetailsAutoscalerAction_GetAutoscaled(tt *testing.T) {
 	d.GetAutoscaled()
 	d = nil
 	d.GetAutoscaled()
-}
-
-func TestDeploymentCauseDetailsAutoscalerAction_GetScaledComponents(tt *testing.T) {
-	zeroValue := map[string]AutoscalerActionScaleChange{}
-	d := &DeploymentCauseDetailsAutoscalerAction{ScaledComponents: zeroValue}
-	d.GetScaledComponents()
-	d = &DeploymentCauseDetailsAutoscalerAction{}
-	d.GetScaledComponents()
-	d = nil
-	d.GetScaledComponents()
 }
 
 func TestDeploymentCauseDetailsDigitalOceanUser_GetEmail(tt *testing.T) {
@@ -3388,41 +3245,6 @@ func TestGitSourceSpec_GetRepoCloneURL(tt *testing.T) {
 	g.GetRepoCloneURL()
 	g = nil
 	g.GetRepoCloneURL()
-}
-
-func TestHealthCheckSpec_GetFailureThreshold(tt *testing.T) {
-	h := &HealthCheckSpec{}
-	h.GetFailureThreshold()
-	h = nil
-	h.GetFailureThreshold()
-}
-
-func TestHealthCheckSpec_GetHTTPPath(tt *testing.T) {
-	h := &HealthCheckSpec{}
-	h.GetHTTPPath()
-	h = nil
-	h.GetHTTPPath()
-}
-
-func TestHealthCheckSpec_GetInitialDelaySeconds(tt *testing.T) {
-	h := &HealthCheckSpec{}
-	h.GetInitialDelaySeconds()
-	h = nil
-	h.GetInitialDelaySeconds()
-}
-
-func TestHealthCheckSpec_GetPeriodSeconds(tt *testing.T) {
-	h := &HealthCheckSpec{}
-	h.GetPeriodSeconds()
-	h = nil
-	h.GetPeriodSeconds()
-}
-
-func TestHealthCheckSpec_GetPort(tt *testing.T) {
-	h := &HealthCheckSpec{}
-	h.GetPort()
-	h = nil
-	h.GetPort()
 }
 
 func TestHealthCheckSpec_GetSuccessThreshold(tt *testing.T) {

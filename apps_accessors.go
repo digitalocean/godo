@@ -181,14 +181,6 @@ func (a *App) GetUpdatedAt() time.Time {
 	return a.UpdatedAt
 }
 
-// GetVPC returns the VPC field.
-func (a *App) GetVPC() *AppVPC {
-	if a == nil {
-		return nil
-	}
-	return a.VPC
-}
-
 // GetComponentName returns the ComponentName field.
 func (a *AppAlert) GetComponentName() string {
 	if a == nil {
@@ -1117,22 +1109,6 @@ func (a *AppInstanceSize) GetFeaturePreview() bool {
 	return a.FeaturePreview
 }
 
-// GetIDleUSDPerMonth returns the IDleUSDPerMonth field.
-func (a *AppInstanceSize) GetIDleUSDPerMonth() string {
-	if a == nil {
-		return ""
-	}
-	return a.IDleUSDPerMonth
-}
-
-// GetIDleUSDPerSecond returns the IDleUSDPerSecond field.
-func (a *AppInstanceSize) GetIDleUSDPerSecond() string {
-	if a == nil {
-		return ""
-	}
-	return a.IDleUSDPerSecond
-}
-
 // GetMemoryBytes returns the MemoryBytes field.
 func (a *AppInstanceSize) GetMemoryBytes() string {
 	if a == nil {
@@ -1341,14 +1317,6 @@ func (a *AppJobSpec) GetRunCommand() string {
 	return a.RunCommand
 }
 
-// GetSchedule returns the Schedule field.
-func (a *AppJobSpec) GetSchedule() *AppJobSpecSchedule {
-	if a == nil {
-		return nil
-	}
-	return a.Schedule
-}
-
 // GetSourceDir returns the SourceDir field.
 func (a *AppJobSpec) GetSourceDir() string {
 	if a == nil {
@@ -1363,22 +1331,6 @@ func (a *AppJobSpec) GetTermination() *AppJobSpecTermination {
 		return nil
 	}
 	return a.Termination
-}
-
-// GetCron returns the Cron field.
-func (a *AppJobSpecSchedule) GetCron() string {
-	if a == nil {
-		return ""
-	}
-	return a.Cron
-}
-
-// GetTimeZone returns the TimeZone field.
-func (a *AppJobSpecSchedule) GetTimeZone() string {
-	if a == nil {
-		return ""
-	}
-	return a.TimeZone
 }
 
 // GetGracePeriodSeconds returns the GracePeriodSeconds field.
@@ -1555,30 +1507,6 @@ func (a *AppMaintenanceSpec) GetOfflinePageURL() string {
 		return ""
 	}
 	return a.OfflinePageURL
-}
-
-// GetName returns the Name field.
-func (a *AppPeeredVpcSpec) GetName() string {
-	if a == nil {
-		return ""
-	}
-	return a.Name
-}
-
-// GetAppID returns the AppID field.
-func (a *AppProposeRequest) GetAppID() string {
-	if a == nil {
-		return ""
-	}
-	return a.AppID
-}
-
-// GetSpec returns the Spec field.
-func (a *AppProposeRequest) GetSpec() *AppSpec {
-	if a == nil {
-		return nil
-	}
-	return a.Spec
 }
 
 // GetAppCost returns the AppCost field.
@@ -1869,14 +1797,6 @@ func (a *AppServiceSpec) GetImage() *ImageSourceSpec {
 	return a.Image
 }
 
-// GetInactivitySleep returns the InactivitySleep field.
-func (a *AppServiceSpec) GetInactivitySleep() *AppServiceSpecInactivitySleep {
-	if a == nil {
-		return nil
-	}
-	return a.InactivitySleep
-}
-
 // GetInstanceCount returns the InstanceCount field.
 func (a *AppServiceSpec) GetInstanceCount() int64 {
 	if a == nil {
@@ -2029,14 +1949,6 @@ func (a *AppServiceSpecHealthCheck) GetTimeoutSeconds() int32 {
 	return a.TimeoutSeconds
 }
 
-// GetAfterSeconds returns the AfterSeconds field.
-func (a *AppServiceSpecInactivitySleep) GetAfterSeconds() int32 {
-	if a == nil {
-		return 0
-	}
-	return a.AfterSeconds
-}
-
 // GetDrainSeconds returns the DrainSeconds field.
 func (a *AppServiceSpecTermination) GetDrainSeconds() int32 {
 	if a == nil {
@@ -2187,14 +2099,6 @@ func (a *AppSpec) GetStaticSites() []*AppStaticSiteSpec {
 		return nil
 	}
 	return a.StaticSites
-}
-
-// GetVpc returns the Vpc field.
-func (a *AppSpec) GetVpc() *AppVpcSpec {
-	if a == nil {
-		return nil
-	}
-	return a.Vpc
 }
 
 // GetWorkers returns the Workers field.
@@ -2421,46 +2325,6 @@ func (a *AppVariableDefinition) GetValue() string {
 	return a.Value
 }
 
-// GetEgressIPs returns the EgressIPs field.
-func (a *AppVPC) GetEgressIPs() []*AppVPCEgressIP {
-	if a == nil {
-		return nil
-	}
-	return a.EgressIPs
-}
-
-// GetID returns the ID field.
-func (a *AppVPC) GetID() string {
-	if a == nil {
-		return ""
-	}
-	return a.ID
-}
-
-// GetIP returns the IP field.
-func (a *AppVPCEgressIP) GetIP() string {
-	if a == nil {
-		return ""
-	}
-	return a.IP
-}
-
-// GetID returns the ID field.
-func (a *AppVpcSpec) GetID() string {
-	if a == nil {
-		return ""
-	}
-	return a.ID
-}
-
-// GetPeeredVpcs returns the PeeredVpcs field.
-func (a *AppVpcSpec) GetPeeredVpcs() []*AppPeeredVpcSpec {
-	if a == nil {
-		return nil
-	}
-	return a.PeeredVpcs
-}
-
 // GetAlerts returns the Alerts field.
 func (a *AppWorkerSpec) GetAlerts() []*AppAlertSpec {
 	if a == nil {
@@ -2619,22 +2483,6 @@ func (a *AppWorkerSpecTermination) GetGracePeriodSeconds() int32 {
 		return 0
 	}
 	return a.GracePeriodSeconds
-}
-
-// GetFrom returns the From field.
-func (a *AutoscalerActionScaleChange) GetFrom() int64 {
-	if a == nil {
-		return 0
-	}
-	return a.From
-}
-
-// GetTo returns the To field.
-func (a *AutoscalerActionScaleChange) GetTo() int64 {
-	if a == nil {
-		return 0
-	}
-	return a.To
 }
 
 // GetBranch returns the Branch field.
@@ -2923,14 +2771,6 @@ func (d *DeploymentCauseDetailsAutoscalerAction) GetAutoscaled() bool {
 		return false
 	}
 	return d.Autoscaled
-}
-
-// GetScaledComponents returns the ScaledComponents map if it's non-nil, an empty map otherwise.
-func (d *DeploymentCauseDetailsAutoscalerAction) GetScaledComponents() map[string]AutoscalerActionScaleChange {
-	if d == nil || d.ScaledComponents == nil {
-		return map[string]AutoscalerActionScaleChange{}
-	}
-	return d.ScaledComponents
 }
 
 // GetEmail returns the Email field.
