@@ -4346,7 +4346,7 @@ func TestDatabases_CreateDatabaseUserWithMongoUserSettings(t *testing.T) {
 
 	user, _, err := client.Databases.CreateUser(ctx, dbID, &DatabaseCreateUserRequest{
 		Name:     expectedUser.Name,
-		Settings: &DatabaseUserSettings{OpenSearchACL: expectedUser.Settings.OpenSearchACL},
+		Settings: &DatabaseUserSettings{MongoUserSettings: expectedUser.Settings.MongoUserSettings},
 	})
 	require.NoError(t, err)
 	require.Equal(t, expectedUser, user)
