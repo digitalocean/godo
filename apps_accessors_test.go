@@ -909,6 +909,34 @@ func TestAppIngressSpecRuleStringMatch_GetPrefix(tt *testing.T) {
 	a.GetPrefix()
 }
 
+func TestAppInstance_GetComponentName(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetComponentName()
+	a = nil
+	a.GetComponentName()
+}
+
+func TestAppInstance_GetComponentType(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetComponentType()
+	a = nil
+	a.GetComponentType()
+}
+
+func TestAppInstance_GetInstanceAlias(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetInstanceAlias()
+	a = nil
+	a.GetInstanceAlias()
+}
+
+func TestAppInstance_GetInstanceName(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetInstanceName()
+	a = nil
+	a.GetInstanceName()
+}
+
 func TestAppInstanceSize_GetBandwidthAllowanceGib(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetBandwidthAllowanceGib()
@@ -1266,6 +1294,20 @@ func TestAppLogDestinationSpecOpenSearch_GetIndexName(tt *testing.T) {
 	a.GetIndexName()
 }
 
+func TestAppProposeRequest_GetAppID(tt *testing.T) {
+	a := &AppProposeRequest{}
+	a.GetAppID()
+	a = nil
+	a.GetAppID()
+}
+
+func TestAppProposeRequest_GetSpec(tt *testing.T) {
+	a := &AppProposeRequest{}
+	a.GetSpec()
+	a = nil
+	a.GetSpec()
+}
+
 func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
 	a := &AppLogDestinationSpecPapertrail{}
 	a.GetEndpoint()
@@ -1292,20 +1334,6 @@ func TestAppMaintenanceSpec_GetOfflinePageURL(tt *testing.T) {
 	a.GetOfflinePageURL()
 	a = nil
 	a.GetOfflinePageURL()
-}
-
-func TestAppProposeRequest_GetAppID(tt *testing.T) {
-	a := &AppProposeRequest{}
-	a.GetAppID()
-	a = nil
-	a.GetAppID()
-}
-
-func TestAppProposeRequest_GetSpec(tt *testing.T) {
-	a := &AppProposeRequest{}
-	a.GetSpec()
-	a = nil
-	a.GetSpec()
 }
 
 func TestAppProposeResponse_GetAppCost(tt *testing.T) {
@@ -3030,6 +3058,13 @@ func TestGetAppDatabaseConnectionDetailsResponse_GetConnectionDetails(tt *testin
 	g.GetConnectionDetails()
 }
 
+func TestGetAppInstancesResponse_GetInstances(tt *testing.T) {
+	g := &GetAppInstancesResponse{}
+	g.GetInstances()
+	g = nil
+	g.GetInstances()
+}
+
 func TestGetDatabaseConnectionDetailsResponse_GetComponentName(tt *testing.T) {
 	g := &GetDatabaseConnectionDetailsResponse{}
 	g.GetComponentName()
@@ -3350,25 +3385,4 @@ func TestUpgradeBuildpackResponse_GetDeployment(tt *testing.T) {
 	u.GetDeployment()
 	u = nil
 	u.GetDeployment()
-}
-
-func TestAppInstance_GetComponentName(tt *testing.T) {
-	a := &AppInstance{}
-	a.GetComponentName()
-	a = nil
-	a.GetComponentName()
-}
-
-func TestAppInstance_GetComponentType(tt *testing.T) {
-	a := &AppInstance{}
-	a.GetComponentType()
-	a = nil
-	a.GetComponentType()
-}
-
-func TestAppInstance_GetInstanceName(tt *testing.T) {
-	a := &AppInstance{}
-	a.GetInstanceName()
-	a = nil
-	a.GetInstanceName()
 }
