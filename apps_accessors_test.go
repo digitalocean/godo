@@ -3247,20 +3247,6 @@ func TestGitSourceSpec_GetRepoCloneURL(tt *testing.T) {
 	g.GetRepoCloneURL()
 }
 
-func TestHealthCheckSpec_GetSuccessThreshold(tt *testing.T) {
-	h := &HealthCheckSpec{}
-	h.GetSuccessThreshold()
-	h = nil
-	h.GetSuccessThreshold()
-}
-
-func TestHealthCheckSpec_GetTimeoutSeconds(tt *testing.T) {
-	h := &HealthCheckSpec{}
-	h.GetTimeoutSeconds()
-	h = nil
-	h.GetTimeoutSeconds()
-}
-
 func TestImageSourceSpec_GetDeployOnPush(tt *testing.T) {
 	i := &ImageSourceSpec{}
 	i.GetDeployOnPush()

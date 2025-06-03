@@ -1501,6 +1501,22 @@ func (a *AppMaintenanceSpec) GetEnabled() bool {
 	return a.Enabled
 }
 
+// GetAppID returns the AppID field.
+func (a *AppProposeRequest) GetAppID() string {
+	if a == nil {
+		return ""
+	}
+	return a.AppID
+}
+
+// GetSpec returns the Spec field.
+func (a *AppProposeRequest) GetSpec() *AppSpec {
+	if a == nil {
+		return nil
+	}
+	return a.Spec
+}
+
 // GetOfflinePageURL returns the OfflinePageURL field.
 func (a *AppMaintenanceSpec) GetOfflinePageURL() string {
 	if a == nil {
@@ -1819,14 +1835,6 @@ func (a *AppServiceSpec) GetInternalPorts() []int64 {
 		return nil
 	}
 	return a.InternalPorts
-}
-
-// GetLivenessHealthCheck returns the LivenessHealthCheck field.
-func (a *AppServiceSpec) GetLivenessHealthCheck() *HealthCheckSpec {
-	if a == nil {
-		return nil
-	}
-	return a.LivenessHealthCheck
 }
 
 // GetLogDestinations returns the LogDestinations field.
@@ -2427,14 +2435,6 @@ func (a *AppWorkerSpec) GetInstanceSizeSlug() string {
 		return ""
 	}
 	return a.InstanceSizeSlug
-}
-
-// GetLivenessHealthCheck returns the LivenessHealthCheck field.
-func (a *AppWorkerSpec) GetLivenessHealthCheck() *HealthCheckSpec {
-	if a == nil {
-		return nil
-	}
-	return a.LivenessHealthCheck
 }
 
 // GetLogDestinations returns the LogDestinations field.
@@ -3707,62 +3707,6 @@ func (g *GitSourceSpec) GetRepoCloneURL() string {
 		return ""
 	}
 	return g.RepoCloneURL
-}
-
-// GetFailureThreshold returns the FailureThreshold field.
-func (h *HealthCheckSpec) GetFailureThreshold() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.FailureThreshold
-}
-
-// GetHTTPPath returns the HTTPPath field.
-func (h *HealthCheckSpec) GetHTTPPath() string {
-	if h == nil {
-		return ""
-	}
-	return h.HTTPPath
-}
-
-// GetInitialDelaySeconds returns the InitialDelaySeconds field.
-func (h *HealthCheckSpec) GetInitialDelaySeconds() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.InitialDelaySeconds
-}
-
-// GetPeriodSeconds returns the PeriodSeconds field.
-func (h *HealthCheckSpec) GetPeriodSeconds() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.PeriodSeconds
-}
-
-// GetPort returns the Port field.
-func (h *HealthCheckSpec) GetPort() int64 {
-	if h == nil {
-		return 0
-	}
-	return h.Port
-}
-
-// GetSuccessThreshold returns the SuccessThreshold field.
-func (h *HealthCheckSpec) GetSuccessThreshold() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.SuccessThreshold
-}
-
-// GetTimeoutSeconds returns the TimeoutSeconds field.
-func (h *HealthCheckSpec) GetTimeoutSeconds() int32 {
-	if h == nil {
-		return 0
-	}
-	return h.TimeoutSeconds
 }
 
 // GetDeployOnPush returns the DeployOnPush field.
