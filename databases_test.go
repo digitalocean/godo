@@ -4304,3 +4304,50 @@ func TestDatabases_StopOnlineMigration(t *testing.T) {
 	_, err := client.Databases.StopOnlineMigration(ctx, dbID, migrationID)
 	require.NoError(t, err)
 }
+
+func TestDatabases_CreateDatabaseUserWithMongoUserSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/users", dbID)
+
+	writeMongoSettings := &MongoUserSettings{
+		Databases: []string{"bar"},
+		Role:      "readWrite",
+	}
+
+	acljson, err := json.Marshal(writeMongoSettings)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	responseJSON := []byte(fmt.Sprintf(`{
+		"user": {
+			"name": "foo",
+			"settings": {
+				"mongo_user_settings": %s
+			}
+		}
+	}`, string(acljson)))
+
+	expectedUser := &DatabaseUser{
+		Name: "foo",
+		Settings: &DatabaseUserSettings{
+			MongoUserSettings: writeMongoSettings,
+		},
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	user, _, err := client.Databases.CreateUser(ctx, dbID, &DatabaseCreateUserRequest{
+		Name:     expectedUser.Name,
+		Settings: &DatabaseUserSettings{OpenSearchACL: expectedUser.Settings.OpenSearchACL},
+	})
+	require.NoError(t, err)
+	require.Equal(t, expectedUser, user)
+}
