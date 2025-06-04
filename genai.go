@@ -37,7 +37,7 @@ type GenAIService interface {
 	ListKnowledgeBases(ctx context.Context, opt *ListOptions) ([]KnowledgeBase, *Response, error)
 	CreateKnowledgeBase(ctx context.Context, KnowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error)
 	ListKnowledgebaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
-	AddKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error)
+	AddKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddKnowledgebaseDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error)
 	DeleteKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error)
 	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error)
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
@@ -419,7 +419,7 @@ type DeletedKnowledgeBaseResponse struct {
 	KnowledgeBaseUuid string `json:"knowledge_base_uuid"`
 }
 
-type AddDataSourceRequest struct {
+type AddKnowledgebaseDataSourceRequest struct {
 	KnowledgeBaseUuid    string                `json:"knowledge_base_uuid"`
 	SpacesDataSource     *SpacesDataSource     `json:"spaces_data_source"`
 	WebCrawlerDataSource *WebCrawlerDataSource `json:"web_crawler_data_source"`
@@ -763,7 +763,7 @@ func (s *GenAIServiceOp) ListKnowledgebaseDataSources(ctx context.Context, knowl
 }
 
 // Add Data Source to a Knowledge Base
-func (s *GenAIServiceOp) AddKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error) {
+func (s *GenAIServiceOp) AddKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddKnowledgebaseDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error) {
 	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, addDataSource)
 	if err != nil {

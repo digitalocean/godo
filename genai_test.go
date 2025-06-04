@@ -868,7 +868,7 @@ func TestAddDataSource(t *testing.T) {
 		fmt.Fprint(w, addDataSourceResponse)
 	})
 
-	req := &AddDataSourceRequest{
+	req := &AddKnowledgebaseDataSourceRequest{
 		KnowledgeBaseUuid: "11111111-1111-1111-1111-111111111111",
 		SpacesDataSource: &SpacesDataSource{
 			BucketName: "test-bucket",
