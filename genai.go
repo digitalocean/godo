@@ -36,9 +36,9 @@ type GenAIService interface {
 	ListModels(context.Context, *ListOptions) ([]*Model, *Response, error)
 	ListKnowledgeBases(ctx context.Context, opt *ListOptions) ([]KnowledgeBase, *Response, error)
 	CreateKnowledgeBase(ctx context.Context, KnowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error)
-	ListDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
-	AddDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error)
-	DeleteDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error)
+	ListKnowledgebaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
+	AddKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error)
+	DeleteKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error)
 	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error)
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
@@ -737,7 +737,7 @@ func (s *GenAIServiceOp) CreateKnowledgeBase(ctx context.Context, KnowledgeBaseC
 }
 
 // List Data Sources for a Knowledge Base
-func (s *GenAIServiceOp) ListDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error) {
+func (s *GenAIServiceOp) ListKnowledgebaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error) {
 
 	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
 	path, err := addOptions(path, opt)
@@ -763,7 +763,7 @@ func (s *GenAIServiceOp) ListDataSources(ctx context.Context, knowledgeBaseID st
 }
 
 // Add Data Source to a Knowledge Base
-func (s *GenAIServiceOp) AddDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error) {
+func (s *GenAIServiceOp) AddKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error) {
 	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, addDataSource)
 	if err != nil {
@@ -778,7 +778,7 @@ func (s *GenAIServiceOp) AddDataSource(ctx context.Context, knowledgeBaseID stri
 }
 
 // Delete data source from a knowledge base
-func (s *GenAIServiceOp) DeleteDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error) {
+func (s *GenAIServiceOp) DeleteKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error) {
 
 	path := fmt.Sprintf(DeleteDataSourcePath, knowledgeBaseID, DataSourceID)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)

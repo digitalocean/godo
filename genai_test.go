@@ -850,7 +850,7 @@ func TestListDataSources(t *testing.T) {
 		PerPage: 1,
 	}
 
-	dataSources, resp, err := client.GenAI.ListDataSources(ctx, "11111111-1111-1111-1111-111111111111", req)
+	dataSources, resp, err := client.GenAI.ListKnowledgebaseDataSources(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.ListDataSources returned error: %v", err)
 	}
@@ -877,7 +877,7 @@ func TestAddDataSource(t *testing.T) {
 		},
 	}
 
-	res, _, err := client.GenAI.AddDataSource(ctx, "11111111-1111-1111-1111-111111111111", req)
+	res, _, err := client.GenAI.AddKnowledgebaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.AddDataSource returned error: %v", err)
 	}
@@ -895,7 +895,7 @@ func TestDeleteDataSource(t *testing.T) {
 		fmt.Fprint(w, deleteDataSourceResponse)
 	})
 
-	kbUUID, dsUUID, resp, err := client.GenAI.DeleteDataSource(ctx, "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222")
+	kbUUID, dsUUID, resp, err := client.GenAI.DeleteKnowledgebaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222")
 	if err != nil {
 		t.Errorf("GenAI.DeleteDataSource returned error: %v", err)
 	}
