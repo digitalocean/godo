@@ -410,6 +410,25 @@ var knowledgeBaseResponse = `
 }
 `
 
+var knowledgeBaseGetResponse = `
+{
+	"database_status" : "ONLINE",
+	"knowledge_base": {
+		"uuid": "11111111-1111-1111-1111-111111111111",
+		"name": "testing-kb",
+		"created_at": "2025-05-14T13:18:05Z",
+		"updated_at": "2025-05-14T13:18:05Z",
+		"region": "tor1",
+		"project_id": "11111111-1111-1111-1111-111111111111",
+		"embedding_model_uuid": "11111111-1111-1111-1111-111111111111",
+		"database_id": "11111111-1111-1111-1111-111111111111",
+		"is_public": false,
+		"tags": ["string"],
+		"user_id": "18919793"
+	}
+}
+`
+
 var knowledgeBaseUpdateResponse = `
 {
 	"knowledge_base": {
@@ -433,9 +452,6 @@ var listDataSourcesResponse = `
 	"knowledge_base_data_sources": [
 		{
 			"uuid": "22222222-2222-2222-2222-222222222222",
-			"bucket_name": "test-bucket",
-			"item_path": "/docs/test.pdf",
-			"region": "tor1",
 			"created_at": "2025-05-14T13:18:05Z",
 			"updated_at": "2025-05-14T13:18:05Z",
 			"spaces_data_source": {
@@ -453,7 +469,7 @@ var listDataSourcesResponse = `
 			"last": "https://api.digitalocean.com/v2/gen-ai/knowledge_bases/11111111-1111-1111-1111-111111111111/data_sources?page=3&per_page=1"
 		}
 	},
-	"meta": {
+	"meta": { 
 		"total": 3,
 		"page": 1,
 		"pages": 3
@@ -465,9 +481,6 @@ var addDataSourceResponse = `
 {
 	"knowledge_base_data_source": {
 		"uuid": "22222222-2222-2222-2222-222222222222",
-		"bucket_name": "test-bucket",
-		"item_path": "/docs/test.pdf",
-		"region": "tor1",
 		"created_at": "2025-05-14T13:18:05Z",
 		"updated_at": "2025-05-14T13:18:05Z",
 		"spaces_data_source": {
@@ -567,7 +580,7 @@ func TestListAPIKeys(t *testing.T) {
 
 	keys, resp, err := client.GenAI.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	assert.NoError(t, err)
-	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
 	assert.Equal(t, "Key One", keys[0].Name)
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", keys[0].Uuid)
@@ -805,7 +818,7 @@ func TestCreateKnowledgeBase(t *testing.T) {
 		Name:               "testing-kb",
 		ProjectID:          "11111111-1111-1111-1111-111111111111",
 		Region:             "tor1",
-		EmbeddingModelUUID: "11111111-1111-1111-1111-111111111111",
+		EmbeddingModelUuid: "11111111-1111-1111-1111-111111111111",
 		Tags:               []string{"string"},
 	}
 
@@ -843,7 +856,7 @@ func TestListDataSources(t *testing.T) {
 	}
 
 	assert.Equal(t, 3, resp.Meta.Total)
-	assert.Equal(t, "test-bucket", dataSources[0].BucketName)
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", dataSources[0].Uuid)
 }
 
 func TestAddDataSource(t *testing.T) {
@@ -856,7 +869,7 @@ func TestAddDataSource(t *testing.T) {
 	})
 
 	req := &AddDataSourceRequest{
-		KnowledgeBaseUUID: "11111111-1111-1111-1111-111111111111",
+		KnowledgeBaseUuid: "11111111-1111-1111-1111-111111111111",
 		SpacesDataSource: &SpacesDataSource{
 			BucketName: "test-bucket",
 			ItemPath:   "/docs/test.pdf",
@@ -869,8 +882,8 @@ func TestAddDataSource(t *testing.T) {
 		t.Errorf("GenAI.AddDataSource returned error: %v", err)
 	}
 
-	assert.Equal(t, "test-bucket", res.BucketName)
-	assert.Equal(t, "/docs/test.pdf", res.ItemPath)
+	assert.Equal(t, "test-bucket", res.SpacesDataSource.BucketName)
+	assert.Equal(t, "/docs/test.pdf", res.SpacesDataSource.ItemPath)
 }
 
 func TestDeleteDataSource(t *testing.T) {
@@ -898,15 +911,17 @@ func TestGetKnowledgeBase(t *testing.T) {
 
 	mux.HandleFunc("/v2/gen-ai/knowledge_bases/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, knowledgeBaseResponse)
+		fmt.Fprint(w, knowledgeBaseGetResponse)
 	})
 
-	res, resp, err := client.GenAI.GetKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
+	res, dbStatus, resp, err := client.GenAI.GetKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.GetKnowledgeBase returned error: %v", err)
 	}
 
 	assert.Equal(t, "testing-kb", res.Name)
+	assert.Equal(t, "ONLINE", dbStatus)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", res.Uuid)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
 

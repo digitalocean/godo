@@ -39,7 +39,7 @@ type GenAIService interface {
 	ListDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
 	AddDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error)
 	DeleteDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error)
-	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, *Response, error)
+	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error)
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
 	AttachKnowledgeBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error)
@@ -344,25 +344,22 @@ type AgentAPIKeyUpdateRequest struct {
 type KnowledgeBaseCreateRequest struct {
 	DatabaseID         string                    `json:"database_id"`
 	DataSources        []KnowledgeBaseDataSource `json:"datasources"`
-	EmbeddingModelUUID string                    `json:"embedding_model_uuid"`
+	EmbeddingModelUuid string                    `json:"embedding_model_uuid"`
 	Name               string                    `json:"name"`
 	ProjectID          string                    `json:"project_id"`
 	Region             string                    `json:"region"`
 	Tags               []string                  `json:"tags"`
-	VPCUUID            string                    `json:"vpc_uuid"`
+	VPCUuid            string                    `json:"vpc_uuid"`
 }
 
 // KnowledgeBaseDataSource represents a Gen AI Knowledge Base Data Source
 type KnowledgeBaseDataSource struct {
-	BucketName           string                `json:"bucket_name,omitempty"`
 	CreatedAt            *Timestamp            `json:"created_at,omitempty"`
 	FileUploadDataSource *FileUploadDataSource `json:"file_upload_data_source,omitempty"`
-	ItemPath             string                `json:"item_path,omitempty"`
 	LastIndexingJob      *LastIndexingJob      `json:"last_indexing_job,omitempty"`
-	Region               string                `json:"region,omitempty"`
 	SpacesDataSource     *SpacesDataSource     `json:"spaces_data_source,omitempty"`
 	UpdatedAt            *Timestamp            `json:"updated_at,omitempty"`
-	UUID                 string                `json:"uuid,omitempty"`
+	Uuid                 string                `json:"uuid,omitempty"`
 	WebCrawlerDataSource *WebCrawlerDataSource `json:"web_crawler_data_source,omitempty"`
 }
 
@@ -409,32 +406,32 @@ type knowledgebaseRoot struct {
 }
 
 type DeleteDataSourceRoot struct {
-	DataSourceUUID    string `json:"data_source_uuid"`
-	KnowledgeBaseUUID string `json:"knowledge_base_uuid"`
+	DataSourceUuid    string `json:"data_source_uuid"`
+	KnowledgeBaseUuid string `json:"knowledge_base_uuid"`
 }
 
 type DeleteKnowledgeBaseRoot struct {
-	KnowledgeBaseUUID string `json:"uuid"`
+	KnowledgeBaseUuid string `json:"uuid"`
 }
 
 type DeletedKnowledgeBaseResponse struct {
-	DataSourceUUID    string `json:"data_source_uuid"`
-	KnowledgeBaseUUID string `json:"knowledge_base_uuid"`
+	DataSourceUuid    string `json:"data_source_uuid"`
+	KnowledgeBaseUuid string `json:"knowledge_base_uuid"`
 }
 
 type AddDataSourceRequest struct {
-	KnowledgeBaseUUID    string                `json:"knowledge_base_uuid"`
+	KnowledgeBaseUuid    string                `json:"knowledge_base_uuid"`
 	SpacesDataSource     *SpacesDataSource     `json:"spaces_data_source"`
 	WebCrawlerDataSource *WebCrawlerDataSource `json:"web_crawler_data_source"`
 }
 
 type UpdateKnowledgeBaseRequest struct {
 	DatabaseID         string   `json:"database_id"`
-	EmbeddingModelUUID string   `json:"embedding_model_uuid"`
+	EmbeddingModelUuid string   `json:"embedding_model_uuid"`
 	Name               string   `json:"name"`
 	ProjectID          string   `json:"project_id"`
 	Tags               []string `json:"tags"`
-	UUID               string   `json:"uuid"`
+	Uuid               string   `json:"uuid"`
 }
 
 type genAIAgentKBRoot struct {
@@ -796,24 +793,24 @@ func (s *GenAIServiceOp) DeleteDataSource(ctx context.Context, knowledgeBaseID s
 		return "", "", resp, err
 
 	}
-	return root.KnowledgeBaseUUID, root.DataSourceUUID, resp, nil
+	return root.KnowledgeBaseUuid, root.DataSourceUuid, resp, nil
 }
 
 // Get a KnowledgeBase
-func (s *GenAIServiceOp) GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, *Response, error) {
+func (s *GenAIServiceOp) GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error) {
 	path := fmt.Sprintf(GetKnowledgeBaseByIDPath, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, "", nil, err
 	}
 	root := new(knowledgebaseRoot)
 	resp, err := s.client.Do(ctx, req, root)
 
 	if err != nil {
-		return nil, resp, err
+		return nil, "", resp, err
 	}
-	return root.KnowledgeBase, resp, nil
+	return root.KnowledgeBase, root.DatabaseStatus, resp, nil
 }
 
 // Update a knowledge base
@@ -848,7 +845,7 @@ func (s *GenAIServiceOp) DeleteKnowledgeBase(ctx context.Context, knowledgeBaseI
 	if err != nil {
 		return "", resp, err
 	}
-	return root.KnowledgeBaseUUID, resp, nil
+	return root.KnowledgeBaseUuid, resp, nil
 }
 
 // Attach a knowledge base to an agent
