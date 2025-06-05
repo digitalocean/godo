@@ -347,6 +347,15 @@ var apiKeyInfoResponse = `
 }
 `
 
+var agentRouteResponse = `
+{
+	"child_agent_uuid": "00000000-0000-0000-0000-000000000001",
+	"parent_agent_uuid": "00000000-0000-0000-0000-000000000000",
+	"rollback": false,
+	"uuid": "00000000-0000-0000-0000-000000000003"
+}
+`
+
 func TestListAgents(t *testing.T) {
 	setup()
 	defer teardown()
@@ -618,4 +627,72 @@ func TestListModels(t *testing.T) {
 	expectedString := fmt.Sprintf("%v", models[0])
 	assert.Equal(t, resp.Response.StatusCode, 200)
 	assert.Equal(t, expectedString, models[0].String())
+}
+
+func TestAddAgentRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/child_agents/00000000-0000-0000-0000-000000000001", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, agentRouteResponse)
+	})
+
+	req := &AgentRouteCreateRequest{
+		ChildAgentUuid:  "00000000-0000-0000-0000-000000000001",
+		IfCase:          "use this to get weather information",
+		ParentAgentUuid: "00000000-0000-0000-0000-000000000000",
+		RouteName:       "weather route app",
+	}
+
+	res, resp, err := client.GenAI.AddAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
+	if err != nil {
+		t.Errorf("GenAI.AddAgentRoute returned error: %v", err)
+	}
+	fmt.Println(res)
+	assert.Equal(t, res.ChildAgentUuid, "00000000-0000-0000-0000-000000000001")
+	assert.Equal(t, resp.Response.StatusCode, 200)
+}
+
+func TestDeleteAgentRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/child_agents/00000000-0000-0000-0000-000000000001", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, agentRouteResponse)
+	})
+
+	res, resp, err := client.GenAI.DeleteAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001")
+	if err != nil {
+		t.Errorf("GenAI.DeleteAgentRoute returned error: %v", err)
+	}
+
+	assert.Equal(t, res.ChildAgentUuid, "00000000-0000-0000-0000-000000000001")
+	assert.Equal(t, resp.Response.StatusCode, 200)
+}
+
+func TestUpdateAgentRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/child_agents/00000000-0000-0000-0000-000000000001", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, agentRouteResponse)
+	})
+
+	req := &AgentRouteUpdateRequest{
+		ChildAgentUuid:  "00000000-0000-0000-0000-000000000001",
+		IfCase:          "use this to get weather information",
+		ParentAgentUuid: "00000000-0000-0000-0000-000000000000",
+		RouteName:       "weather route app",
+	}
+
+	res, resp, err := client.GenAI.UpdateAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
+	if err != nil {
+		t.Errorf("GenAI.UpdateAgentRoute returned error: %v", err)
+	}
+
+	assert.Equal(t, res.ChildAgentUuid, "00000000-0000-0000-0000-000000000001")
+	assert.Equal(t, resp.Response.StatusCode, 200)
 }

@@ -27,6 +27,9 @@ type GenAIService interface {
 	DeleteAgent(context.Context, string) (*Agent, *Response, error)
 	UpdateAgentVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
 	ListModels(context.Context, *ListOptions) ([]*Model, *Response, error)
+	AddAgentRoute(context.Context, string, string, *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error)
+	UpdateAgentRoute(context.Context, string, string, *AgentRouteUpdateRequest) (*AgentRouteResponse, *Response, error)
+	DeleteAgentRoute(context.Context, string, string) (*AgentRouteResponse, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -60,6 +63,13 @@ type agentAPIKeysRoot struct {
 
 type agentAPIKeyRoot struct {
 	ApiKey *ApiKeyInfo `json:"api_key_info,omitempty"`
+}
+
+type AgentRouteResponse struct {
+	ChildAgentUuid  string `json:"child_agent_uuid,omitempty"`
+	ParentAgentUuid string `json:"parent_agent_uuid,omitempty"`
+	Rollback        bool   `json:"rollback,omitempty"`
+	UUID            string `json:"uuid,omitempty"`
 }
 
 // Agent represents a Gen AI Agent
@@ -170,6 +180,23 @@ type OpenAiApiKey struct {
 type AgentVisibilityUpdateRequest struct {
 	Uuid       string `json:"uuid,omitempty"`
 	Visibility string `json:"visibility,omitempty"`
+}
+
+// AgentRouteCreateRequest represents a route between a parent and child agent.
+type AgentRouteCreateRequest struct {
+	ChildAgentUuid  string `json:"child_agent_uuid,omitempty"`
+	IfCase          string `json:"if_case,omitempty"`
+	ParentAgentUuid string `json:"parent_agent_uuid,omitempty"`
+	RouteName       string `json:"route_name,omitempty"`
+}
+
+// AgentRouteUpdateRequest represents the request to update an existing route between a parent and child agent.
+type AgentRouteUpdateRequest struct {
+	ChildAgentUuid  string `json:"child_agent_uuid,omitempty"`
+	IfCase          string `json:"if_case,omitempty"`
+	ParentAgentUuid string `json:"parent_agent_uuid,omitempty"`
+	RouteName       string `json:"route_name,omitempty"`
+	UUID            string `json:"uuid,omitempty"`
 }
 
 // AgentTemplate represents the template of a Gen AI Agent
@@ -573,6 +600,59 @@ func (s *GenAIServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*M
 	}
 
 	return root.Models, resp, nil
+}
+
+// AddAgentRoute function adds a route between a parent and child agent.
+func (s *GenAIServiceOp) AddAgentRoute(ctx context.Context, parentId string, childId string, route *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error) {
+	path := fmt.Sprintf("%s/%s/child_agents/%s", genAIBasePath, parentId, childId)
+	fmt.Println(path)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, route)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(AgentRouteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
+}
+
+// UpdateAgentRoute function updates a route between a parent and child agent.
+func (s *GenAIServiceOp) UpdateAgentRoute(ctx context.Context, parentId string, childId string, route *AgentRouteUpdateRequest) (*AgentRouteResponse, *Response, error) {
+	path := fmt.Sprintf("%s/%s/child_agents/%s", genAIBasePath, parentId, childId)
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, route)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(AgentRouteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
+}
+
+// DeleteAgentRoute function deletes a route between a parent and child agent.
+func (s *GenAIServiceOp) DeleteAgentRoute(ctx context.Context, parentId string, childId string) (*AgentRouteResponse, *Response, error) {
+	path := fmt.Sprintf("%s/%s/child_agents/%s", genAIBasePath, parentId, childId)
+	fmt.Println(path)
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(AgentRouteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
 }
 
 func (a Agent) String() string {
