@@ -433,7 +433,7 @@ var knowledgeBaseUpdateResponse = `
 {
 	"knowledge_base": {
 		"uuid": "11111111-1111-1111-1111-111111111111",
-		"name": "Updated Knowledge Base",
+		"name": "Updated-Knowledge-Base",
 		"created_at": "2025-05-14T13:18:05Z",
 		"updated_at": "2025-05-14T13:46:48Z",
 		"region": "tor1",
@@ -820,6 +820,13 @@ func TestCreateKnowledgeBase(t *testing.T) {
 		Region:             "tor1",
 		EmbeddingModelUuid: "11111111-1111-1111-1111-111111111111",
 		Tags:               []string{"string"},
+		DataSources: []KnowledgeBaseDataSource{
+			{
+				WebCrawlerDataSource: &WebCrawlerDataSource{
+					BaseUrl: "https://www.example.com",
+				},
+			},
+		},
 	}
 
 	res, _, err := client.GenAI.CreateKnowledgeBase(ctx, req)
@@ -829,6 +836,8 @@ func TestCreateKnowledgeBase(t *testing.T) {
 
 	assert.Equal(t, res.Name, req.Name)
 	assert.Equal(t, res.ProjectId, req.ProjectID)
+	assert.Equal(t, req.EmbeddingModelUuid, res.EmbeddingModelUuid)
+	assert.Equal(t, req.Region, res.Region)
 }
 
 func TestListDataSources(t *testing.T) {
@@ -935,7 +944,7 @@ func TestUpdateKnowledgeBase(t *testing.T) {
 	})
 
 	req := &UpdateKnowledgeBaseRequest{
-		Name: "Updated Knowledge Base",
+		Name: "Updated-Knowledge-Base",
 		Tags: []string{"updated", "example"},
 	}
 
@@ -944,6 +953,8 @@ func TestUpdateKnowledgeBase(t *testing.T) {
 		t.Errorf("GenAI.UpdateKnowledgeBase returned error: %v", err)
 	}
 
+	assert.Equal(t, req.Name, res.Name)
+	assert.Equal(t, req.Tags, res.Tags)
 	assert.Equal(t, res.Tags[0], req.Tags[0])
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
@@ -975,7 +986,7 @@ func TestAttachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.AttachKnowledgeBase(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.GenAI.AttachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.AttachKnowledgBase returned error: %v", err)
 	}

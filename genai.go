@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 const (
@@ -42,7 +43,7 @@ type GenAIService interface {
 	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error)
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
-	AttachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
+	AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 	DetachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 }
 
@@ -722,6 +723,29 @@ func (s *GenAIServiceOp) CreateKnowledgeBase(ctx context.Context, knowledgeBaseC
 
 	path := KnowledgeBasePath
 
+	if knowledgeBaseCreate.Name == "" {
+		return nil, nil, fmt.Errorf("name is required")
+	}
+	if strings.Contains(knowledgeBaseCreate.Name, " ") {
+		return nil, nil, fmt.Errorf("name cannot contain spaces")
+	}
+	if len(knowledgeBaseCreate.DataSources) == 0 {
+		return nil, nil, fmt.Errorf("at least one datasource is required")
+	}
+	// TODO: Remove this check when additional regions are supported.
+	if knowledgeBaseCreate.Region == "" {
+		knowledgeBaseCreate.Region = "tor1"
+	}
+	if knowledgeBaseCreate.Region != "tor1" {
+		return nil, nil, fmt.Errorf("currently only region 'tor1' is supported")
+	}
+
+	if knowledgeBaseCreate.EmbeddingModelUuid == "" {
+		return nil, nil, fmt.Errorf("EmbeddingModelUuid ID is required")
+	}
+	if knowledgeBaseCreate.ProjectID == "" {
+		return nil, nil, fmt.Errorf("Project ID is required")
+	}
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, knowledgeBaseCreate)
 	if err != nil {
 		return nil, nil, err
@@ -850,7 +874,7 @@ func (s *GenAIServiceOp) DeleteKnowledgeBase(ctx context.Context, knowledgeBaseI
 }
 
 // Attach a knowledge base to an agent
-func (s *GenAIServiceOp) AttachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
+func (s *GenAIServiceOp) AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
 	path := fmt.Sprintf(AgentKnowledgeBasePath, agentID, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
