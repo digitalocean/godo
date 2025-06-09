@@ -35,15 +35,15 @@ type GenAIService interface {
 	UpdateAgentVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
 	ListModels(context.Context, *ListOptions) ([]*Model, *Response, error)
 	ListKnowledgeBases(ctx context.Context, opt *ListOptions) ([]KnowledgeBase, *Response, error)
-	CreateKnowledgeBase(ctx context.Context, KnowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error)
-	ListKnowledgebaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
-	AddKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddKnowledgebaseDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error)
-	DeleteKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error)
+	CreateKnowledgeBase(ctx context.Context, knowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error)
+	ListKnowledgeBaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
+	AddKnowledgeBaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddKnowledgeBaseDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error)
+	DeleteKnowledgeBaseDataSource(ctx context.Context, knowledgeBaseID string, dataSourceID string) (string, string, *Response, error)
 	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error)
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
-	AttachKnowledgeBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error)
-	DetachKnowledgeBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error)
+	AttachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
+	DetachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -419,7 +419,7 @@ type DeletedKnowledgeBaseResponse struct {
 	KnowledgeBaseUuid string `json:"knowledge_base_uuid"`
 }
 
-type AddKnowledgebaseDataSourceRequest struct {
+type AddKnowledgeBaseDataSourceRequest struct {
 	KnowledgeBaseUuid    string                `json:"knowledge_base_uuid"`
 	SpacesDataSource     *SpacesDataSource     `json:"spaces_data_source"`
 	WebCrawlerDataSource *WebCrawlerDataSource `json:"web_crawler_data_source"`
@@ -431,7 +431,7 @@ type UpdateKnowledgeBaseRequest struct {
 	Name               string   `json:"name"`
 	ProjectID          string   `json:"project_id"`
 	Tags               []string `json:"tags"`
-	Uuid               string   `json:"uuid"`
+	KnowledgeBaseUUID  string   `json:"uuid"`
 }
 
 type genAIAgentKBRoot struct {
@@ -718,11 +718,11 @@ func (s *GenAIServiceOp) ListKnowledgeBases(ctx context.Context, opt *ListOption
 }
 
 // Create a knowledge base
-func (s *GenAIServiceOp) CreateKnowledgeBase(ctx context.Context, KnowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error) {
+func (s *GenAIServiceOp) CreateKnowledgeBase(ctx context.Context, knowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error) {
 
 	path := KnowledgeBasePath
 
-	req, err := s.client.NewRequest(ctx, http.MethodPost, path, KnowledgeBaseCreate)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, knowledgeBaseCreate)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -737,7 +737,7 @@ func (s *GenAIServiceOp) CreateKnowledgeBase(ctx context.Context, KnowledgeBaseC
 }
 
 // List Data Sources for a Knowledge Base
-func (s *GenAIServiceOp) ListKnowledgebaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error) {
+func (s *GenAIServiceOp) ListKnowledgeBaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error) {
 
 	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
 	path, err := addOptions(path, opt)
@@ -763,7 +763,7 @@ func (s *GenAIServiceOp) ListKnowledgebaseDataSources(ctx context.Context, knowl
 }
 
 // Add Data Source to a Knowledge Base
-func (s *GenAIServiceOp) AddKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddKnowledgebaseDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error) {
+func (s *GenAIServiceOp) AddKnowledgeBaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddKnowledgeBaseDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error) {
 	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, addDataSource)
 	if err != nil {
@@ -777,10 +777,10 @@ func (s *GenAIServiceOp) AddKnowledgebaseDataSource(ctx context.Context, knowled
 	return root.KnowledgeBaseDatasource, resp, err
 }
 
-// Delete data source from a knowledge base
-func (s *GenAIServiceOp) DeleteKnowledgebaseDataSource(ctx context.Context, knowledgeBaseID string, DataSourceID string) (string, string, *Response, error) {
+// Deletes data source from a knowledge base
+func (s *GenAIServiceOp) DeleteKnowledgeBaseDataSource(ctx context.Context, knowledgeBaseID string, dataSourceID string) (string, string, *Response, error) {
 
-	path := fmt.Sprintf(DeleteDataSourcePath, knowledgeBaseID, DataSourceID)
+	path := fmt.Sprintf(DeleteDataSourcePath, knowledgeBaseID, dataSourceID)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 
 	if err != nil {
@@ -796,7 +796,8 @@ func (s *GenAIServiceOp) DeleteKnowledgebaseDataSource(ctx context.Context, know
 	return root.KnowledgeBaseUuid, root.DataSourceUuid, resp, nil
 }
 
-// Get a KnowledgeBase
+// Get information about a KnowledgeBase and its Database status
+// Database status can be "CREATING","ONLINE","POWEROFF","REBUILDING","REBALANCING","DECOMMISSIONED","FORKING","MIGRATING","RESIZING","RESTORING","POWERING_ON","UNHEALTHY"
 func (s *GenAIServiceOp) GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error) {
 	path := fmt.Sprintf(GetKnowledgeBaseByIDPath, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -830,7 +831,7 @@ func (s *GenAIServiceOp) UpdateKnowledgeBase(ctx context.Context, knowledgeBaseI
 	return root.KnowledgeBase, resp, nil
 }
 
-// Delete a knowledge base
+// Deletes a knowledge base by its corresponding UUID and returns the UUID of the deleted knowledge base
 func (s *GenAIServiceOp) DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error) {
 
 	path := fmt.Sprintf(DeleteKnowledgeBaseByIDPath, knowledgeBaseID)
@@ -849,9 +850,9 @@ func (s *GenAIServiceOp) DeleteKnowledgeBase(ctx context.Context, knowledgeBaseI
 }
 
 // Attach a knowledge base to an agent
-func (s *GenAIServiceOp) AttachKnowledgeBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error) {
+func (s *GenAIServiceOp) AttachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
-	path := fmt.Sprintf(AgentKnowledgeBasePath, AgentID, knowledgeBaseID)
+	path := fmt.Sprintf(AgentKnowledgeBasePath, agentID, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -867,9 +868,9 @@ func (s *GenAIServiceOp) AttachKnowledgeBase(ctx context.Context, AgentID string
 }
 
 // Detach a knowledge base from an agent
-func (s *GenAIServiceOp) DetachKnowledgeBase(ctx context.Context, AgentID string, knowledgeBaseID string) (*Agent, *Response, error) {
+func (s *GenAIServiceOp) DetachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
-	path := fmt.Sprintf(AgentKnowledgeBasePath, AgentID, knowledgeBaseID)
+	path := fmt.Sprintf(AgentKnowledgeBasePath, agentID, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
