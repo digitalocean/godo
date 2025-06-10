@@ -1,6 +1,7 @@
 package godo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -89,4 +90,45 @@ func TestBYOIPs_GetResources(t *testing.T) {
 	if !reflect.DeepEqual(resources, expectedResources) {
 		t.Errorf("BYOIPs.GetResources returned %+v, expected %+v", resources, expectedResources)
 	}
+}
+
+func TestBYOIPs_Create(t *testing.T) {
+	setup()
+	defer teardown()
+
+	byoipCR := &BYOIPCreateReq{
+		Prefix:    "10.10.10.10/24",
+		Signature: "signature",
+		Region:    "nyc3",
+	}
+
+	mux.HandleFunc("/v2/byoip_prefixes", func(w http.ResponseWriter, r *http.Request) {
+
+		v := new(BYOIPCreateReq)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !reflect.DeepEqual(v, byoipCR) {
+			t.Errorf("Request body = %+v, expected %+v", v, byoipCR)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"id": "byoip-uuid"}`)
+	})
+
+	byoipUUID, _, err := client.BYOIPs.Create(ctx, byoipCR)
+	if err != nil {
+		t.Errorf("BYOIPs.Create returned error: %v", err)
+	}
+
+	expectedBYOIPUUID := BYOIPPrefixCreateResp{
+		ID: "byoip-uuid",
+	}
+
+	if !reflect.DeepEqual(byoipUUID.ID, expectedBYOIPUUID.ID) {
+		t.Errorf("BYOIPs.Create returned %+v, expected %+v", byoipUUID, expectedBYOIPUUID)
+	}
+
 }

@@ -13,6 +13,7 @@ const byoipsBasePath = "/v2/byoip_prefixes"
 // endpoints of the Digital Ocean API.
 
 type BYOIPsService interface {
+	Create(context.Context, *BYOIPCreateReq) (*BYOIPPrefixCreateResp, *Response, error)
 	List(context.Context, *ListOptions) ([]BYOIP, *Response, error)
 	Get(context.Context, string) (*BYOIP, *Response, error)
 	GetResources(context.Context, string) ([]BYOIPResource, *Response, error)
@@ -34,6 +35,18 @@ type BYOIP struct {
 	Status        string                   `json:"status"`
 	FailureReason string                   `json:"failure_reason"`
 	Validations   []map[string]interface{} `json:"validations"`
+}
+
+// BYOIPCreateReq represents a request to create a BYOIP prefix.
+type BYOIPCreateReq struct {
+	Prefix    string `json:"prefix"`
+	Signature string `json:"signature"`
+	Region    string `json:"region"`
+}
+
+// BYOIPPrefixCreateResp represents the response from creating a BYOIP prefix.
+type BYOIPPrefixCreateResp struct {
+	ID string `json:"id"`
 }
 
 // BYOIPResource represents a BYOIP resource allocations
@@ -126,4 +139,22 @@ func (r *BYOIPServiceOp) GetResources(ctx context.Context, uuid string) ([]BYOIP
 	}
 
 	return root.Resources, resp, err
+}
+
+// Create a BYOIP prefix
+func (r *BYOIPServiceOp) Create(ctx context.Context, byoip *BYOIPCreateReq) (*BYOIPPrefixCreateResp, *Response, error) {
+	path := byoipsBasePath
+
+	req, err := r.client.NewRequest(ctx, http.MethodPost, path, byoip)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(BYOIPPrefixCreateResp)
+	resp, err := r.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, err
 }
