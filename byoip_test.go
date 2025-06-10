@@ -12,7 +12,7 @@ func TestBYOIPs_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/reserved_ips/byoips", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/byoip_prefixes", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"byoips": [
 			{"uuid":"139efe95-c8fc-42a7-8faa-bd3afc2b0985","cidr":"192.168.0.0/24","region":"nyc3", "status": "active", "failure_reason": "", "validations": [{"name": "validation","status": "PASSED"}]},
@@ -48,7 +48,7 @@ func TestBYOIPs_List(t *testing.T) {
 func TestBYOIPs_Get(t *testing.T) {
 	setup()
 	defer teardown()
-	mux.HandleFunc("/v2/reserved_ips/byoips/1de94988-5102-4aae-b17d-f71b98707b88", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/byoip_prefixes/1de94988-5102-4aae-b17d-f71b98707b88", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"byoip": {"uuid":"1de94988-5102-4aae-b17d-f71b98707b88","cidr":"192.168.0.0/24","region":"nyc3", "status": "active", "failure_reason": "", "validations": [{"name": "validation","status": "PASSED"}]}}`)
 	})
@@ -68,7 +68,7 @@ func TestBYOIPs_Get(t *testing.T) {
 func TestBYOIPs_GetResources(t *testing.T) {
 	setup()
 	defer teardown()
-	mux.HandleFunc("/v2/reserved_ips/byoips/1de94988-5102-4aae-b17d-f71b98707b88/ips", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/byoip_prefixes/1de94988-5102-4aae-b17d-f71b98707b88/ips", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"ips": [
 			{"id":1,"byoip":"192.168.0.1","region":"nyc3","resource": "do:droplet:a3ec41f4-84f4-44d2-a4ff-27165b957cdc", "assigned_at": "2025-03-14T00:00:01.000Z"},

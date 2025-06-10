@@ -7,12 +7,11 @@ import (
 	"time"
 )
 
-const byoipsBasePath = "v2/reserved_ips/byoips"
+const byoipsBasePath = "/v2/byoip_prefixes"
 
 // BYOIPsService is an interface for interacting with the BYOIPs
 // endpoints of the Digital Ocean API.
-// TODO: update the links
-// See: https://docs.digitalocean.com/reference/api/api-reference/#tag/Reserved-IPs
+
 type BYOIPsService interface {
 	List(context.Context, *ListOptions) ([]BYOIP, *Response, error)
 	Get(context.Context, string) (*BYOIP, *Response, error)
