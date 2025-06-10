@@ -44,7 +44,7 @@ type GenAIService interface {
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
 	AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
-	DetachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
+	DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -892,7 +892,7 @@ func (s *GenAIServiceOp) AttachKnowledgeBaseToAgent(ctx context.Context, agentID
 }
 
 // Detach a knowledge base from an agent
-func (s *GenAIServiceOp) DetachKnowledgeBase(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
+func (s *GenAIServiceOp) DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
 	path := fmt.Sprintf(AgentKnowledgeBasePath, agentID, knowledgeBaseID)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)

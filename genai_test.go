@@ -1004,7 +1004,7 @@ func TestDetachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.DetachKnowledgeBase(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.GenAI.DetachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	fmt.Print(res)
 	fmt.Print(resp)
 
