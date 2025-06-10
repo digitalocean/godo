@@ -825,6 +825,13 @@ func TestAppIngressSpecRule_GetRedirect(tt *testing.T) {
 	a.GetRedirect()
 }
 
+func TestAppIngressSpecRuleMatch_GetAuthority(tt *testing.T) {
+	a := &AppIngressSpecRuleMatch{}
+	a.GetAuthority()
+	a = nil
+	a.GetAuthority()
+}
+
 func TestAppIngressSpecRuleMatch_GetPath(tt *testing.T) {
 	a := &AppIngressSpecRuleMatch{}
 	a.GetPath()
@@ -888,11 +895,46 @@ func TestAppIngressSpecRuleRoutingRedirect_GetUri(tt *testing.T) {
 	a.GetUri()
 }
 
+func TestAppIngressSpecRuleStringMatch_GetExact(tt *testing.T) {
+	a := &AppIngressSpecRuleStringMatch{}
+	a.GetExact()
+	a = nil
+	a.GetExact()
+}
+
 func TestAppIngressSpecRuleStringMatch_GetPrefix(tt *testing.T) {
 	a := &AppIngressSpecRuleStringMatch{}
 	a.GetPrefix()
 	a = nil
 	a.GetPrefix()
+}
+
+func TestAppInstance_GetComponentName(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetComponentName()
+	a = nil
+	a.GetComponentName()
+}
+
+func TestAppInstance_GetComponentType(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetComponentType()
+	a = nil
+	a.GetComponentType()
+}
+
+func TestAppInstance_GetInstanceAlias(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetInstanceAlias()
+	a = nil
+	a.GetInstanceAlias()
+}
+
+func TestAppInstance_GetInstanceName(tt *testing.T) {
+	a := &AppInstance{}
+	a.GetInstanceName()
+	a = nil
+	a.GetInstanceName()
 }
 
 func TestAppInstanceSize_GetBandwidthAllowanceGib(tt *testing.T) {
@@ -1252,6 +1294,20 @@ func TestAppLogDestinationSpecOpenSearch_GetIndexName(tt *testing.T) {
 	a.GetIndexName()
 }
 
+func TestAppProposeRequest_GetAppID(tt *testing.T) {
+	a := &AppProposeRequest{}
+	a.GetAppID()
+	a = nil
+	a.GetAppID()
+}
+
+func TestAppProposeRequest_GetSpec(tt *testing.T) {
+	a := &AppProposeRequest{}
+	a.GetSpec()
+	a = nil
+	a.GetSpec()
+}
+
 func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
 	a := &AppLogDestinationSpecPapertrail{}
 	a.GetEndpoint()
@@ -1278,20 +1334,6 @@ func TestAppMaintenanceSpec_GetOfflinePageURL(tt *testing.T) {
 	a.GetOfflinePageURL()
 	a = nil
 	a.GetOfflinePageURL()
-}
-
-func TestAppProposeRequest_GetAppID(tt *testing.T) {
-	a := &AppProposeRequest{}
-	a.GetAppID()
-	a = nil
-	a.GetAppID()
-}
-
-func TestAppProposeRequest_GetSpec(tt *testing.T) {
-	a := &AppProposeRequest{}
-	a.GetSpec()
-	a = nil
-	a.GetSpec()
 }
 
 func TestAppProposeResponse_GetAppCost(tt *testing.T) {
@@ -1700,6 +1742,20 @@ func TestAppSpec_GetDatabases(tt *testing.T) {
 	a.GetDatabases()
 }
 
+func TestAppSpec_GetDisableEdgeCache(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetDisableEdgeCache()
+	a = nil
+	a.GetDisableEdgeCache()
+}
+
+func TestAppSpec_GetDisableEmailObfuscation(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetDisableEmailObfuscation()
+	a = nil
+	a.GetDisableEmailObfuscation()
+}
+
 func TestAppSpec_GetDomains(tt *testing.T) {
 	a := &AppSpec{}
 	a.GetDomains()
@@ -1712,6 +1768,13 @@ func TestAppSpec_GetEgress(tt *testing.T) {
 	a.GetEgress()
 	a = nil
 	a.GetEgress()
+}
+
+func TestAppSpec_GetEnhancedThreatControlEnabled(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetEnhancedThreatControlEnabled()
+	a = nil
+	a.GetEnhancedThreatControlEnabled()
 }
 
 func TestAppSpec_GetEnvs(tt *testing.T) {
@@ -2993,6 +3056,13 @@ func TestGetAppDatabaseConnectionDetailsResponse_GetConnectionDetails(tt *testin
 	g.GetConnectionDetails()
 	g = nil
 	g.GetConnectionDetails()
+}
+
+func TestGetAppInstancesResponse_GetInstances(tt *testing.T) {
+	g := &GetAppInstancesResponse{}
+	g.GetInstances()
+	g = nil
+	g.GetInstances()
 }
 
 func TestGetDatabaseConnectionDetailsResponse_GetComponentName(tt *testing.T) {

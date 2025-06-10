@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -597,6 +598,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		ClusterAutoscalerConfiguration: &KubernetesClusterAutoscalerConfiguration{
 			ScaleDownUtilizationThreshold: &scaleDownUtilizationThreshold,
 			ScaleDownUnneededTime:         &scaleDownUnneededTime,
+			Expanders:                     []string{"random"},
 		},
 	}
 	createRequest := &KubernetesClusterCreateRequest{
@@ -672,9 +674,10 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			]
 		},
 		"cluster_autoscaler_configuration": {
-      "scale_down_utilization_threshold": 0.5,
-      "scale_down_unneeded_time": "1m30s"
-    }
+			"scale_down_utilization_threshold": 0.5,
+			"scale_down_unneeded_time": "1m30s",
+			"expanders": ["random"]
+		}
 	}
 }`
 
@@ -863,6 +866,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		ClusterAutoscalerConfiguration: &KubernetesClusterAutoscalerConfiguration{
 			ScaleDownUtilizationThreshold: &scaleDownUtilizationThreshold,
 			ScaleDownUnneededTime:         &scaleDownUnneededTime,
+			Expanders:                     []string{}, // need to be able to remove all expander customizations by passing an empty slice
 		},
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
@@ -919,7 +923,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s"},"routing_agent":{"enabled":true}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
@@ -1891,6 +1895,47 @@ func TestKubernetesRunClusterlint_WithoutRequestBody(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, want, runID)
 
+}
+
+func TestKubernetesClusterStatusMessages(t *testing.T) {
+	setup()
+	defer teardown()
+
+	since := time.Date(2019, 10, 30, 5, 34, 7, 0, time.UTC)
+	kubeSvc := client.Kubernetes
+
+	jBlob := `
+{
+	"messages": [
+		{
+			"message": "droplet limit exceeded, please contact support for an increase",
+			"timestamp": "2019-10-31T00:00:00Z"
+		}
+	]
+}`
+
+	want := []*KubernetesClusterStatusMessage{
+		{
+			Message:   "droplet limit exceeded, please contact support for an increase",
+			Timestamp: time.Date(2019, 10, 31, 0, 0, 0, 0, time.UTC),
+		},
+	}
+
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/status_messages", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		// urls escape the colon character as %3A
+		sinceFormatted := since.Format(time.RFC3339)
+		urlEncodedSince := strings.ReplaceAll(sinceFormatted, ":", "%3A")
+
+		require.Equal(t, "since="+urlEncodedSince, r.URL.Query().Encode())
+		fmt.Fprint(w, jBlob)
+	})
+
+	messages, _, err := kubeSvc.GetClusterStatusMessages(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", &KubernetesGetClusterStatusMessagesRequest{
+		Since: &since,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, want, messages)
 }
 
 func TestKubernetesGetClusterlint_WithRunID(t *testing.T) {
