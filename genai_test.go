@@ -127,6 +127,19 @@ var agentResponse = `
 		"updated_at": "2025-05-14T13:18:05Z",
 		"instruction": "You are an agent who thinks deeply about the world",
 		"description": "My Agent Description",
+		"functions": [
+		{
+			"uuid": "00000000-0000-0000-0000-000000000000",
+			"name": "godo-test-function",
+			"description": "My Agent Description",
+			"input_schema": "{}",
+			"output_schema": "{}",
+			"api_key":"",
+			"created_at": "2025-01-13T20:56:20Z",
+			"updated_at": "2025-05-13T15:16:21Z"
+
+		}
+		],
 		"model": {
 			"uuid": "00000000-0000-0000-0000-000000000000",
 			"name": "Llama 3.3 Instruct (70B)",
@@ -1017,5 +1030,141 @@ func TestDetachKnowledgeBase(t *testing.T) {
 	}
 
 	assert.Equal(t, "testing-godo", res.Name)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestCreateFunctionRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/functions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, agentResponse)
+	})
+
+	req := &FunctionRouteCreateRequest{
+		Description:   "Creating Function Route",
+		AgentUuid:     "00000000-0000-0000-0000-000000000000",
+		FaasName:      "godo-test-faasname",
+		FaasNamespace: "fn-00000000-0000-0000-0000-000000000000",
+		InputSchema: FunctionInputSchema{
+			Parameters: []OpenAPIParameterSchema{
+				{
+					Name: "zipCode",
+					In:   "query",
+					Schema: NestedSchema{
+						Type: "string",
+					},
+					Required:    false,
+					Description: "The ZIP code for which to fetch the weather",
+				},
+				{
+					Name: "measurement",
+					In:   "query",
+					Schema: NestedSchema{
+						Type: "string",
+						Enum: []string{"F", "C"},
+					},
+					Required:    false,
+					Description: "The measurement unit for temperature (F or C)",
+				},
+			},
+		},
+		FunctionName: "godo-test-function",
+		OutputSchema: json.RawMessage(`{
+  "properties": [
+    {
+      "name": "temperature",
+      "type": "number",
+      "description": "The temperature for the specified location"
+    },
+    {
+      "name": "measurement",
+      "type": "string",
+      "description": "The measurement unit used for the temperature (F or C)"
+    },
+    {
+      "name": "conditions",
+      "type": "string",
+      "description": "A description of the current weather conditions (Sunny, Cloudy, etc)"
+    }
+  ]
+}`),
+	}
+
+	agent, res, err := client.GenAI.CreateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", req)
+	if err != nil {
+		t.Errorf("GenAI.Create returned error: %v", err)
+	}
+
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.Response.StatusCode)
+	t.Log(agent)
+	assert.Equal(t, req.FunctionName, agent.Functions[0].Name)
+}
+
+func TestUpdateFunctionRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/functions/00000000-0000-0000-0000-000000000000", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, agentResponse)
+	})
+
+	req := &FunctionRouteUpdateRequest{
+		Description: "My Agent Description",
+		InputSchema: FunctionInputSchema{
+			Parameters: []OpenAPIParameterSchema{
+				{
+					Name: "zipCode",
+					In:   "query",
+					Schema: NestedSchema{
+						Type: "string",
+					},
+					Required:    false,
+					Description: "The ZIP code for which to fetch the weather",
+				},
+				{
+					Name: "measurement",
+					In:   "query",
+					Schema: NestedSchema{
+						Type: "string",
+						Enum: []string{"F", "C"},
+					},
+					Required:    false,
+					Description: "The measurement unit for temperature (F or C)",
+				},
+			},
+		},
+		OutputSchema: json.RawMessage(`{
+            "properties": [
+                {
+                    "name": "temperature",
+                    "type": "number",
+                    "description": "The temperature for the specified location"
+                }
+            ]
+        }`),
+	}
+
+	agent, resp, err := client.GenAI.UpdateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, req.Description, agent.Functions[0].Description)
+}
+
+func TestDeleteFunctionRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/functions/00000000-0000-0000-0000-000000000000", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{}`)
+	})
+
+	_, resp, err := client.GenAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
