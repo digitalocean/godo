@@ -10,6 +10,7 @@ import (
 const (
 	genAIBasePath                = "/v2/gen-ai/agents"
 	agentModelBasePath           = "/v2/gen-ai/models"
+	agentRouteBasePath           = genAIBasePath + "/%s/child_agents/%s"
 	KnowledgeBasePath            = "/v2/gen-ai/knowledge_bases"
 	KnowledgeBaseDataSourcesPath = KnowledgeBasePath + "/%s/data_sources"
 	GetKnowledgeBaseByIDPath     = KnowledgeBasePath + "/%s"
@@ -45,6 +46,9 @@ type GenAIService interface {
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
 	AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 	DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
+	AddAgentRoute(context.Context, string, string, *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error)
+	UpdateAgentRoute(context.Context, string, string, *AgentRouteUpdateRequest) (*AgentRouteResponse, *Response, error)
+	DeleteAgentRoute(context.Context, string, string) (*AgentRouteResponse, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -62,6 +66,11 @@ type genAIAgentsRoot struct {
 
 type genAIAgentRoot struct {
 	Agent *Agent `json:"agent"`
+}
+
+// AgentServiceOp interfaces with the Agent Service endpoints in the DigitalOcean API.
+type AgentServiceOp struct {
+	client *Client
 }
 
 type genAIModelsRoot struct {
@@ -411,6 +420,13 @@ type DeleteDataSourceRoot struct {
 	KnowledgeBaseUuid string `json:"knowledge_base_uuid"`
 }
 
+type AgentRouteResponse struct {
+	ChildAgentUuid  string `json:"child_agent_uuid,omitempty"`
+	ParentAgentUuid string `json:"parent_agent_uuid,omitempty"`
+	Rollback        bool   `json:"rollback,omitempty"`
+	UUID            string `json:"uuid,omitempty"`
+}
+
 type DeleteKnowledgeBaseRoot struct {
 	KnowledgeBaseUuid string `json:"uuid"`
 }
@@ -433,6 +449,23 @@ type UpdateKnowledgeBaseRequest struct {
 	ProjectID          string   `json:"project_id"`
 	Tags               []string `json:"tags"`
 	KnowledgeBaseUUID  string   `json:"uuid"`
+}
+
+// AgentRouteCreateRequest represents a route between a parent and child agent.
+type AgentRouteCreateRequest struct {
+	ChildAgentUuid  string `json:"child_agent_uuid,omitempty"`
+	IfCase          string `json:"if_case,omitempty"`
+	ParentAgentUuid string `json:"parent_agent_uuid,omitempty"`
+	RouteName       string `json:"route_name,omitempty"`
+}
+
+// AgentRouteUpdateRequest represents the request to update an existing route between a parent and child agent.
+type AgentRouteUpdateRequest struct {
+	ChildAgentUuid  string `json:"child_agent_uuid,omitempty"`
+	IfCase          string `json:"if_case,omitempty"`
+	ParentAgentUuid string `json:"parent_agent_uuid,omitempty"`
+	RouteName       string `json:"route_name,omitempty"`
+	UUID            string `json:"uuid,omitempty"`
 }
 
 type genAIAgentKBRoot struct {
@@ -907,6 +940,59 @@ func (s *GenAIServiceOp) DetachKnowledgeBaseToAgent(ctx context.Context, agentID
 	return root.Agent, resp, nil
 }
 
+// AddAgentRoute function adds a route between a parent and child agent.
+func (s *GenAIServiceOp) AddAgentRoute(ctx context.Context, parentId string, childId string, route *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error) {
+	path := fmt.Sprintf(agentRouteBasePath, parentId, childId)
+	fmt.Println(path)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, route)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(AgentRouteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
+}
+
+// UpdateAgentRoute function updates a route between a parent and child agent.
+func (s *GenAIServiceOp) UpdateAgentRoute(ctx context.Context, parentId string, childId string, route *AgentRouteUpdateRequest) (*AgentRouteResponse, *Response, error) {
+	path := fmt.Sprintf(agentRouteBasePath, parentId, childId)
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, route)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(AgentRouteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
+}
+
+// DeleteAgentRoute function deletes a route between a parent and child agent.
+func (s *GenAIServiceOp) DeleteAgentRoute(ctx context.Context, parentId string, childId string) (*AgentRouteResponse, *Response, error) {
+	path := fmt.Sprintf(agentRouteBasePath, parentId, childId)
+	fmt.Println(path)
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(AgentRouteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
+}
+
 func (a Agent) String() string {
 	return Stringify(a)
 }
@@ -924,5 +1010,9 @@ func (a KnowledgeBaseDataSource) String() string {
 }
 
 func (a ApiKeyInfo) String() string {
+	return Stringify(a)
+}
+
+func (a AgentRouteResponse) String() string {
 	return Stringify(a)
 }
