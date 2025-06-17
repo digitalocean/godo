@@ -30,6 +30,47 @@ var vPartnerAttachmentTestObj = &PartnerAttachment{
 	RedundancyZone: "MEGAPORT_RED",
 }
 
+var vPartnerAttachmentHAParentTestObj = &PartnerAttachment{
+	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
+	Name:                      "my-new-partner-connect",
+	State:                     "ACTIVE",
+	ConnectionBandwidthInMbps: 50,
+	Region:                    "NYC",
+	NaaSProvider:              "MEGAPORT",
+	VPCIDs:                    []string{"f5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
+	BGP: BGP{
+		LocalASN:      64532,
+		LocalRouterIP: "169.250.0.1",
+		PeerASN:       133937,
+		PeerRouterIP:  "169.250.0.6",
+		AuthKey:       "my-auth-key",
+	},
+	CreatedAt:      time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
+	RedundancyZone: "MEGAPORT_RED",
+	ParentUuid:     "fd1aad75-94ff-47f9-bae1-30c5d9caa14e",
+}
+
+var vPartnerAttachmentHAChildrenTestObj = &PartnerAttachment{
+	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
+	Name:                      "my-new-partner-connect",
+	State:                     "ACTIVE",
+	ConnectionBandwidthInMbps: 50,
+	Region:                    "NYC",
+	NaaSProvider:              "MEGAPORT",
+	VPCIDs:                    []string{"f5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
+	BGP: BGP{
+		LocalASN:      64532,
+		LocalRouterIP: "169.250.0.1",
+		PeerASN:       133937,
+		PeerRouterIP:  "169.250.0.6",
+		AuthKey:       "my-auth-key",
+	},
+	CreatedAt:      time.Date(2024, 12, 26, 21, 48, 40, 995304079, time.UTC),
+	RedundancyZone: "MEGAPORT_RED",
+	ParentUuid:     "fd1aad75-94ff-47f9-bae1-30c5d9caa14e",
+	Children:       []string{"28cedc83-85bb-4398-a48e-d2735ca028ac"},
+}
+
 var vPartnerAttachmentNoBGPTestObj = &PartnerAttachment{
 	ID:                        "880b7f98-f062-404d-b33c-458d545696f6",
 	Name:                      "my-new-partner-connect",
@@ -60,6 +101,51 @@ var vPartnerAttachmentTestJSON = `
 			},
 		"created_at":"2024-12-26T21:48:40.995304079Z",
 		"redundancy_zone": "MEGAPORT_RED"
+	}
+`
+
+var vPartnerAttachmentHAParentTestJSON = `
+	{
+		"id":"880b7f98-f062-404d-b33c-458d545696f6",
+		"name":"my-new-partner-connect",
+		"state":"ACTIVE",
+		"connection_bandwidth_in_mbps":50,
+		"region":"NYC",
+		"naas_provider":"MEGAPORT",
+		"vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"],
+		"bgp":{
+			"local_asn":64532,
+			"local_router_ip":"169.250.0.1",
+			"peer_asn":133937,
+			"peer_router_ip":"169.250.0.6",
+			"auth_key":"my-auth-key"
+			},
+		"created_at":"2024-12-26T21:48:40.995304079Z",
+		"redundancy_zone": "MEGAPORT_RED",
+		"parent_uuid": "fd1aad75-94ff-47f9-bae1-30c5d9caa14e"
+	}
+`
+
+var vPartnerAttachmentHAChildrenTestJSON = `
+	{
+		"id":"880b7f98-f062-404d-b33c-458d545696f6",
+		"name":"my-new-partner-connect",
+		"state":"ACTIVE",
+		"connection_bandwidth_in_mbps":50,
+		"region":"NYC",
+		"naas_provider":"MEGAPORT",
+		"vpc_ids":["f5a0c5e4-7537-47de-bb8d-46c766f89ffb"],
+		"bgp":{
+			"local_asn":64532,
+			"local_router_ip":"169.250.0.1",
+			"peer_asn":133937,
+			"peer_router_ip":"169.250.0.6",
+			"auth_key":"my-auth-key"
+			},
+		"created_at":"2024-12-26T21:48:40.995304079Z",
+		"redundancy_zone": "MEGAPORT_RED",
+		"parent_uuid": "fd1aad75-94ff-47f9-bae1-30c5d9caa14e",
+		"children": ["28cedc83-85bb-4398-a48e-d2735ca028ac"]
 	}
 `
 
@@ -169,6 +255,54 @@ func TestPartnerAttachment_Create(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestPartnerAttachment_CreateHA(t *testing.T) {
+	setup()
+	defer teardown()
+
+	parentPAUUID := "fd1aad75-94ff-47f9-bae1-30c5d9caa14e"
+
+	svc := client.PartnerAttachment
+	path := "/v2/partner_network_connect/attachments"
+	want := vPartnerAttachmentHAParentTestObj
+	req := &PartnerAttachmentCreateRequest{
+		Name:                      "my-new-partner-connect",
+		ConnectionBandwidthInMbps: 50,
+		Region:                    "NYC",
+		NaaSProvider:              "MEGAPORT",
+		VPCIDs:                    []string{"f5a0c5e4-7537-47de-bb8d-46c766f89ffb"},
+		BGP: BGP{
+			LocalASN:      64532,
+			LocalRouterIP: "169.250.0.1",
+			PeerASN:       133937,
+			PeerRouterIP:  "169.250.0.6",
+		},
+		RedundancyZone: "MEGAPORT_BLUE",
+		ParentUuid:     parentPAUUID,
+	}
+	jsonBlob := `
+{
+	"partner_attachment":
+` + vPartnerAttachmentHAParentTestJSON + `
+}
+`
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		c := new(PartnerAttachmentCreateRequest)
+		err := json.NewDecoder(r.Body).Decode(c)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, c, req)
+		w.Write([]byte(jsonBlob))
+	})
+
+	got, _, err := svc.Create(ctx, req)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
 func TestPartnerAttachment_CreateNoBGP(t *testing.T) {
 	setup()
 	defer teardown()
@@ -227,6 +361,31 @@ func TestPartnerAttachment_Get(t *testing.T) {
 {
 	"partner_attachment":
 ` + vPartnerAttachmentTestJSON + `
+}
+`
+
+	mux.HandleFunc(path+"/"+id, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Write([]byte(jsonBlob))
+	})
+
+	got, _, err := svc.Get(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestPartnerAttachment_GetHA(t *testing.T) {
+	setup()
+	defer teardown()
+
+	svc := client.PartnerAttachment
+	path := "/v2/partner_network_connect/attachments"
+	want := vPartnerAttachmentHAChildrenTestObj
+	id := "880b7f98-f062-404d-b33c-458d545696f6"
+	jsonBlob := `
+{
+	"partner_attachment":
+` + vPartnerAttachmentHAChildrenTestJSON + `
 }
 `
 
