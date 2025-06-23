@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.153.0] - 2025-06-23
+
+- #850 - @imaskm - Add byoip APIs support
+- #851 - @guptado - [VPC-4603] godo: PNC HA support
+
 ## [v1.152.0] - 2025-06-16
 
 - #846 - @harshmaru7 - GenAI Knowledgebase endpoints 
