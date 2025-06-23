@@ -143,3 +143,19 @@ func TestBYOIPs_Create(t *testing.T) {
 	}
 
 }
+
+func TestBYOIPs_Delete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/byoip_prefixes/1de94988-5102-4aae-b17d-f71b98707b88", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusAccepted)
+	})
+
+	_, err := client.BYOIPs.Delete(ctx, "1de94988-5102-4aae-b17d-f71b98707b88")
+	if err != nil {
+		t.Errorf("BYOIPs.Delete returned error: %v", err)
+	}
+
+}

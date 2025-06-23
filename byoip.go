@@ -17,6 +17,7 @@ type BYOIPsService interface {
 	List(context.Context, *ListOptions) ([]*BYOIP, *Response, error)
 	Get(context.Context, string) (*BYOIP, *Response, error)
 	GetResources(context.Context, string, *ListOptions) ([]BYOIPResource, *Response, error)
+	Delete(context.Context, string) (*Response, error)
 }
 
 // BYOIPServiceOp handles communication with the BYOIP related methods of the
@@ -152,6 +153,17 @@ func (r *BYOIPServiceOp) GetResources(ctx context.Context, uuid string, opt *Lis
 
 // Create a BYOIP prefix
 func (r *BYOIPServiceOp) Create(ctx context.Context, byoip *BYOIPCreateReq) (*BYOIPPrefixCreateResp, *Response, error) {
+
+	if byoip.Prefix == "" {
+		return nil, nil, fmt.Errorf("prefix is required")
+	}
+	if byoip.Signature == "" {
+		return nil, nil, fmt.Errorf("signature is required")
+	}
+	if byoip.Region == "" {
+		return nil, nil, fmt.Errorf("region is required")
+	}
+
 	path := byoipsBasePath
 
 	req, err := r.client.NewRequest(ctx, http.MethodPost, path, byoip)
@@ -166,4 +178,19 @@ func (r *BYOIPServiceOp) Create(ctx context.Context, byoip *BYOIPCreateReq) (*BY
 	}
 
 	return root, resp, err
+}
+
+func (r *BYOIPServiceOp) Delete(ctx context.Context, uuid string) (*Response, error) {
+	path := fmt.Sprintf("%s/%s", byoipsBasePath, uuid)
+
+	req, err := r.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := r.client.Do(ctx, req, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
