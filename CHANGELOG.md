@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.154.0] - 2025-06-23
+
+- #856 - @imaskm - Fix byoip names with byoipPrefix
+
 ## [v1.153.0] - 2025-06-23
 
 - #850 - @imaskm - Add byoip APIs support
