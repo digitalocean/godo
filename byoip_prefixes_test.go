@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func TestBYOIPs_List(t *testing.T) {
+func TestBYOIPPrefixes_List(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -23,12 +23,12 @@ func TestBYOIPs_List(t *testing.T) {
 		}`)
 	})
 
-	byoips, resp, err := client.BYOIPs.List(ctx, nil)
+	byoips, resp, err := client.BYOIPPrefixes.List(ctx, nil)
 	if err != nil {
 		t.Errorf("BYOIPs.List returned error: %v", err)
 	}
 
-	expectedBYOIPs := []*BYOIP{
+	expectedBYOIPs := []*BYOIPPrefix{
 		{UUID: "139efe95-c8fc-42a7-8faa-bd3afc2b0985", Prefix: "192.168.0.0/24", Status: "active", Region: "nyc3", FailureReason: "", Validations: []any{map[string]interface{}{"name": "validation", "status": "PASSED"}}},
 		{UUID: "e164034d-deaa-4288-b72e-dbff38103eb1", Prefix: "127.0.0.0/24", Status: "declined", Region: "nyc1", FailureReason: "not allowed local IP range", Validations: []any{}},
 	}
@@ -46,7 +46,7 @@ func TestBYOIPs_List(t *testing.T) {
 	}
 }
 
-func TestBYOIPs_Get(t *testing.T) {
+func TestBYOIPPrefixes_Get(t *testing.T) {
 	setup()
 	defer teardown()
 	mux.HandleFunc("/v2/byoip_prefixes/1de94988-5102-4aae-b17d-f71b98707b88", func(w http.ResponseWriter, r *http.Request) {
@@ -54,19 +54,19 @@ func TestBYOIPs_Get(t *testing.T) {
 		fmt.Fprint(w, `{"byoip_prefix": {"uuid":"1de94988-5102-4aae-b17d-f71b98707b88","prefix":"192.168.0.0/24","region":"nyc3", "status": "active", "failure_reason": "", "validations": [{"name": "validation","status": "PASSED"}]}}`)
 	})
 
-	byoip, _, err := client.BYOIPs.Get(ctx, "1de94988-5102-4aae-b17d-f71b98707b88")
+	byoipPrefix, _, err := client.BYOIPPrefixes.Get(ctx, "1de94988-5102-4aae-b17d-f71b98707b88")
 	if err != nil {
 		t.Errorf("BYOIPs.Get returned error: %v", err)
 	}
 
-	expected := &byoipRoot{BYOIP: &BYOIP{UUID: "1de94988-5102-4aae-b17d-f71b98707b88", Prefix: "192.168.0.0/24", Status: "active", Region: "nyc3", FailureReason: "", Validations: []any{map[string]any{"name": "validation", "status": "PASSED"}}}}
+	expected := &byoipPrefixRoot{BYOIPPrefix: &BYOIPPrefix{UUID: "1de94988-5102-4aae-b17d-f71b98707b88", Prefix: "192.168.0.0/24", Status: "active", Region: "nyc3", FailureReason: "", Validations: []any{map[string]any{"name": "validation", "status": "PASSED"}}}}
 
-	if !reflect.DeepEqual(byoip, expected.BYOIP) {
-		t.Errorf("BYOIPs.Get returned %+v, expected %+v", byoip, expected)
+	if !reflect.DeepEqual(byoipPrefix, expected.BYOIPPrefix) {
+		t.Errorf("BYOIPs.Get returned %+v, expected %+v", byoipPrefix, expected)
 	}
 }
 
-func TestBYOIPs_GetResources(t *testing.T) {
+func TestBYOIPPrefixes_GetResources(t *testing.T) {
 	setup()
 	defer teardown()
 	mux.HandleFunc("/v2/byoip_prefixes/1de94988-5102-4aae-b17d-f71b98707b88/ips", func(w http.ResponseWriter, r *http.Request) {
@@ -78,12 +78,12 @@ func TestBYOIPs_GetResources(t *testing.T) {
 			"meta": {"total": 2}}`)
 	})
 
-	resources, resp, err := client.BYOIPs.GetResources(ctx, "1de94988-5102-4aae-b17d-f71b98707b88", nil)
+	resources, resp, err := client.BYOIPPrefixes.GetResources(ctx, "1de94988-5102-4aae-b17d-f71b98707b88", nil)
 	if err != nil {
 		t.Errorf("BYOIPs.GetResources returned error: %v", err)
 	}
 
-	expectedResources := []BYOIPResource{
+	expectedResources := []BYOIPPrefixResource{
 		{ID: 1, BYOIP: "192.168.0.1", Region: "nyc3", Resource: "do:droplet:a3ec41f4-84f4-44d2-a4ff-27165b957cdc", AssignedAt: time.Date(2025, 3, 14, 0, 0, 1, 0, time.UTC)},
 		{ID: 4, BYOIP: "192.168.0.10", Region: "nyc3", Resource: "do:droplet:81725c6d-97f7-4ffe-9129-d2e4890a0800", AssignedAt: time.Date(2025, 3, 15, 0, 0, 2, 0, time.UTC)},
 	}
@@ -101,11 +101,11 @@ func TestBYOIPs_GetResources(t *testing.T) {
 	}
 }
 
-func TestBYOIPs_Create(t *testing.T) {
+func TestBYOIPPrefixes_Create(t *testing.T) {
 	setup()
 	defer teardown()
 
-	byoipCR := &BYOIPCreateReq{
+	byoipCR := &BYOIPPrefixCreateReq{
 		Prefix:    "10.10.10.10/24",
 		Signature: "signature",
 		Region:    "nyc3",
@@ -113,7 +113,7 @@ func TestBYOIPs_Create(t *testing.T) {
 
 	mux.HandleFunc("/v2/byoip_prefixes", func(w http.ResponseWriter, r *http.Request) {
 
-		v := new(BYOIPCreateReq)
+		v := new(BYOIPPrefixCreateReq)
 		err := json.NewDecoder(r.Body).Decode(v)
 		if err != nil {
 			t.Fatal(err)
@@ -124,16 +124,16 @@ func TestBYOIPs_Create(t *testing.T) {
 		}
 
 		testMethod(t, r, http.MethodPost)
-		fmt.Fprint(w, `{"uuid": "byoip-uuid", "region": "nyc3", "status": "pending"}`)
+		fmt.Fprint(w, `{"uuid": "byoip-prefix-uuid", "region": "nyc3", "status": "pending"}`)
 	})
 
-	byoipCreated, _, err := client.BYOIPs.Create(ctx, byoipCR)
+	byoipCreated, _, err := client.BYOIPPrefixes.Create(ctx, byoipCR)
 	if err != nil {
 		t.Errorf("BYOIPs.Create returned error: %v", err)
 	}
 
 	expectedBYOIP := &BYOIPPrefixCreateResp{
-		UUID:   "byoip-uuid",
+		UUID:   "byoip-prefix-uuid",
 		Region: "nyc3",
 		Status: "pending",
 	}
@@ -144,7 +144,7 @@ func TestBYOIPs_Create(t *testing.T) {
 
 }
 
-func TestBYOIPs_Delete(t *testing.T) {
+func TestBYOIPPrefixes_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -153,7 +153,7 @@ func TestBYOIPs_Delete(t *testing.T) {
 		w.WriteHeader(http.StatusAccepted)
 	})
 
-	_, err := client.BYOIPs.Delete(ctx, "1de94988-5102-4aae-b17d-f71b98707b88")
+	_, err := client.BYOIPPrefixes.Delete(ctx, "1de94988-5102-4aae-b17d-f71b98707b88")
 	if err != nil {
 		t.Errorf("BYOIPs.Delete returned error: %v", err)
 	}

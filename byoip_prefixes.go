@@ -12,23 +12,23 @@ const byoipsBasePath = "/v2/byoip_prefixes"
 // BYOIPsService is an interface for interacting with the BYOIPs
 // endpoints of the Digital Ocean API.
 
-type BYOIPsService interface {
-	Create(context.Context, *BYOIPCreateReq) (*BYOIPPrefixCreateResp, *Response, error)
-	List(context.Context, *ListOptions) ([]*BYOIP, *Response, error)
-	Get(context.Context, string) (*BYOIP, *Response, error)
-	GetResources(context.Context, string, *ListOptions) ([]BYOIPResource, *Response, error)
+type BYOIPPrefixesService interface {
+	Create(context.Context, *BYOIPPrefixCreateReq) (*BYOIPPrefixCreateResp, *Response, error)
+	List(context.Context, *ListOptions) ([]*BYOIPPrefix, *Response, error)
+	Get(context.Context, string) (*BYOIPPrefix, *Response, error)
+	GetResources(context.Context, string, *ListOptions) ([]BYOIPPrefixResource, *Response, error)
 	Delete(context.Context, string) (*Response, error)
 }
 
-// BYOIPServiceOp handles communication with the BYOIP related methods of the
+// BYOIPPrefixServiceOp handles communication with the BYOIP Prefix related methods of the
 // DigitalOcean API.
-type BYOIPServiceOp struct {
+type BYOIPPrefixServiceOp struct {
 	client *Client
 }
 
-var _ BYOIPsService = (*BYOIPServiceOp)(nil)
+var _ BYOIPPrefixesService = (*BYOIPPrefixServiceOp)(nil)
 
-type BYOIP struct {
+type BYOIPPrefix struct {
 	Prefix        string `json:"prefix"`
 	Status        string `json:"status"`
 	UUID          string `json:"uuid"`
@@ -37,8 +37,8 @@ type BYOIP struct {
 	FailureReason string `json:"failure_reason"`
 }
 
-// BYOIPCreateReq represents a request to create a BYOIP prefix.
-type BYOIPCreateReq struct {
+// BYOIPPrefixCreateReq represents a request to create a BYOIP prefix.
+type BYOIPPrefixCreateReq struct {
 	Prefix    string `json:"prefix"`
 	Signature string `json:"signature"`
 	Region    string `json:"region"`
@@ -51,8 +51,8 @@ type BYOIPPrefixCreateResp struct {
 	Status string `json:"status"`
 }
 
-// BYOIPResource represents a BYOIP resource allocations
-type BYOIPResource struct {
+// BYOIPPrefixResource represents a BYOIP resource allocations
+type BYOIPPrefixResource struct {
 	ID         uint64    `json:"id"`
 	BYOIP      string    `json:"byoip"`
 	Resource   string    `json:"resource"`
@@ -60,28 +60,28 @@ type BYOIPResource struct {
 	AssignedAt time.Time `json:"assigned_at"`
 }
 
-type byoipRoot struct {
-	BYOIP *BYOIP `json:"byoip_prefix"`
+type byoipPrefixRoot struct {
+	BYOIPPrefix *BYOIPPrefix `json:"byoip_prefix"`
 }
 
 type byoipsRoot struct {
-	BYOIPs []*BYOIP `json:"byoip_prefixes"`
-	Links  *Links   `json:"links"`
-	Meta   *Meta    `json:"meta"`
+	BYOIPs []*BYOIPPrefix `json:"byoip_prefixes"`
+	Links  *Links         `json:"links"`
+	Meta   *Meta          `json:"meta"`
 }
 
 type byoipResourcesRoot struct {
-	Resources []BYOIPResource `json:"ips"`
-	Links     *Links          `json:"links"`
-	Meta      *Meta           `json:"meta"`
+	Resources []BYOIPPrefixResource `json:"ips"`
+	Links     *Links                `json:"links"`
+	Meta      *Meta                 `json:"meta"`
 }
 
-func (r BYOIP) String() string {
+func (r BYOIPPrefix) String() string {
 	return Stringify(r)
 }
 
 // List all BYOIP prefixes.
-func (r *BYOIPServiceOp) List(ctx context.Context, opt *ListOptions) ([]*BYOIP, *Response, error) {
+func (r *BYOIPPrefixServiceOp) List(ctx context.Context, opt *ListOptions) ([]*BYOIPPrefix, *Response, error) {
 	path := byoipsBasePath
 	path, err := addOptions(path, opt)
 	if err != nil {
@@ -109,7 +109,7 @@ func (r *BYOIPServiceOp) List(ctx context.Context, opt *ListOptions) ([]*BYOIP, 
 }
 
 // Get an individual BYOIP prefix details.
-func (r *BYOIPServiceOp) Get(ctx context.Context, uuid string) (*BYOIP, *Response, error) {
+func (r *BYOIPPrefixServiceOp) Get(ctx context.Context, uuid string) (*BYOIPPrefix, *Response, error) {
 	path := fmt.Sprintf("%s/%s", byoipsBasePath, uuid)
 
 	req, err := r.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -117,17 +117,17 @@ func (r *BYOIPServiceOp) Get(ctx context.Context, uuid string) (*BYOIP, *Respons
 		return nil, nil, err
 	}
 
-	root := new(byoipRoot)
+	root := new(byoipPrefixRoot)
 	resp, err := r.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return root.BYOIP, resp, err
+	return root.BYOIPPrefix, resp, err
 }
 
 // GetResources return all existing BYOIP allocations for given BYOIP prefix id.
-func (r *BYOIPServiceOp) GetResources(ctx context.Context, uuid string, opt *ListOptions) ([]BYOIPResource, *Response, error) {
+func (r *BYOIPPrefixServiceOp) GetResources(ctx context.Context, uuid string, opt *ListOptions) ([]BYOIPPrefixResource, *Response, error) {
 	path := fmt.Sprintf("%s/%s/ips", byoipsBasePath, uuid)
 
 	addOptions(path, opt)
@@ -152,21 +152,21 @@ func (r *BYOIPServiceOp) GetResources(ctx context.Context, uuid string, opt *Lis
 }
 
 // Create a BYOIP prefix
-func (r *BYOIPServiceOp) Create(ctx context.Context, byoip *BYOIPCreateReq) (*BYOIPPrefixCreateResp, *Response, error) {
+func (r *BYOIPPrefixServiceOp) Create(ctx context.Context, byoipPrefix *BYOIPPrefixCreateReq) (*BYOIPPrefixCreateResp, *Response, error) {
 
-	if byoip.Prefix == "" {
+	if byoipPrefix.Prefix == "" {
 		return nil, nil, fmt.Errorf("prefix is required")
 	}
-	if byoip.Signature == "" {
+	if byoipPrefix.Signature == "" {
 		return nil, nil, fmt.Errorf("signature is required")
 	}
-	if byoip.Region == "" {
+	if byoipPrefix.Region == "" {
 		return nil, nil, fmt.Errorf("region is required")
 	}
 
 	path := byoipsBasePath
 
-	req, err := r.client.NewRequest(ctx, http.MethodPost, path, byoip)
+	req, err := r.client.NewRequest(ctx, http.MethodPost, path, byoipPrefix)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -180,7 +180,7 @@ func (r *BYOIPServiceOp) Create(ctx context.Context, byoip *BYOIPCreateReq) (*BY
 	return root, resp, err
 }
 
-func (r *BYOIPServiceOp) Delete(ctx context.Context, uuid string) (*Response, error) {
+func (r *BYOIPPrefixServiceOp) Delete(ctx context.Context, uuid string) (*Response, error) {
 	path := fmt.Sprintf("%s/%s", byoipsBasePath, uuid)
 
 	req, err := r.client.NewRequest(ctx, http.MethodDelete, path, nil)
