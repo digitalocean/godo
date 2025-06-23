@@ -14,9 +14,9 @@ const byoipsBasePath = "/v2/byoip_prefixes"
 
 type BYOIPsService interface {
 	Create(context.Context, *BYOIPCreateReq) (*BYOIPPrefixCreateResp, *Response, error)
-	List(context.Context, *ListOptions) ([]BYOIP, *Response, error)
+	List(context.Context, *ListOptions) ([]*BYOIP, *Response, error)
 	Get(context.Context, string) (*BYOIP, *Response, error)
-	GetResources(context.Context, string) ([]BYOIPResource, *Response, error)
+	GetResources(context.Context, string, *ListOptions) ([]BYOIPResource, *Response, error)
 }
 
 // BYOIPServiceOp handles communication with the BYOIP related methods of the
@@ -27,14 +27,13 @@ type BYOIPServiceOp struct {
 
 var _ BYOIPsService = (*BYOIPServiceOp)(nil)
 
-// BYOIP represents a Digital Ocean BYOIP resource.
 type BYOIP struct {
-	UUID          string                   `json:"uuid"`
-	Cidr          string                   `json:"cidr"`
-	RegionSlug    string                   `json:"region"`
-	Status        string                   `json:"status"`
-	FailureReason string                   `json:"failure_reason"`
-	Validations   []map[string]interface{} `json:"validations"`
+	Prefix        string `json:"prefix"`
+	Status        string `json:"status"`
+	UUID          string `json:"uuid"`
+	Region        string `json:"region"`
+	Validations   []any  `json:"validations"`
+	FailureReason string `json:"failure_reason"`
 }
 
 // BYOIPCreateReq represents a request to create a BYOIP prefix.
@@ -46,7 +45,9 @@ type BYOIPCreateReq struct {
 
 // BYOIPPrefixCreateResp represents the response from creating a BYOIP prefix.
 type BYOIPPrefixCreateResp struct {
-	ID string `json:"id"`
+	UUID   string `json:"uuid"`
+	Region string `json:"region"`
+	Status string `json:"status"`
 }
 
 // BYOIPResource represents a BYOIP resource allocations
@@ -54,22 +55,24 @@ type BYOIPResource struct {
 	ID         uint64    `json:"id"`
 	BYOIP      string    `json:"byoip"`
 	Resource   string    `json:"resource"`
-	RegionSlug string    `json:"region"`
+	Region     string    `json:"region"`
 	AssignedAt time.Time `json:"assigned_at"`
 }
 
 type byoipRoot struct {
-	BYOIP *BYOIP `json:"byoip"`
+	BYOIP *BYOIP `json:"byoip_prefix"`
 }
 
 type byoipsRoot struct {
-	BYOIPs []BYOIP `json:"byoips"`
-	Links  *Links  `json:"links"`
-	Meta   *Meta   `json:"meta"`
+	BYOIPs []*BYOIP `json:"byoip_prefixes"`
+	Links  *Links   `json:"links"`
+	Meta   *Meta    `json:"meta"`
 }
 
 type byoipResourcesRoot struct {
 	Resources []BYOIPResource `json:"ips"`
+	Links     *Links          `json:"links"`
+	Meta      *Meta           `json:"meta"`
 }
 
 func (r BYOIP) String() string {
@@ -77,7 +80,7 @@ func (r BYOIP) String() string {
 }
 
 // List all BYOIP prefixes.
-func (r *BYOIPServiceOp) List(ctx context.Context, opt *ListOptions) ([]BYOIP, *Response, error) {
+func (r *BYOIPServiceOp) List(ctx context.Context, opt *ListOptions) ([]*BYOIP, *Response, error) {
 	path := byoipsBasePath
 	path, err := addOptions(path, opt)
 	if err != nil {
@@ -123,9 +126,10 @@ func (r *BYOIPServiceOp) Get(ctx context.Context, uuid string) (*BYOIP, *Respons
 }
 
 // GetResources return all existing BYOIP allocations for given BYOIP prefix id.
-func (r *BYOIPServiceOp) GetResources(ctx context.Context, uuid string) ([]BYOIPResource, *Response, error) {
+func (r *BYOIPServiceOp) GetResources(ctx context.Context, uuid string, opt *ListOptions) ([]BYOIPResource, *Response, error) {
 	path := fmt.Sprintf("%s/%s/ips", byoipsBasePath, uuid)
 
+	addOptions(path, opt)
 	req, err := r.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -137,7 +141,12 @@ func (r *BYOIPServiceOp) GetResources(ctx context.Context, uuid string) ([]BYOIP
 	if err != nil {
 		return nil, resp, err
 	}
-
+	if root.Meta != nil {
+		resp.Meta = root.Meta
+	}
+	if root.Links != nil {
+		resp.Links = root.Links
+	}
 	return root.Resources, resp, err
 }
 
