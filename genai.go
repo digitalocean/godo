@@ -49,8 +49,8 @@ type GenAIService interface {
 	AddAgentRoute(context.Context, string, string, *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error)
 	UpdateAgentRoute(context.Context, string, string, *AgentRouteUpdateRequest) (*AgentRouteResponse, *Response, error)
 	DeleteAgentRoute(context.Context, string, string) (*AgentRouteResponse, *Response, error)
-	ListVersions(context.Context, string, *ListOptions) ([]*AgentVersion, *Response, error)
-	RollbackVersion(context.Context, string, string) (string, *Response, error)
+	ListAgentVersions(context.Context, string, *ListOptions) ([]*AgentVersion, *Response, error)
+	RollbackAgentVersion(context.Context, string, string) (string, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -68,11 +68,6 @@ type genAIAgentsRoot struct {
 
 type genAIAgentRoot struct {
 	Agent *Agent `json:"agent"`
-}
-
-// AgentServiceOp interfaces with the Agent Service endpoints in the DigitalOcean API.
-type AgentServiceOp struct {
-	client *Client
 }
 
 type genAIModelsRoot struct {
@@ -136,6 +131,7 @@ type Agent struct {
 	Uuid               string                    `json:"uuid,omitempty"`
 }
 
+// AgentVersion represents a version of a Gen AI Agent
 type AgentVersion struct {
 	AgentUuid              string                `json:"agent_uuid,omitempty"`
 	AttachedChildAgents    []*AttachedChildAgent `json:"attached_child_agents,omitempty"`
@@ -186,6 +182,7 @@ type AuditHeader struct {
 	UserUUID          string `json:"user_uuid,omitempty"`
 }
 
+// RollbackVersionRequest represents the request to rollback a Gen AI Agent to a previous version
 type RollbackVersionRequest struct {
 	AgentUuid   string `json:"uuid,omitempty"`
 	VersionHash string `json:"version_hash,omitempty"`
@@ -994,6 +991,7 @@ func (s *GenAIServiceOp) AttachKnowledgeBaseToAgent(ctx context.Context, agentID
 func (s *GenAIServiceOp) DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
 	path := fmt.Sprintf(AgentKnowledgeBasePath, agentID, knowledgeBaseID)
+
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1059,8 +1057,13 @@ func (s *GenAIServiceOp) DeleteAgentRoute(ctx context.Context, parentId string, 
 	return root, resp, nil
 }
 
-func (s *GenAIServiceOp) ListVersions(ctx context.Context, agentId string, opt *ListOptions) ([]*AgentVersion, *Response, error) {
+func (s *GenAIServiceOp) ListAgentVersions(ctx context.Context, agentId string, opt *ListOptions) ([]*AgentVersion, *Response, error) {
 	path := fmt.Sprintf("%s/%s/versions", genAIBasePath, agentId)
+	path, err := addOptions(path, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1075,7 +1078,7 @@ func (s *GenAIServiceOp) ListVersions(ctx context.Context, agentId string, opt *
 	return root.AgentVersions, resp, nil
 }
 
-func (s *GenAIServiceOp) RollbackVersion(ctx context.Context, agentId string, versionId string) (string, *Response, error) {
+func (s *GenAIServiceOp) RollbackAgentVersion(ctx context.Context, agentId string, versionId string) (string, *Response, error) {
 	path := fmt.Sprintf("%s/%s/versions", genAIBasePath, agentId)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, RollbackVersionRequest{

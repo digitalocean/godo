@@ -1160,7 +1160,7 @@ func TestListVersions(t *testing.T) {
 		fmt.Fprint(w, listAgentVersionsResponse)
 	})
 
-	versions, resp, err := client.GenAI.ListVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	versions, resp, err := client.GenAI.ListAgentVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	if err != nil {
 		t.Errorf("GenAI.ListAgentVersions returned error: %v", err)
 	}
@@ -1179,7 +1179,7 @@ func TestRollbackVersion(t *testing.T) {
 		fmt.Fprint(w, rollbackResponse)
 	})
 
-	versions, resp, err := client.GenAI.RollbackVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
+	versions, resp, err := client.GenAI.RollbackAgentVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
 	if err != nil {
 		t.Errorf("GenAI.RollbackVersion returned error: %v", err)
 	}
