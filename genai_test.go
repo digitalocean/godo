@@ -513,6 +513,60 @@ var agentRouteResponse = `
 }
 `
 
+var listAgentVersionsResponse = `
+{
+	"agent_versions": [
+		{
+			"agent_uuid": "00000000-0000-0000-0000-000000000000",
+			"currently_applied": true,
+			"version_hash": "00000000000000000000000000000000000000000000000000000000000000",
+			"created_at": "2025-06-25T09:32:26Z",
+			"created_by_email": "example@gmail.com",
+			"trigger_action": "Rolled back from version ABCDEDF",
+			"model_name": "Llama 3.3 Instruct (70B)",
+			"name": "normal-agent",
+			"instruction": "You are an agent who thinks deeply about the world",
+			"description": "Think about the world deeply",
+			"tags": [
+				"example string"
+			],
+			"k": 10,
+			"temperature": 0.7,
+			"top_p": 0.9,
+			"max_tokens": 512,
+			"retrieval_method": "RETRIEVAL_METHOD_NONE",
+			"attached_functions": [
+				{
+					"name": "terraform-tf",
+					"faas_name": "default/testing",
+					"faas_namespace": "fn-b90f0000-0000-0000-0000-75edfbb6f397",
+					"is_deleted": true
+				}
+			],
+			"can_rollback": true
+		}
+	],
+	"links": {
+		"pages": {
+			"first": "https://api.digitalocean.com/v2/gen-ai/agents/01efde4/versions?page=1&per_page=5",
+			"next": "https://api.digitalocean.com/v2/gen-ai/agents/01efde4/versions?page=2&per_page=5",
+			"last": "https://api.digitalocean.com/v2/gen-ai/agents/01efde4/versions?page=13&per_page=5"
+		}
+	},
+	"meta": {
+		"total": 65,
+		"page": 1,
+		"pages": 13
+	}
+}
+`
+
+var rollbackResponse = `
+{
+	"version_hash": "00000000000000000000000000000000000000000000000000000000000001"
+}
+`
+
 func TestListAgents(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1095,4 +1149,41 @@ func TestUpdateAgentRoute(t *testing.T) {
 
 	assert.Equal(t, res.ChildAgentUuid, "00000000-0000-0000-0000-000000000001")
 	assert.Equal(t, resp.Response.StatusCode, 200)
+}
+
+func TestListVersions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/versions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAgentVersionsResponse)
+	})
+
+	versions, resp, err := client.GenAI.ListVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	if err != nil {
+		t.Errorf("GenAI.ListAgentVersions returned error: %v", err)
+	}
+	fmt.Println(versions)
+	assert.Equal(t, 1, len(versions))
+	assert.Equal(t, "00000000000000000000000000000000000000000000000000000000000000", versions[0].VersionHash)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestRollbackVersion(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/versions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, rollbackResponse)
+	})
+
+	versions, resp, err := client.GenAI.RollbackVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
+	if err != nil {
+		t.Errorf("GenAI.RollbackVersion returned error: %v", err)
+	}
+
+	assert.Equal(t, "00000000000000000000000000000000000000000000000000000000000001", versions)
+	assert.Equal(t, 200, resp.Response.StatusCode)
 }
