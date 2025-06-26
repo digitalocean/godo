@@ -445,6 +445,7 @@ type UpdateKnowledgeBaseRequest struct {
 type genAIAgentKBRoot struct {
 	Agent *Agent `json:"agent"`
 }
+
 type NestedSchema struct {
 	Type        string                   `json:"type" validate:"required,oneof=string boolean number integer array object"`
 	Items       *NestedSchema            `json:"items,omitempty"`
@@ -460,9 +461,11 @@ type OpenAPIParameterSchema struct {
 	Description string       `json:"description,omitempty"`
 	Required    bool         `json:"required,omitempty"`
 }
+
 type FunctionInputSchema struct {
 	Parameters []OpenAPIParameterSchema `json:"parameters" validate:"required,min=1,dive"`
 }
+
 type FunctionRouteCreateRequest struct {
 	AgentUuid     string              `json:"agent_uuid,omitempty"`
 	Description   string              `json:"description,omitempty"`
