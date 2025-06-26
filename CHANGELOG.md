@@ -1,6 +1,6 @@
 # Change Log
 
-## [v1.155.0] - 2025-06-23
+## [v1.155.0] - 2025-06-26
 
 - #854 - @anup-deka - Implementation for Agent Route and Agent Versions 
 - #858 - @imaskm - Fix byoip create resp
