@@ -1007,7 +1007,6 @@ func (s *GenAIServiceOp) DetachKnowledgeBaseToAgent(ctx context.Context, agentID
 // AddAgentRoute function adds a route between a parent and child agent.
 func (s *GenAIServiceOp) AddAgentRoute(ctx context.Context, parentId string, childId string, route *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error) {
 	path := fmt.Sprintf(agentRouteBasePath, parentId, childId)
-	fmt.Println(path)
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, route)
 	if err != nil {
 		return nil, nil, err
@@ -1042,7 +1041,6 @@ func (s *GenAIServiceOp) UpdateAgentRoute(ctx context.Context, parentId string, 
 // DeleteAgentRoute function deletes a route between a parent and child agent.
 func (s *GenAIServiceOp) DeleteAgentRoute(ctx context.Context, parentId string, childId string) (*AgentRouteResponse, *Response, error) {
 	path := fmt.Sprintf(agentRouteBasePath, parentId, childId)
-	fmt.Println(path)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1080,7 +1078,6 @@ func (s *GenAIServiceOp) ListAgentVersions(ctx context.Context, agentId string, 
 
 func (s *GenAIServiceOp) RollbackAgentVersion(ctx context.Context, agentId string, versionId string) (string, *Response, error) {
 	path := fmt.Sprintf("%s/%s/versions", genAIBasePath, agentId)
-
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, RollbackVersionRequest{
 		AgentUuid:   agentId,
 		VersionHash: versionId,
