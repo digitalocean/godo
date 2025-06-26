@@ -124,7 +124,7 @@ func TestBYOIPPrefixes_Create(t *testing.T) {
 		}
 
 		testMethod(t, r, http.MethodPost)
-		fmt.Fprint(w, `{"uuid": "byoip-prefix-uuid", "region": "nyc3", "status": "pending"}`)
+		fmt.Fprint(w, `{"byoip_prefix": {"uuid": "byoip-prefix-uuid", "region": "nyc3", "status": "pending"}}`)
 	})
 
 	byoipCreated, _, err := client.BYOIPPrefixes.Create(ctx, byoipCR)
