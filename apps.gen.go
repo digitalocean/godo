@@ -1159,7 +1159,6 @@ type FunctionsComponentHealthMetrics struct {
 	TimeWindow  string  `json:"time_window,omitempty"`
 }
 
-
 // GetAppDatabaseConnectionDetailsResponse struct for GetAppDatabaseConnectionDetailsResponse
 type GetAppDatabaseConnectionDetailsResponse struct {
 	ConnectionDetails []*GetDatabaseConnectionDetailsResponse `json:"connection_details,omitempty"`
