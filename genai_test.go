@@ -560,6 +560,74 @@ var listAgentVersionsResponse = `
 	}
 }
 `
+var listAnthropicAPIKeysResponse = `
+{
+    "api_key_infos": [
+        {
+            "uuid": "11111111-1111-1111-1111-111111111111",
+            "name": "Anthropic Key One",
+             "api_key": "sk-ant-1",
+            "created_at": "2025-05-14T13:18:05Z",
+            "created_by": "user-1"
+        },
+        {
+            "uuid": "22222222-2222-2222-2222-222222222222",
+            "name": "Anthropic Key Two",
+             "api_key": "sk-ant-2",
+            "created_at": "2025-05-15T13:18:05Z",
+            "created_by": "user-2"
+        }
+    ],
+    "links": {
+        "pages": {
+            "first": "https://api.digitalocean.com/v2/gen-ai/anthropic/keys?page=1&per_page=1",
+            "next": "https://api.digitalocean.com/v2/gen-ai/anthropic/keys?page=2&per_page=1",
+            "last": "https://api.digitalocean.com/v2/gen-ai/anthropic/keys?page=10&per_page=1"
+        }
+    },
+    "meta": {
+        "total": 2,
+        "page": 1,
+        "pages": 10
+    }
+}
+`
+
+var anthropicAPIKeyInfoResponse = `
+{
+    "api_key_info": {
+        "uuid": "11111111-1111-1111-1111-111111111111",
+        "name": "Anthropic Key One",
+        "api_key": "sk-ant-1",
+        "created_at": "2025-05-14T13:18:05Z",
+        "created_by": "user-1"
+    }
+}
+`
+var listAgentsByAnthropicAPIKeyResponse = `
+{
+  "agents": [
+    {
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "name": "Anthropic Agent 1"
+    },
+    {
+      "uuid": "00000000-0000-0000-0000-000000000001",
+      "name": "Anthropic Agent 2"
+    }
+  ],
+  "links": {
+    "pages": {
+      "first": "https://api.digitalocean.com/v2/gen-ai/anthropic/keys?page=1&per_page=1"
+    }
+  },
+  "meta": {
+    "total": 2,
+    "page": 1,
+    "pages": 1
+  }
+}
+`
 
 var rollbackResponse = `
 {
@@ -1186,4 +1254,121 @@ func TestRollbackVersion(t *testing.T) {
 
 	assert.Equal(t, "00000000000000000000000000000000000000000000000000000000000001", versions)
 	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestListAnthropicAPIKeys(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/anthropic/keys", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAnthropicAPIKeysResponse)
+	})
+
+	keys, resp, err := client.GenAI.ListAnthropicAPIKeys(ctx, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, 2, len(keys))
+	assert.Equal(t, "Anthropic Key One", keys[0].Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", keys[0].Uuid)
+	assert.Equal(t, "Anthropic Key Two", keys[1].Name)
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", keys[1].Uuid)
+}
+
+func TestCreateAnthropicAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/anthropic/keys", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
+	})
+
+	req := &AnthropicAPIKeyCreateRequest{
+		Name:   "Anthropic Key One",
+		ApiKey: "11111111-1111-1111-1111-111111111111",
+	}
+
+	key, resp, err := client.GenAI.CreateAnthropicAPIKey(ctx, req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, "Anthropic Key One", key.Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", key.Uuid)
+}
+
+func TestGetAnthropicAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/anthropic/keys/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
+	})
+
+	key, resp, err := client.GenAI.GetAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, "Anthropic Key One", key.Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", key.Uuid)
+}
+
+func TestUpdateAnthropicAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/anthropic/keys/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
+	})
+
+	req := &AnthropicAPIKeyUpdateRequest{
+		Name:       "Anthropic Key One",
+		ApiKey:     "11111111-1111-1111-1111-111111111111",
+		ApiKeyUuid: "11111111-1111-1111-1111-111111111111",
+	}
+
+	key, resp, err := client.GenAI.UpdateAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, "Anthropic Key One", key.Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", key.Uuid)
+}
+
+func TestDeleteAnthropicAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/anthropic/keys/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
+	})
+
+	key, resp, err := client.GenAI.DeleteAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, "Anthropic Key One", key.Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", key.Uuid)
+}
+
+func TestListAgentsByAnthropicAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/anthropic/keys/11111111-1111-1111-1111-111111111111/agents", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAgentsByAnthropicAPIKeyResponse)
+	})
+
+	agents, resp, err := client.GenAI.ListAgentsByAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, 2, len(agents))
+	assert.Equal(t, "Anthropic Agent 1", agents[0].Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", agents[0].Uuid)
+	assert.Equal(t, "Anthropic Agent 2", agents[1].Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000001", agents[1].Uuid)
+	assert.NotNil(t, resp.Meta)
+	assert.Equal(t, 2, resp.Meta.Total)
+	assert.NotNil(t, resp.Links)
+	assert.Equal(t, "https://api.digitalocean.com/v2/gen-ai/anthropic/keys?page=1&per_page=1", resp.Links.Pages.First)
 }
