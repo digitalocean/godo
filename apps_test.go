@@ -249,6 +249,38 @@ var (
 	}
 )
 
+func TestApps_GetAppHealth(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	appHealth := &AppHealth{
+		Components: []*ComponentHealth{
+			{
+				Name:               "web",
+				CPUUsagePercent:    90,
+				MemoryUsagePercent: 90,
+				ReplicasDesired:    1,
+				ReplicasReady:      1,
+				State:              "RUNNING",
+			},
+		},
+	}
+
+	mux.HandleFunc("/v2/apps/{id}/health", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		json.NewEncoder(w).Encode(json.NewEncoder(w).Encode(
+			appHealthRoot{Health: appHealth},
+		))
+	})
+
+	appHealthResponse, _, err := client.Apps.GetAppHealth(ctx, testApp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, appHealthResponse, appHealth)
+}
+
 func TestApps_CreateApp(t *testing.T) {
 	setup()
 	defer teardown()
