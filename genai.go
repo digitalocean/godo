@@ -112,7 +112,7 @@ type anthropicAPIKeyRoot struct {
 
 // Agent represents a Gen AI Agent
 type Agent struct {
-	AnthropicApiKey    *AnthropicApiKeyInfo      `json:"api_key_infos,omitempty"`
+	AnthropicApiKey    *AnthropicApiKeyInfo      `json:"anthropic_api_key,omitempty"`
 	ApiKeyInfos        []*ApiKeyInfo             `json:"api_key_infos,omitempty"`
 	ApiKeys            []*ApiKey                 `json:"api_keys,omitempty"`
 	ChatBot            *ChatBot                  `json:"chatbot,omitempty"`
@@ -1244,7 +1244,7 @@ func (s *GenAIServiceOp) ListAgentsByAnthropicAPIKey(ctx context.Context, anthro
 	}
 
 	root := new(genAIAgentsRoot)
-	resp, err := s.client.Do(ctx, req, &root)
+	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
