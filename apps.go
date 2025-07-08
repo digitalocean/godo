@@ -203,7 +203,7 @@ func (a App) URN() string {
 }
 
 type appHealthRoot struct {
-	Health *AppHealth `json:"health"`
+	Health *AppHealth `json:"app_health"`
 }
 
 func (s *AppsServiceOp) GetAppHealth(ctx context.Context, appID string) (*AppHealth, *Response, error) {
