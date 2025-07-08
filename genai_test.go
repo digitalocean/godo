@@ -635,6 +635,151 @@ var rollbackResponse = `
 }
 `
 
+var listOpenAIAPIKeysResponse = `
+{
+    "api_key_infos": [
+        {
+            "uuid": "11111111-1111-1111-1111-111111111111",
+            "created_at": "2025-05-14T13:18:05Z",
+            "created_by": "user-1",
+			"name": "openai-key1",
+			"models": [{
+				"agreement": {
+					"description": "openai example",
+					"name": "example name",
+					"url": "example string",
+					"uuid": "123e4567-e89b-12d3-a456-426614174000"
+				},
+				"created_at": "2023-01-01T00:00:00Z",
+				"inference_name": "example name",
+				"inference_version": "example string",
+				"is_foundational": true,
+				"metadata": { },
+				"name": "example name",
+				"parent_uuid": "123e4567-e89b-12d3-a456-426614174000",
+				"provider": "MODEL_PROVIDER_DIGITALOCEAN",
+				"updated_at": "2023-01-01T00:00:00Z",
+				"upload_complete": true,
+				"url": "example string",
+				"usecases": ["MODEL_USECASE_AGENT","MODEL_USECASE_GUARDRAIL"],
+				"uuid": "123e4567-e89b-12d3-a456-426614174000",
+				"version": {
+					"major": 123,
+					"minor": 123,
+					"patch": 123
+				}
+			}]
+        },
+		 {
+            "uuid": "22222222-2222-2222-2222-222222222222",
+            "created_at": "2025-05-14T13:18:05Z",
+            "created_by": "user-2",
+			"name": "openai-key2",
+			"models": [{
+				"agreement": {
+					"description": "openai example",
+					"name": "example name",
+					"url": "example string",
+					"uuid": "123e4567-e89b-12d3-a456-426614174000"
+				},
+				"created_at": "2023-01-01T00:00:00Z",
+				"inference_name": "example name",
+				"inference_version": "example string",
+				"is_foundational": true,
+				"metadata": { },
+				"name": "example name",
+				"parent_uuid": "123e4567-e89b-12d3-a456-426614174000",
+				"provider": "MODEL_PROVIDER_DIGITALOCEAN",
+				"updated_at": "2023-01-01T00:00:00Z",
+				"upload_complete": true,
+				"url": "example string",
+				"usecases": ["MODEL_USECASE_AGENT","MODEL_USECASE_GUARDRAIL"],
+				"uuid": "123e4567-e89b-12d3-a456-426614174000",
+				"version": {
+					"major": 123,
+					"minor": 123,
+					"patch": 123
+				}
+			}]
+        }
+    ],
+    "links": {
+        "pages": {
+            "first": "https://api.digitalocean.com/v2/gen-ai/openai/keys?page=1&per_page=1",
+            "next": "https://api.digitalocean.com/v2/gen-ai/openai/keys?page=2&per_page=1",
+            "last": "https://api.digitalocean.com/v2/gen-ai/openai/keys?page=10&per_page=1"
+        }
+    },
+    "meta": {
+        "total": 2,
+        "page": 1,
+        "pages": 10
+    }
+}
+`
+
+var openaiAPIKeyInfoResponse = `
+{
+    "api_key_info": {
+            "uuid": "11111111-1111-1111-1111-111111111111",
+            "created_at": "2025-05-14T13:18:05Z",
+            "created_by": "user-1",
+			"name": "OpenAI One",
+			"models": [{
+				"agreement": {
+					"description": "openai example",
+					"name": "example name",
+					"url": "example string",
+					"uuid": "123e4567-e89b-12d3-a456-426614174000"
+				},
+				"created_at": "2023-01-01T00:00:00Z",
+				"inference_name": "example name",
+				"inference_version": "example string",
+				"is_foundational": true,
+				"metadata": { },
+				"name": "example name",
+				"parent_uuid": "123e4567-e89b-12d3-a456-426614174000",
+				"provider": "MODEL_PROVIDER_DIGITALOCEAN",
+				"updated_at": "2023-01-01T00:00:00Z",
+				"upload_complete": true,
+				"url": "example string",
+				"usecases": ["MODEL_USECASE_AGENT","MODEL_USECASE_GUARDRAIL"],
+				"uuid": "123e4567-e89b-12d3-a456-426614174000",
+				"version": {
+					"major": 123,
+					"minor": 123,
+					"patch": 123
+				}
+			}]
+        }
+}
+`
+
+var listAgentsByOpenAIAPIKeyResponse = `
+{
+  "agents": [
+    {
+      "uuid": "00000000-0000-0000-0000-000000000000",
+      "name": "OpenAI Agent 1"
+    },
+    {
+      "uuid": "00000000-0000-0000-0000-000000000001",
+      "name": "OpenAI Agent 2"
+    }
+  ],
+  "links": {
+    "pages": {
+      "first": "https://api.digitalocean.com/v2/gen-ai/openai/keys?page=1&per_page=1"
+    }
+  },
+  "meta": {
+    "total": 2,
+    "page": 1,
+    "pages": 1
+  }
+}
+`
+
 func TestListAgents(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1371,4 +1516,121 @@ func TestListAgentsByAnthropicAPIKey(t *testing.T) {
 	assert.Equal(t, 2, resp.Meta.Total)
 	assert.NotNil(t, resp.Links)
 	assert.Equal(t, "https://api.digitalocean.com/v2/gen-ai/anthropic/keys?page=1&per_page=1", resp.Links.Pages.First)
+}
+
+func TestListOpenAIAPIKeys(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/openai/keys", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listOpenAIAPIKeysResponse)
+	})
+
+	keys, resp, err := client.GenAI.ListOpenAIAPIKeys(ctx, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, 2, len(keys))
+	assert.Equal(t, "openai-key1", keys[0].Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", keys[0].Uuid)
+	assert.Equal(t, "openai-key2", keys[1].Name)
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", keys[1].Uuid)
+}
+
+func TestCreateOpenAIAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/openai/keys", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, openaiAPIKeyInfoResponse)
+	})
+
+	req := &OpenAIAPIKeyCreateRequest{
+		Name:   "OpenAI One",
+		ApiKey: "11111111-1111-1111-1111-111111111111",
+	}
+
+	key, resp, err := client.GenAI.CreateOpenAIAPIKey(ctx, req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, "OpenAI One", key.Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", key.Uuid)
+}
+
+func TestGetOpenAIAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/openai/keys/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, openaiAPIKeyInfoResponse)
+	})
+
+	key, resp, err := client.GenAI.GetOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, "OpenAI One", key.Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", key.Uuid)
+}
+
+func TestUpdateOpenAIAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/openai/keys/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, openaiAPIKeyInfoResponse)
+	})
+
+	req := &OpenAIAPIKeyUpdateRequest{
+		Name:       "OpenAI One",
+		ApiKey:     "11111111-1111-1111-1111-111111111111",
+		ApiKeyUuid: "11111111-1111-1111-1111-111111111111",
+	}
+
+	key, resp, err := client.GenAI.UpdateOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, "OpenAI One", key.Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", key.Uuid)
+}
+
+func TestDeleteOpenAIAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/openai/keys/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, openaiAPIKeyInfoResponse)
+	})
+
+	key, resp, err := client.GenAI.DeleteOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, "OpenAI One", key.Name)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", key.Uuid)
+}
+
+func TestListAgentsByOpenAIAPIKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/openai/keys/11111111-1111-1111-1111-111111111111/agents", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAgentsByOpenAIAPIKeyResponse)
+	})
+
+	agents, resp, err := client.GenAI.ListAgentsByOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, 2, len(agents))
+	assert.Equal(t, "OpenAI Agent 1", agents[0].Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", agents[0].Uuid)
+	assert.Equal(t, "OpenAI Agent 2", agents[1].Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000001", agents[1].Uuid)
+	assert.NotNil(t, resp.Meta)
+	assert.Equal(t, 2, resp.Meta.Total)
+	assert.NotNil(t, resp.Links)
+	assert.Equal(t, "https://api.digitalocean.com/v2/gen-ai/openai/keys?page=1&per_page=1", resp.Links.Pages.First)
 }

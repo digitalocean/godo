@@ -20,6 +20,7 @@ const (
 	DeleteDataSourcePath         = KnowledgeBasePath + "/%s/data_sources/%s"
 	AnthropicAPIKeysPath         = "/v2/gen-ai/anthropic/keys"
 	AnthropicAPIKeyByIDPath      = AnthropicAPIKeysPath + "/%s"
+	OpenAIAPIKeysPath            = "/v2/gen-ai/openai/keys"
 )
 
 // GenAIService is an interface for interfacing with the Gen AI Agent endpoints
@@ -59,6 +60,12 @@ type GenAIService interface {
 	UpdateAnthropicAPIKey(ctx context.Context, id string, anthropicAPIKeyUpdateRequest *AnthropicAPIKeyUpdateRequest) (*AnthropicApiKeyInfo, *Response, error)
 	DeleteAnthropicAPIKey(ctx context.Context, id string) (*AnthropicApiKeyInfo, *Response, error)
 	ListAgentsByAnthropicAPIKey(ctx context.Context, id string, opt *ListOptions) ([]*Agent, *Response, error)
+	ListOpenAIAPIKeys(context.Context, *ListOptions) ([]*OpenAiApiKey, *Response, error)
+	CreateOpenAIAPIKey(ctx context.Context, openaiAPIKeyCreate *OpenAIAPIKeyCreateRequest) (*OpenAiApiKey, *Response, error)
+	GetOpenAIAPIKey(ctx context.Context, openaiApiKeyId string) (*OpenAiApiKey, *Response, error)
+	UpdateOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, openaiAPIKeyUpdate *OpenAIAPIKeyUpdateRequest) (*OpenAiApiKey, *Response, error)
+	DeleteOpenAIAPIKey(ctx context.Context, openaiApiKeyId string) (*OpenAiApiKey, *Response, error)
+	ListAgentsByOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, opt *ListOptions) ([]*Agent, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -106,8 +113,17 @@ type anthropicAPIKeysRoot struct {
 	Meta             *Meta                  `json:"meta"`
 }
 
+type openaiAPIKeysRoot struct {
+	OpenAIApiKeys []*OpenAiApiKey `json:"api_key_infos"`
+	Links         *Links          `json:"links"`
+	Meta          *Meta           `json:"meta"`
+}
+
 type anthropicAPIKeyRoot struct {
 	AnthropicApiKey *AnthropicApiKeyInfo `json:"api_key_info,omitempty"`
+}
+type openaiAPIKeyRoot struct {
+	OpenAIAPIKey *OpenAiApiKey `json:"api_key_info,omitempty"`
 }
 
 // Agent represents a Gen AI Agent
@@ -438,6 +454,17 @@ type AnthropicAPIKeyCreateRequest struct {
 }
 
 type AnthropicAPIKeyUpdateRequest struct {
+	Name       string `json:"name,omitempty"`
+	ApiKey     string `json:"api_key,omitempty"`
+	ApiKeyUuid string `json:"api_key_uuid,omitempty"`
+}
+
+type OpenAIAPIKeyCreateRequest struct {
+	Name   string `json:"name,omitempty"`
+	ApiKey string `json:"api_key,omitempty"`
+}
+
+type OpenAIAPIKeyUpdateRequest struct {
 	Name       string `json:"name,omitempty"`
 	ApiKey     string `json:"api_key,omitempty"`
 	ApiKeyUuid string `json:"api_key_uuid,omitempty"`
@@ -1234,6 +1261,139 @@ func (s *GenAIServiceOp) DeleteAnthropicAPIKey(ctx context.Context, anthropicApi
 
 func (s *GenAIServiceOp) ListAgentsByAnthropicAPIKey(ctx context.Context, anthropicApiKeyId string, opt *ListOptions) ([]*Agent, *Response, error) {
 	path := fmt.Sprintf("%s/%s/agents", AnthropicAPIKeysPath, anthropicApiKeyId)
+	path, err := addOptions(path, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIAgentsRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+	return root.Agents, resp, nil
+}
+
+func (s *GenAIServiceOp) ListOpenAIAPIKeys(ctx context.Context, opt *ListOptions) ([]*OpenAiApiKey, *Response, error) {
+	path := OpenAIAPIKeysPath
+	path, err := addOptions(path, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(openaiAPIKeysRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+	return root.OpenAIApiKeys, resp, nil
+}
+
+func (s *GenAIServiceOp) CreateOpenAIAPIKey(ctx context.Context, openaiAPIKeyCreate *OpenAIAPIKeyCreateRequest) (*OpenAiApiKey, *Response, error) {
+	path := OpenAIAPIKeysPath
+
+	if openaiAPIKeyCreate.Name == "" {
+		return nil, nil, fmt.Errorf("Name is required")
+	}
+	if openaiAPIKeyCreate.ApiKey == "" {
+		return nil, nil, fmt.Errorf("ApiKey is required")
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, openaiAPIKeyCreate)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(openaiAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.OpenAIAPIKey, resp, nil
+}
+
+func (s *GenAIServiceOp) GetOpenAIAPIKey(ctx context.Context, openaiApiKeyId string) (*OpenAiApiKey, *Response, error) {
+	path := OpenAIAPIKeysPath + "/" + openaiApiKeyId
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(openaiAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.OpenAIAPIKey, resp, nil
+}
+
+func (s *GenAIServiceOp) UpdateOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, openaiAPIKeyUpdate *OpenAIAPIKeyUpdateRequest) (*OpenAiApiKey, *Response, error) {
+	path := OpenAIAPIKeysPath + "/" + openaiApiKeyId
+
+	if openaiAPIKeyUpdate.ApiKeyUuid == "" {
+		openaiAPIKeyUpdate.ApiKeyUuid = openaiApiKeyId
+	}
+	if openaiAPIKeyUpdate.ApiKeyUuid == "" {
+		return nil, nil, fmt.Errorf("ApiKeyUuid is required")
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, openaiAPIKeyUpdate)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(openaiAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.OpenAIAPIKey, resp, nil
+}
+
+func (s *GenAIServiceOp) DeleteOpenAIAPIKey(ctx context.Context, openaiApiKeyId string) (*OpenAiApiKey, *Response, error) {
+	path := OpenAIAPIKeysPath + "/" + openaiApiKeyId
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(openaiAPIKeyRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.OpenAIAPIKey, resp, nil
+}
+
+func (s *GenAIServiceOp) ListAgentsByOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, opt *ListOptions) ([]*Agent, *Response, error) {
+	path := fmt.Sprintf("%s/%s/agents", OpenAIAPIKeysPath, openaiApiKeyId)
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
