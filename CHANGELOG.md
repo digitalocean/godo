@@ -1,5 +1,10 @@
 # Change Log
 
+## [v1.157.0] - 2025-07-08
+
+- #866 - @ssaengs - fix: appHealth incorrectly keyed.
+- #867 - @harshmaru7 - Added OpenAI API Key Operations 
+
 ## [v1.156.0] - 2025-07-07
 
 - #862 - @ssaengs - APPS: expose app health 
