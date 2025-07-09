@@ -11,20 +11,18 @@ const saasAddonsBasePath = "v1/marketplace/add-ons"
 
 // SaasAddonsService is an interface for interacting with the SaasAddons/Marketplace Add-ons API
 type SaasAddonsService interface {
-	GetAppsByVendor(context.Context) ([]*SaasAddonsApp, *Response, error)
 	GetAppBySlug(context.Context, string) (*SaasAddonsApp, *Response, error)
-	GetAppByVendorUUID(context.Context, string, string) (*SaasAddonsApp, *Response, error)
 	GetPlansByApp(context.Context, string) ([]*SaasAddonsPlan, *Response, error)
 	GetPublicInfoByApps(context.Context, *GetPublicInfoByAppsRequest) (*GetPublicInfoByAppsResponse, *Response, error)
 	GetAppFeatures(context.Context, string) ([]*SaasAddonsFeature, *Response, error)
-	GetLiveApps(context.Context) ([]*SaasAddonsApp, *Response, error)
+	GetAllApps(context.Context) ([]*SaasAddonsApp, *Response, error)
 	GetAppBySlugPublic(context.Context, string) (*SaasAddonsPublicApp, *Response, error)
 	GetAllResourcesPublic(context.Context) ([]*SaasAddonsPublicResource, *Response, error)
 	GetPublicResource(context.Context, string) (*SaasAddonsPublicResource, *Response, error)
+	CreateResourcePublic(context.Context, *CreateResourceRequest) (*SaasAddonsPublicResource, *Response, error)
+	UpdateResourcePublic(context.Context, string, *UpdateResourceRequest) (*SaasAddonsPublicResource, *Response, error)
+	DeprovisionResourcePublic(context.Context, string) (*Response, error)
 	GetAddonMetadata(context.Context, string) (*SaasAddonsAddonMetadata, *Response, error)
-	GetDimensionsByFeature(context.Context, string, uint64) ([]*SaasAddonsDimension, *Response, error)
-	GetDimensionVolumes(context.Context, string, uint64, uint64) ([]*SaasAddonsDimensionVolume, *Response, error)
-	GetPlanFeaturePrices(context.Context, string, uint64) ([]*SaasAddonsPlanFeaturePrice, *Response, error)
 }
 
 // SaasAddonsServiceOp handles communication with the SaasAddons/Marketplace Add-ons related methods
@@ -33,7 +31,6 @@ type SaasAddonsServiceOp struct {
 }
 
 var _ SaasAddonsService = &SaasAddonsServiceOp{}
-
 
 // SaasAddonsApp represents a SaasAddons application
 type SaasAddonsApp struct {
@@ -226,45 +223,9 @@ type saasAddonsPlanFeaturePricesRoot struct {
 	PlanFeaturePrices []*SaasAddonsPlanFeaturePrice `json:"plan_feature_prices"`
 }
 
-// GetAppsByVendor returns apps by vendor (public, no permissions needed)
-func (s *SaasAddonsServiceOp) GetAppsByVendor(ctx context.Context) ([]*SaasAddonsApp, *Response, error) {
-	path := fmt.Sprintf("%s/vendors/apps", saasAddonsBasePath)
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(saasAddonsAppsRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root.Apps, resp, nil
-}
-
 // GetAppBySlug returns an app by slug (public, no permissions needed)
 func (s *SaasAddonsServiceOp) GetAppBySlug(ctx context.Context, appSlug string) (*SaasAddonsApp, *Response, error) {
 	path := fmt.Sprintf("%s/apps/%s", saasAddonsBasePath, appSlug)
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(saasAddonsAppRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root.App, resp, nil
-}
-
-// GetAppByVendorUUID returns an app by vendor UUID and app slug (public, no permissions needed)
-func (s *SaasAddonsServiceOp) GetAppByVendorUUID(ctx context.Context, vendorUUID, appSlug string) (*SaasAddonsApp, *Response, error) {
-	path := fmt.Sprintf("%s/vendor/%s/apps/%s", saasAddonsBasePath, vendorUUID, appSlug)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -316,7 +277,7 @@ func (s *SaasAddonsServiceOp) GetPublicInfoByApps(ctx context.Context, request *
 	return root, resp, nil
 }
 
-// GetAppFeatures returns features for an app (public, no permissions needed)
+// GetAppFeatures returns features for an app
 func (s *SaasAddonsServiceOp) GetAppFeatures(ctx context.Context, appSlug string) ([]*SaasAddonsFeature, *Response, error) {
 	path := fmt.Sprintf("%s/apps/%s/features", saasAddonsBasePath, appSlug)
 
@@ -332,24 +293,6 @@ func (s *SaasAddonsServiceOp) GetAppFeatures(ctx context.Context, appSlug string
 	}
 
 	return root.Features, resp, nil
-}
-
-// GetLiveApps returns live apps (public, no permissions needed)
-func (s *SaasAddonsServiceOp) GetLiveApps(ctx context.Context) ([]*SaasAddonsApp, *Response, error) {
-	path := fmt.Sprintf("%s/apps", saasAddonsBasePath)
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(saasAddonsAppsRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root.Apps, resp, nil
 }
 
 // GetAppBySlugPublic returns an app by slug using the public endpoint
@@ -424,56 +367,106 @@ func (s *SaasAddonsServiceOp) GetAddonMetadata(ctx context.Context, appSlug stri
 	return root, resp, nil
 }
 
-// GetDimensionsByFeature returns dimensions for a feature
-func (s *SaasAddonsServiceOp) GetDimensionsByFeature(ctx context.Context, appSlug string, featureID uint64) ([]*SaasAddonsDimension, *Response, error) {
-	path := fmt.Sprintf("%s/apps/%s/features/%d/dimensions", saasAddonsBasePath, appSlug, featureID)
+// GetAppsByVendor returns apps by vendor (public, no permissions needed)
+func (s *SaasAddonsServiceOp) GetAppsByVendor(ctx context.Context) ([]*SaasAddonsApp, *Response, error) {
+	path := fmt.Sprintf("%s/vendors/apps", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	root := new(saasAddonsDimensionsRoot)
+	root := new(saasAddonsAppsRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return root.Dimensions, resp, nil
+	return root.Apps, resp, nil
 }
 
-// GetDimensionVolumes returns dimension volumes for a dimension
-func (s *SaasAddonsServiceOp) GetDimensionVolumes(ctx context.Context, appSlug string, featureID, dimensionID uint64) ([]*SaasAddonsDimensionVolume, *Response, error) {
-	path := fmt.Sprintf("%s/apps/%s/features/%d/dimensions/%d/volumes", saasAddonsBasePath, appSlug, featureID, dimensionID)
+// CreateResourcePublic creates a resource using the public endpoint
+func (s *SaasAddonsServiceOp) CreateResourcePublic(ctx context.Context, request *CreateResourceRequest) (*SaasAddonsPublicResource, *Response, error) {
+	path := fmt.Sprintf("%s/public/resources", saasAddonsBasePath)
 
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, request)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	root := new(saasAddonsDimensionVolumesRoot)
+	root := new(saasAddonsPublicResourceRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return root.DimensionVolumes, resp, nil
+	return root.Resource, resp, nil
 }
 
-// GetPlanFeaturePrices returns plan feature prices
-func (s *SaasAddonsServiceOp) GetPlanFeaturePrices(ctx context.Context, appSlug string, planFeatureID uint64) ([]*SaasAddonsPlanFeaturePrice, *Response, error) {
-	path := fmt.Sprintf("%s/apps/%s/plan_features/%d/prices", saasAddonsBasePath, appSlug, planFeatureID)
+// UpdateResourcePublic updates a resource using the public endpoint
+func (s *SaasAddonsServiceOp) UpdateResourcePublic(ctx context.Context, resourceUUID string, request *UpdateResourceRequest) (*SaasAddonsPublicResource, *Response, error) {
+	path := fmt.Sprintf("%s/public/resources/%s", saasAddonsBasePath, resourceUUID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, request)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(saasAddonsPublicResourceRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Resource, resp, nil
+}
+
+// DeprovisionResourcePublic deprovisions a resource using the public endpoint
+func (s *SaasAddonsServiceOp) DeprovisionResourcePublic(ctx context.Context, resourceUUID string) (*Response, error) {
+	path := fmt.Sprintf("%s/public/resources/%s", saasAddonsBasePath, resourceUUID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+// GetAllApps returns all live apps (public, no permissions needed)
+func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context) ([]*SaasAddonsApp, *Response, error) {
+	path := fmt.Sprintf("%s/apps/live", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	root := new(saasAddonsPlanFeaturePricesRoot)
+	root := new(saasAddonsAppsRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
 
-	return root.PlanFeaturePrices, resp, nil
+	return root.Apps, resp, nil
+}
+
+// CreateResourceRequest represents the request for creating a resource
+type CreateResourceRequest struct {
+	AppSlug         string                        `json:"app_slug"`
+	PlanSlug        string                        `json:"plan_slug"`
+	Name            string                        `json:"name"`
+	Metadata        []*SaasAddonsResourceMetadata `json:"metadata,omitempty"`
+	LinkedDropletID uint64                        `json:"linked_droplet_id,omitempty"`
+	FleetUUID       string                        `json:"fleet_uuid,omitempty"`
+}
+
+// UpdateResourceRequest represents the request for updating a resource
+type UpdateResourceRequest struct {
+	Name string `json:"name"`
 }

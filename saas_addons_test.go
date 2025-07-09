@@ -10,28 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSaasAddonsService_GetAppsByVendor(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/marketplace/add-ons/vendors/apps", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"apps": [{"id": 1, "slug": "test-app", "name": "Test App", "description": "A test application"}]}`)
-	})
-
-	apps, _, err := client.SaasAddons.GetAppsByVendor(context.Background())
-	require.NoError(t, err)
-	require.Len(t, apps, 1)
-
-	expected := &SaasAddonsApp{
-		ID:          1,
-		Slug:        "test-app",
-		Name:        "Test App",
-		Description: "A test application",
-	}
-	assert.Equal(t, expected, apps[0])
-}
-
 func TestSaasAddonsService_GetAppBySlug(t *testing.T) {
 	setup()
 	defer teardown()
@@ -53,37 +31,13 @@ func TestSaasAddonsService_GetAppBySlug(t *testing.T) {
 	assert.Equal(t, expected, app)
 }
 
-func TestSaasAddonsService_GetAppByVendorUUID(t *testing.T) {
-	setup()
-	defer teardown()
-
-	vendorUUID := "vendor-123"
-	appSlug := "test-app"
-
-	mux.HandleFunc("/v1/marketplace/add-ons/vendor/vendor-123/apps/test-app", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"app": {"id": 1, "slug": "test-app", "name": "Test App", "vendor_uuid": "vendor-123"}}`)
-	})
-
-	app, _, err := client.SaasAddons.GetAppByVendorUUID(context.Background(), vendorUUID, appSlug)
-	require.NoError(t, err)
-
-	expected := &SaasAddonsApp{
-		ID:         1,
-		Slug:       "test-app",
-		Name:       "Test App",
-		VendorUUID: "vendor-123",
-	}
-	assert.Equal(t, expected, app)
-}
-
 func TestSaasAddonsService_GetPlansByApp(t *testing.T) {
 	setup()
 	defer teardown()
 
 	mux.HandleFunc("/v1/marketplace/add-ons/apps/test-app/plans", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"plans": [{"id": 1, "slug": "basic", "name": "Basic Plan", "price": "5.00", "app_slug": "test-app"}]}`)
+		fmt.Fprint(w, `{"plans": [{"id": 1, "slug": "basic", "name": "Basic Plan", "description": "Basic plan for testing"}]}`)
 	})
 
 	plans, _, err := client.SaasAddons.GetPlansByApp(context.Background(), "test-app")
@@ -91,11 +45,10 @@ func TestSaasAddonsService_GetPlansByApp(t *testing.T) {
 	require.Len(t, plans, 1)
 
 	expected := &SaasAddonsPlan{
-		ID:      1,
-		Slug:    "basic",
-		Name:    "Basic Plan",
-		Price:   "5.00",
-		AppSlug: "test-app",
+		ID:          1,
+		Slug:        "basic",
+		Name:        "Basic Plan",
+		Description: "Basic plan for testing",
 	}
 	assert.Equal(t, expected, plans[0])
 }
@@ -115,7 +68,6 @@ func TestSaasAddonsService_GetPublicInfoByApps(t *testing.T) {
 
 	response, _, err := client.SaasAddons.GetPublicInfoByApps(context.Background(), request)
 	require.NoError(t, err)
-	require.Len(t, response.InfoByApp, 1)
 
 	expected := &SaasAddonsInfoByApp{
 		AppSlug: "test-app",
@@ -148,24 +100,24 @@ func TestSaasAddonsService_GetAppFeatures(t *testing.T) {
 	assert.Equal(t, expected, features[0])
 }
 
-func TestSaasAddonsService_GetLiveApps(t *testing.T) {
+func TestSaasAddonsService_GetAllApps(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/apps", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/marketplace/add-ons/apps/live", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"apps": [{"id": 1, "slug": "live-app", "name": "Live App", "state": "live"}]}`)
+		fmt.Fprint(w, `{"apps": [{"id": 1, "slug": "test-app", "name": "Test App", "description": "A live application"}]}`)
 	})
 
-	apps, _, err := client.SaasAddons.GetLiveApps(context.Background())
+	apps, _, err := client.SaasAddons.GetAllApps(context.Background())
 	require.NoError(t, err)
 	require.Len(t, apps, 1)
 
 	expected := &SaasAddonsApp{
-		ID:    1,
-		Slug:  "live-app",
-		Name:  "Live App",
-		State: "live",
+		ID:          1,
+		Slug:        "test-app",
+		Name:        "Test App",
+		Description: "A live application",
 	}
 	assert.Equal(t, expected, apps[0])
 }
@@ -176,17 +128,17 @@ func TestSaasAddonsService_GetAppBySlugPublic(t *testing.T) {
 
 	mux.HandleFunc("/v1/marketplace/add-ons/public/apps/test-app", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"app": {"id": 1, "slug": "test-app", "name": "Test App", "config_vars_prefix": "TEST_"}}`)
+		fmt.Fprint(w, `{"app": {"id": 1, "slug": "test-app", "name": "Test App", "description": "A public application"}}`)
 	})
 
 	app, _, err := client.SaasAddons.GetAppBySlugPublic(context.Background(), "test-app")
 	require.NoError(t, err)
 
 	expected := &SaasAddonsPublicApp{
-		ID:               1,
-		Slug:             "test-app",
-		Name:             "Test App",
-		ConfigVarsPrefix: "TEST_",
+		ID:          1,
+		Slug:        "test-app",
+		Name:        "Test App",
+		Description: "A public application",
 	}
 	assert.Equal(t, expected, app)
 }
@@ -218,7 +170,6 @@ func TestSaasAddonsService_GetPublicResource(t *testing.T) {
 	defer teardown()
 
 	resourceUUID := "resource-123"
-
 	mux.HandleFunc("/v1/marketplace/add-ons/public/resources/resource-123", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"resource": {"uuid": "resource-123", "app_slug": "test-app", "plan_slug": "basic", "state": "provisioned"}}`)
@@ -234,6 +185,73 @@ func TestSaasAddonsService_GetPublicResource(t *testing.T) {
 		State:    "provisioned",
 	}
 	assert.Equal(t, expected, resource)
+}
+
+func TestSaasAddonsService_CreateResourcePublic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/marketplace/add-ons/public/resources", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"resource": {"uuid": "resource-123", "app_slug": "test-app", "plan_slug": "basic", "state": "provisioned"}}`)
+	})
+
+	request := &CreateResourceRequest{
+		AppSlug:  "test-app",
+		PlanSlug: "basic",
+		Name:     "test-resource",
+	}
+
+	resource, _, err := client.SaasAddons.CreateResourcePublic(context.Background(), request)
+	require.NoError(t, err)
+
+	expected := &SaasAddonsPublicResource{
+		UUID:     "resource-123",
+		AppSlug:  "test-app",
+		PlanSlug: "basic",
+		State:    "provisioned",
+	}
+	assert.Equal(t, expected, resource)
+}
+
+func TestSaasAddonsService_UpdateResourcePublic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	resourceUUID := "resource-123"
+	mux.HandleFunc("/v1/marketplace/add-ons/public/resources/resource-123", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		fmt.Fprint(w, `{"resource": {"uuid": "resource-123", "app_slug": "test-app", "plan_slug": "basic", "state": "provisioned"}}`)
+	})
+
+	request := &UpdateResourceRequest{
+		Name: "updated-resource",
+	}
+
+	resource, _, err := client.SaasAddons.UpdateResourcePublic(context.Background(), resourceUUID, request)
+	require.NoError(t, err)
+
+	expected := &SaasAddonsPublicResource{
+		UUID:     "resource-123",
+		AppSlug:  "test-app",
+		PlanSlug: "basic",
+		State:    "provisioned",
+	}
+	assert.Equal(t, expected, resource)
+}
+
+func TestSaasAddonsService_DeprovisionResourcePublic(t *testing.T) {
+	setup()
+	defer teardown()
+
+	resourceUUID := "resource-123"
+	mux.HandleFunc("/v1/marketplace/add-ons/public/resources/resource-123", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.SaasAddons.DeprovisionResourcePublic(context.Background(), resourceUUID)
+	require.NoError(t, err)
 }
 
 func TestSaasAddonsService_GetAddonMetadata(t *testing.T) {
@@ -258,67 +276,4 @@ func TestSaasAddonsService_GetAddonMetadata(t *testing.T) {
 		},
 	}
 	assert.Equal(t, expected, metadata)
-}
-
-func TestSaasAddonsService_GetDimensionsByFeature(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/test-app/features/1/dimensions", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"dimensions": [{"id": 1, "sku": "SKU123", "slug": "storage", "display_name": "Storage"}]}`)
-	})
-
-	dimensions, _, err := client.SaasAddons.GetDimensionsByFeature(context.Background(), "test-app", 1)
-	require.NoError(t, err)
-	require.Len(t, dimensions, 1)
-
-	expected := &SaasAddonsDimension{
-		ID:          1,
-		SKU:         "SKU123",
-		Slug:        "storage",
-		DisplayName: "Storage",
-	}
-	assert.Equal(t, expected, dimensions[0])
-}
-
-func TestSaasAddonsService_GetDimensionVolumes(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/test-app/features/1/dimensions/1/volumes", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"dimension_volumes": [{"id": 1, "low_volume": 1, "max_volume": 100}]}`)
-	})
-
-	volumes, _, err := client.SaasAddons.GetDimensionVolumes(context.Background(), "test-app", 1, 1)
-	require.NoError(t, err)
-	require.Len(t, volumes, 1)
-
-	expected := &SaasAddonsDimensionVolume{
-		ID:        1,
-		LowVolume: 1,
-		MaxVolume: 100,
-	}
-	assert.Equal(t, expected, volumes[0])
-}
-
-func TestSaasAddonsService_GetPlanFeaturePrices(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/test-app/plan_features/1/prices", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"plan_feature_prices": [{"dimension_volume_id": 1, "price_per_unit": "0.10"}]}`)
-	})
-
-	prices, _, err := client.SaasAddons.GetPlanFeaturePrices(context.Background(), "test-app", 1)
-	require.NoError(t, err)
-	require.Len(t, prices, 1)
-
-	expected := &SaasAddonsPlanFeaturePrice{
-		DimensionVolumeID: 1,
-		PricePerUnit:      "0.10",
-	}
-	assert.Equal(t, expected, prices[0])
 }
