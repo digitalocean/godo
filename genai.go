@@ -2,6 +2,7 @@ package godo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -12,6 +13,7 @@ const (
 	agentModelBasePath           = "/v2/gen-ai/models"
 	agentRouteBasePath           = genAIBasePath + "/%s/child_agents/%s"
 	KnowledgeBasePath            = "/v2/gen-ai/knowledge_bases"
+	functionRouteBasePath        = genAIBasePath + "/%s/functions"
 	KnowledgeBaseDataSourcesPath = KnowledgeBasePath + "/%s/data_sources"
 	GetKnowledgeBaseByIDPath     = KnowledgeBasePath + "/%s"
 	UpdateKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
@@ -21,6 +23,8 @@ const (
 	AnthropicAPIKeysPath         = "/v2/gen-ai/anthropic/keys"
 	AnthropicAPIKeyByIDPath      = AnthropicAPIKeysPath + "/%s"
 	OpenAIAPIKeysPath            = "/v2/gen-ai/openai/keys"
+	UpdateFunctionRoutePath      = functionRouteBasePath + "/%s"
+	DeleteFunctionRoutePath      = functionRouteBasePath + "/%s"
 )
 
 // GenAIService is an interface for interfacing with the Gen AI Agent endpoints
@@ -66,6 +70,9 @@ type GenAIService interface {
 	UpdateOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, openaiAPIKeyUpdate *OpenAIAPIKeyUpdateRequest) (*OpenAiApiKey, *Response, error)
 	DeleteOpenAIAPIKey(ctx context.Context, openaiApiKeyId string) (*OpenAiApiKey, *Response, error)
 	ListAgentsByOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, opt *ListOptions) ([]*Agent, *Response, error)
+	CreateFunctionRoute(context.Context, string, *FunctionRouteCreateRequest) (*Agent, *Response, error)
+	DeleteFunctionRoute(context.Context, string, string) (*Agent, *Response, error)
+	UpdateFunctionRoute(context.Context, string, string, *FunctionRouteUpdateRequest) (*Agent, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -585,6 +592,47 @@ type AgentRouteUpdateRequest struct {
 	ParentAgentUuid string `json:"parent_agent_uuid,omitempty"`
 	RouteName       string `json:"route_name,omitempty"`
 	UUID            string `json:"uuid,omitempty"`
+}
+
+type NestedSchema struct {
+	Type        string                   `json:"type" validate:"required,oneof=string boolean number integer array object"`
+	Items       *NestedSchema            `json:"items,omitempty"`
+	Properties  map[string]*NestedSchema `json:"properties,omitempty"`
+	Enum        []string                 `json:"enum,omitempty"`
+	Description string                   `json:"description,omitempty"`
+}
+
+type OpenAPIParameterSchema struct {
+	Name        string       `json:"name" validate:"required"`
+	In          string       `json:"in" validate:"omitempty,oneof=query header path cookie"`
+	Schema      NestedSchema `json:"schema" validate:"required"`
+	Description string       `json:"description,omitempty"`
+	Required    bool         `json:"required,omitempty"`
+}
+
+type FunctionInputSchema struct {
+	Parameters []OpenAPIParameterSchema `json:"parameters" validate:"required,min=1,dive"`
+}
+
+type FunctionRouteCreateRequest struct {
+	AgentUuid     string              `json:"agent_uuid,omitempty"`
+	Description   string              `json:"description,omitempty"`
+	FaasName      string              `json:"faas_name,omitempty"`
+	FaasNamespace string              `json:"faas_namespace,omitempty"`
+	FunctionName  string              `json:"function_name,omitempty"`
+	InputSchema   FunctionInputSchema `json:"input_schema,omitempty"`
+	OutputSchema  json.RawMessage     `json:"output_schema,omitempty"`
+}
+
+type FunctionRouteUpdateRequest struct {
+	AgentUuid     string              `json:"agent_uuid,omitempty"`
+	Description   string              `json:"description,omitempty"`
+	FaasName      string              `json:"faas_name,omitempty"`
+	FaasNamespace string              `json:"faas_namespace,omitempty"`
+	FunctionName  string              `json:"function_name,omitempty"`
+	FunctionUuid  string              `json:"function_uuid,omitempty"`
+	InputSchema   FunctionInputSchema `json:"input_schema,omitempty"`
+	OutputSchema  json.RawMessage     `json:"output_schema,omitempty"`
 }
 
 type genAIAgentKBRoot struct {
@@ -1415,6 +1463,80 @@ func (s *GenAIServiceOp) ListAgentsByOpenAIAPIKey(ctx context.Context, openaiApi
 		resp.Meta = m
 	}
 	return root.Agents, resp, nil
+}
+
+// Attaches a functionroute to an agent.
+func (g *GenAIServiceOp) CreateFunctionRoute(ctx context.Context, id string, create *FunctionRouteCreateRequest) (*Agent, *Response, error) {
+	path := fmt.Sprintf(functionRouteBasePath, id)
+
+	if create.AgentUuid == "" {
+		return nil, nil, fmt.Errorf("AgentUuid is required")
+	}
+	if create.Description == "" {
+		return nil, nil, fmt.Errorf("Description is required")
+	}
+	if create.FaasName == "" {
+		return nil, nil, fmt.Errorf("FaasName is required")
+	}
+	if create.FaasNamespace == "" {
+		return nil, nil, fmt.Errorf("FaasNamespace is required")
+	}
+	if create.FunctionName == "" {
+		return nil, nil, fmt.Errorf("FunctionName is required")
+	}
+	if len(create.InputSchema.Parameters) == 0 {
+		return nil, nil, fmt.Errorf("InputSchema is required")
+	}
+
+	req, err := g.client.NewRequest(ctx, http.MethodPost, path, create)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIAgentRoot)
+	resp, err := g.client.Do(ctx, req, root)
+
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Agent, resp, nil
+}
+
+// Deletes a functionroute to an agent.
+func (g *GenAIServiceOp) DeleteFunctionRoute(ctx context.Context, agent_id string, function_id string) (*Agent, *Response, error) {
+	path := fmt.Sprintf(UpdateFunctionRoutePath, agent_id, function_id)
+	req, err := g.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIAgentRoot)
+	resp, err := g.client.Do(ctx, req, root)
+
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Agent, resp, nil
+}
+
+// Updates a functionroute to an agent.
+func (g *GenAIServiceOp) UpdateFunctionRoute(ctx context.Context, agent_id string, function_id string, update *FunctionRouteUpdateRequest) (*Agent, *Response, error) {
+	path := fmt.Sprintf(UpdateFunctionRoutePath, agent_id, function_id)
+	req, err := g.client.NewRequest(ctx, http.MethodPut, path, update)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIAgentRoot)
+	resp, err := g.client.Do(ctx, req, root)
+
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Agent, resp, nil
 }
 
 func (a Agent) String() string {

@@ -231,7 +231,61 @@ var agentResponse = `
 				"agent_chatbot_identifier": "dsfgbfsdsadsfbgfdfvsc"
 			}
 		],
-		"retrieval_method": "RETRIEVAL_METHOD_NONE"
+		"retrieval_method": "RETRIEVAL_METHOD_NONE",
+		"functions": [
+        {
+            "name": "godo-test-function",
+            "description": "Creating Function Route",
+            "faas_name": "godo-test-faasname",
+            "faas_namespace": "fn-00000000-0000-0000-0000-000000000000",
+            "input_schema": {
+                "parameters": [
+                    {
+                        "name": "zipCode",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": false,
+                        "description": "The ZIP code for which to fetch the weather"
+                    },
+                    {
+                        "name": "measurement",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "F",
+                                "C"
+                            ]
+                        },
+                        "required": false,
+                        "description": "The measurement unit for temperature (F or C)"
+                    }
+                ]
+            },
+            "output_schema": {
+                "properties": [
+                    {
+                        "name": "temperature",
+                        "type": "number",
+                        "description": "The temperature for the specified location"
+                    },
+                    {
+                        "name": "measurement",
+                        "type": "string",
+                        "description": "The measurement unit used for the temperature (F or C)"
+                    },
+                    {
+                        "name": "conditions",
+                        "type": "string",
+                        "description": "A description of the current weather conditions (Sunny, Cloudy, etc)"
+                    }
+                ]
+            }
+        }
+    ]
+		
 	}
 }
 `
@@ -273,7 +327,60 @@ var agentUpdateResponse = `
 		},
 		"route_created_at": "0001-01-01T00:00:00Z",
 		"user_id": "18793",
-		"retrieval_method": "RETRIEVAL_METHOD_NONE"
+		"retrieval_method": "RETRIEVAL_METHOD_NONE",
+		"functions": [
+        {
+            "name": "godo-test-function",
+            "description": "Updating Function Route",
+            "faas_name": "godo-test-faasname",
+            "faas_namespace": "fn-00000000-0000-0000-0000-000000000000",
+            "input_schema": {
+                "parameters": [
+                    {
+                        "name": "zipCode",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": false,
+                        "description": "The ZIP code for which to fetch the weather"
+                    },
+                    {
+                        "name": "measurement",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "F",
+                                "C"
+                            ]
+                        },
+                        "required": false,
+                        "description": "The measurement unit for temperature (F or C)"
+                    }
+                ]
+            },
+            "output_schema": {
+                "properties": [
+                    {
+                        "name": "temperature",
+                        "type": "number",
+                        "description": "The temperature for the specified location"
+                    },
+                    {
+                        "name": "measurement",
+                        "type": "string",
+                        "description": "The measurement unit used for the temperature (F or C)"
+                    },
+                    {
+                        "name": "conditions",
+                        "type": "string",
+                        "description": "A description of the current weather conditions (Sunny, Cloudy, etc)"
+                    }
+                ]
+            }
+        }
+    ]
 	}
 }
 `
@@ -1633,4 +1740,141 @@ func TestListAgentsByOpenAIAPIKey(t *testing.T) {
 	assert.Equal(t, 2, resp.Meta.Total)
 	assert.NotNil(t, resp.Links)
 	assert.Equal(t, "https://api.digitalocean.com/v2/gen-ai/openai/keys?page=1&per_page=1", resp.Links.Pages.First)
+}
+
+func TestCreateFunctionRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/functions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		// Respond with an agent object that includes a non-empty functions array
+		fmt.Fprint(w, agentResponse)
+	})
+
+	req := &FunctionRouteCreateRequest{
+		Description:   "Creating Function Route",
+		AgentUuid:     "00000000-0000-0000-0000-000000000000",
+		FaasName:      "godo-test-faasname",
+		FaasNamespace: "fn-00000000-0000-0000-0000-000000000000",
+		InputSchema: FunctionInputSchema{
+			Parameters: []OpenAPIParameterSchema{
+				{
+					Name: "zipCode",
+					In:   "query",
+					Schema: NestedSchema{
+						Type: "string",
+					},
+					Required:    false,
+					Description: "The ZIP code for which to fetch the weather",
+				},
+				{
+					Name: "measurement",
+					In:   "query",
+					Schema: NestedSchema{
+						Type: "string",
+						Enum: []string{"F", "C"},
+					},
+					Required:    false,
+					Description: "The measurement unit for temperature (F or C)",
+				},
+			},
+		},
+		FunctionName: "godo-test-function",
+		OutputSchema: json.RawMessage(`{
+  "properties": [
+    {
+      "name": "temperature",
+      "type": "number",
+      "description": "The temperature for the specified location"
+    },
+    {
+      "name": "measurement",
+      "type": "string",
+      "description": "The measurement unit used for the temperature (F or C)"
+    },
+    {
+      "name": "conditions",
+      "type": "string",
+      "description": "A description of the current weather conditions (Sunny, Cloudy, etc)"
+    }
+  ]
+}`),
+	}
+
+	agent, res, err := client.GenAI.CreateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", req)
+	if err != nil {
+		t.Errorf("GenAI.Create returned error: %v", err)
+	}
+
+	assert.NoError(t, err)
+	assert.Equal(t, 200, res.Response.StatusCode)
+	t.Log(agent)
+	assert.Equal(t, req.FunctionName, agent.Functions[0].Name)
+}
+
+func TestUpdateFunctionRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/functions/00000000-0000-0000-0000-000000000000", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, agentUpdateResponse)
+	})
+
+	req := &FunctionRouteUpdateRequest{
+		Description: "Updating Function Route",
+		InputSchema: FunctionInputSchema{
+			Parameters: []OpenAPIParameterSchema{
+				{
+					Name: "zipCode",
+					In:   "query",
+					Schema: NestedSchema{
+						Type: "string",
+					},
+					Required:    false,
+					Description: "The ZIP code for which to fetch the weather",
+				},
+				{
+					Name: "measurement",
+					In:   "query",
+					Schema: NestedSchema{
+						Type: "string",
+						Enum: []string{"F", "C"},
+					},
+					Required:    false,
+					Description: "The measurement unit for temperature (F or C)",
+				},
+			},
+		},
+		OutputSchema: json.RawMessage(`{
+            "properties": [
+                {
+                    "name": "temperature",
+                    "type": "number",
+                    "description": "The temperature for the specified location"
+                }
+            ]
+        }`),
+	}
+
+	agent, resp, err := client.GenAI.UpdateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, req.Description, agent.Functions[0].Description)
+}
+
+func TestDeleteFunctionRoute(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/agents/00000000-0000-0000-0000-000000000000/functions/00000000-0000-0000-0000-000000000000", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{}`)
+	})
+
+	_, resp, err := client.GenAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
 }
