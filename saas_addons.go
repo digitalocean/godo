@@ -239,10 +239,6 @@ type saasAddonsAppDetailsRoot struct {
 	App *SaasAddonsAppDetails `json:"app"`
 }
 
-type saasAddonsPublicAppRoot struct {
-	App *SaasAddonsPublicApp `json:"app"`
-}
-
 type saasAddonsPublicResourcesRoot struct {
 	Resources []*SaasAddonsPublicResource `json:"resources"`
 }
@@ -251,17 +247,21 @@ type saasAddonsPublicResourceRoot struct {
 	Resource *SaasAddonsPublicResource `json:"resource"`
 }
 
-type saasAddonsDimensionsRoot struct {
-	Dimensions []*SaasAddonsDimension `json:"dimensions"`
+// CreateAddonRequest represents the request for creating an addon
+type CreateAddonRequest struct {
+	AppSlug         string                        `json:"app_slug"`
+	PlanSlug        string                        `json:"plan_slug"`
+	Name            string                        `json:"name"`
+	Metadata        []*SaasAddonsResourceMetadata `json:"metadata,omitempty"`
+	LinkedDropletID uint64                        `json:"linked_droplet_id,omitempty"`
+	FleetUUID       string                        `json:"fleet_uuid,omitempty"`
 }
 
-type saasAddonsDimensionVolumesRoot struct {
-	DimensionVolumes []*SaasAddonsDimensionVolume `json:"dimension_volumes"`
+// UpdateAddonRequest represents the request for updating an addon
+type UpdateAddonRequest struct {
+	Name string `json:"name"`
 }
 
-type saasAddonsPlanFeaturePricesRoot struct {
-	PlanFeaturePrices []*SaasAddonsPlanFeaturePrice `json:"plan_feature_prices"`
-}
 
 // GetAppBySlug returns an app by slug (public, no permissions needed)
 func (s *SaasAddonsServiceOp) GetAppBySlug(ctx context.Context, appSlug string) (*SaasAddonsApp, *Response, error) {
@@ -281,7 +281,7 @@ func (s *SaasAddonsServiceOp) GetAppBySlug(ctx context.Context, appSlug string) 
 	return root.App, resp, nil
 }
 
-// GetPlansByApp returns plans for an app (public, no permissions needed)
+// GetPlansByApp returns plans for an app
 func (s *SaasAddonsServiceOp) GetPlansByApp(ctx context.Context, appSlug string) ([]*SaasAddonsPlan, *Response, error) {
 	path := fmt.Sprintf("%s/apps/%s/plans", saasAddonsBasePath, appSlug)
 
@@ -407,24 +407,6 @@ func (s *SaasAddonsServiceOp) GetAddonMetadata(ctx context.Context, appSlug stri
 	return root, resp, nil
 }
 
-// GetAppsByVendor returns apps by vendor (public, no permissions needed)
-func (s *SaasAddonsServiceOp) GetAppsByVendor(ctx context.Context) ([]*SaasAddonsApp, *Response, error) {
-	path := fmt.Sprintf("%s/vendors/apps", saasAddonsBasePath)
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(saasAddonsAppsRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root.Apps, resp, nil
-}
-
 // CreateAddon creates an addon
 func (s *SaasAddonsServiceOp) CreateAddon(ctx context.Context, request *CreateAddonRequest) (*SaasAddonsPublicResource, *Response, error) {
 	path := fmt.Sprintf("%s/public/resources", saasAddonsBasePath)
@@ -494,19 +476,4 @@ func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context) ([]*SaasAddonsApp,
 	}
 
 	return root.Apps, resp, nil
-}
-
-// CreateAddonRequest represents the request for creating an addon
-type CreateAddonRequest struct {
-	AppSlug         string                        `json:"app_slug"`
-	PlanSlug        string                        `json:"plan_slug"`
-	Name            string                        `json:"name"`
-	Metadata        []*SaasAddonsResourceMetadata `json:"metadata,omitempty"`
-	LinkedDropletID uint64                        `json:"linked_droplet_id,omitempty"`
-	FleetUUID       string                        `json:"fleet_uuid,omitempty"`
-}
-
-// UpdateAddonRequest represents the request for updating an addon
-type UpdateAddonRequest struct {
-	Name string `json:"name"`
 }
