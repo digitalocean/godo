@@ -13,15 +13,15 @@ const saasAddonsBasePath = "v1/marketplace/add-ons"
 type SaasAddonsService interface {
 	GetAppBySlug(context.Context, string) (*SaasAddonsApp, *Response, error)
 	GetPlansByApp(context.Context, string) ([]*SaasAddonsPlan, *Response, error)
-	GetPublicInfoByApps(context.Context, *GetPublicInfoByAppsRequest) (*GetPublicInfoByAppsResponse, *Response, error)
+	GetAppsInfo(context.Context, *GetAppsInfoRequest) (*GetAppsInfoResponse, *Response, error)
 	GetAppFeatures(context.Context, string) ([]*SaasAddonsFeature, *Response, error)
 	GetAllApps(context.Context) ([]*SaasAddonsApp, *Response, error)
-	GetAppBySlugPublic(context.Context, string) (*SaasAddonsPublicApp, *Response, error)
-	GetAllResourcesPublic(context.Context) ([]*SaasAddonsPublicResource, *Response, error)
-	GetPublicResource(context.Context, string) (*SaasAddonsPublicResource, *Response, error)
-	CreateResourcePublic(context.Context, *CreateResourceRequest) (*SaasAddonsPublicResource, *Response, error)
-	UpdateResourcePublic(context.Context, string, *UpdateResourceRequest) (*SaasAddonsPublicResource, *Response, error)
-	DeprovisionResourcePublic(context.Context, string) (*Response, error)
+	GetAppDetails(context.Context, string) (*SaasAddonsAppDetails, *Response, error)
+	ListAddons(context.Context) ([]*SaasAddonsPublicResource, *Response, error)
+	GetAddon(context.Context, string) (*SaasAddonsPublicResource, *Response, error)
+	CreateAddon(context.Context, *CreateAddonRequest) (*SaasAddonsPublicResource, *Response, error)
+	UpdateAddon(context.Context, string, *UpdateAddonRequest) (*SaasAddonsPublicResource, *Response, error)
+	DeleteAddon(context.Context, string) (*Response, error)
 	GetAddonMetadata(context.Context, string) (*SaasAddonsAddonMetadata, *Response, error)
 }
 
@@ -74,6 +74,42 @@ type SaasAddonsFeature struct {
 	AppSlug     string    `json:"app_slug"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// SaasAddonsAppDetails represents detailed SaasAddons application information
+type SaasAddonsAppDetails struct {
+	ID               uint64                    `json:"id"`
+	Slug             string                    `json:"slug"`
+	Name             string                    `json:"name"`
+	Description      string                    `json:"description"`
+	Categories       []*SaasAddonsCategory     `json:"categories"`
+	Plans            []*SaasAddonsDetailedPlan `json:"plans"`
+	Metadata         []*SaasAddonsMetadata     `json:"metadata"`
+	ConfigVarsPrefix string                    `json:"config_vars_prefix"`
+}
+
+// SaasAddonsDetailedPlan represents a detailed SaasAddons plan
+type SaasAddonsDetailedPlan struct {
+	ID          uint64                           `json:"id"`
+	Slug        string                           `json:"slug"`
+	Name        string                           `json:"name"`
+	Description string                           `json:"description"`
+	Price       string                           `json:"price"`
+	Features    []*SaasAddonsDetailedPlanFeature `json:"features"`
+}
+
+// SaasAddonsDetailedPlanFeature represents a detailed SaasAddons plan feature
+type SaasAddonsDetailedPlanFeature struct {
+	ID          uint64 `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	DataType    string `json:"data_type"`
+}
+
+// SaasAddonsMetadata represents SaasAddons metadata
+type SaasAddonsMetadata struct {
+	Name     string `json:"name"`
+	DataType string `json:"data_type"`
 }
 
 // SaasAddonsPublicApp represents a public SaasAddons application
@@ -164,13 +200,13 @@ type SaasAddonsPlanFeaturePrice struct {
 	PricePerUnit      string `json:"price_per_unit"`
 }
 
-// GetPublicInfoByAppsRequest represents the request for getting public info by apps
-type GetPublicInfoByAppsRequest struct {
+// GetAppsInfoRequest represents the request for getting apps info
+type GetAppsInfoRequest struct {
 	AppSlugs []string `json:"app_slugs"`
 }
 
-// GetPublicInfoByAppsResponse represents the response for getting public info by apps
-type GetPublicInfoByAppsResponse struct {
+// GetAppsInfoResponse represents the response for getting apps info
+type GetAppsInfoResponse struct {
 	InfoByApp []*SaasAddonsInfoByApp `json:"info_by_app"`
 }
 
@@ -197,6 +233,10 @@ type saasAddonsPlansRoot struct {
 
 type saasAddonsFeaturesRoot struct {
 	Features []*SaasAddonsFeature `json:"features"`
+}
+
+type saasAddonsAppDetailsRoot struct {
+	App *SaasAddonsAppDetails `json:"app"`
 }
 
 type saasAddonsPublicAppRoot struct {
@@ -259,8 +299,8 @@ func (s *SaasAddonsServiceOp) GetPlansByApp(ctx context.Context, appSlug string)
 	return root.Plans, resp, nil
 }
 
-// GetPublicInfoByApps returns public info for multiple apps (public, no permissions needed)
-func (s *SaasAddonsServiceOp) GetPublicInfoByApps(ctx context.Context, request *GetPublicInfoByAppsRequest) (*GetPublicInfoByAppsResponse, *Response, error) {
+// GetAppsInfo returns info for multiple apps
+func (s *SaasAddonsServiceOp) GetAppsInfo(ctx context.Context, request *GetAppsInfoRequest) (*GetAppsInfoResponse, *Response, error) {
 	path := fmt.Sprintf("%s/apps/public_info", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, request)
@@ -268,7 +308,7 @@ func (s *SaasAddonsServiceOp) GetPublicInfoByApps(ctx context.Context, request *
 		return nil, nil, err
 	}
 
-	root := new(GetPublicInfoByAppsResponse)
+	root := new(GetAppsInfoResponse)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -295,8 +335,8 @@ func (s *SaasAddonsServiceOp) GetAppFeatures(ctx context.Context, appSlug string
 	return root.Features, resp, nil
 }
 
-// GetAppBySlugPublic returns an app by slug using the public endpoint
-func (s *SaasAddonsServiceOp) GetAppBySlugPublic(ctx context.Context, appSlug string) (*SaasAddonsPublicApp, *Response, error) {
+// GetAppDetails returns detailed app information
+func (s *SaasAddonsServiceOp) GetAppDetails(ctx context.Context, appSlug string) (*SaasAddonsAppDetails, *Response, error) {
 	path := fmt.Sprintf("%s/public/apps/%s", saasAddonsBasePath, appSlug)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -304,7 +344,7 @@ func (s *SaasAddonsServiceOp) GetAppBySlugPublic(ctx context.Context, appSlug st
 		return nil, nil, err
 	}
 
-	root := new(saasAddonsPublicAppRoot)
+	root := new(saasAddonsAppDetailsRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -313,8 +353,8 @@ func (s *SaasAddonsServiceOp) GetAppBySlugPublic(ctx context.Context, appSlug st
 	return root.App, resp, nil
 }
 
-// GetAllResourcesPublic returns all public resources
-func (s *SaasAddonsServiceOp) GetAllResourcesPublic(ctx context.Context) ([]*SaasAddonsPublicResource, *Response, error) {
+// ListAddons returns all addons
+func (s *SaasAddonsServiceOp) ListAddons(ctx context.Context) ([]*SaasAddonsPublicResource, *Response, error) {
 	path := fmt.Sprintf("%s/public/resources", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -331,8 +371,8 @@ func (s *SaasAddonsServiceOp) GetAllResourcesPublic(ctx context.Context) ([]*Saa
 	return root.Resources, resp, nil
 }
 
-// GetPublicResource returns a public resource by UUID
-func (s *SaasAddonsServiceOp) GetPublicResource(ctx context.Context, resourceUUID string) (*SaasAddonsPublicResource, *Response, error) {
+// GetAddon returns an addon by UUID
+func (s *SaasAddonsServiceOp) GetAddon(ctx context.Context, resourceUUID string) (*SaasAddonsPublicResource, *Response, error) {
 	path := fmt.Sprintf("%s/public/resources/%s", saasAddonsBasePath, resourceUUID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -385,8 +425,8 @@ func (s *SaasAddonsServiceOp) GetAppsByVendor(ctx context.Context) ([]*SaasAddon
 	return root.Apps, resp, nil
 }
 
-// CreateResourcePublic creates a resource using the public endpoint
-func (s *SaasAddonsServiceOp) CreateResourcePublic(ctx context.Context, request *CreateResourceRequest) (*SaasAddonsPublicResource, *Response, error) {
+// CreateAddon creates an addon
+func (s *SaasAddonsServiceOp) CreateAddon(ctx context.Context, request *CreateAddonRequest) (*SaasAddonsPublicResource, *Response, error) {
 	path := fmt.Sprintf("%s/public/resources", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, request)
@@ -403,8 +443,8 @@ func (s *SaasAddonsServiceOp) CreateResourcePublic(ctx context.Context, request 
 	return root.Resource, resp, nil
 }
 
-// UpdateResourcePublic updates a resource using the public endpoint
-func (s *SaasAddonsServiceOp) UpdateResourcePublic(ctx context.Context, resourceUUID string, request *UpdateResourceRequest) (*SaasAddonsPublicResource, *Response, error) {
+// UpdateAddon updates an addon
+func (s *SaasAddonsServiceOp) UpdateAddon(ctx context.Context, resourceUUID string, request *UpdateAddonRequest) (*SaasAddonsPublicResource, *Response, error) {
 	path := fmt.Sprintf("%s/public/resources/%s", saasAddonsBasePath, resourceUUID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, request)
@@ -421,8 +461,8 @@ func (s *SaasAddonsServiceOp) UpdateResourcePublic(ctx context.Context, resource
 	return root.Resource, resp, nil
 }
 
-// DeprovisionResourcePublic deprovisions a resource using the public endpoint
-func (s *SaasAddonsServiceOp) DeprovisionResourcePublic(ctx context.Context, resourceUUID string) (*Response, error) {
+// DeleteAddon deletes an addon
+func (s *SaasAddonsServiceOp) DeleteAddon(ctx context.Context, resourceUUID string) (*Response, error) {
 	path := fmt.Sprintf("%s/public/resources/%s", saasAddonsBasePath, resourceUUID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
@@ -456,8 +496,8 @@ func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context) ([]*SaasAddonsApp,
 	return root.Apps, resp, nil
 }
 
-// CreateResourceRequest represents the request for creating a resource
-type CreateResourceRequest struct {
+// CreateAddonRequest represents the request for creating an addon
+type CreateAddonRequest struct {
 	AppSlug         string                        `json:"app_slug"`
 	PlanSlug        string                        `json:"plan_slug"`
 	Name            string                        `json:"name"`
@@ -466,7 +506,7 @@ type CreateResourceRequest struct {
 	FleetUUID       string                        `json:"fleet_uuid,omitempty"`
 }
 
-// UpdateResourceRequest represents the request for updating a resource
-type UpdateResourceRequest struct {
+// UpdateAddonRequest represents the request for updating an addon
+type UpdateAddonRequest struct {
 	Name string `json:"name"`
 }
