@@ -160,6 +160,13 @@ func TestApp_GetUpdatedAt(tt *testing.T) {
 	a.GetUpdatedAt()
 }
 
+func TestApp_GetVPC(tt *testing.T) {
+	a := &App{}
+	a.GetVPC()
+	a = nil
+	a.GetVPC()
+}
+
 func TestAppAlert_GetComponentName(tt *testing.T) {
 	a := &AppAlert{}
 	a.GetComponentName()
@@ -1336,6 +1343,13 @@ func TestAppMaintenanceSpec_GetOfflinePageURL(tt *testing.T) {
 	a.GetOfflinePageURL()
 }
 
+func TestAppPeeredVpcSpec_GetName(tt *testing.T) {
+	a := &AppPeeredVpcSpec{}
+	a.GetName()
+	a = nil
+	a.GetName()
+}
+
 func TestAppProposeResponse_GetAppCost(tt *testing.T) {
 	a := &AppProposeResponse{}
 	a.GetAppCost()
@@ -1847,6 +1861,13 @@ func TestAppSpec_GetStaticSites(tt *testing.T) {
 	a.GetStaticSites()
 }
 
+func TestAppSpec_GetVpc(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetVpc()
+	a = nil
+	a.GetVpc()
+}
+
 func TestAppSpec_GetWorkers(tt *testing.T) {
 	a := &AppSpec{}
 	a.GetWorkers()
@@ -2041,6 +2062,41 @@ func TestAppVariableDefinition_GetValue(tt *testing.T) {
 	a.GetValue()
 	a = nil
 	a.GetValue()
+}
+
+func TestAppVPC_GetEgressIPs(tt *testing.T) {
+	a := &AppVPC{}
+	a.GetEgressIPs()
+	a = nil
+	a.GetEgressIPs()
+}
+
+func TestAppVPC_GetID(tt *testing.T) {
+	a := &AppVPC{}
+	a.GetID()
+	a = nil
+	a.GetID()
+}
+
+func TestAppVPCEgressIP_GetIP(tt *testing.T) {
+	a := &AppVPCEgressIP{}
+	a.GetIP()
+	a = nil
+	a.GetIP()
+}
+
+func TestAppVpcSpec_GetID(tt *testing.T) {
+	a := &AppVpcSpec{}
+	a.GetID()
+	a = nil
+	a.GetID()
+}
+
+func TestAppVpcSpec_GetPeeredVpcs(tt *testing.T) {
+	a := &AppVpcSpec{}
+	a.GetPeeredVpcs()
+	a = nil
+	a.GetPeeredVpcs()
 }
 
 func TestAppWorkerSpec_GetAlerts(tt *testing.T) {

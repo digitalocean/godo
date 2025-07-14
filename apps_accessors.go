@@ -181,6 +181,14 @@ func (a *App) GetUpdatedAt() time.Time {
 	return a.UpdatedAt
 }
 
+// GetVPC returns the VPC field.
+func (a *App) GetVPC() *AppVPC {
+	if a == nil {
+		return nil
+	}
+	return a.VPC
+}
+
 // GetComponentName returns the ComponentName field.
 func (a *AppAlert) GetComponentName() string {
 	if a == nil {
@@ -1501,6 +1509,14 @@ func (a *AppMaintenanceSpec) GetEnabled() bool {
 	return a.Enabled
 }
 
+// GetName returns the Name field.
+func (a *AppPeeredVpcSpec) GetName() string {
+	if a == nil {
+		return ""
+	}
+	return a.Name
+}
+
 // GetAppID returns the AppID field.
 func (a *AppProposeRequest) GetAppID() string {
 	if a == nil {
@@ -2109,6 +2125,14 @@ func (a *AppSpec) GetStaticSites() []*AppStaticSiteSpec {
 	return a.StaticSites
 }
 
+// GetVpc returns the Vpc field.
+func (a *AppSpec) GetVpc() *AppVpcSpec {
+	if a == nil {
+		return nil
+	}
+	return a.Vpc
+}
+
 // GetWorkers returns the Workers field.
 func (a *AppSpec) GetWorkers() []*AppWorkerSpec {
 	if a == nil {
@@ -2331,6 +2355,46 @@ func (a *AppVariableDefinition) GetValue() string {
 		return ""
 	}
 	return a.Value
+}
+
+// GetEgressIPs returns the EgressIPs field.
+func (a *AppVPC) GetEgressIPs() []*AppVPCEgressIP {
+	if a == nil {
+		return nil
+	}
+	return a.EgressIPs
+}
+
+// GetID returns the ID field.
+func (a *AppVPC) GetID() string {
+	if a == nil {
+		return ""
+	}
+	return a.ID
+}
+
+// GetIP returns the IP field.
+func (a *AppVPCEgressIP) GetIP() string {
+	if a == nil {
+		return ""
+	}
+	return a.IP
+}
+
+// GetID returns the ID field.
+func (a *AppVpcSpec) GetID() string {
+	if a == nil {
+		return ""
+	}
+	return a.ID
+}
+
+// GetPeeredVpcs returns the PeeredVpcs field.
+func (a *AppVpcSpec) GetPeeredVpcs() []*AppPeeredVpcSpec {
+	if a == nil {
+		return nil
+	}
+	return a.PeeredVpcs
 }
 
 // GetAlerts returns the Alerts field.
