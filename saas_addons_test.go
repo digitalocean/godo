@@ -148,21 +148,21 @@ func TestSaasAddonsService_GetAddon(t *testing.T) {
 	}
 }
 
-func TestSaasAddonsService_CreateAddon(t *testing.T) {
+func TestSaasAddonsService_InstallAddon(t *testing.T) {
 	setup()
 	defer teardown()
 
 	mux.HandleFunc("/v1/marketplace/add-ons/public/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 
-		var req CreateAddonRequest
+		var req InstallAddonRequest
 		json.NewDecoder(r.Body).Decode(&req)
 
 		if req.AppSlug != "test-app" {
-			t.Errorf("CreateAddon request AppSlug = %v, expected test-app", req.AppSlug)
+			t.Errorf("InstallAddon request AppSlug = %v, expected test-app", req.AppSlug)
 		}
 		if req.PlanSlug != "basic-plan" {
-			t.Errorf("CreateAddon request PlanSlug = %v, expected basic-plan", req.PlanSlug)
+			t.Errorf("InstallAddon request PlanSlug = %v, expected basic-plan", req.PlanSlug)
 		}
 
 		json.NewEncoder(w).Encode(&saasAddonsPublicResourceRoot{
@@ -177,19 +177,19 @@ func TestSaasAddonsService_CreateAddon(t *testing.T) {
 		})
 	})
 
-	req := &CreateAddonRequest{
+	req := &InstallAddonRequest{
 		AppSlug:  "test-app",
 		PlanSlug: "basic-plan",
 		Name:     "Test Resource 1",
 	}
 
-	resource, _, err := client.SaasAddons.CreateAddon(ctx, req)
+	resource, _, err := client.SaasAddons.InstallAddon(ctx, req)
 	if err != nil {
-		t.Errorf("SaasAddons.CreateAddon returned error: %v", err)
+		t.Errorf("SaasAddons.InstallAddon returned error: %v", err)
 	}
 
 	if resource.UUID != "resource-1" {
-		t.Errorf("SaasAddons.CreateAddon returned UUID %s, expected resource-1", resource.UUID)
+		t.Errorf("SaasAddons.InstallAddon returned UUID %s, expected resource-1", resource.UUID)
 	}
 }
 
@@ -275,14 +275,14 @@ func TestSaasAddonsService_GetAddonMetadata(t *testing.T) {
 	}
 }
 
-func TestSaasAddonsService_CreateAddonRequestValidation(t *testing.T) {
+func TestSaasAddonsService_InstallAddonRequestValidation(t *testing.T) {
 	setup()
 	defer teardown()
 
 	mux.HandleFunc("/v1/marketplace/add-ons/public/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 
-		var req CreateAddonRequest
+		var req InstallAddonRequest
 		json.NewDecoder(r.Body).Decode(&req)
 
 		if req.AppSlug == "" {
@@ -307,17 +307,17 @@ func TestSaasAddonsService_CreateAddonRequestValidation(t *testing.T) {
 	})
 
 	// Test with missing AppSlug
-	req := &CreateAddonRequest{
+	req := &InstallAddonRequest{
 		PlanSlug: "basic-plan",
 		Name:     "Test Resource 1",
 	}
 
-	_, resp, err := client.SaasAddons.CreateAddon(ctx, req)
+	_, resp, err := client.SaasAddons.InstallAddon(ctx, req)
 	if err == nil {
-		t.Errorf("SaasAddons.CreateAddon should have returned an error for missing AppSlug")
+		t.Errorf("SaasAddons.InstallAddon should have returned an error for missing AppSlug")
 	}
 	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("SaasAddons.CreateAddon returned status %d, expected %d", resp.StatusCode, http.StatusBadRequest)
+		t.Errorf("SaasAddons.InstallAddon returned status %d, expected %d", resp.StatusCode, http.StatusBadRequest)
 	}
 }
 

@@ -15,7 +15,7 @@ type SaasAddonsService interface {
 	GetAppDetails(context.Context, string) (*SaasAddonsAppDetails, *Response, error)
 	ListAddons(context.Context) ([]*SaasAddonsPublicResource, *Response, error)
 	GetAddon(context.Context, string) (*SaasAddonsPublicResource, *Response, error)
-	CreateAddon(context.Context, *CreateAddonRequest) (*SaasAddonsPublicResource, *Response, error)
+	InstallAddon(context.Context, *InstallAddonRequest) (*SaasAddonsPublicResource, *Response, error)
 	UpdateAddon(context.Context, string, *UpdateAddonRequest) (*SaasAddonsPublicResource, *Response, error)
 	DeleteAddon(context.Context, string) (*Response, error)
 	GetAddonMetadata(context.Context, string) (*SaasAddonsAddonMetadata, *Response, error)
@@ -231,8 +231,8 @@ type saasAddonsPublicResourceRoot struct {
 	Resource *SaasAddonsPublicResource `json:"resource"`
 }
 
-// CreateAddonRequest represents the request for creating an addon
-type CreateAddonRequest struct {
+// InstallAddonRequest represents the request for creating an addon
+type InstallAddonRequest struct {
 	AppSlug         string                        `json:"app_slug"`
 	PlanSlug        string                        `json:"plan_slug"`
 	Name            string                        `json:"name"`
@@ -319,7 +319,7 @@ func (s *SaasAddonsServiceOp) GetAddonMetadata(ctx context.Context, appSlug stri
 }
 
 // CreateAddon creates an addon
-func (s *SaasAddonsServiceOp) CreateAddon(ctx context.Context, request *CreateAddonRequest) (*SaasAddonsPublicResource, *Response, error) {
+func (s *SaasAddonsServiceOp) InstallAddon(ctx context.Context, request *InstallAddonRequest) (*SaasAddonsPublicResource, *Response, error) {
 	path := fmt.Sprintf("%s/public/resources", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, request)
