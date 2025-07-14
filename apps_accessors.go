@@ -1509,14 +1509,6 @@ func (a *AppMaintenanceSpec) GetEnabled() bool {
 	return a.Enabled
 }
 
-// GetName returns the Name field.
-func (a *AppPeeredVpcSpec) GetName() string {
-	if a == nil {
-		return ""
-	}
-	return a.Name
-}
-
 // GetAppID returns the AppID field.
 func (a *AppProposeRequest) GetAppID() string {
 	if a == nil {
@@ -2387,14 +2379,6 @@ func (a *AppVpcSpec) GetID() string {
 		return ""
 	}
 	return a.ID
-}
-
-// GetPeeredVpcs returns the PeeredVpcs field.
-func (a *AppVpcSpec) GetPeeredVpcs() []*AppPeeredVpcSpec {
-	if a == nil {
-		return nil
-	}
-	return a.PeeredVpcs
 }
 
 // GetAlerts returns the Alerts field.

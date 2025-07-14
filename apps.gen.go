@@ -508,12 +508,6 @@ type AppMaintenanceSpec struct {
 	OfflinePageURL string `json:"offline_page_url,omitempty"`
 }
 
-// AppPeeredVpcSpec Configuration of the target VPC.
-type AppPeeredVpcSpec struct {
-	// The name of the VPC.
-	Name string `json:"name,omitempty"`
-}
-
 // AppRouteSpec struct for AppRouteSpec
 type AppRouteSpec struct {
 	// (Deprecated) An HTTP path prefix. Paths must start with / and must be unique across all components within an app.
@@ -683,8 +677,6 @@ type AppVPCEgressIP struct {
 
 // AppVpcSpec Configuration of VPC.
 type AppVpcSpec struct {
-	// The list of target vpcs.
-	PeeredVpcs []*AppPeeredVpcSpec `json:"peered_vpcs,omitempty"`
 	// The id of the target VPC, in UUID format.
 	ID string `json:"id,omitempty"`
 }

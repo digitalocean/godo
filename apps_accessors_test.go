@@ -1343,13 +1343,6 @@ func TestAppMaintenanceSpec_GetOfflinePageURL(tt *testing.T) {
 	a.GetOfflinePageURL()
 }
 
-func TestAppPeeredVpcSpec_GetName(tt *testing.T) {
-	a := &AppPeeredVpcSpec{}
-	a.GetName()
-	a = nil
-	a.GetName()
-}
-
 func TestAppProposeResponse_GetAppCost(tt *testing.T) {
 	a := &AppProposeResponse{}
 	a.GetAppCost()
@@ -2090,13 +2083,6 @@ func TestAppVpcSpec_GetID(tt *testing.T) {
 	a.GetID()
 	a = nil
 	a.GetID()
-}
-
-func TestAppVpcSpec_GetPeeredVpcs(tt *testing.T) {
-	a := &AppVpcSpec{}
-	a.GetPeeredVpcs()
-	a = nil
-	a.GetPeeredVpcs()
 }
 
 func TestAppWorkerSpec_GetAlerts(tt *testing.T) {
