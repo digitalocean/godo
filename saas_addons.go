@@ -219,18 +219,6 @@ type saasAddonsAppsRoot struct {
 	Apps []*SaasAddonsApp `json:"apps"`
 }
 
-type saasAddonsAppRoot struct {
-	App *SaasAddonsApp `json:"app"`
-}
-
-type saasAddonsPlansRoot struct {
-	Plans []*SaasAddonsPlan `json:"plans"`
-}
-
-type saasAddonsFeaturesRoot struct {
-	Features []*SaasAddonsFeature `json:"features"`
-}
-
 type saasAddonsAppDetailsRoot struct {
 	App *SaasAddonsAppDetails `json:"app"`
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 )
+
 func TestSaasAddonsService_GetAllApps(t *testing.T) {
 	setup()
 	defer teardown()
@@ -46,7 +47,7 @@ func TestSaasAddonsService_GetAllApps(t *testing.T) {
 	}
 
 	if apps[0].ID != "1" {
-		t.Errorf("SaasAddons.GetAllApps returned first app ID %d, expected 1", apps[0].ID)
+		t.Errorf("SaasAddons.GetAllApps returned first app ID %s, expected 1", apps[0].ID)
 	}
 }
 
@@ -73,7 +74,7 @@ func TestSaasAddonsService_GetAppDetails(t *testing.T) {
 	}
 
 	if app.ID != "1" {
-		t.Errorf("SaasAddons.GetAppDetails returned ID %d, expected 1", app.ID)
+		t.Errorf("SaasAddons.GetAppDetails returned ID %s, expected 1", app.ID)
 	}
 }
 
