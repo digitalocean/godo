@@ -6,160 +6,6 @@ import (
 	"testing"
 	"time"
 )
-
-func TestSaasAddonsService_GetAppBySlug(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/test-app", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		json.NewEncoder(w).Encode(&saasAddonsAppRoot{
-			App: &SaasAddonsApp{
-				ID:          1,
-				Slug:        "test-app",
-				Name:        "Test App",
-				Description: "Test application",
-				VendorUUID:  "vendor-123",
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
-			},
-		})
-	})
-
-	app, _, err := client.SaasAddons.GetAppBySlug(ctx, "test-app")
-	if err != nil {
-		t.Errorf("SaasAddons.GetAppBySlug returned error: %v", err)
-	}
-
-	if app.ID != 1 {
-		t.Errorf("SaasAddons.GetAppBySlug returned ID %d, expected 1", app.ID)
-	}
-	if app.Slug != "test-app" {
-		t.Errorf("SaasAddons.GetAppBySlug returned slug %s, expected test-app", app.Slug)
-	}
-}
-
-func TestSaasAddonsService_GetPlansByApp(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/test-app/plans", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		json.NewEncoder(w).Encode(&saasAddonsPlansRoot{
-			Plans: []*SaasAddonsPlan{
-				{
-					ID:          1,
-					Slug:        "basic-plan",
-					Name:        "Basic Plan",
-					Description: "Basic plan description",
-					Price:       "9.99",
-					AppSlug:     "test-app",
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
-				},
-			},
-		})
-	})
-
-	plans, _, err := client.SaasAddons.GetPlansByApp(ctx, "test-app")
-	if err != nil {
-		t.Errorf("SaasAddons.GetPlansByApp returned error: %v", err)
-	}
-
-	if len(plans) != 1 {
-		t.Errorf("SaasAddons.GetPlansByApp returned %d plans, expected 1", len(plans))
-	}
-
-	if plans[0].ID != 1 {
-		t.Errorf("SaasAddons.GetPlansByApp returned ID %d, expected 1", plans[0].ID)
-	}
-	if plans[0].Price != "9.99" {
-		t.Errorf("SaasAddons.GetPlansByApp returned price %s, expected 9.99", plans[0].Price)
-	}
-}
-
-func TestSaasAddonsService_GetAppsInfo(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/public_info", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodPost)
-		json.NewEncoder(w).Encode(&GetAppsInfoResponse{
-			InfoByApp: []*SaasAddonsInfoByApp{
-				{
-					AppSlug: "test-app",
-					TOS:     "https://example.com/tos",
-					EULA:    "https://example.com/eula",
-					Plans: []*SaasAddonsPlan{
-						{
-							ID:          1,
-							Slug:        "basic-plan",
-							Name:        "Basic Plan",
-							Description: "Basic plan description",
-							Price:       "9.99",
-							AppSlug:     "test-app",
-							CreatedAt:   time.Now(),
-							UpdatedAt:   time.Now(),
-						},
-					},
-				},
-			},
-		})
-	})
-
-	req := &GetAppsInfoRequest{
-		AppSlugs: []string{"test-app"},
-	}
-
-	resp, _, err := client.SaasAddons.GetAppsInfo(ctx, req)
-	if err != nil {
-		t.Errorf("SaasAddons.GetAppsInfo returned error: %v", err)
-	}
-
-	if len(resp.InfoByApp) != 1 {
-		t.Errorf("SaasAddons.GetAppsInfo returned %d apps, expected 1", len(resp.InfoByApp))
-	}
-
-	if resp.InfoByApp[0].AppSlug != "test-app" {
-		t.Errorf("SaasAddons.GetAppsInfo returned app slug %s, expected test-app", resp.InfoByApp[0].AppSlug)
-	}
-}
-
-func TestSaasAddonsService_GetAppFeatures(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/test-app/features", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		json.NewEncoder(w).Encode(&saasAddonsFeaturesRoot{
-			Features: []*SaasAddonsFeature{
-				{
-					ID:          1,
-					Name:        "Feature 1",
-					Description: "First feature",
-					DataType:    "string",
-					AppSlug:     "test-app",
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
-				},
-			},
-		})
-	})
-
-	features, _, err := client.SaasAddons.GetAppFeatures(ctx, "test-app")
-	if err != nil {
-		t.Errorf("SaasAddons.GetAppFeatures returned error: %v", err)
-	}
-
-	if len(features) != 1 {
-		t.Errorf("SaasAddons.GetAppFeatures returned %d features, expected 1", len(features))
-	}
-
-	if features[0].ID != 1 {
-		t.Errorf("SaasAddons.GetAppFeatures returned ID %d, expected 1", features[0].ID)
-	}
-}
-
 func TestSaasAddonsService_GetAllApps(t *testing.T) {
 	setup()
 	defer teardown()
@@ -169,7 +15,7 @@ func TestSaasAddonsService_GetAllApps(t *testing.T) {
 		json.NewEncoder(w).Encode(&saasAddonsAppsRoot{
 			Apps: []*SaasAddonsApp{
 				{
-					ID:          1,
+					ID:          "1",
 					Slug:        "test-app-1",
 					Name:        "Test App 1",
 					Description: "First test application",
@@ -178,7 +24,7 @@ func TestSaasAddonsService_GetAllApps(t *testing.T) {
 					UpdatedAt:   time.Now(),
 				},
 				{
-					ID:          2,
+					ID:          "2",
 					Slug:        "test-app-2",
 					Name:        "Test App 2",
 					Description: "Second test application",
@@ -199,7 +45,7 @@ func TestSaasAddonsService_GetAllApps(t *testing.T) {
 		t.Errorf("SaasAddons.GetAllApps returned %d apps, expected 2", len(apps))
 	}
 
-	if apps[0].ID != 1 {
+	if apps[0].ID != "1" {
 		t.Errorf("SaasAddons.GetAllApps returned first app ID %d, expected 1", apps[0].ID)
 	}
 }
@@ -212,7 +58,7 @@ func TestSaasAddonsService_GetAppDetails(t *testing.T) {
 		testMethod(t, r, http.MethodGet)
 		json.NewEncoder(w).Encode(&saasAddonsAppDetailsRoot{
 			App: &SaasAddonsAppDetails{
-				ID:               1,
+				ID:               "1",
 				Slug:             "test-app",
 				Name:             "Test App",
 				Description:      "Test application",
@@ -226,7 +72,7 @@ func TestSaasAddonsService_GetAppDetails(t *testing.T) {
 		t.Errorf("SaasAddons.GetAppDetails returned error: %v", err)
 	}
 
-	if app.ID != 1 {
+	if app.ID != "1" {
 		t.Errorf("SaasAddons.GetAppDetails returned ID %d, expected 1", app.ID)
 	}
 }

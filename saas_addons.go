@@ -7,14 +7,10 @@ import (
 	"time"
 )
 
-const saasAddonsBasePath = "v1/marketplace/add-ons"
+const saasAddonsBasePath = "/api/v1/marketplace/add-ons"
 
 // SaasAddonsService is an interface for interacting with the SaasAddons/Marketplace Add-ons API
 type SaasAddonsService interface {
-	GetAppBySlug(context.Context, string) (*SaasAddonsApp, *Response, error)
-	GetPlansByApp(context.Context, string) ([]*SaasAddonsPlan, *Response, error)
-	GetAppsInfo(context.Context, *GetAppsInfoRequest) (*GetAppsInfoResponse, *Response, error)
-	GetAppFeatures(context.Context, string) ([]*SaasAddonsFeature, *Response, error)
 	GetAllApps(context.Context) ([]*SaasAddonsApp, *Response, error)
 	GetAppDetails(context.Context, string) (*SaasAddonsAppDetails, *Response, error)
 	ListAddons(context.Context) ([]*SaasAddonsPublicResource, *Response, error)
@@ -34,7 +30,7 @@ var _ SaasAddonsService = &SaasAddonsServiceOp{}
 
 // SaasAddonsApp represents a SaasAddons application
 type SaasAddonsApp struct {
-	ID          uint64                `json:"id"`
+	ID          string                `json:"id"`
 	Slug        string                `json:"slug"`
 	Name        string                `json:"name"`
 	Description string                `json:"description"`
@@ -47,14 +43,14 @@ type SaasAddonsApp struct {
 
 // SaasAddonsCategory represents a SaasAddons application category
 type SaasAddonsCategory struct {
-	ID   uint64 `json:"id"`
+	ID   string `json:"id"`
 	Name string `json:"name"`
 	Slug string `json:"slug"`
 }
 
 // SaasAddonsPlan represents a SaasAddons plan
 type SaasAddonsPlan struct {
-	ID          uint64               `json:"id"`
+	ID          string               `json:"id"`
 	Slug        string               `json:"slug"`
 	Name        string               `json:"name"`
 	Description string               `json:"description"`
@@ -67,7 +63,7 @@ type SaasAddonsPlan struct {
 
 // SaasAddonsFeature represents a SaasAddons feature
 type SaasAddonsFeature struct {
-	ID          uint64    `json:"id"`
+	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
 	DataType    string    `json:"data_type"`
@@ -78,7 +74,7 @@ type SaasAddonsFeature struct {
 
 // SaasAddonsAppDetails represents detailed SaasAddons application information
 type SaasAddonsAppDetails struct {
-	ID               uint64                    `json:"id"`
+	ID               string                    `json:"id"`
 	Slug             string                    `json:"slug"`
 	Name             string                    `json:"name"`
 	Description      string                    `json:"description"`
@@ -90,7 +86,7 @@ type SaasAddonsAppDetails struct {
 
 // SaasAddonsDetailedPlan represents a detailed SaasAddons plan
 type SaasAddonsDetailedPlan struct {
-	ID          uint64                           `json:"id"`
+	ID          string                           `json:"id"`
 	Slug        string                           `json:"slug"`
 	Name        string                           `json:"name"`
 	Description string                           `json:"description"`
@@ -100,7 +96,7 @@ type SaasAddonsDetailedPlan struct {
 
 // SaasAddonsDetailedPlanFeature represents a detailed SaasAddons plan feature
 type SaasAddonsDetailedPlanFeature struct {
-	ID          uint64 `json:"id"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	DataType    string `json:"data_type"`
@@ -114,7 +110,7 @@ type SaasAddonsMetadata struct {
 
 // SaasAddonsPublicApp represents a public SaasAddons application
 type SaasAddonsPublicApp struct {
-	ID               uint64                      `json:"id"`
+	ID               string                      `json:"id"`
 	Slug             string                      `json:"slug"`
 	Name             string                      `json:"name"`
 	Description      string                      `json:"description"`
@@ -126,7 +122,7 @@ type SaasAddonsPublicApp struct {
 
 // SaasAddonsPublicPlan represents a public SaasAddons plan
 type SaasAddonsPublicPlan struct {
-	ID          uint64                         `json:"id"`
+	ID          string                         `json:"id"`
 	Slug        string                         `json:"slug"`
 	Name        string                         `json:"name"`
 	Description string                         `json:"description"`
@@ -136,7 +132,7 @@ type SaasAddonsPublicPlan struct {
 
 // SaasAddonsPublicPlanFeature represents a public SaasAddons plan feature
 type SaasAddonsPublicPlanFeature struct {
-	ID          uint64 `json:"id"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	DataType    string `json:"data_type"`
@@ -260,79 +256,6 @@ type CreateAddonRequest struct {
 // UpdateAddonRequest represents the request for updating an addon
 type UpdateAddonRequest struct {
 	Name string `json:"name"`
-}
-
-
-// GetAppBySlug returns an app by slug (public, no permissions needed)
-func (s *SaasAddonsServiceOp) GetAppBySlug(ctx context.Context, appSlug string) (*SaasAddonsApp, *Response, error) {
-	path := fmt.Sprintf("%s/apps/%s", saasAddonsBasePath, appSlug)
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(saasAddonsAppRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root.App, resp, nil
-}
-
-// GetPlansByApp returns plans for an app
-func (s *SaasAddonsServiceOp) GetPlansByApp(ctx context.Context, appSlug string) ([]*SaasAddonsPlan, *Response, error) {
-	path := fmt.Sprintf("%s/apps/%s/plans", saasAddonsBasePath, appSlug)
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(saasAddonsPlansRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root.Plans, resp, nil
-}
-
-// GetAppsInfo returns info for multiple apps
-func (s *SaasAddonsServiceOp) GetAppsInfo(ctx context.Context, request *GetAppsInfoRequest) (*GetAppsInfoResponse, *Response, error) {
-	path := fmt.Sprintf("%s/apps/public_info", saasAddonsBasePath)
-
-	req, err := s.client.NewRequest(ctx, http.MethodPost, path, request)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(GetAppsInfoResponse)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root, resp, nil
-}
-
-// GetAppFeatures returns features for an app
-func (s *SaasAddonsServiceOp) GetAppFeatures(ctx context.Context, appSlug string) ([]*SaasAddonsFeature, *Response, error) {
-	path := fmt.Sprintf("%s/apps/%s/features", saasAddonsBasePath, appSlug)
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(saasAddonsFeaturesRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return root.Features, resp, nil
 }
 
 // GetAppDetails returns detailed app information
@@ -462,7 +385,7 @@ func (s *SaasAddonsServiceOp) DeleteAddon(ctx context.Context, resourceUUID stri
 
 // GetAllApps returns all live apps (public, no permissions needed)
 func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context) ([]*SaasAddonsApp, *Response, error) {
-	path := fmt.Sprintf("%s/apps/live", saasAddonsBasePath)
+	path := fmt.Sprintf("%s/apps", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
