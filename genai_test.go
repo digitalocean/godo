@@ -385,7 +385,7 @@ var agentUpdateResponse = `
 }
 `
 
-var agentModelsResponse = `
+var listAvailableModelsResponse = `
 {
 	"models": [
 		{
@@ -887,6 +887,27 @@ var listAgentsByOpenAIAPIKeyResponse = `
 }
 `
 
+var listDatacenterRegionsResponse = `
+{
+	"regions": [
+		{
+			"region": "tor1",
+			"inference_url": "https://tor1.gen-ai.digitalocean.com",
+			"serves_batch": true,
+			"serves_inference": true,
+			"stream_inference_url": "https://tor1.gen-ai.digitalocean.com/stream"
+		},
+		{
+			"region": "nyc3",
+			"inference_url": "https://nyc3.gen-ai.digitalocean.com",
+			"serves_batch": false,
+			"serves_inference": true,
+			"stream_inference_url": "https://nyc3.gen-ai.digitalocean.com/stream"
+		}
+	]
+}
+`
+
 func TestListAgents(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1128,36 +1149,6 @@ func TestUpdateAgentVisibility(t *testing.T) {
 	assert.Equal(t, res.Uuid, req.Uuid)
 	assert.Equal(t, res.Name, "My Agent")
 	assert.Equal(t, resp.Response.StatusCode, 200)
-}
-
-func TestListModels(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		testFormValues(t, r, values{
-			"page":     "1",
-			"per_page": "1",
-		})
-
-		fmt.Fprint(w, agentModelsResponse)
-	})
-
-	req := &ListOptions{
-		Page:    1,
-		PerPage: 1,
-	}
-
-	models, resp, err := client.GenAI.ListModels(ctx, req)
-	if err != nil {
-		t.Errorf("GenAI ListModels returned error: %v", err)
-	}
-
-	assert.Equal(t, models[0].Name, "Llama 3.3 Instruct (70B)")
-	expectedString := fmt.Sprintf("%v", models[0])
-	assert.Equal(t, resp.Response.StatusCode, 200)
-	assert.Equal(t, expectedString, models[0].String())
 }
 
 func TestListKnowledgeBases(t *testing.T) {
@@ -1876,5 +1867,66 @@ func TestDeleteFunctionRoute(t *testing.T) {
 
 	_, resp, err := client.GenAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestListAvailableModels(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "1",
+		})
+
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	req := &ListOptions{
+		Page:    1,
+		PerPage: 1,
+	}
+
+	models, resp, err := client.GenAI.ListAvailableModels(ctx, req)
+	if err != nil {
+		t.Fatalf("GenAI ListAvailableModels returned error: %v", err)
+	}
+
+	assert.Equal(t, "Llama 3.3 Instruct (70B)", models[0].Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", models[0].Uuid)
+	expectedString := fmt.Sprintf("%v", models[0])
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, expectedString, models[0].String())
+}
+
+func TestListDatacenterRegions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/regions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listDatacenterRegionsResponse)
+	})
+
+	regions, resp, err := client.GenAI.ListDatacenterRegions(ctx)
+	if err != nil {
+		t.Fatalf("GenAI ListDatacenterRegions returned error: %v", err)
+	}
+
+	assert.Equal(t, 2, len(regions))
+	assert.Equal(t, "tor1", regions[0].Region)
+	assert.Equal(t, "https://tor1.gen-ai.digitalocean.com", regions[0].InferenceUrl)
+	assert.Equal(t, true, regions[0].ServesBatch)
+	assert.Equal(t, true, regions[0].ServesInference)
+	assert.Equal(t, "https://tor1.gen-ai.digitalocean.com/stream", regions[0].StreamInferenceUrl)
+
+	assert.Equal(t, "nyc3", regions[1].Region)
+	assert.Equal(t, "https://nyc3.gen-ai.digitalocean.com", regions[1].InferenceUrl)
+	assert.Equal(t, false, regions[1].ServesBatch)
+	assert.Equal(t, true, regions[1].ServesInference)
+	assert.Equal(t, "https://nyc3.gen-ai.digitalocean.com/stream", regions[1].StreamInferenceUrl)
+
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
