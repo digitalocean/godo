@@ -1,5 +1,9 @@
 # Change Log
 
+## [v1.160.0] - 2025-07-24
+
+- #877 - @m3co-code - impl new doks cluster options
+
 ## [v1.159.0] - 2025-07-17
 
 - #871 - @ShivaniKumar1 - Add VPC Integration
