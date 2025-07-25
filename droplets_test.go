@@ -319,9 +319,10 @@ func TestDroplets_Create(t *testing.T) {
 			{ID: "hello-im-another-volume"},
 			{Name: "should be ignored due to Name", ID: "aaa-111-bbb-222-ccc"},
 		},
-		Tags:    []string{"one", "two"},
-		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
-		Backups: true,
+		Tags:      []string{"one", "two"},
+		VPCUUID:   "880b7f98-f062-404d-b33c-458d545696f6",
+		ProjectID: "88b72d1a-b78a-4d9f-9090-b53c4399073f",
+		Backups:   true,
 		BackupPolicy: &DropletBackupPolicyRequest{
 			Plan:    "weekly",
 			Weekday: "MON",
@@ -345,6 +346,7 @@ func TestDroplets_Create(t *testing.T) {
 			},
 			"tags":          []interface{}{"one", "two"},
 			"vpc_uuid":      "880b7f98-f062-404d-b33c-458d545696f6",
+			"project_id":    "88b72d1a-b78a-4d9f-9090-b53c4399073f",
 			"backups":       true,
 			"backup_policy": map[string]interface{}{"plan": "weekly", "weekday": "MON", "hour": float64(0)},
 		}
@@ -609,8 +611,9 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 		Image: DropletCreateImage{
 			ID: 1,
 		},
-		Tags:    []string{"one", "two"},
-		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
+		Tags:      []string{"one", "two"},
+		VPCUUID:   "880b7f98-f062-404d-b33c-458d545696f6",
+		ProjectID: "88b72d1a-b78a-4d9f-9090-b53c4399073f",
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
@@ -626,6 +629,7 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 			"monitoring":         false,
 			"tags":               []interface{}{"one", "two"},
 			"vpc_uuid":           "880b7f98-f062-404d-b33c-458d545696f6",
+			"project_id":         "88b72d1a-b78a-4d9f-9090-b53c4399073f",
 		}
 		jsonBlob := `
 {
