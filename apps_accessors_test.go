@@ -2218,6 +2218,20 @@ func TestAppWorkerSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
 	a.GetGracePeriodSeconds()
 }
 
+func TestAutoscalerActionScaleChange_GetFrom(tt *testing.T) {
+	a := &AutoscalerActionScaleChange{}
+	a.GetFrom()
+	a = nil
+	a.GetFrom()
+}
+
+func TestAutoscalerActionScaleChange_GetTo(tt *testing.T) {
+	a := &AutoscalerActionScaleChange{}
+	a.GetTo()
+	a = nil
+	a.GetTo()
+}
+
 func TestBitbucketSourceSpec_GetBranch(tt *testing.T) {
 	b := &BitbucketSourceSpec{}
 	b.GetBranch()
@@ -2468,6 +2482,16 @@ func TestDeploymentCauseDetailsAutoscalerAction_GetAutoscaled(tt *testing.T) {
 	d.GetAutoscaled()
 	d = nil
 	d.GetAutoscaled()
+}
+
+func TestDeploymentCauseDetailsAutoscalerAction_GetScaledComponents(tt *testing.T) {
+	zeroValue := map[string]AutoscalerActionScaleChange{}
+	d := &DeploymentCauseDetailsAutoscalerAction{ScaledComponents: zeroValue}
+	d.GetScaledComponents()
+	d = &DeploymentCauseDetailsAutoscalerAction{}
+	d.GetScaledComponents()
+	d = nil
+	d.GetScaledComponents()
 }
 
 func TestDeploymentCauseDetailsDigitalOceanUser_GetEmail(tt *testing.T) {
