@@ -1,0 +1,209 @@
+name: Generate CHANGELOG.md
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g. 1.8.0)"
+        required: true
+
+env:
+  VERSION_PREFIX: release
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      
+    steps:
+      - name: Validate version is SemVer
+        run: |
+          version="${{ github.event.inputs.version }}"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version: '$version'. Must match semantic versioning (e.g. 1.2.3)"
+            exit 1
+          fi
+      - name: Check if release already exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${{ github.event.inputs.version }}"
+          owner_repo="${{ github.repository }}"
+          
+          echo "Checking for existing release: $version"
+
+          if [[ "$version" != v* ]]; then
+            vversion="v$version"
+            if gh release view "$vversion" --repo "$owner_repo" > /dev/null 2>&1; then
+              echo "❌ Release '$vversion' already exists."
+              exit 1
+            fi
+          fi
+
+          echo "✅ No existing release found for '$version'"
+
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+
+          clean: true
+          fetch-depth: 0
+
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "go.mod"
+          cache: true
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+
+      - name: Create release branch
+        run: |
+          branch="${VERSION_PREFIX}/${{ github.event.inputs.version }}"
+          git checkout -b "$branch"
+      - name: Update libraryVersion in godo.go
+        run: |
+          version="${{ github.event.inputs.version }}"
+          sed -i -E 's/^(\s*libraryVersion = ")[^"]+(")/\11.161.0\2/' godo.go
+          
+          echo "📊 Final git status:"
+          git status --porcelain
+          echo "📊 Files to be added:"
+          git diff --cached --name-only || echo "No files staged"
+
+          # Check if godo.go has actually changed
+          if git diff --quiet godo.go; then
+            echo "❌ ERROR: godo.go was not modified"
+            exit 1
+          else
+            echo "✅ godo.go has been modified successfully"
+          fi
+          git add godo.go
+      - name: Install github-changelog-generator@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          go install github.com/digitalocean/github-changelog-generator@latest
+      
+      - name: Generate CHANGELOG.md and insert header if missing
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${{ github.event.inputs.version }}"
+          date=$(date +%F)
+          header="## [${version}] - ${date}"
+
+          # Generate CHANGELOG from PRs and capture the new entries from stdout
+          echo "🔄 Running github-changelog-generator..."
+          new_entries=$(github-changelog-generator -org '${{ github.repository_owner }}' -repo '${{ github.event.repository.name }}')
+          
+          echo "📝 New entries: '$new_entries'"
+
+          # Check if version header already exists (look for version with any date)
+          version_pattern="^## \[${version}\]"
+          if grep -q "$version_pattern" CHANGELOG.md; then
+            echo "✅ Found existing section for ${version}, will replace it"
+            
+            # Extract content that comes BEFORE our version header  
+            content_before=$(awk -v version="$version" '
+              $0 ~ "^## \\[" version "\\]" { exit }
+              { print }
+            ' CHANGELOG.md)
+            
+            # Extract content that comes AFTER our version section (starting from next ## header)
+            content_after=$(awk -v version="$version" '
+              BEGIN { found=0; skip=0 }
+              $0 ~ "^## \\[" version "\\]" { found=1; skip=1; next }
+              found && /^## \[/ && skip { skip=0; print; next }
+              found && !skip { print }
+            ' CHANGELOG.md)
+          else
+            echo "ℹ️ Creating new section for ${version}"
+            
+            # For new version, content_before is everything up to first ## header
+            content_before=$(awk '
+              /^## \[/ { exit }
+              { print }
+            ' CHANGELOG.md)
+            
+            # content_after is everything from first ## header onwards
+            content_after=$(awk '
+              /^## \[/ { found=1 }
+              found { print }
+            ' CHANGELOG.md)
+          fi
+
+          # Rebuild the file: content before + our header + new entries + content after
+          {
+            echo "$content_before"
+            echo ""
+            echo "$header"
+            echo ""
+            if [ -n "$new_entries" ]; then
+              echo "$new_entries"
+              echo ""
+            fi
+            echo "$content_after"
+          } > NEW_CHANGELOG.md
+
+          mv NEW_CHANGELOG.md CHANGELOG.md
+          echo "✅ CHANGELOG.md updated with new section for ${version}"
+
+          echo "📊 Final git status:"
+          git status --porcelain
+          echo "📊 Files to be added:"
+          git diff --cached --name-only || echo "No files staged"
+
+          # Check if CHANGELOG.md has actually changed
+          if git diff --quiet CHANGELOG.md; then
+            echo "❌ ERROR: CHANGELOG.md was not modified"
+            exit 1
+          else
+            echo "✅ CHANGELOG.md has been modified successfully"
+          fi
+          git add CHANGELOG.md
+      - name: Commit changes (only if needed)
+        run: |
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 1
+          fi
+          git commit -m "Release ${{ github.event.inputs.version }}: update CHANGELOG and libraryVersion"
+
+      - name: Push branch
+        run: |
+          branch="${VERSION_PREFIX}/${{ github.event.inputs.version }}"
+          git push origin "$branch"
+
+      - name: Create Pull Request with gh CLI
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="${{ github.event.inputs.version }}"
+          branch="${VERSION_PREFIX}/${version}"
+
+          # Extract the actual entries that were added to CHANGELOG.md for this version
+          changelog=$(awk -v version="$version" '
+            $0 ~ "^## \\[" version "\\]" { found=1; next }
+            found && /^## \[/ { exit }
+            found && NF > 0 { print }
+          ' CHANGELOG.md)
+
+          pr_body="This PR updates the CHANGELOG and libraryVersion for \`${version}\`.
+
+          ### Changelog:
+          ${changelog}"
+
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "CHANGELOG.md Updated: ${version} (${{ github.sha }})" \
+            --body "$pr_body"
