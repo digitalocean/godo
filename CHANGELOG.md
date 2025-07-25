@@ -1,5 +1,7 @@
 # Change Log
 
+## [1.160.3] - 2025-07-25
+
 ## [1.160.2] - 2025-07-25
 
 - #22 - @ElanHasson - Timetravel
