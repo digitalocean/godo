@@ -1,0 +1,74 @@
+name: Release PR
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. v1.8.0)'
+        required: true
+      changelog:
+        description: 'Changelog bullet points (markdown, one per line)'
+        required: true
+        type: string
+        
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Install github-changelog-generator
+        run: |
+          go install github.com/digitalocean/github-changelog-generator@latest
+
+      - name: Generate CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          github-changelog-generator -org digitalocean -repo godo
+
+      - name: Update libraryVersion in godo.go
+        run: |
+          version="${{ github.event.inputs.version }}"
+          sed -i -E "s/^(var libraryVersion = \")[^"]+(\")/\1${version}\2/" godo.go
+
+      - name: Create release branch
+        run: |
+          version="${{ github.event.inputs.version }}"
+          git checkout -b release/${version}
+
+      - name: Commit changes
+        run: |
+          version="${{ github.event.inputs.version }}"
+          git add CHANGELOG.md godo.go
+          git commit -m "Release ${version}: update CHANGELOG and libraryVersion"
+
+      - name: Push branch
+        run: |
+          version="${{ github.event.inputs.version }}"
+          git push origin release/${version}
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: release/${{ github.event.inputs.version }}
+          title: "Release ${{ github.event.inputs.version }}"
+          body: |
+            This PR updates the CHANGELOG and libraryVersion for ${{ github.event.inputs.version }}.
+            
+            Changelog:
+            ${{ github.event.inputs.changelog }}
+          base: main
