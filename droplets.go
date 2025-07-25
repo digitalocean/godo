@@ -66,6 +66,7 @@ type Droplet struct {
 	Tags             []string      `json:"tags,omitempty"`
 	VolumeIDs        []string      `json:"volume_ids"`
 	VPCUUID          string        `json:"vpc_uuid,omitempty"`
+	ProjectID        string        `json:"project_id,omitempty"`
 }
 
 // PublicIPv4 returns the public IPv4 address for the Droplet.

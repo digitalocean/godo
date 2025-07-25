@@ -418,6 +418,7 @@ func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 		},
 		Tags:             []string{"one", "two"},
 		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		ProjectID:        "88b72d1a-b78a-4d9f-9090-b53c4399073f",
 		WithDropletAgent: &boolVal,
 	}
 
@@ -438,6 +439,7 @@ func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 			},
 			"tags":               []interface{}{"one", "two"},
 			"vpc_uuid":           "880b7f98-f062-404d-b33c-458d545696f6",
+			"project_id":         "88b72d1a-b78a-4d9f-9090-b53c4399073f",
 			"with_droplet_agent": false,
 		}
 		jsonBlob := `
@@ -499,15 +501,15 @@ func TestDroplets_WithDropletAgentJsonMarshal(t *testing.T) {
 	}{
 		{
 			in:   &DropletCreateRequest{Name: "foo", WithDropletAgent: &boolF},
-			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null,"with_droplet_agent":false}`,
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"project_id":"","tags":null,"with_droplet_agent":false}`,
 		},
 		{
 			in:   &DropletCreateRequest{Name: "foo", WithDropletAgent: &boolT},
-			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null,"with_droplet_agent":true}`,
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"project_id":"","tags":null,"with_droplet_agent":true}`,
 		},
 		{
 			in:   &DropletCreateRequest{Name: "foo"},
-			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"tags":null}`,
+			want: `{"name":"foo","region":"","size":"","image":0,"ssh_keys":null,"backups":false,"ipv6":false,"private_networking":false,"monitoring":false,"project_id":"","tags":null}`,
 		},
 	}
 
@@ -537,8 +539,9 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 			{ID: "hello-im-another-volume"},
 			{Name: "should be ignored due to Name", ID: "aaa-111-bbb-222-ccc"},
 		},
-		Tags:    []string{"one", "two"},
-		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
+		Tags:      []string{"one", "two"},
+		VPCUUID:   "880b7f98-f062-404d-b33c-458d545696f6",
+		ProjectID: "88b72d1a-b78a-4d9f-9090-b53c4399073f",
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
@@ -556,8 +559,9 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 				map[string]interface{}{"id": "hello-im-another-volume"},
 				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
 			},
-			"tags":     []interface{}{"one", "two"},
-			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+			"tags":       []interface{}{"one", "two"},
+			"vpc_uuid":   "880b7f98-f062-404d-b33c-458d545696f6",
+			"project_id": "88b72d1a-b78a-4d9f-9090-b53c4399073f",
 		}
 		jsonBlob := `
 {
