@@ -34,12 +34,17 @@ jobs:
           
           echo "Checking for existing release: $version"
 
-          if [[ "$version" != v* ]]; then
-            vversion="v$version"
-            if gh release view "$vversion" --repo "$owner_repo" > /dev/null 2>&1; then
-              echo "❌ Release '$vversion' already exists."
-              exit 1
-            fi
+          # Check for release with exact version
+          if gh release view "$version" --repo "$owner_repo" > /dev/null 2>&1; then
+            echo "❌ Release '$version' already exists."
+            exit 1
+          fi
+          
+          # Check for release with v prefix
+          vversion="v$version"
+          if gh release view "$vversion" --repo "$owner_repo" > /dev/null 2>&1; then
+            echo "❌ Release '$vversion' already exists."
+            exit 1
           fi
 
           echo "✅ No existing release found for '$version'"
