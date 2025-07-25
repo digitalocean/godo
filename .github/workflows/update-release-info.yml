@@ -77,7 +77,7 @@ jobs:
       - name: Update libraryVersion in godo.go
         run: |
           version="${{ github.event.inputs.version }}"
-          sed -i -E 's/^(\s*libraryVersion = ")[^"]+(")/\11.161.0\2/' godo.go
+          sed -i "s/^\([[:space:]]*libraryVersion = \"\)[^\"]*\(\"\)$/\1${version}\2/" godo.go
           
           echo "📊 Final git status:"
           git status --porcelain
