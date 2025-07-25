@@ -10,6 +10,7 @@ You can view the client API docs here: [http://godoc.org/github.com/digitalocean
 You can view DigitalOcean API docs here: [https://docs.digitalocean.com/reference/api/api-reference/](https://docs.digitalocean.com/reference/api/api-reference/)
 
 ## Install
+
 ```sh
 go get github.com/digitalocean/godo@vX.Y.Z
 ```
@@ -17,9 +18,11 @@ go get github.com/digitalocean/godo@vX.Y.Z
 where X.Y.Z is the [version](https://github.com/digitalocean/godo/releases) you need.
 
 or
+
 ```sh
 go get github.com/digitalocean/godo
 ```
+
 for non Go modules usage or latest version.
 
 ## Usage
@@ -55,7 +58,6 @@ If you need to provide a `context.Context` to your new client, you should use [`
 
 ## Examples
 
-
 To create a new Droplet:
 
 ```go
@@ -82,7 +84,80 @@ if err != nil {
 
 ### Pagination
 
-If a list of items is paginated by the API, you must request pages individually. For example, to fetch all Droplets:
+If a list of items is paginated by the API, you must request pages individually.
+For example, using a generic helper to fetch all Droplets:
+
+```go
+
+for droplet, err := range Unpaginate(ctx, client.Droplets.List, godo.ListOptions{}) {
+    if err != nil {
+        return err;
+    }
+    ...
+}
+```
+
+where the generic helper is:
+
+```go
+// Unpaginate repeatedly calls a paginated List* function, returning
+// an iterable of the returned object type.
+func Unpaginate[T any](ctx context.Context, f func(ctx context.Context, opt *godo.ListOptions) ([]T, *godo.Response, error), opt godo.ListOptions) iter.Seq2[T, error] {
+	return func(yield func(T, error) bool) {
+		var buffer T
+		for {
+			items, resp, err := f(ctx, &opt)
+			if err != nil {
+				yield(buffer, err)
+				return
+			}
+			for _, item := range items {
+				if !yield(item, nil) {
+					return
+				}
+			}
+			if resp.Links == nil || resp.Links.IsLastPage() {
+				return
+			}
+
+			page, err := resp.Links.CurrentPage()
+			if err != nil {
+				yield(buffer, err)
+				return
+			}
+
+			// set the page we want for the next request
+			opt.Page = page + 1
+		}
+	}
+}
+```
+
+Some list functions require an additional argument, which can be handled using the following pattern:
+
+```go
+for droplet, err := range Unpaginate(ctx, Unarg(client.Droplets.ListByTag, "tag-name"), godo.ListOptions{}) {
+    if err != nil {
+        reurn err;
+    }
+    ...
+}
+
+// Unarg is passed a godo List* function which takes an argument
+// prior to the ListOptions, along with the argument's value.
+// It allows the Unpaginate generic function to be used.
+// e.g.:
+// Unpaginate(ctx, Unarg(dropletsService.ListByTag, template.name), godo.ListOptions{})
+func Unarg[S any, T any](f func(context.Context, S, *godo.ListOptions) ([]T, *godo.Response, error), arg S) func(context.Context, *godo.ListOptions) ([]T, *godo.Response, error) {
+	return func(ctx context.Context, opt *godo.ListOptions) ([]T, *godo.Response, error) {
+		return f(ctx, arg, opt)
+	}
+}
+
+```
+
+Older go versions which do not support slices and generics will require a custom function to be written to wrap
+each paginated List\* function:
 
 ```go
 func DropletList(ctx context.Context, client *godo.Client) ([]godo.Droplet, error) {
@@ -186,13 +261,11 @@ Each version of the client is tagged and the version is updated accordingly.
 
 To see the list of past versions, run `git tag`.
 
-
 ## Documentation
 
 For a comprehensive list of examples, check out the [API documentation](https://docs.digitalocean.com/reference/api/api-reference/#tag/SSH-Keys).
 
 For details on all the functionality in this library, see the [GoDoc](http://godoc.org/github.com/digitalocean/godo) documentation.
-
 
 ## Contributing
 
