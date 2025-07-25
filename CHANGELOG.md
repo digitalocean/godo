@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.160.1] - 2025-07-25
+## [1.160.1] - 2025-07-22
 
 - #16 - @ElanHasson - Changelog time travel
 - #15 - @github-actions[bot] - CHANGELOG.md Updated: 1.60.1 (9a160d7c9deb5d3832cf8b59b81d438b6410312f)
