@@ -1,8 +1,8 @@
 # Change Log
 
-## [1.160.4] - 2025-07-23
+## [1.160.4] - 2025-07-25
 
-- #27 - ExtraProcessChange - Some Manual change outside of the GHA workflow someone made
+- #27 - @ElanHasson - Update README.md
 
 ## [1.160.3] - 2025-07-25
 
