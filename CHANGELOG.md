@@ -1,5 +1,7 @@
 # Change Log
 
+## [1.160.5] - 2025-07-25
+
 ## [1.160.4] - 2025-07-25
 
 - #27 - @ElanHasson - Update README.md
