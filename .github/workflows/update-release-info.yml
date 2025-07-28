@@ -1,4 +1,4 @@
-name: Generate CHANGELOG.md
+name: Prepare Release
 
 on:
   workflow_dispatch:
@@ -11,7 +11,8 @@ env:
   VERSION_PREFIX: release
 
 jobs:
-  release-pr:
+  sync-release-details:
+    name: Sync Release Details
     runs-on: ubuntu-latest
     permissions:
       contents: write
