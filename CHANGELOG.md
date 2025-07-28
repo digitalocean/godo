@@ -1,5 +1,29 @@
 # Change Log
 
+## [1.160.5] - 2025-07-25
+
+## [1.160.4] - 2025-07-25
+
+- #27 - @ElanHasson - Update README.md
+
+## [1.160.3] - 2025-07-25
+
+## [1.160.2] - 2025-07-25
+
+- #22 - @ElanHasson - Timetravel
+- #20 - @github-actions[bot] - CHANGELOG.md Updated: 1.160.1 (04824c8ebee806a32fdcf80be9741cd451995610)
+- #16 - @ElanHasson - Changelog time travel
+- #15 - @github-actions[bot] - CHANGELOG.md Updated: 1.60.1 (9a160d7c9deb5d3832cf8b59b81d438b6410312f)
+- #14 - @ElanHasson - Add GitHub Actions workflow to generate CHANGELOG.md and update libra…
+- #3 - @ElanHasson - Update 1-click_test.go
+
+## [1.160.1] - 2025-07-21
+
+- #16 - @ElanHasson - Changelog time travel
+- #15 - @github-actions[bot] - CHANGELOG.md Updated: 1.60.1 (9a160d7c9deb5d3832cf8b59b81d438b6410312f)
+- #14 - @ElanHasson - Add GitHub Actions workflow to generate CHANGELOG.md and update libra…
+- #3 - @ElanHasson - Update 1-click_test.go
+
 ## [v1.160.0] - 2025-07-24
 
 - #877 - @m3co-code - impl new doks cluster options
