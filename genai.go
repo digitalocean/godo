@@ -74,7 +74,7 @@ type GenAIService interface {
 	DeleteFunctionRoute(context.Context, string, string) (*Agent, *Response, error)
 	UpdateFunctionRoute(context.Context, string, string, *FunctionRouteUpdateRequest) (*Agent, *Response, error)
 	ListAvailableModels(context.Context, *ListOptions) ([]*Model, *Response, error)
-	ListDatacenterRegions(context.Context) ([]*DatacenterRegions, *Response, error)
+	ListDatacenterRegions(context.Context, *bool, *bool) ([]*DatacenterRegions, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -1555,11 +1555,20 @@ func (g *GenAIServiceOp) ListAvailableModels(ctx context.Context, opt *ListOptio
 }
 
 // ListDatacenterRegions returns a list of available datacenter regions for Gen AI services
-func (g *GenAIServiceOp) ListDatacenterRegions(ctx context.Context) ([]*DatacenterRegions, *Response, error) {
-	path, err := addOptions(datacenterRegionsPath, nil)
-	if err != nil {
-		return nil, nil, err
+func (g *GenAIServiceOp) ListDatacenterRegions(ctx context.Context, servesInference, servesBatch *bool) ([]*DatacenterRegions, *Response, error) {
+	path := datacenterRegionsPath
+
+	var params []string
+	if servesInference != nil {
+		params = append(params, fmt.Sprintf("serves_inference=%t", *servesInference))
 	}
+	if servesBatch != nil {
+		params = append(params, fmt.Sprintf("serves_batch=%t", *servesBatch))
+	}
+	if len(params) > 0 {
+		path = path + "?" + strings.Join(params, "&")
+	}
+
 	req, err := g.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err

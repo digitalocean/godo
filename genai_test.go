@@ -1910,7 +1910,7 @@ func TestListDatacenterRegions(t *testing.T) {
 		fmt.Fprint(w, listDatacenterRegionsResponse)
 	})
 
-	regions, resp, err := client.GenAI.ListDatacenterRegions(ctx)
+	regions, resp, err := client.GenAI.ListDatacenterRegions(ctx, nil, nil)
 	if err != nil {
 		t.Fatalf("GenAI ListDatacenterRegions returned error: %v", err)
 	}
