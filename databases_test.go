@@ -3090,7 +3090,8 @@ func TestDatabases_GetConfigValkey(t *testing.T) {
 	"valkey_timeout": 300,
 	"valkey_notify_keyspace_events": "",
 	"valkey_persistence": "off",
-	"valkey_acl_channels_default": "allchannels"
+	"valkey_acl_channels_default": "allchannels",
+	"valkey_number_of_databases": 16
   }
 }`
 
@@ -3103,6 +3104,7 @@ func TestDatabases_GetConfigValkey(t *testing.T) {
 			ValkeyNotifyKeyspaceEvents: PtrTo(""),
 			ValkeyPersistence:          PtrTo("off"),
 			ValkeyACLChannelsDefault:   PtrTo("allchannels"),
+			ValkeyNumberOfDatabases:    PtrTo(16),
 		}
 	)
 

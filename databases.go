@@ -674,17 +674,19 @@ type RedisConfig struct {
 
 // ValkeyConfig holds advanced configurations for Valkey database clusters.
 type ValkeyConfig struct {
-	ValkeyMaxmemoryPolicy      *string `json:"valkey_maxmemory_policy,omitempty"`
-	ValkeyIOThreads            *int    `json:"valkey_io_threads,omitempty"`
-	ValkeyLFULogFactor         *int    `json:"valkey_lfu_log_factor,omitempty"`
-	ValkeyLFUDecayTime         *int    `json:"valkey_lfu_decay_time,omitempty"`
-	ValkeySSL                  *bool   `json:"valkey_ssl,omitempty"`
-	ValkeyTimeout              *int    `json:"valkey_timeout,omitempty"`
-	ValkeyNotifyKeyspaceEvents *string `json:"valkey_notify_keyspace_events,omitempty"`
-	ValkeyPersistence          *string `json:"valkey_persistence,omitempty"`
-	ValkeyACLChannelsDefault   *string `json:"valkey_acl_channels_default,omitempty"`
-	FrequentSnapshots          *bool   `json:"frequent_snapshots,omitempty"`
-	ValkeyActiveExpireEffort   *int    `json:"valkey_active_expire_effort,omitempty"`
+	ValkeyMaxmemoryPolicy               *string `json:"valkey_maxmemory_policy,omitempty"`
+	ValkeyIOThreads                     *int    `json:"valkey_io_threads,omitempty"`
+	ValkeyLFULogFactor                  *int    `json:"valkey_lfu_log_factor,omitempty"`
+	ValkeyLFUDecayTime                  *int    `json:"valkey_lfu_decay_time,omitempty"`
+	ValkeySSL                           *bool   `json:"valkey_ssl,omitempty"`
+	ValkeyTimeout                       *int    `json:"valkey_timeout,omitempty"`
+	ValkeyNotifyKeyspaceEvents          *string `json:"valkey_notify_keyspace_events,omitempty"`
+	ValkeyPersistence                   *string `json:"valkey_persistence,omitempty"`
+	ValkeyACLChannelsDefault            *string `json:"valkey_acl_channels_default,omitempty"`
+	FrequentSnapshots                   *bool   `json:"frequent_snapshots,omitempty"`
+	ValkeyActiveExpireEffort            *int    `json:"valkey_active_expire_effort,omitempty"`
+	ValkeyPubSubClientOutputBufferLimit *int    `json:"valkey_pubsub_client_output_buffer_limit,omitempty"`
+	ValkeyNumberOfDatabases             *int    `json:"valkey_number_of_databases,omitempty"`
 }
 
 // MySQLConfig holds advanced configurations for MySQL database clusters.
