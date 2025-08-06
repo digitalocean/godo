@@ -3072,6 +3072,85 @@ func TestDatabases_UpdateConfigRedisNormalizeEvictionPolicy(t *testing.T) {
 	}
 }
 
+func TestDatabases_GetConfigValkey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		valkeyConfigJSON = `{
+  "config": {
+	"valkey_maxmemory_policy": "allkeys-lru",
+	"valkey_lfu_log_factor": 10,
+	"valkey_lfu_decay_time": 1,
+	"valkey_ssl": true,
+	"valkey_timeout": 300,
+	"valkey_notify_keyspace_events": "",
+	"valkey_persistence": "off",
+	"valkey_acl_channels_default": "allchannels",
+	"valkey_number_of_databases": 16
+  }
+}`
+
+		valkeyConfig = ValkeyConfig{
+			ValkeyMaxmemoryPolicy:      PtrTo("allkeys-lru"),
+			ValkeyLFULogFactor:         PtrTo(10),
+			ValkeyLFUDecayTime:         PtrTo(1),
+			ValkeySSL:                  PtrTo(true),
+			ValkeyTimeout:              PtrTo(300),
+			ValkeyNotifyKeyspaceEvents: PtrTo(""),
+			ValkeyPersistence:          PtrTo("off"),
+			ValkeyACLChannelsDefault:   PtrTo("allchannels"),
+			ValkeyNumberOfDatabases:    PtrTo(16),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, valkeyConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetValkeyConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &valkeyConfig, got)
+}
+
+func TestDatabases_UpdateConfigValkey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID         = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path         = fmt.Sprintf("/v2/databases/%s/config", dbID)
+		valkeyConfig = &ValkeyConfig{
+			ValkeyMaxmemoryPolicy:      PtrTo("allkeys-lru"),
+			ValkeyLFULogFactor:         PtrTo(10),
+			ValkeyNotifyKeyspaceEvents: PtrTo(""),
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseValkeyConfigRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, valkeyConfig)
+		assert.Equal(t, "", *b.Config.ValkeyNotifyKeyspaceEvents, "pointers to zero value should be sent")
+		assert.Nil(t, b.Config.ValkeyPersistence, "excluded value should not be sent")
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateValkeyConfig(ctx, dbID, valkeyConfig)
+	require.NoError(t, err)
+}
+
 func TestDatabases_GetConfigMySQL(t *testing.T) {
 	setup()
 	defer teardown()

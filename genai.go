@@ -2,6 +2,7 @@ package godo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -10,8 +11,10 @@ import (
 const (
 	genAIBasePath                = "/v2/gen-ai/agents"
 	agentModelBasePath           = "/v2/gen-ai/models"
+	datacenterRegionsPath        = "/v2/gen-ai/regions"
 	agentRouteBasePath           = genAIBasePath + "/%s/child_agents/%s"
 	KnowledgeBasePath            = "/v2/gen-ai/knowledge_bases"
+	functionRouteBasePath        = genAIBasePath + "/%s/functions"
 	KnowledgeBaseDataSourcesPath = KnowledgeBasePath + "/%s/data_sources"
 	GetKnowledgeBaseByIDPath     = KnowledgeBasePath + "/%s"
 	UpdateKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
@@ -21,6 +24,8 @@ const (
 	AnthropicAPIKeysPath         = "/v2/gen-ai/anthropic/keys"
 	AnthropicAPIKeyByIDPath      = AnthropicAPIKeysPath + "/%s"
 	OpenAIAPIKeysPath            = "/v2/gen-ai/openai/keys"
+	UpdateFunctionRoutePath      = functionRouteBasePath + "/%s"
+	DeleteFunctionRoutePath      = functionRouteBasePath + "/%s"
 )
 
 // GenAIService is an interface for interfacing with the Gen AI Agent endpoints
@@ -38,7 +43,6 @@ type GenAIService interface {
 	UpdateAgent(context.Context, string, *AgentUpdateRequest) (*Agent, *Response, error)
 	DeleteAgent(context.Context, string) (*Agent, *Response, error)
 	UpdateAgentVisibility(context.Context, string, *AgentVisibilityUpdateRequest) (*Agent, *Response, error)
-	ListModels(context.Context, *ListOptions) ([]*Model, *Response, error)
 	ListKnowledgeBases(ctx context.Context, opt *ListOptions) ([]KnowledgeBase, *Response, error)
 	CreateKnowledgeBase(ctx context.Context, knowledgeBaseCreate *KnowledgeBaseCreateRequest) (*KnowledgeBase, *Response, error)
 	ListKnowledgeBaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error)
@@ -66,6 +70,11 @@ type GenAIService interface {
 	UpdateOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, openaiAPIKeyUpdate *OpenAIAPIKeyUpdateRequest) (*OpenAiApiKey, *Response, error)
 	DeleteOpenAIAPIKey(ctx context.Context, openaiApiKeyId string) (*OpenAiApiKey, *Response, error)
 	ListAgentsByOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, opt *ListOptions) ([]*Agent, *Response, error)
+	CreateFunctionRoute(context.Context, string, *FunctionRouteCreateRequest) (*Agent, *Response, error)
+	DeleteFunctionRoute(context.Context, string, string) (*Agent, *Response, error)
+	UpdateFunctionRoute(context.Context, string, string, *FunctionRouteUpdateRequest) (*Agent, *Response, error)
+	ListAvailableModels(context.Context, *ListOptions) ([]*Model, *Response, error)
+	ListDatacenterRegions(context.Context, *bool, *bool) ([]*DatacenterRegions, *Response, error)
 }
 
 var _ GenAIService = &GenAIServiceOp{}
@@ -587,6 +596,59 @@ type AgentRouteUpdateRequest struct {
 	UUID            string `json:"uuid,omitempty"`
 }
 
+type NestedSchema struct {
+	Type        string                   `json:"type" validate:"required,oneof=string boolean number integer array object"`
+	Items       *NestedSchema            `json:"items,omitempty"`
+	Properties  map[string]*NestedSchema `json:"properties,omitempty"`
+	Enum        []string                 `json:"enum,omitempty"`
+	Description string                   `json:"description,omitempty"`
+}
+
+type OpenAPIParameterSchema struct {
+	Name        string       `json:"name" validate:"required"`
+	In          string       `json:"in" validate:"omitempty,oneof=query header path cookie"`
+	Schema      NestedSchema `json:"schema" validate:"required"`
+	Description string       `json:"description,omitempty"`
+	Required    bool         `json:"required,omitempty"`
+}
+
+type FunctionInputSchema struct {
+	Parameters []OpenAPIParameterSchema `json:"parameters" validate:"required,min=1,dive"`
+}
+
+type FunctionRouteCreateRequest struct {
+	AgentUuid     string              `json:"agent_uuid,omitempty"`
+	Description   string              `json:"description,omitempty"`
+	FaasName      string              `json:"faas_name,omitempty"`
+	FaasNamespace string              `json:"faas_namespace,omitempty"`
+	FunctionName  string              `json:"function_name,omitempty"`
+	InputSchema   FunctionInputSchema `json:"input_schema,omitempty"`
+	OutputSchema  json.RawMessage     `json:"output_schema,omitempty"`
+}
+
+type FunctionRouteUpdateRequest struct {
+	AgentUuid     string              `json:"agent_uuid,omitempty"`
+	Description   string              `json:"description,omitempty"`
+	FaasName      string              `json:"faas_name,omitempty"`
+	FaasNamespace string              `json:"faas_namespace,omitempty"`
+	FunctionName  string              `json:"function_name,omitempty"`
+	FunctionUuid  string              `json:"function_uuid,omitempty"`
+	InputSchema   FunctionInputSchema `json:"input_schema,omitempty"`
+	OutputSchema  json.RawMessage     `json:"output_schema,omitempty"`
+}
+
+type DatacenterRegions struct {
+	Region             string `json:"region"`
+	InferenceUrl       string `json:"inference_url"`
+	ServesBatch        bool   `json:"serves_batch"`
+	ServesInference    bool   `json:"serves_inference"`
+	StreamInferenceUrl string `json:"stream_inference_url"`
+}
+
+type datacenterRegionsRoot struct {
+	DatacenterRegions []*DatacenterRegions `json:"regions"`
+}
+
 type genAIAgentKBRoot struct {
 	Agent *Agent `json:"agent"`
 }
@@ -817,29 +879,6 @@ func (s *GenAIServiceOp) UpdateAgentVisibility(ctx context.Context, id string, u
 	}
 
 	return root.Agent, resp, nil
-}
-
-// ListModels function returns a list of Gen AI Models
-func (s *GenAIServiceOp) ListModels(ctx context.Context, opt *ListOptions) ([]*Model, *Response, error) {
-	path, err := addOptions(agentModelBasePath, opt)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-	root := new(genAIModelsRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	if l := root.Links; l != nil {
-		resp.Links = l
-	}
-
-	return root.Models, resp, nil
 }
 
 // List all knowledge bases
@@ -1415,6 +1454,131 @@ func (s *GenAIServiceOp) ListAgentsByOpenAIAPIKey(ctx context.Context, openaiApi
 		resp.Meta = m
 	}
 	return root.Agents, resp, nil
+}
+
+// Attaches a functionroute to an agent.
+func (g *GenAIServiceOp) CreateFunctionRoute(ctx context.Context, id string, create *FunctionRouteCreateRequest) (*Agent, *Response, error) {
+	path := fmt.Sprintf(functionRouteBasePath, id)
+
+	if create.AgentUuid == "" {
+		return nil, nil, fmt.Errorf("AgentUuid is required")
+	}
+	if create.Description == "" {
+		return nil, nil, fmt.Errorf("Description is required")
+	}
+	if create.FaasName == "" {
+		return nil, nil, fmt.Errorf("FaasName is required")
+	}
+	if create.FaasNamespace == "" {
+		return nil, nil, fmt.Errorf("FaasNamespace is required")
+	}
+	if create.FunctionName == "" {
+		return nil, nil, fmt.Errorf("FunctionName is required")
+	}
+	if len(create.InputSchema.Parameters) == 0 {
+		return nil, nil, fmt.Errorf("InputSchema is required")
+	}
+
+	req, err := g.client.NewRequest(ctx, http.MethodPost, path, create)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIAgentRoot)
+	resp, err := g.client.Do(ctx, req, root)
+
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Agent, resp, nil
+}
+
+// Deletes a functionroute to an agent.
+func (g *GenAIServiceOp) DeleteFunctionRoute(ctx context.Context, agent_id string, function_id string) (*Agent, *Response, error) {
+	path := fmt.Sprintf(UpdateFunctionRoutePath, agent_id, function_id)
+	req, err := g.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIAgentRoot)
+	resp, err := g.client.Do(ctx, req, root)
+
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Agent, resp, nil
+}
+
+// Updates a functionroute to an agent.
+func (g *GenAIServiceOp) UpdateFunctionRoute(ctx context.Context, agent_id string, function_id string, update *FunctionRouteUpdateRequest) (*Agent, *Response, error) {
+	path := fmt.Sprintf(UpdateFunctionRoutePath, agent_id, function_id)
+	req, err := g.client.NewRequest(ctx, http.MethodPut, path, update)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIAgentRoot)
+	resp, err := g.client.Do(ctx, req, root)
+
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Agent, resp, nil
+}
+
+// ListAvailableModels returns a list of available Gen AI models
+func (g *GenAIServiceOp) ListAvailableModels(ctx context.Context, opt *ListOptions) ([]*Model, *Response, error) {
+	path, err := addOptions(agentModelBasePath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := g.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(genAIModelsRoot)
+	resp, err := g.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+
+	return root.Models, resp, nil
+}
+
+// ListDatacenterRegions returns a list of available datacenter regions for Gen AI services
+func (g *GenAIServiceOp) ListDatacenterRegions(ctx context.Context, servesInference, servesBatch *bool) ([]*DatacenterRegions, *Response, error) {
+	path := datacenterRegionsPath
+
+	var params []string
+	if servesInference != nil {
+		params = append(params, fmt.Sprintf("serves_inference=%t", *servesInference))
+	}
+	if servesBatch != nil {
+		params = append(params, fmt.Sprintf("serves_batch=%t", *servesBatch))
+	}
+	if len(params) > 0 {
+		path = path + "?" + strings.Join(params, "&")
+	}
+
+	req, err := g.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(datacenterRegionsRoot)
+	resp, err := g.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.DatacenterRegions, resp, nil
 }
 
 func (a Agent) String() string {

@@ -160,6 +160,13 @@ func TestApp_GetUpdatedAt(tt *testing.T) {
 	a.GetUpdatedAt()
 }
 
+func TestApp_GetVPC(tt *testing.T) {
+	a := &App{}
+	a.GetVPC()
+	a = nil
+	a.GetVPC()
+}
+
 func TestAppAlert_GetComponentName(tt *testing.T) {
 	a := &AppAlert{}
 	a.GetComponentName()
@@ -1847,6 +1854,13 @@ func TestAppSpec_GetStaticSites(tt *testing.T) {
 	a.GetStaticSites()
 }
 
+func TestAppSpec_GetVpc(tt *testing.T) {
+	a := &AppSpec{}
+	a.GetVpc()
+	a = nil
+	a.GetVpc()
+}
+
 func TestAppSpec_GetWorkers(tt *testing.T) {
 	a := &AppSpec{}
 	a.GetWorkers()
@@ -2043,6 +2057,34 @@ func TestAppVariableDefinition_GetValue(tt *testing.T) {
 	a.GetValue()
 }
 
+func TestAppVPC_GetEgressIPs(tt *testing.T) {
+	a := &AppVPC{}
+	a.GetEgressIPs()
+	a = nil
+	a.GetEgressIPs()
+}
+
+func TestAppVPC_GetID(tt *testing.T) {
+	a := &AppVPC{}
+	a.GetID()
+	a = nil
+	a.GetID()
+}
+
+func TestAppVPCEgressIP_GetIP(tt *testing.T) {
+	a := &AppVPCEgressIP{}
+	a.GetIP()
+	a = nil
+	a.GetIP()
+}
+
+func TestAppVpcSpec_GetID(tt *testing.T) {
+	a := &AppVpcSpec{}
+	a.GetID()
+	a = nil
+	a.GetID()
+}
+
 func TestAppWorkerSpec_GetAlerts(tt *testing.T) {
 	a := &AppWorkerSpec{}
 	a.GetAlerts()
@@ -2174,6 +2216,20 @@ func TestAppWorkerSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
 	a.GetGracePeriodSeconds()
 	a = nil
 	a.GetGracePeriodSeconds()
+}
+
+func TestAutoscalerActionScaleChange_GetFrom(tt *testing.T) {
+	a := &AutoscalerActionScaleChange{}
+	a.GetFrom()
+	a = nil
+	a.GetFrom()
+}
+
+func TestAutoscalerActionScaleChange_GetTo(tt *testing.T) {
+	a := &AutoscalerActionScaleChange{}
+	a.GetTo()
+	a = nil
+	a.GetTo()
 }
 
 func TestBitbucketSourceSpec_GetBranch(tt *testing.T) {
@@ -2426,6 +2482,16 @@ func TestDeploymentCauseDetailsAutoscalerAction_GetAutoscaled(tt *testing.T) {
 	d.GetAutoscaled()
 	d = nil
 	d.GetAutoscaled()
+}
+
+func TestDeploymentCauseDetailsAutoscalerAction_GetScaledComponents(tt *testing.T) {
+	zeroValue := map[string]AutoscalerActionScaleChange{}
+	d := &DeploymentCauseDetailsAutoscalerAction{ScaledComponents: zeroValue}
+	d.GetScaledComponents()
+	d = &DeploymentCauseDetailsAutoscalerAction{}
+	d.GetScaledComponents()
+	d = nil
+	d.GetScaledComponents()
 }
 
 func TestDeploymentCauseDetailsDigitalOceanUser_GetEmail(tt *testing.T) {
