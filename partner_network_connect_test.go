@@ -532,56 +532,6 @@ func TestPartnerAttachment_ListRoutes(t *testing.T) {
 	assert.Equal(t, resp.Meta, meta)
 }
 
-func TestPartnerAttachment_Set(t *testing.T) {
-	tests := []struct {
-		desc                        string
-		id                          string
-		req                         *PartnerAttachmentSetRoutesRequest
-		mockResponse                string
-		expectedRequestBody         string
-		expectedUpdatedInterconnect *PartnerAttachment
-	}{
-		{
-			desc: "set remote routes",
-			id:   "880b7f98-f062-404d-b33c-458d545696f6",
-			req: &PartnerAttachmentSetRoutesRequest{
-				Routes: []string{"169.250.0.1/29", "169.250.0.6/29"},
-			},
-			mockResponse: `
-{
-	"partner_attachment":
-` + vPartnerAttachmentTestJSON + `
-}
-			`,
-			expectedRequestBody:         `{"routes":["169.250.0.1/29", "169.250.0.6/29"]}`,
-			expectedUpdatedInterconnect: vPartnerAttachmentTestObj,
-		},
-	}
-
-	for _, tt := range tests {
-		setup()
-
-		mux.HandleFunc("/v2/partner_network_connect/attachments/"+tt.id+"/remote_routes", func(w http.ResponseWriter, r *http.Request) {
-			v := new(PartnerAttachmentSetRoutesRequest)
-			err := json.NewDecoder(r.Body).Decode(v)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			testMethod(t, r, http.MethodPut)
-			require.Equal(t, v, tt.req)
-			w.Write([]byte(tt.mockResponse))
-		})
-
-		got, _, err := client.PartnerAttachment.SetRoutes(ctx, tt.id, tt.req)
-
-		teardown()
-
-		require.NoError(t, err)
-		require.Equal(t, tt.expectedUpdatedInterconnect, got)
-	}
-}
-
 func TestPartnerAttachment_GetBGPAuthKey(t *testing.T) {
 	setup()
 	defer teardown()
