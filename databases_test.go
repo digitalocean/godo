@@ -4430,3 +4430,247 @@ func TestDatabases_CreateDatabaseUserWithMongoUserSettings(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expectedUser, user)
 }
+
+func TestDatabases_CreateKafkaSchemaRegistry(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/schema-registry", dbID)
+
+	responseJSON, err := json.Marshal(&DatabaseKafkaSchemaRegistrySubject{
+		SubjectName: "test-subject",
+		SchemaType:  "AVRO",
+		Schema:      `{"type":"record","name":"test","fields":[{"name":"field1","type":"string"}]}`,
+		SchemaID:    1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	kafkaSchemaRegistry, _, err := client.Databases.CreateKafkaSchemaRegistry(ctx, dbID, &DatabaseKafkaSchemaRegistryRequest{
+		SubjectName: "test-subject",
+		SchemaType:  "AVRO",
+		Schema:      `{"type":"record","name":"test","fields":[{"name":"field1","type":"string"}]}`,
+	})
+	require.NoError(t, err)
+	require.Equal(t, &DatabaseKafkaSchemaRegistrySubject{
+		SubjectName: "test-subject",
+		SchemaType:  "AVRO",
+		Schema:      `{"type":"record","name":"test","fields":[{"name":"field1","type":"string"}]}`,
+		SchemaID:    1,
+	}, kafkaSchemaRegistry)
+}
+
+func TestDatabases_ListKafkaSchemaRegistry(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/schema-registry", dbID)
+
+	responseJSON, err := json.Marshal(&ListDatabaseKafkaSchemaRegistrySubjectsRoot{
+		Subjects: []DatabaseKafkaSchemaRegistrySubject{
+			{
+				SubjectName: "test-subject",
+				SchemaType:  "AVRO",
+				Schema:      `{"type":"record","name":"test","fields":[{"name":"field1","type":"string"}]}`,
+				SchemaID:    1,
+			},
+			{
+				SubjectName: "test-subject-2",
+				SchemaType:  "AVRO",
+				Schema:      `{"type":"record","name":"test","fields":[{"name":"field1","type":"string"}]}`,
+				SchemaID:    2,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	kafkaSchemaRegistrySubjects, _, err := client.Databases.ListKafkaSchemaRegistry(ctx, dbID, &ListOptions{})
+	require.NoError(t, err)
+	require.Equal(t, 2, len(kafkaSchemaRegistrySubjects))
+	require.Equal(t, "test-subject", kafkaSchemaRegistrySubjects[0].SubjectName)
+	require.Equal(t, "AVRO", kafkaSchemaRegistrySubjects[0].SchemaType)
+	require.Equal(t, `{"type":"record","name":"test","fields":[{"name":"field1","type":"string"}]}`, kafkaSchemaRegistrySubjects[0].Schema)
+	require.Equal(t, 1, kafkaSchemaRegistrySubjects[0].SchemaID)
+}
+
+func TestDatabases_GetKafkaSchemaRegistry(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	subjectName := "test-subject"
+	path := fmt.Sprintf("/v2/databases/%s/schema-registry/%s", dbID, subjectName)
+
+	responseJSON, err := json.Marshal(&DatabaseKafkaSchemaRegistrySubject{
+		SubjectName: subjectName,
+		SchemaType:  "AVRO",
+		Schema:      `{"type":"record","name":"test","fields":[{"name":"field1","type":"string"}]}`,
+		SchemaID:    1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	kafkaSchemaRegistrySubject, _, err := client.Databases.GetKafkaSchemaRegistry(ctx, dbID, subjectName)
+	require.NoError(t, err)
+	require.Equal(t, &DatabaseKafkaSchemaRegistrySubject{
+		SubjectName: subjectName,
+		SchemaType:  "AVRO",
+		Schema:      `{"type":"record","name":"test","fields":[{"name":"field1","type":"string"}]}`,
+		SchemaID:    1,
+	}, kafkaSchemaRegistrySubject)
+}
+
+func TestDatabases_DeleteKafkaSchemaRegistry(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	subjectName := "test-subject"
+	path := fmt.Sprintf("/v2/databases/%s/schema-registry/%s", dbID, subjectName)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.DeleteKafkaSchemaRegistry(ctx, dbID, subjectName)
+	require.NoError(t, err)
+}
+
+func TestDatabases_UpdateKafkaSchemaRegistryConfig(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/schema-registry/config", dbID)
+
+	updateConfig := &DatabaseKafkaSchemaRegistryConfig{
+		CompatibilityLevel: "FULL",
+	}
+
+	responseJSON, err := json.Marshal(updateConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	resp, _, err := client.Databases.UpdateKafkaSchemaRegistryConfig(ctx, dbID, updateConfig)
+	require.NoError(t, err)
+	require.Equal(t, updateConfig, resp)
+}
+
+func TestDatabases_GetKafkaSchemaRegistryConfig(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/schema-registry/config", dbID)
+
+	responseJSON, err := json.Marshal(&DatabaseKafkaSchemaRegistryConfig{
+		CompatibilityLevel: "FULL",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	resp, _, err := client.Databases.GetKafkaSchemaRegistryConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &DatabaseKafkaSchemaRegistryConfig{
+		CompatibilityLevel: "FULL",
+	}, resp)
+}
+
+func TestDatabases_UpdateKafkaSchemaRegistrySubjectConfig(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	subjectName := "test-subject"
+	path := fmt.Sprintf("/v2/databases/%s/schema-registry/config/%s", dbID, subjectName)
+
+	updateConfig := &DatabaseKafkaSchemaRegistrySubjectConfigResponse{
+		SubjectName:        subjectName,
+		CompatibilityLevel: "FULL",
+	}
+
+	responseJSON, err := json.Marshal(updateConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	resp, _, err := client.Databases.UpdateKafkaSchemaRegistrySubjectConfig(ctx, dbID, subjectName, &DatabaseKafkaSchemaRegistryConfig{
+		CompatibilityLevel: "FULL",
+	})
+	require.NoError(t, err)
+	require.Equal(t, subjectName, resp.SubjectName)
+	require.Equal(t, updateConfig.CompatibilityLevel, resp.CompatibilityLevel)
+}
+
+func TestDatabases_GetKafkaSchemaRegistrySubjectConfig(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	subjectName := "test-subject"
+	path := fmt.Sprintf("/v2/databases/%s/schema-registry/config/%s", dbID, subjectName)
+
+	responseJSON, err := json.Marshal(&DatabaseKafkaSchemaRegistrySubjectConfigResponse{
+		SubjectName:        subjectName,
+		CompatibilityLevel: "FULL",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.WriteHeader(http.StatusOK)
+		w.Write(responseJSON)
+	})
+
+	resp, _, err := client.Databases.GetKafkaSchemaRegistrySubjectConfig(ctx, dbID, subjectName)
+	require.NoError(t, err)
+	require.Equal(t, subjectName, resp.SubjectName)
+	require.Equal(t, "FULL", resp.CompatibilityLevel)
+}
