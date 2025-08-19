@@ -16,8 +16,8 @@ func TestBYOIPPrefixes_List(t *testing.T) {
 	mux.HandleFunc("/v2/byoip_prefixes", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"byoip_prefixes": [
-			{"uuid":"139efe95-c8fc-42a7-8faa-bd3afc2b0985","prefix":"192.168.0.0/24","region":"nyc3", "status": "active", "failure_reason": "", "validations": [{"name": "validation","status": "PASSED"}], "fleet": {"uuid": "fleet-uuid-1", "name": "test-fleet", "description": "Test fleet", "purpose": "production", "environment": "prod", "is_default": true}, "advertised": true, "locked": false},
-			{"uuid":"e164034d-deaa-4288-b72e-dbff38103eb1","prefix":"127.0.0.0/24", "region":"nyc1", "status": "declined", "failure_reason": "not allowed local IP range", "validations": [], "advertised": false, "locked": false}
+			{"uuid":"139efe95-c8fc-42a7-8faa-bd3afc2b0985","prefix":"192.168.0.0/24","region":"nyc3", "status": "active", "failure_reason": "", "validations": [{"name": "validation","status": "PASSED"}], "project_id": "project-123", "advertised": true, "locked": false},
+			{"uuid":"e164034d-deaa-4288-b72e-dbff38103eb1","prefix":"127.0.0.0/24", "region":"nyc1", "status": "declined", "failure_reason": "not allowed local IP range", "validations": [], "project_id": "project-456", "advertised": false, "locked": false}
 			],
 			"meta": {"total": 2}
 		}`)
@@ -29,8 +29,8 @@ func TestBYOIPPrefixes_List(t *testing.T) {
 	}
 
 	expectedBYOIPs := []*BYOIPPrefix{
-		{UUID: "139efe95-c8fc-42a7-8faa-bd3afc2b0985", Prefix: "192.168.0.0/24", Status: "active", Region: "nyc3", FailureReason: "", Validations: []any{map[string]interface{}{"name": "validation", "status": "PASSED"}}, Fleet: &Fleet{UUID: "fleet-uuid-1", Name: "test-fleet", Description: "Test fleet", Purpose: "production", Environment: "prod", IsDefault: true}, Advertised: true, Locked: false},
-		{UUID: "e164034d-deaa-4288-b72e-dbff38103eb1", Prefix: "127.0.0.0/24", Status: "declined", Region: "nyc1", FailureReason: "not allowed local IP range", Validations: []any{}, Fleet: nil, Advertised: false, Locked: false},
+		{UUID: "139efe95-c8fc-42a7-8faa-bd3afc2b0985", Prefix: "192.168.0.0/24", Status: "active", Region: "nyc3", FailureReason: "", Validations: []any{map[string]interface{}{"name": "validation", "status": "PASSED"}}, ProjectID: "project-123", Advertised: true, Locked: false},
+		{UUID: "e164034d-deaa-4288-b72e-dbff38103eb1", Prefix: "127.0.0.0/24", Status: "declined", Region: "nyc1", FailureReason: "not allowed local IP range", Validations: []any{}, ProjectID: "project-456", Advertised: false, Locked: false},
 	}
 
 	if !reflect.DeepEqual(byoips, expectedBYOIPs) {
@@ -51,7 +51,7 @@ func TestBYOIPPrefixes_Get(t *testing.T) {
 	defer teardown()
 	mux.HandleFunc("/v2/byoip_prefixes/1de94988-5102-4aae-b17d-f71b98707b88", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"byoip_prefix": {"uuid":"1de94988-5102-4aae-b17d-f71b98707b88","prefix":"192.168.0.0/24","region":"nyc3", "status": "active", "failure_reason": "", "validations": [{"name": "validation","status": "PASSED"}], "fleet": {"uuid": "fleet-uuid-1", "name": "test-fleet", "description": "Test fleet", "purpose": "production", "environment": "prod", "is_default": true}, "advertised": true, "locked": false}}`)
+		fmt.Fprint(w, `{"byoip_prefix": {"uuid":"1de94988-5102-4aae-b17d-f71b98707b88","prefix":"192.168.0.0/24","region":"nyc3", "status": "active", "failure_reason": "", "validations": [{"name": "validation","status": "PASSED"}], "project_id": "project-abc", "advertised": true, "locked": false}}`)
 	})
 
 	byoipPrefix, _, err := client.BYOIPPrefixes.Get(ctx, "1de94988-5102-4aae-b17d-f71b98707b88")
@@ -59,7 +59,7 @@ func TestBYOIPPrefixes_Get(t *testing.T) {
 		t.Errorf("BYOIPs.Get returned error: %v", err)
 	}
 
-	expected := &byoipPrefixRoot{BYOIPPrefix: &BYOIPPrefix{UUID: "1de94988-5102-4aae-b17d-f71b98707b88", Prefix: "192.168.0.0/24", Status: "active", Region: "nyc3", FailureReason: "", Validations: []any{map[string]any{"name": "validation", "status": "PASSED"}}, Fleet: &Fleet{UUID: "fleet-uuid-1", Name: "test-fleet", Description: "Test fleet", Purpose: "production", Environment: "prod", IsDefault: true}, Advertised: true, Locked: false}}
+	expected := &byoipPrefixRoot{BYOIPPrefix: &BYOIPPrefix{UUID: "1de94988-5102-4aae-b17d-f71b98707b88", Prefix: "192.168.0.0/24", Status: "active", Region: "nyc3", FailureReason: "", Validations: []any{map[string]any{"name": "validation", "status": "PASSED"}}, ProjectID: "project-abc", Advertised: true, Locked: false}}
 
 	if !reflect.DeepEqual(byoipPrefix, expected.BYOIPPrefix) {
 		t.Errorf("BYOIPs.Get returned %+v, expected %+v", byoipPrefix, expected)
@@ -187,14 +187,7 @@ func TestBYOIPPrefixes_Update(t *testing.T) {
 			"status": "active", 
 			"failure_reason": "", 
 			"validations": [],
-			"fleet": {
-				"uuid": "fleet-123", 
-				"name": "test-fleet", 
-				"description": "Test fleet", 
-				"purpose": "testing", 
-				"environment": "dev", 
-				"is_default": false
-			}, 
+			"project_id": "project-update-123", 
 			"advertised": true, 
 			"locked": false
 		}}`)
@@ -212,16 +205,9 @@ func TestBYOIPPrefixes_Update(t *testing.T) {
 		Region:        "nyc3",
 		FailureReason: "",
 		Validations:   []any{},
-		Fleet: &Fleet{
-			UUID:        "fleet-123",
-			Name:        "test-fleet",
-			Description: "Test fleet",
-			Purpose:     "testing",
-			Environment: "dev",
-			IsDefault:   false,
-		},
-		Advertised: true,
-		Locked:     false,
+		ProjectID:     "project-update-123",
+		Advertised:    true,
+		Locked:        false,
 	}
 
 	if !reflect.DeepEqual(byoipPrefix, expected) {

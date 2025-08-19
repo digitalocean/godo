@@ -29,15 +29,6 @@ type BYOIPPrefixServiceOp struct {
 
 var _ BYOIPPrefixesService = (*BYOIPPrefixServiceOp)(nil)
 
-type Fleet struct {
-	UUID        string `json:"uuid"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Purpose     string `json:"purpose"`
-	Environment string `json:"environment"`
-	IsDefault   bool   `json:"is_default"`
-}
-
 type BYOIPPrefix struct {
 	Prefix        string `json:"prefix"`
 	Status        string `json:"status"`
@@ -45,7 +36,7 @@ type BYOIPPrefix struct {
 	Region        string `json:"region"`
 	Validations   []any  `json:"validations"`
 	FailureReason string `json:"failure_reason"`
-	Fleet         *Fleet `json:"fleet,omitempty"`
+	ProjectID     string `json:"project_id"`
 	Advertised    bool   `json:"advertised"`
 	Locked        bool   `json:"locked"`
 }
