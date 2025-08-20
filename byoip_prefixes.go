@@ -85,7 +85,7 @@ type byoipResourcesRoot struct {
 }
 
 type BYOIPPrefixUpdateReq struct {
-	IsAdvertised *bool `json:"is_advertised"`
+	Advertise *bool `json:"advertise"`
 }
 
 type byoipPrefixUpdateRoot struct {
@@ -218,7 +218,7 @@ func (r *BYOIPPrefixServiceOp) Update(ctx context.Context, prefixUUID string, up
 		return nil, nil, fmt.Errorf("prefix UUID is required")
 	}
 
-	if updateReq.IsAdvertised == nil {
+	if updateReq.Advertise == nil {
 		return nil, nil, fmt.Errorf("is_advertised is required")
 	}
 

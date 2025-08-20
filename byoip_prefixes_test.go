@@ -165,7 +165,7 @@ func TestBYOIPPrefixes_Update(t *testing.T) {
 	defer teardown()
 
 	updateReq := &BYOIPPrefixUpdateReq{
-		IsAdvertised: PtrTo(true),
+		Advertise: PtrTo(true),
 	}
 
 	mux.HandleFunc("/v2/byoip_prefixes/test-uuid-123", func(w http.ResponseWriter, r *http.Request) {
