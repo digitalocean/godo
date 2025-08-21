@@ -12,7 +12,7 @@ const saasAppsBasePath = "v2/add-ons/apps"
 
 // SaasAddonsService is an interface for interacting with the SaasAddons/Marketplace Add-ons API
 type SaasAddonsService interface {
-	GetAllApps(context.Context, ...string) ([]*SaasAddonsApp, *Response, error)
+	GetAllApps(context.Context, string) ([]*SaasAddonsApp, *Response, error)
 	GetAppDetails(context.Context, string) (*SaasAddonsAppDetails, *Response, error)
 	ListAddons(context.Context) ([]*SaasAddonsPublicResource, *Response, error)
 	GetAddon(context.Context, string) (*SaasAddonsPublicResource, *Response, error)
@@ -372,7 +372,7 @@ func (s *SaasAddonsServiceOp) DeleteAddon(ctx context.Context, resourceUUID stri
 	return resp, nil
 }
 
-func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context, appSlug ...string) ([]*SaasAddonsApp, *Response, error) {
+func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context, appSlug string) ([]*SaasAddonsApp, *Response, error) {
 	path := saasAppsBasePath
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -380,9 +380,9 @@ func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context, appSlug ...string)
 		return nil, nil, err
 	}
 
-	if len(appSlug) > 0 && appSlug[0] != "" {
+	if len(appSlug) > 0 && appSlug != "" {
 		q := req.URL.Query()
-		q.Add("app_slug", appSlug[0])
+		q.Add("app_slug", appSlug)
 		req.URL.RawQuery = q.Encode()
 	}
 
