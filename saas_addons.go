@@ -7,11 +7,12 @@ import (
 	"time"
 )
 
-const saasAddonsBasePath = "/api/v1/marketplace/add-ons"
+const saasAddonsBasePath = "v2/add-ons/saas"
+const saasAppsBasePath = "v2/add-ons/apps"
 
 // SaasAddonsService is an interface for interacting with the SaasAddons/Marketplace Add-ons API
 type SaasAddonsService interface {
-	GetAllApps(context.Context) ([]*SaasAddonsApp, *Response, error)
+	GetAllApps(context.Context, ...string) ([]*SaasAddonsApp, *Response, error)
 	GetAppDetails(context.Context, string) (*SaasAddonsAppDetails, *Response, error)
 	ListAddons(context.Context) ([]*SaasAddonsPublicResource, *Response, error)
 	GetAddon(context.Context, string) (*SaasAddonsPublicResource, *Response, error)
@@ -248,7 +249,7 @@ type UpdateAddonRequest struct {
 
 // GetAppDetails returns detailed app information
 func (s *SaasAddonsServiceOp) GetAppDetails(ctx context.Context, appSlug string) (*SaasAddonsAppDetails, *Response, error) {
-	path := fmt.Sprintf("%s/public/apps/%s", saasAddonsBasePath, appSlug)
+	path := fmt.Sprintf("%s/%s", saasAppsBasePath, appSlug)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -266,7 +267,7 @@ func (s *SaasAddonsServiceOp) GetAppDetails(ctx context.Context, appSlug string)
 
 // ListAddons returns all addons
 func (s *SaasAddonsServiceOp) ListAddons(ctx context.Context) ([]*SaasAddonsPublicResource, *Response, error) {
-	path := fmt.Sprintf("%s/public/resources", saasAddonsBasePath)
+	path := fmt.Sprintf("%s/resources", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -284,7 +285,7 @@ func (s *SaasAddonsServiceOp) ListAddons(ctx context.Context) ([]*SaasAddonsPubl
 
 // GetAddon returns an addon by UUID
 func (s *SaasAddonsServiceOp) GetAddon(ctx context.Context, resourceUUID string) (*SaasAddonsPublicResource, *Response, error) {
-	path := fmt.Sprintf("%s/public/resources/%s", saasAddonsBasePath, resourceUUID)
+	path := fmt.Sprintf("%s/resources/%s", saasAddonsBasePath, resourceUUID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -302,7 +303,7 @@ func (s *SaasAddonsServiceOp) GetAddon(ctx context.Context, resourceUUID string)
 
 // GetAddonMetadata returns addon metadata for an app
 func (s *SaasAddonsServiceOp) GetAddonMetadata(ctx context.Context, appSlug string) (*SaasAddonsAddonMetadata, *Response, error) {
-	path := fmt.Sprintf("%s/apps/%s/metadata", saasAddonsBasePath, appSlug)
+	path := fmt.Sprintf("%s/%s/metadata", saasAppsBasePath, appSlug)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -320,7 +321,7 @@ func (s *SaasAddonsServiceOp) GetAddonMetadata(ctx context.Context, appSlug stri
 
 // CreateAddon creates an addon
 func (s *SaasAddonsServiceOp) InstallAddon(ctx context.Context, request *InstallAddonRequest) (*SaasAddonsPublicResource, *Response, error) {
-	path := fmt.Sprintf("%s/public/resources", saasAddonsBasePath)
+	path := fmt.Sprintf("%s/resources", saasAddonsBasePath)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, request)
 	if err != nil {
@@ -338,7 +339,7 @@ func (s *SaasAddonsServiceOp) InstallAddon(ctx context.Context, request *Install
 
 // UpdateAddon updates an addon
 func (s *SaasAddonsServiceOp) UpdateAddon(ctx context.Context, resourceUUID string, request *UpdateAddonRequest) (*SaasAddonsPublicResource, *Response, error) {
-	path := fmt.Sprintf("%s/public/resources/%s", saasAddonsBasePath, resourceUUID)
+	path := fmt.Sprintf("%s/resources/%s", saasAddonsBasePath, resourceUUID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, request)
 	if err != nil {
@@ -356,7 +357,7 @@ func (s *SaasAddonsServiceOp) UpdateAddon(ctx context.Context, resourceUUID stri
 
 // DeleteAddon deletes an addon
 func (s *SaasAddonsServiceOp) DeleteAddon(ctx context.Context, resourceUUID string) (*Response, error) {
-	path := fmt.Sprintf("%s/public/resources/%s", saasAddonsBasePath, resourceUUID)
+	path := fmt.Sprintf("%s/resources/%s", saasAddonsBasePath, resourceUUID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -371,13 +372,18 @@ func (s *SaasAddonsServiceOp) DeleteAddon(ctx context.Context, resourceUUID stri
 	return resp, nil
 }
 
-// GetAllApps returns all live apps (public, no permissions needed)
-func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context) ([]*SaasAddonsApp, *Response, error) {
-	path := fmt.Sprintf("%s/apps", saasAddonsBasePath)
+func (s *SaasAddonsServiceOp) GetAllApps(ctx context.Context, appSlug ...string) ([]*SaasAddonsApp, *Response, error) {
+	path := saasAppsBasePath
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if len(appSlug) > 0 && appSlug[0] != "" {
+		q := req.URL.Query()
+		q.Add("app_slug", appSlug[0])
+		req.URL.RawQuery = q.Encode()
 	}
 
 	root := new(saasAddonsAppsRoot)

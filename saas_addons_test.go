@@ -11,7 +11,7 @@ func TestSaasAddonsService_GetAllApps(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/live", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/apps", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		json.NewEncoder(w).Encode(&saasAddonsAppsRoot{
 			Apps: []*SaasAddonsApp{
@@ -51,11 +51,53 @@ func TestSaasAddonsService_GetAllApps(t *testing.T) {
 	}
 }
 
+func TestSaasAddonsService_GetAllAppsWithAppSlug(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/add-ons/apps", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		
+		// Check if app_slug query parameter is present
+		appSlug := r.URL.Query().Get("app_slug")
+		if appSlug != "test-app-1" {
+			t.Errorf("Expected app_slug query parameter to be 'test-app-1', got %s", appSlug)
+		}
+		
+		json.NewEncoder(w).Encode(&saasAddonsAppsRoot{
+			Apps: []*SaasAddonsApp{
+				{
+					ID:          "1",
+					Slug:        "test-app-1",
+					Name:        "Test App 1",
+					Description: "First test application",
+					VendorUUID:  "vendor-123",
+					CreatedAt:   time.Now(),
+					UpdatedAt:   time.Now(),
+				},
+			},
+		})
+	})
+
+	apps, _, err := client.SaasAddons.GetAllApps(ctx, "test-app-1")
+	if err != nil {
+		t.Errorf("SaasAddons.GetAllApps returned error: %v", err)
+	}
+
+	if len(apps) != 1 {
+		t.Errorf("SaasAddons.GetAllApps returned %d apps, expected 1", len(apps))
+	}
+
+	if apps[0].Slug != "test-app-1" {
+		t.Errorf("SaasAddons.GetAllApps returned app slug %s, expected test-app-1", apps[0].Slug)
+	}
+}
+
 func TestSaasAddonsService_GetAppDetails(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/public/apps/test-app", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/apps/test-app", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		json.NewEncoder(w).Encode(&saasAddonsAppDetailsRoot{
 			App: &SaasAddonsAppDetails{
@@ -82,7 +124,7 @@ func TestSaasAddonsService_ListAddons(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/public/resources", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/saas/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		json.NewEncoder(w).Encode(&saasAddonsPublicResourcesRoot{
 			Resources: []*SaasAddonsPublicResource{
@@ -124,7 +166,7 @@ func TestSaasAddonsService_GetAddon(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/public/resources/resource-1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/saas/resources/resource-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		json.NewEncoder(w).Encode(&saasAddonsPublicResourceRoot{
 			Resource: &SaasAddonsPublicResource{
@@ -152,7 +194,7 @@ func TestSaasAddonsService_InstallAddon(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/public/resources", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/saas/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 
 		var req InstallAddonRequest
@@ -197,7 +239,7 @@ func TestSaasAddonsService_UpdateAddon(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/public/resources/resource-1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/saas/resources/resource-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPatch)
 
 		var req UpdateAddonRequest
@@ -237,7 +279,7 @@ func TestSaasAddonsService_DeleteAddon(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/public/resources/resource-1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/saas/resources/resource-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -252,7 +294,7 @@ func TestSaasAddonsService_GetAddonMetadata(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/apps/test-app/metadata", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/apps/test-app/metadata", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		json.NewEncoder(w).Encode(&SaasAddonsAddonMetadata{
 			AppSlug: "test-app",
@@ -279,7 +321,7 @@ func TestSaasAddonsService_InstallAddonRequestValidation(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/public/resources", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/saas/resources", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 
 		var req InstallAddonRequest
@@ -325,7 +367,7 @@ func TestSaasAddonsService_ErrorHandling(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/marketplace/add-ons/public/resources/nonexistent", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/add-ons/saas/resources/nonexistent", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		http.Error(w, "Resource not found", http.StatusNotFound)
 	})
@@ -336,5 +378,111 @@ func TestSaasAddonsService_ErrorHandling(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusNotFound {
 		t.Errorf("SaasAddons.GetAddon returned status %d, expected %d", resp.StatusCode, http.StatusNotFound)
+	}
+}
+
+func TestSaasAddonsService_InstallAddonWithOptionalFields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/add-ons/saas/resources", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		var req InstallAddonRequest
+		json.NewDecoder(r.Body).Decode(&req)
+
+		if req.AppSlug != "test-app" {
+			t.Errorf("InstallAddon request AppSlug = %v, expected test-app", req.AppSlug)
+		}
+		if req.PlanSlug != "basic-plan" {
+			t.Errorf("InstallAddon request PlanSlug = %v, expected basic-plan", req.PlanSlug)
+		}
+		if req.LinkedDropletID != uint64(12345) {
+			t.Errorf("InstallAddon request LinkedDropletID = %v, expected 12345", req.LinkedDropletID)
+		}
+		if req.FleetUUID != "fleet-abc-123" {
+			t.Errorf("InstallAddon request FleetUUID = %v, expected fleet-abc-123", req.FleetUUID)
+		}
+		if len(req.Metadata) != 1 || req.Metadata[0].Name != "config_key" {
+			t.Errorf("InstallAddon request Metadata = %v, expected metadata with config_key", req.Metadata)
+		}
+
+		json.NewEncoder(w).Encode(&saasAddonsPublicResourceRoot{
+			Resource: &SaasAddonsPublicResource{
+				UUID:      "resource-1",
+				AppSlug:   req.AppSlug,
+				PlanSlug:  req.PlanSlug,
+				State:     "provisioning",
+				Metadata:  req.Metadata,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+		})
+	})
+
+	req := &InstallAddonRequest{
+		AppSlug:         "test-app",
+		PlanSlug:        "basic-plan",
+		Name:            "Test Resource with Options",
+		LinkedDropletID: 12345,
+		FleetUUID:       "fleet-abc-123",
+		Metadata: []*SaasAddonsResourceMetadata{
+			{
+				Name:     "config_key",
+				Value:    "config_value",
+				DataType: "string",
+			},
+		},
+	}
+
+	resource, _, err := client.SaasAddons.InstallAddon(ctx, req)
+	if err != nil {
+		t.Errorf("SaasAddons.InstallAddon returned error: %v", err)
+	}
+
+	if resource.UUID != "resource-1" {
+		t.Errorf("SaasAddons.InstallAddon returned UUID %s, expected resource-1", resource.UUID)
+	}
+
+	if len(resource.Metadata) != 1 || resource.Metadata[0].Name != "config_key" {
+		t.Errorf("SaasAddons.InstallAddon returned incorrect metadata: %v", resource.Metadata)
+	}
+}
+
+func TestSaasAddonsService_GetAllAppsEmptyAppSlug(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/add-ons/apps", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		
+		// Check that no app_slug query parameter is present when empty string is passed
+		appSlug := r.URL.Query().Get("app_slug")
+		if appSlug != "" {
+			t.Errorf("Expected no app_slug query parameter when empty string passed, got %s", appSlug)
+		}
+		
+		json.NewEncoder(w).Encode(&saasAddonsAppsRoot{
+			Apps: []*SaasAddonsApp{
+				{
+					ID:          "1",
+					Slug:        "test-app-1",
+					Name:        "Test App 1",
+					Description: "First test application",
+					VendorUUID:  "vendor-123",
+					CreatedAt:   time.Now(),
+					UpdatedAt:   time.Now(),
+				},
+			},
+		})
+	})
+
+	apps, _, err := client.SaasAddons.GetAllApps(ctx, "")
+	if err != nil {
+		t.Errorf("SaasAddons.GetAllApps returned error: %v", err)
+	}
+
+	if len(apps) != 1 {
+		t.Errorf("SaasAddons.GetAllApps returned %d apps, expected 1", len(apps))
 	}
 }
