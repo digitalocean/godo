@@ -37,7 +37,7 @@ func TestSaasAddonsService_GetAllApps(t *testing.T) {
 		})
 	})
 
-	apps, _, err := client.SaasAddons.GetAllApps(ctx)
+	apps, _, err := client.SaasAddons.GetAllApps(ctx, "")
 	if err != nil {
 		t.Errorf("SaasAddons.GetAllApps returned error: %v", err)
 	}
@@ -57,13 +57,13 @@ func TestSaasAddonsService_GetAllAppsWithAppSlug(t *testing.T) {
 
 	mux.HandleFunc("/v2/add-ons/apps", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		
+
 		// Check if app_slug query parameter is present
 		appSlug := r.URL.Query().Get("app_slug")
 		if appSlug != "test-app-1" {
 			t.Errorf("Expected app_slug query parameter to be 'test-app-1', got %s", appSlug)
 		}
-		
+
 		json.NewEncoder(w).Encode(&saasAddonsAppsRoot{
 			Apps: []*SaasAddonsApp{
 				{
@@ -455,13 +455,13 @@ func TestSaasAddonsService_GetAllAppsEmptyAppSlug(t *testing.T) {
 
 	mux.HandleFunc("/v2/add-ons/apps", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		
+
 		// Check that no app_slug query parameter is present when empty string is passed
 		appSlug := r.URL.Query().Get("app_slug")
 		if appSlug != "" {
 			t.Errorf("Expected no app_slug query parameter when empty string passed, got %s", appSlug)
 		}
-		
+
 		json.NewEncoder(w).Encode(&saasAddonsAppsRoot{
 			Apps: []*SaasAddonsApp{
 				{
