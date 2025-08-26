@@ -22,7 +22,7 @@ type Pages struct {
 
 // LinkAction is a pointer to an action
 type LinkAction struct {
-	ID   int    `json:"id,omitempty"`
+	ID   int64    `json:"id,omitempty"`
 	Rel  string `json:"rel,omitempty"`
 	HREF string `json:"href,omitempty"`
 }
