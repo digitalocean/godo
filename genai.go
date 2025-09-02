@@ -21,6 +21,7 @@ const (
 	DeleteKnowledgeBaseByIDPath  = KnowledgeBasePath + "/%s"
 	AgentKnowledgeBasePath       = "/v2/gen-ai/agents" + "/%s/knowledge_bases/%s"
 	DeleteDataSourcePath         = KnowledgeBasePath + "/%s/data_sources/%s"
+	IndexingJobsPath             = "/v2/gen-ai/indexing_jobs"
 	AnthropicAPIKeysPath         = "/v2/gen-ai/anthropic/keys"
 	AnthropicAPIKeyByIDPath      = AnthropicAPIKeysPath + "/%s"
 	OpenAIAPIKeysPath            = "/v2/gen-ai/openai/keys"
@@ -51,6 +52,7 @@ type GenAIService interface {
 	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error)
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
+	ListIndexingJobs(ctx context.Context, opt *ListOptions) ([]LastIndexingJob, *Response, error)
 	AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 	DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 	AddAgentRoute(context.Context, string, string, *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error)
@@ -538,6 +540,12 @@ type knowledgebasesRoot struct {
 	Meta           *Meta           `json:"meta"`
 }
 
+type indexingJobsRoot struct {
+	Jobs  []LastIndexingJob `json:"jobs"`
+	Links *Links            `json:"links"`
+	Meta  *Meta             `json:"meta"`
+}
+
 type knowledgebaseRoot struct {
 	KnowledgeBase  *KnowledgeBase `json:"knowledge_base"`
 	DatabaseStatus string         `json:"database_status,omitempty"`
@@ -907,6 +915,33 @@ func (s *GenAIServiceOp) ListKnowledgeBases(ctx context.Context, opt *ListOption
 		resp.Meta = m
 	}
 	return root.KnowledgeBases, resp, err
+}
+
+// ListIndexingJobs returns a list of all indexing jobs for knowledge bases
+func (s *GenAIServiceOp) ListIndexingJobs(ctx context.Context, opt *ListOptions) ([]LastIndexingJob, *Response, error) {
+	path := IndexingJobsPath
+	path, err := addOptions(path, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(indexingJobsRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+	return root.Jobs, resp, err
 }
 
 // Create a knowledge base
