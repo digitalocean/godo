@@ -52,7 +52,7 @@ type GenAIService interface {
 	GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error)
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
-	ListIndexingJobs(ctx context.Context, opt *ListOptions) ([]LastIndexingJob, *Response, error)
+	ListIndexingJobs(ctx context.Context, opt *ListOptions) (*IndexingJobsResponse, *Response, error)
 	AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 	DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 	AddAgentRoute(context.Context, string, string, *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error)
@@ -349,10 +349,18 @@ type LastIndexingJob struct {
 	KnowledgeBaseUuid    string     `json:"knowledge_base_uuid,omitempty"`
 	Phase                string     `json:"phase,omitempty"`
 	StartedAt            *Timestamp `json:"started_at,omitempty"`
+	Status               string     `json:"status,omitempty"`
 	Tokens               int        `json:"tokens,omitempty"`
 	TotalDatasources     int        `json:"total_datasources,omitempty"`
 	UpdatedAt            *Timestamp `json:"updated_at,omitempty"`
 	Uuid                 string     `json:"uuid,omitempty"`
+}
+
+// IndexingJobsResponse represents the response from listing indexing jobs
+type IndexingJobsResponse struct {
+	Jobs  []LastIndexingJob `json:"jobs"`
+	Links *Links            `json:"links,omitempty"`
+	Meta  *Meta             `json:"meta,omitempty"`
 }
 
 type AgentChatbotIdentifier struct {
@@ -918,7 +926,7 @@ func (s *GenAIServiceOp) ListKnowledgeBases(ctx context.Context, opt *ListOption
 }
 
 // ListIndexingJobs returns a list of all indexing jobs for knowledge bases
-func (s *GenAIServiceOp) ListIndexingJobs(ctx context.Context, opt *ListOptions) ([]LastIndexingJob, *Response, error) {
+func (s *GenAIServiceOp) ListIndexingJobs(ctx context.Context, opt *ListOptions) (*IndexingJobsResponse, *Response, error) {
 	path := IndexingJobsPath
 	path, err := addOptions(path, opt)
 	if err != nil {
@@ -941,7 +949,14 @@ func (s *GenAIServiceOp) ListIndexingJobs(ctx context.Context, opt *ListOptions)
 	if m := root.Meta; m != nil {
 		resp.Meta = m
 	}
-	return root.Jobs, resp, err
+
+	result := &IndexingJobsResponse{
+		Jobs:  root.Jobs,
+		Links: root.Links,
+		Meta:  root.Meta,
+	}
+
+	return result, resp, err
 }
 
 // Create a knowledge base

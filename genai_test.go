@@ -1243,21 +1243,21 @@ func TestListIndexingJobs(t *testing.T) {
 		PerPage: 2,
 	}
 
-	jobs, resp, err := client.GenAI.ListIndexingJobs(ctx, req)
+	result, resp, err := client.GenAI.ListIndexingJobs(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListIndexingJobs returned error: %v", err)
 	}
 
 	assert.Equal(t, 9, resp.Meta.Total)
-	assert.Equal(t, 2, len(jobs))
-	assert.Equal(t, "22222222-2222-2222-2222-222222222222", jobs[0].Uuid)
-	assert.Equal(t, "11111111-1111-1111-1111-111111111111", jobs[0].KnowledgeBaseUuid)
-	assert.Equal(t, "BATCH_JOB_PHASE_SUCCEEDED", jobs[0].Phase)
-	assert.Equal(t, 2, jobs[0].TotalDatasources)
-	assert.Equal(t, 2, jobs[0].CompletedDatasources)
-	assert.Equal(t, 10500, jobs[0].Tokens)
-	assert.Equal(t, 2, len(jobs[0].DataSourceUuids))
-	assert.Equal(t, "55555555-5555-5555-5555-555555555555", jobs[1].Uuid)
+	assert.Equal(t, 2, len(result.Jobs))
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", result.Jobs[0].Uuid)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", result.Jobs[0].KnowledgeBaseUuid)
+	assert.Equal(t, "BATCH_JOB_PHASE_SUCCEEDED", result.Jobs[0].Phase)
+	assert.Equal(t, 2, result.Jobs[0].TotalDatasources)
+	assert.Equal(t, 2, result.Jobs[0].CompletedDatasources)
+	assert.Equal(t, 10500, result.Jobs[0].Tokens)
+	assert.Equal(t, 2, len(result.Jobs[0].DataSourceUuids))
+	assert.Equal(t, "55555555-5555-5555-5555-555555555555", result.Jobs[1].Uuid)
 }
 
 func TestCreateKnowledgeBase(t *testing.T) {
