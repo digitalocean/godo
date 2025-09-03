@@ -544,6 +544,45 @@ var listIndexingJobsResponse = `
 }
 `
 
+var indexingJobDataSourcesResponse = `
+{
+	"indexed_data_sources": [
+		{
+			"completed_at": "2025-05-08T03:38:28Z",
+			"data_source_uuid": "33333333-3333-3333-3333-333333333333",
+			"error_details": "",
+			"error_msg": "",
+			"failed_item_count": "0",
+			"indexed_file_count": "5",
+			"indexed_item_count": "150",
+			"removed_item_count": "0",
+			"skipped_item_count": "2",
+			"started_at": "2025-05-08T03:37:30Z",
+			"status": "DATA_SOURCE_STATUS_COMPLETED",
+			"total_bytes": "2048000",
+			"total_bytes_indexed": "1900000",
+			"total_file_count": "7"
+		},
+		{
+			"completed_at": "2025-05-08T03:38:25Z",
+			"data_source_uuid": "44444444-4444-4444-4444-444444444444",
+			"error_details": "File format not supported",
+			"error_msg": "Some files could not be processed",
+			"failed_item_count": "3",
+			"indexed_file_count": "8",
+			"indexed_item_count": "200",
+			"removed_item_count": "1",
+			"skipped_item_count": "5",
+			"started_at": "2025-05-08T03:37:32Z",
+			"status": "DATA_SOURCE_STATUS_COMPLETED_WITH_ERRORS",
+			"total_bytes": "3072000",
+			"total_bytes_indexed": "2800000",
+			"total_file_count": "12"
+		}
+	]
+}
+`
+
 var knowledgeBaseResponse = `
 {
 	"knowledge_base": {
@@ -1258,6 +1297,50 @@ func TestListIndexingJobs(t *testing.T) {
 	assert.Equal(t, 10500, result.Jobs[0].Tokens)
 	assert.Equal(t, 2, len(result.Jobs[0].DataSourceUuids))
 	assert.Equal(t, "55555555-5555-5555-5555-555555555555", result.Jobs[1].Uuid)
+}
+
+func TestListIndexingJobDataSources(t *testing.T) {
+	setup()
+	defer teardown()
+
+	indexingJobUUID := "22222222-2222-2222-2222-222222222222"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/indexing_jobs/%s/data_sources", indexingJobUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, indexingJobDataSourcesResponse)
+	})
+
+	result, resp, err := client.GenAI.ListIndexingJobDataSources(ctx, indexingJobUUID)
+	if err != nil {
+		t.Errorf("GenAI.ListIndexingJobDataSources returned error: %v", err)
+	}
+
+	assert.Equal(t, 2, len(result.IndexedDataSources))
+
+	// Test first data source
+	ds1 := result.IndexedDataSources[0]
+	assert.Equal(t, "33333333-3333-3333-3333-333333333333", ds1.DataSourceUuid)
+	assert.Equal(t, "DATA_SOURCE_STATUS_COMPLETED", ds1.Status)
+	assert.Equal(t, "5", ds1.IndexedFileCount)
+	assert.Equal(t, "150", ds1.IndexedItemCount)
+	assert.Equal(t, "0", ds1.FailedItemCount)
+	assert.Equal(t, "2", ds1.SkippedItemCount)
+	assert.Equal(t, "2048000", ds1.TotalBytes)
+	assert.Equal(t, "1900000", ds1.TotalBytesIndexed)
+	assert.Equal(t, "7", ds1.TotalFileCount)
+
+	// Test second data source with errors
+	ds2 := result.IndexedDataSources[1]
+	assert.Equal(t, "44444444-4444-4444-4444-444444444444", ds2.DataSourceUuid)
+	assert.Equal(t, "DATA_SOURCE_STATUS_COMPLETED_WITH_ERRORS", ds2.Status)
+	assert.Equal(t, "8", ds2.IndexedFileCount)
+	assert.Equal(t, "200", ds2.IndexedItemCount)
+	assert.Equal(t, "3", ds2.FailedItemCount)
+	assert.Equal(t, "5", ds2.SkippedItemCount)
+	assert.Equal(t, "File format not supported", ds2.ErrorDetails)
+	assert.Equal(t, "Some files could not be processed", ds2.ErrorMsg)
+
+	_ = resp // Mark as used to avoid unused variable warning
 }
 
 func TestCreateKnowledgeBase(t *testing.T) {
