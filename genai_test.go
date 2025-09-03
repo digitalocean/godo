@@ -499,6 +499,51 @@ var listKnowledgeBaseResponse = `
 }
 `
 
+var listIndexingJobsResponse = `
+{
+	"jobs": [
+		{
+			"uuid": "22222222-2222-2222-2222-222222222222",
+			"knowledge_base_uuid": "11111111-1111-1111-1111-111111111111",
+			"created_at": "2025-05-08T03:37:28Z",
+			"started_at": "2025-05-08T03:37:30Z",
+			"finished_at": "2025-05-08T03:38:28Z",
+			"updated_at": "2025-05-08T03:38:28Z",
+			"phase": "BATCH_JOB_PHASE_SUCCEEDED",
+			"total_datasources": 2,
+			"completed_datasources": 2,
+			"tokens": 10500,
+			"data_source_uuids": ["33333333-3333-3333-3333-333333333333", "44444444-4444-4444-4444-444444444444"]
+		},
+		{
+			"uuid": "55555555-5555-5555-5555-555555555555",
+			"knowledge_base_uuid": "66666666-6666-6666-6666-666666666666",
+			"created_at": "2025-05-07T02:30:15Z",
+			"started_at": "2025-05-07T02:30:20Z",
+			"finished_at": "2025-05-07T02:32:45Z",
+			"updated_at": "2025-05-07T02:32:45Z",
+			"phase": "BATCH_JOB_PHASE_SUCCEEDED",
+			"total_datasources": 1,
+			"completed_datasources": 1,
+			"tokens": 7500,
+			"data_source_uuids": ["77777777-7777-7777-7777-777777777777"]
+		}
+	],
+	"links": {
+		"pages": {
+			"first": "https://api.digitalocean.com/v2/gen-ai/indexing_jobs?page=1&per_page=2",
+			"next": "https://api.digitalocean.com/v2/gen-ai/indexing_jobs?page=2&per_page=2",
+			"last": "https://api.digitalocean.com/v2/gen-ai/indexing_jobs?page=5&per_page=2"
+		}
+	},
+	"meta": {
+		"total": 9,
+		"page": 1,
+		"pages": 5
+	}
+}
+`
+
 var knowledgeBaseResponse = `
 {
 	"knowledge_base": {
@@ -1177,6 +1222,42 @@ func TestListKnowledgeBases(t *testing.T) {
 
 	assert.Equal(t, 10, resp.Meta.Total)
 	assert.Equal(t, "Test Knowledge Base", knowledgeBases[0].Name)
+}
+
+func TestListIndexingJobs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/indexing_jobs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "2",
+		})
+
+		fmt.Fprint(w, listIndexingJobsResponse)
+	})
+
+	req := &ListOptions{
+		Page:    1,
+		PerPage: 2,
+	}
+
+	result, resp, err := client.GenAI.ListIndexingJobs(ctx, req)
+	if err != nil {
+		t.Errorf("GenAI.ListIndexingJobs returned error: %v", err)
+	}
+
+	assert.Equal(t, 9, resp.Meta.Total)
+	assert.Equal(t, 2, len(result.Jobs))
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", result.Jobs[0].Uuid)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", result.Jobs[0].KnowledgeBaseUuid)
+	assert.Equal(t, "BATCH_JOB_PHASE_SUCCEEDED", result.Jobs[0].Phase)
+	assert.Equal(t, 2, result.Jobs[0].TotalDatasources)
+	assert.Equal(t, 2, result.Jobs[0].CompletedDatasources)
+	assert.Equal(t, 10500, result.Jobs[0].Tokens)
+	assert.Equal(t, 2, len(result.Jobs[0].DataSourceUuids))
+	assert.Equal(t, "55555555-5555-5555-5555-555555555555", result.Jobs[1].Uuid)
 }
 
 func TestCreateKnowledgeBase(t *testing.T) {
