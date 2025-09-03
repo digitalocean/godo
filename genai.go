@@ -22,6 +22,7 @@ const (
 	AgentKnowledgeBasePath       = "/v2/gen-ai/agents" + "/%s/knowledge_bases/%s"
 	DeleteDataSourcePath         = KnowledgeBasePath + "/%s/data_sources/%s"
 	IndexingJobsPath             = "/v2/gen-ai/indexing_jobs"
+	IndexingJobByIDPath          = IndexingJobsPath + "/%s"
 	IndexingJobDataSourcesPath   = IndexingJobsPath + "/%s/data_sources"
 	AnthropicAPIKeysPath         = "/v2/gen-ai/anthropic/keys"
 	AnthropicAPIKeyByIDPath      = AnthropicAPIKeysPath + "/%s"
@@ -54,6 +55,7 @@ type GenAIService interface {
 	UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error)
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
 	ListIndexingJobs(ctx context.Context, opt *ListOptions) (*IndexingJobsResponse, *Response, error)
+	GetIndexingJob(ctx context.Context, indexingJobUUID string) (*IndexingJobResponse, *Response, error)
 	ListIndexingJobDataSources(ctx context.Context, indexingJobUUID string) (*IndexingJobDataSourcesResponse, *Response, error)
 	AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 	DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
@@ -354,6 +356,9 @@ type LastIndexingJob struct {
 	Status               string     `json:"status,omitempty"`
 	Tokens               int        `json:"tokens,omitempty"`
 	TotalDatasources     int        `json:"total_datasources,omitempty"`
+	TotalItemsFailed     string     `json:"total_items_failed,omitempty"`
+	TotalItemsIndexed    string     `json:"total_items_indexed,omitempty"`
+	TotalItemsSkipped    string     `json:"total_items_skipped,omitempty"`
 	UpdatedAt            *Timestamp `json:"updated_at,omitempty"`
 	Uuid                 string     `json:"uuid,omitempty"`
 }
@@ -363,6 +368,11 @@ type IndexingJobsResponse struct {
 	Jobs  []LastIndexingJob `json:"jobs"`
 	Links *Links            `json:"links,omitempty"`
 	Meta  *Meta             `json:"meta,omitempty"`
+}
+
+// IndexingJobResponse represents the response from retrieving a single indexing job
+type IndexingJobResponse struct {
+	Job LastIndexingJob `json:"job"`
 }
 
 // IndexedDataSource represents a data source within an indexing job
@@ -993,6 +1003,23 @@ func (s *GenAIServiceOp) ListIndexingJobDataSources(ctx context.Context, indexin
 	}
 
 	result := new(IndexingJobDataSourcesResponse)
+	resp, err := s.client.Do(ctx, req, result)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return result, resp, err
+}
+
+// GetIndexingJob retrieves the status of a specific indexing job for a knowledge base
+func (s *GenAIServiceOp) GetIndexingJob(ctx context.Context, indexingJobUUID string) (*IndexingJobResponse, *Response, error) {
+	path := fmt.Sprintf(IndexingJobByIDPath, indexingJobUUID)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	result := new(IndexingJobResponse)
 	resp, err := s.client.Do(ctx, req, result)
 	if err != nil {
 		return nil, resp, err
