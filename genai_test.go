@@ -608,6 +608,27 @@ var indexingJobResponse = `
 }
 `
 
+var cancelIndexingJobResponse = `
+{
+	"job": {
+		"uuid": "22222222-2222-2222-2222-222222222222",
+		"knowledge_base_uuid": "11111111-1111-1111-1111-111111111111",
+		"status": "INDEX_JOB_STATUS_CANCELLED",
+		"phase": "BATCH_JOB_PHASE_CANCELLED",
+		"created_at": "2025-05-08T03:30:00Z",
+		"started_at": "2025-05-08T03:30:05Z",
+		"finished_at": "2025-05-08T03:35:00Z",
+		"updated_at": "2025-05-08T03:35:00Z",
+		"data_source_uuids": [
+			"33333333-3333-3333-3333-333333333333"
+		],
+		"total_datasources": 1,
+		"completed_datasources": 0,
+		"tokens": 0
+	}
+}
+`
+
 var knowledgeBaseResponse = `
 {
 	"knowledge_base": {
@@ -1401,6 +1422,54 @@ func TestGetIndexingJob(t *testing.T) {
 	assert.Equal(t, 2, len(job.DataSourceUuids))
 	assert.Equal(t, "33333333-3333-3333-3333-333333333333", job.DataSourceUuids[0])
 	assert.Equal(t, "44444444-4444-4444-4444-444444444444", job.DataSourceUuids[1])
+
+	// Test timestamps
+	assert.NotNil(t, job.CreatedAt)
+	assert.NotNil(t, job.StartedAt)
+	assert.NotNil(t, job.FinishedAt)
+	assert.NotNil(t, job.UpdatedAt)
+
+	_ = resp // Mark as used to avoid unused variable warning
+}
+
+func TestCancelIndexingJob(t *testing.T) {
+	setup()
+	defer teardown()
+
+	indexingJobUUID := "22222222-2222-2222-2222-222222222222"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/indexing_jobs/%s/cancel", indexingJobUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		// Verify the request payload
+		v := new(CancelIndexingJobRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Errorf("Error decoding request body: %v", err)
+		}
+		assert.Equal(t, indexingJobUUID, v.UUID)
+
+		fmt.Fprint(w, cancelIndexingJobResponse)
+	})
+
+	result, resp, err := client.GenAI.CancelIndexingJob(ctx, indexingJobUUID)
+	if err != nil {
+		t.Errorf("GenAI.CancelIndexingJob returned error: %v", err)
+	}
+
+	// Test the cancelled job details
+	job := result.Job
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", job.Uuid)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", job.KnowledgeBaseUuid)
+	assert.Equal(t, "INDEX_JOB_STATUS_CANCELLED", job.Status)
+	assert.Equal(t, "BATCH_JOB_PHASE_CANCELLED", job.Phase)
+	assert.Equal(t, 1, job.TotalDatasources)
+	assert.Equal(t, 0, job.CompletedDatasources)
+	assert.Equal(t, 0, job.Tokens)
+
+	// Test data source UUIDs array
+	assert.Equal(t, 1, len(job.DataSourceUuids))
+	assert.Equal(t, "33333333-3333-3333-3333-333333333333", job.DataSourceUuids[0])
 
 	// Test timestamps
 	assert.NotNil(t, job.CreatedAt)

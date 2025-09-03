@@ -23,6 +23,7 @@ const (
 	DeleteDataSourcePath         = KnowledgeBasePath + "/%s/data_sources/%s"
 	IndexingJobsPath             = "/v2/gen-ai/indexing_jobs"
 	IndexingJobByIDPath          = IndexingJobsPath + "/%s"
+	IndexingJobCancelPath        = IndexingJobsPath + "/%s/cancel"
 	IndexingJobDataSourcesPath   = IndexingJobsPath + "/%s/data_sources"
 	AnthropicAPIKeysPath         = "/v2/gen-ai/anthropic/keys"
 	AnthropicAPIKeyByIDPath      = AnthropicAPIKeysPath + "/%s"
@@ -56,6 +57,7 @@ type GenAIService interface {
 	DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error)
 	ListIndexingJobs(ctx context.Context, opt *ListOptions) (*IndexingJobsResponse, *Response, error)
 	GetIndexingJob(ctx context.Context, indexingJobUUID string) (*IndexingJobResponse, *Response, error)
+	CancelIndexingJob(ctx context.Context, indexingJobUUID string) (*IndexingJobResponse, *Response, error)
 	ListIndexingJobDataSources(ctx context.Context, indexingJobUUID string) (*IndexingJobDataSourcesResponse, *Response, error)
 	AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
 	DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error)
@@ -373,6 +375,11 @@ type IndexingJobsResponse struct {
 // IndexingJobResponse represents the response from retrieving a single indexing job
 type IndexingJobResponse struct {
 	Job LastIndexingJob `json:"job"`
+}
+
+// CancelIndexingJobRequest represents the request payload for cancelling an indexing job
+type CancelIndexingJobRequest struct {
+	UUID string `json:"uuid"`
 }
 
 // IndexedDataSource represents a data source within an indexing job
@@ -1015,6 +1022,29 @@ func (s *GenAIServiceOp) ListIndexingJobDataSources(ctx context.Context, indexin
 func (s *GenAIServiceOp) GetIndexingJob(ctx context.Context, indexingJobUUID string) (*IndexingJobResponse, *Response, error) {
 	path := fmt.Sprintf(IndexingJobByIDPath, indexingJobUUID)
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	result := new(IndexingJobResponse)
+	resp, err := s.client.Do(ctx, req, result)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return result, resp, err
+}
+
+// CancelIndexingJob cancels a specific indexing job for a knowledge base
+func (s *GenAIServiceOp) CancelIndexingJob(ctx context.Context, indexingJobUUID string) (*IndexingJobResponse, *Response, error) {
+	path := fmt.Sprintf(IndexingJobCancelPath, indexingJobUUID)
+
+	// Create the request payload
+	cancelRequest := &CancelIndexingJobRequest{
+		UUID: indexingJobUUID,
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, cancelRequest)
 	if err != nil {
 		return nil, nil, err
 	}
