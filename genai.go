@@ -1757,3 +1757,11 @@ func (a AgentRouteResponse) String() string {
 func (a AgentVersion) String() string {
 	return Stringify(a)
 }
+
+func (a IndexingJobResponse) String() string {
+	return Stringify(a)
+}
+
+func (a IndexingJobDataSourcesResponse) String() string {
+	return Stringify(a)
+}
