@@ -544,6 +544,91 @@ var listIndexingJobsResponse = `
 }
 `
 
+var indexingJobDataSourcesResponse = `
+{
+	"indexed_data_sources": [
+		{
+			"completed_at": "2025-05-08T03:38:28Z",
+			"data_source_uuid": "33333333-3333-3333-3333-333333333333",
+			"error_details": "",
+			"error_msg": "",
+			"failed_item_count": "0",
+			"indexed_file_count": "5",
+			"indexed_item_count": "150",
+			"removed_item_count": "0",
+			"skipped_item_count": "2",
+			"started_at": "2025-05-08T03:37:30Z",
+			"status": "DATA_SOURCE_STATUS_COMPLETED",
+			"total_bytes": "2048000",
+			"total_bytes_indexed": "1900000",
+			"total_file_count": "7"
+		},
+		{
+			"completed_at": "2025-05-08T03:38:25Z",
+			"data_source_uuid": "44444444-4444-4444-4444-444444444444",
+			"error_details": "File format not supported",
+			"error_msg": "Some files could not be processed",
+			"failed_item_count": "3",
+			"indexed_file_count": "8",
+			"indexed_item_count": "200",
+			"removed_item_count": "1",
+			"skipped_item_count": "5",
+			"started_at": "2025-05-08T03:37:32Z",
+			"status": "DATA_SOURCE_STATUS_COMPLETED_WITH_ERRORS",
+			"total_bytes": "3072000",
+			"total_bytes_indexed": "2800000",
+		"total_file_count": "12"
+	}
+]
+}
+`
+
+var indexingJobResponse = `
+{
+	"job": {
+		"uuid": "22222222-2222-2222-2222-222222222222",
+		"knowledge_base_uuid": "11111111-1111-1111-1111-111111111111",
+		"status": "INDEX_JOB_STATUS_COMPLETED",
+		"phase": "BATCH_JOB_PHASE_COMPLETED",
+		"created_at": "2025-05-08T03:30:00Z",
+		"started_at": "2025-05-08T03:30:05Z",
+		"finished_at": "2025-05-08T03:37:45Z",
+		"updated_at": "2025-05-08T03:37:45Z",
+		"data_source_uuids": [
+			"33333333-3333-3333-3333-333333333333",
+			"44444444-4444-4444-4444-444444444444"
+		],
+		"total_datasources": 2,
+		"completed_datasources": 2,
+		"tokens": 1250,
+		"total_items_indexed": "350",
+		"total_items_failed": "3",
+		"total_items_skipped": "7"
+	}
+}
+`
+
+var cancelIndexingJobResponse = `
+{
+	"job": {
+		"uuid": "22222222-2222-2222-2222-222222222222",
+		"knowledge_base_uuid": "11111111-1111-1111-1111-111111111111",
+		"status": "INDEX_JOB_STATUS_CANCELLED",
+		"phase": "BATCH_JOB_PHASE_CANCELLED",
+		"created_at": "2025-05-08T03:30:00Z",
+		"started_at": "2025-05-08T03:30:05Z",
+		"finished_at": "2025-05-08T03:35:00Z",
+		"updated_at": "2025-05-08T03:35:00Z",
+		"data_source_uuids": [
+			"33333333-3333-3333-3333-333333333333"
+		],
+		"total_datasources": 1,
+		"completed_datasources": 0,
+		"tokens": 0
+	}
+}
+`
+
 var knowledgeBaseResponse = `
 {
 	"knowledge_base": {
@@ -1258,6 +1343,141 @@ func TestListIndexingJobs(t *testing.T) {
 	assert.Equal(t, 10500, result.Jobs[0].Tokens)
 	assert.Equal(t, 2, len(result.Jobs[0].DataSourceUuids))
 	assert.Equal(t, "55555555-5555-5555-5555-555555555555", result.Jobs[1].Uuid)
+}
+
+func TestListIndexingJobDataSources(t *testing.T) {
+	setup()
+	defer teardown()
+
+	indexingJobUUID := "22222222-2222-2222-2222-222222222222"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/indexing_jobs/%s/data_sources", indexingJobUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, indexingJobDataSourcesResponse)
+	})
+
+	result, resp, err := client.GenAI.ListIndexingJobDataSources(ctx, indexingJobUUID)
+	if err != nil {
+		t.Errorf("GenAI.ListIndexingJobDataSources returned error: %v", err)
+	}
+
+	assert.Equal(t, 2, len(result.IndexedDataSources))
+
+	// Test first data source
+	ds1 := result.IndexedDataSources[0]
+	assert.Equal(t, "33333333-3333-3333-3333-333333333333", ds1.DataSourceUuid)
+	assert.Equal(t, "DATA_SOURCE_STATUS_COMPLETED", ds1.Status)
+	assert.Equal(t, "5", ds1.IndexedFileCount)
+	assert.Equal(t, "150", ds1.IndexedItemCount)
+	assert.Equal(t, "0", ds1.FailedItemCount)
+	assert.Equal(t, "2", ds1.SkippedItemCount)
+	assert.Equal(t, "2048000", ds1.TotalBytes)
+	assert.Equal(t, "1900000", ds1.TotalBytesIndexed)
+	assert.Equal(t, "7", ds1.TotalFileCount)
+
+	// Test second data source with errors
+	ds2 := result.IndexedDataSources[1]
+	assert.Equal(t, "44444444-4444-4444-4444-444444444444", ds2.DataSourceUuid)
+	assert.Equal(t, "DATA_SOURCE_STATUS_COMPLETED_WITH_ERRORS", ds2.Status)
+	assert.Equal(t, "8", ds2.IndexedFileCount)
+	assert.Equal(t, "200", ds2.IndexedItemCount)
+	assert.Equal(t, "3", ds2.FailedItemCount)
+	assert.Equal(t, "5", ds2.SkippedItemCount)
+	assert.Equal(t, "File format not supported", ds2.ErrorDetails)
+	assert.Equal(t, "Some files could not be processed", ds2.ErrorMsg)
+
+	_ = resp // Mark as used to avoid unused variable warning
+}
+
+func TestGetIndexingJob(t *testing.T) {
+	setup()
+	defer teardown()
+
+	indexingJobUUID := "22222222-2222-2222-2222-222222222222"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/indexing_jobs/%s", indexingJobUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, indexingJobResponse)
+	})
+
+	result, resp, err := client.GenAI.GetIndexingJob(ctx, indexingJobUUID)
+	if err != nil {
+		t.Errorf("GenAI.GetIndexingJob returned error: %v", err)
+	}
+
+	// Test the job details
+	job := result.Job
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", job.Uuid)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", job.KnowledgeBaseUuid)
+	assert.Equal(t, "INDEX_JOB_STATUS_COMPLETED", job.Status)
+	assert.Equal(t, "BATCH_JOB_PHASE_COMPLETED", job.Phase)
+	assert.Equal(t, 2, job.TotalDatasources)
+	assert.Equal(t, 2, job.CompletedDatasources)
+	assert.Equal(t, 1250, job.Tokens)
+	assert.Equal(t, "350", job.TotalItemsIndexed)
+	assert.Equal(t, "3", job.TotalItemsFailed)
+	assert.Equal(t, "7", job.TotalItemsSkipped)
+
+	// Test data source UUIDs array
+	assert.Equal(t, 2, len(job.DataSourceUuids))
+	assert.Equal(t, "33333333-3333-3333-3333-333333333333", job.DataSourceUuids[0])
+	assert.Equal(t, "44444444-4444-4444-4444-444444444444", job.DataSourceUuids[1])
+
+	// Test timestamps
+	assert.NotNil(t, job.CreatedAt)
+	assert.NotNil(t, job.StartedAt)
+	assert.NotNil(t, job.FinishedAt)
+	assert.NotNil(t, job.UpdatedAt)
+
+	_ = resp // Mark as used to avoid unused variable warning
+}
+
+func TestCancelIndexingJob(t *testing.T) {
+	setup()
+	defer teardown()
+
+	indexingJobUUID := "22222222-2222-2222-2222-222222222222"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/indexing_jobs/%s/cancel", indexingJobUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		// Verify the request payload
+		v := new(CancelIndexingJobRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Errorf("Error decoding request body: %v", err)
+		}
+		assert.Equal(t, indexingJobUUID, v.UUID)
+
+		fmt.Fprint(w, cancelIndexingJobResponse)
+	})
+
+	result, resp, err := client.GenAI.CancelIndexingJob(ctx, indexingJobUUID)
+	if err != nil {
+		t.Errorf("GenAI.CancelIndexingJob returned error: %v", err)
+	}
+
+	// Test the cancelled job details
+	job := result.Job
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", job.Uuid)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", job.KnowledgeBaseUuid)
+	assert.Equal(t, "INDEX_JOB_STATUS_CANCELLED", job.Status)
+	assert.Equal(t, "BATCH_JOB_PHASE_CANCELLED", job.Phase)
+	assert.Equal(t, 1, job.TotalDatasources)
+	assert.Equal(t, 0, job.CompletedDatasources)
+	assert.Equal(t, 0, job.Tokens)
+
+	// Test data source UUIDs array
+	assert.Equal(t, 1, len(job.DataSourceUuids))
+	assert.Equal(t, "33333333-3333-3333-3333-333333333333", job.DataSourceUuids[0])
+
+	// Test timestamps
+	assert.NotNil(t, job.CreatedAt)
+	assert.NotNil(t, job.StartedAt)
+	assert.NotNil(t, job.FinishedAt)
+	assert.NotNil(t, job.UpdatedAt)
+
+	_ = resp // Mark as used to avoid unused variable warning
 }
 
 func TestCreateKnowledgeBase(t *testing.T) {
