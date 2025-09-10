@@ -491,7 +491,6 @@ func TestPartnerAttachment_ListRoutes(t *testing.T) {
 	path := "/v2/partner_network_connect/attachments"
 	want := []*RemoteRoute{
 		{
-			ID:   "a0eb6eb0-fa38-41a8-a5de-1a75524667fe",
 			Cidr: "169.250.0.0/29",
 		},
 	}
@@ -508,7 +507,7 @@ func TestPartnerAttachment_ListRoutes(t *testing.T) {
 	jsonBlob := `
 {
   "remote_routes": [
-	{"id": "a0eb6eb0-fa38-41a8-a5de-1a75524667fe", "cidr": "169.250.0.0/29"}
+	{"cidr": "169.250.0.0/29"}
   ],
   "links": {
     "pages": {
