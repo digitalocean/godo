@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.164.0] - 2025-09-10
+
+- #897 - @DO-rrao - List remote route | removed id field from remote route
+- #894 - @DO-rrao - GenAI : Implement Indexing Jobs Operations
+- #893 - @DO-rrao - GenAI - added changes for ListIndexingJobs for a Knowledge Base
+- #891 - @imaskm - Added prefix update method
+
 ## [1.163.0] - 2025-08-14
 
 - #889 - @bhardwajRahul - Enable Support for Kafka Schema Registry in Godo
