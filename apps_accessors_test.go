@@ -783,6 +783,20 @@ func TestAppFunctionsSpec_GetSourceDir(tt *testing.T) {
 	a.GetSourceDir()
 }
 
+func TestAppHealth_GetComponents(tt *testing.T) {
+	a := &AppHealth{}
+	a.GetComponents()
+	a = nil
+	a.GetComponents()
+}
+
+func TestAppHealth_GetFunctionsComponents(tt *testing.T) {
+	a := &AppHealth{}
+	a.GetFunctionsComponents()
+	a = nil
+	a.GetFunctionsComponents()
+}
+
 func TestAppIngressSpec_GetLoadBalancer(tt *testing.T) {
 	a := &AppIngressSpec{}
 	a.GetLoadBalancer()
@@ -979,6 +993,20 @@ func TestAppInstanceSize_GetFeaturePreview(tt *testing.T) {
 	a.GetFeaturePreview()
 }
 
+func TestAppInstanceSize_GetIDleUSDPerMonth(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetIDleUSDPerMonth()
+	a = nil
+	a.GetIDleUSDPerMonth()
+}
+
+func TestAppInstanceSize_GetIDleUSDPerSecond(tt *testing.T) {
+	a := &AppInstanceSize{}
+	a.GetIDleUSDPerSecond()
+	a = nil
+	a.GetIDleUSDPerSecond()
+}
+
 func TestAppInstanceSize_GetMemoryBytes(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetMemoryBytes()
@@ -1161,6 +1189,13 @@ func TestAppJobSpec_GetRunCommand(tt *testing.T) {
 	a.GetRunCommand()
 }
 
+func TestAppJobSpec_GetSchedule(tt *testing.T) {
+	a := &AppJobSpec{}
+	a.GetSchedule()
+	a = nil
+	a.GetSchedule()
+}
+
 func TestAppJobSpec_GetSourceDir(tt *testing.T) {
 	a := &AppJobSpec{}
 	a.GetSourceDir()
@@ -1173,6 +1208,27 @@ func TestAppJobSpec_GetTermination(tt *testing.T) {
 	a.GetTermination()
 	a = nil
 	a.GetTermination()
+}
+
+func TestAppJobSpec_GetTimeout(tt *testing.T) {
+	a := &AppJobSpec{}
+	a.GetTimeout()
+	a = nil
+	a.GetTimeout()
+}
+
+func TestAppJobSpecSchedule_GetCron(tt *testing.T) {
+	a := &AppJobSpecSchedule{}
+	a.GetCron()
+	a = nil
+	a.GetCron()
+}
+
+func TestAppJobSpecSchedule_GetTimeZone(tt *testing.T) {
+	a := &AppJobSpecSchedule{}
+	a.GetTimeZone()
+	a = nil
+	a.GetTimeZone()
 }
 
 func TestAppJobSpecTermination_GetGracePeriodSeconds(tt *testing.T) {
@@ -1301,20 +1357,6 @@ func TestAppLogDestinationSpecOpenSearch_GetIndexName(tt *testing.T) {
 	a.GetIndexName()
 }
 
-func TestAppProposeRequest_GetAppID(tt *testing.T) {
-	a := &AppProposeRequest{}
-	a.GetAppID()
-	a = nil
-	a.GetAppID()
-}
-
-func TestAppProposeRequest_GetSpec(tt *testing.T) {
-	a := &AppProposeRequest{}
-	a.GetSpec()
-	a = nil
-	a.GetSpec()
-}
-
 func TestAppLogDestinationSpecPapertrail_GetEndpoint(tt *testing.T) {
 	a := &AppLogDestinationSpecPapertrail{}
 	a.GetEndpoint()
@@ -1341,6 +1383,27 @@ func TestAppMaintenanceSpec_GetOfflinePageURL(tt *testing.T) {
 	a.GetOfflinePageURL()
 	a = nil
 	a.GetOfflinePageURL()
+}
+
+func TestAppPeeredVpcSpec_GetName(tt *testing.T) {
+	a := &AppPeeredVpcSpec{}
+	a.GetName()
+	a = nil
+	a.GetName()
+}
+
+func TestAppProposeRequest_GetAppID(tt *testing.T) {
+	a := &AppProposeRequest{}
+	a.GetAppID()
+	a = nil
+	a.GetAppID()
+}
+
+func TestAppProposeRequest_GetSpec(tt *testing.T) {
+	a := &AppProposeRequest{}
+	a.GetSpec()
+	a = nil
+	a.GetSpec()
 }
 
 func TestAppProposeResponse_GetAppCost(tt *testing.T) {
@@ -1595,6 +1658,13 @@ func TestAppServiceSpec_GetImage(tt *testing.T) {
 	a.GetImage()
 }
 
+func TestAppServiceSpec_GetInactivitySleep(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetInactivitySleep()
+	a = nil
+	a.GetInactivitySleep()
+}
+
 func TestAppServiceSpec_GetInstanceCount(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetInstanceCount()
@@ -1614,6 +1684,13 @@ func TestAppServiceSpec_GetInternalPorts(tt *testing.T) {
 	a.GetInternalPorts()
 	a = nil
 	a.GetInternalPorts()
+}
+
+func TestAppServiceSpec_GetLivenessHealthCheck(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetLivenessHealthCheck()
+	a = nil
+	a.GetLivenessHealthCheck()
 }
 
 func TestAppServiceSpec_GetLogDestinations(tt *testing.T) {
@@ -1719,6 +1796,20 @@ func TestAppServiceSpecHealthCheck_GetTimeoutSeconds(tt *testing.T) {
 	a.GetTimeoutSeconds()
 	a = nil
 	a.GetTimeoutSeconds()
+}
+
+func TestAppServiceSpecInactivitySleep_GetAfterSeconds(tt *testing.T) {
+	a := &AppServiceSpecInactivitySleep{}
+	a.GetAfterSeconds()
+	a = nil
+	a.GetAfterSeconds()
+}
+
+func TestAppServiceSpecInactivitySleep_GetLoadingPage(tt *testing.T) {
+	a := &AppServiceSpecInactivitySleep{}
+	a.GetLoadingPage()
+	a = nil
+	a.GetLoadingPage()
 }
 
 func TestAppServiceSpecTermination_GetDrainSeconds(tt *testing.T) {
@@ -2085,6 +2176,13 @@ func TestAppVpcSpec_GetID(tt *testing.T) {
 	a.GetID()
 }
 
+func TestAppVpcSpec_GetPeeredVpcs(tt *testing.T) {
+	a := &AppVpcSpec{}
+	a.GetPeeredVpcs()
+	a = nil
+	a.GetPeeredVpcs()
+}
+
 func TestAppWorkerSpec_GetAlerts(tt *testing.T) {
 	a := &AppWorkerSpec{}
 	a.GetAlerts()
@@ -2174,6 +2272,13 @@ func TestAppWorkerSpec_GetInstanceSizeSlug(tt *testing.T) {
 	a.GetInstanceSizeSlug()
 	a = nil
 	a.GetInstanceSizeSlug()
+}
+
+func TestAppWorkerSpec_GetLivenessHealthCheck(tt *testing.T) {
+	a := &AppWorkerSpec{}
+	a.GetLivenessHealthCheck()
+	a = nil
+	a.GetLivenessHealthCheck()
 }
 
 func TestAppWorkerSpec_GetLogDestinations(tt *testing.T) {
@@ -2300,6 +2405,48 @@ func TestBuildpack_GetVersion(tt *testing.T) {
 	b.GetVersion()
 	b = nil
 	b.GetVersion()
+}
+
+func TestComponentHealth_GetCPUUsagePercent(tt *testing.T) {
+	c := &ComponentHealth{}
+	c.GetCPUUsagePercent()
+	c = nil
+	c.GetCPUUsagePercent()
+}
+
+func TestComponentHealth_GetMemoryUsagePercent(tt *testing.T) {
+	c := &ComponentHealth{}
+	c.GetMemoryUsagePercent()
+	c = nil
+	c.GetMemoryUsagePercent()
+}
+
+func TestComponentHealth_GetName(tt *testing.T) {
+	c := &ComponentHealth{}
+	c.GetName()
+	c = nil
+	c.GetName()
+}
+
+func TestComponentHealth_GetReplicasDesired(tt *testing.T) {
+	c := &ComponentHealth{}
+	c.GetReplicasDesired()
+	c = nil
+	c.GetReplicasDesired()
+}
+
+func TestComponentHealth_GetReplicasReady(tt *testing.T) {
+	c := &ComponentHealth{}
+	c.GetReplicasReady()
+	c = nil
+	c.GetReplicasReady()
+}
+
+func TestComponentHealth_GetState(tt *testing.T) {
+	c := &ComponentHealth{}
+	c.GetState()
+	c = nil
+	c.GetState()
 }
 
 func TestDeployment_GetCause(tt *testing.T) {
@@ -3117,11 +3264,53 @@ func TestDetectResponseServerlessPackage_GetName(tt *testing.T) {
 	d.GetName()
 }
 
+func TestFunctionsComponentHealth_GetFunctionsComponentHealthMetrics(tt *testing.T) {
+	f := &FunctionsComponentHealth{}
+	f.GetFunctionsComponentHealthMetrics()
+	f = nil
+	f.GetFunctionsComponentHealthMetrics()
+}
+
+func TestFunctionsComponentHealth_GetName(tt *testing.T) {
+	f := &FunctionsComponentHealth{}
+	f.GetName()
+	f = nil
+	f.GetName()
+}
+
+func TestFunctionsComponentHealthMetrics_GetMetricLabel(tt *testing.T) {
+	f := &FunctionsComponentHealthMetrics{}
+	f.GetMetricLabel()
+	f = nil
+	f.GetMetricLabel()
+}
+
+func TestFunctionsComponentHealthMetrics_GetMetricValue(tt *testing.T) {
+	f := &FunctionsComponentHealthMetrics{}
+	f.GetMetricValue()
+	f = nil
+	f.GetMetricValue()
+}
+
+func TestFunctionsComponentHealthMetrics_GetTimeWindow(tt *testing.T) {
+	f := &FunctionsComponentHealthMetrics{}
+	f.GetTimeWindow()
+	f = nil
+	f.GetTimeWindow()
+}
+
 func TestGetAppDatabaseConnectionDetailsResponse_GetConnectionDetails(tt *testing.T) {
 	g := &GetAppDatabaseConnectionDetailsResponse{}
 	g.GetConnectionDetails()
 	g = nil
 	g.GetConnectionDetails()
+}
+
+func TestGetAppHealthResponse_GetAppHealth(tt *testing.T) {
+	g := &GetAppHealthResponse{}
+	g.GetAppHealth()
+	g = nil
+	g.GetAppHealth()
 }
 
 func TestGetAppInstancesResponse_GetInstances(tt *testing.T) {
@@ -3257,6 +3446,13 @@ func TestGetDatabaseTrustedSourceResponse_GetIsEnabled(tt *testing.T) {
 	g.GetIsEnabled()
 }
 
+func TestGetJobInvocationResponse_GetJobInvocation(tt *testing.T) {
+	g := &GetJobInvocationResponse{}
+	g.GetJobInvocation()
+	g = nil
+	g.GetJobInvocation()
+}
+
 func TestGitHubSourceSpec_GetBranch(tt *testing.T) {
 	g := &GitHubSourceSpec{}
 	g.GetBranch()
@@ -3311,6 +3507,55 @@ func TestGitSourceSpec_GetRepoCloneURL(tt *testing.T) {
 	g.GetRepoCloneURL()
 	g = nil
 	g.GetRepoCloneURL()
+}
+
+func TestHealthCheckSpec_GetFailureThreshold(tt *testing.T) {
+	h := &HealthCheckSpec{}
+	h.GetFailureThreshold()
+	h = nil
+	h.GetFailureThreshold()
+}
+
+func TestHealthCheckSpec_GetHTTPPath(tt *testing.T) {
+	h := &HealthCheckSpec{}
+	h.GetHTTPPath()
+	h = nil
+	h.GetHTTPPath()
+}
+
+func TestHealthCheckSpec_GetInitialDelaySeconds(tt *testing.T) {
+	h := &HealthCheckSpec{}
+	h.GetInitialDelaySeconds()
+	h = nil
+	h.GetInitialDelaySeconds()
+}
+
+func TestHealthCheckSpec_GetPeriodSeconds(tt *testing.T) {
+	h := &HealthCheckSpec{}
+	h.GetPeriodSeconds()
+	h = nil
+	h.GetPeriodSeconds()
+}
+
+func TestHealthCheckSpec_GetPort(tt *testing.T) {
+	h := &HealthCheckSpec{}
+	h.GetPort()
+	h = nil
+	h.GetPort()
+}
+
+func TestHealthCheckSpec_GetSuccessThreshold(tt *testing.T) {
+	h := &HealthCheckSpec{}
+	h.GetSuccessThreshold()
+	h = nil
+	h.GetSuccessThreshold()
+}
+
+func TestHealthCheckSpec_GetTimeoutSeconds(tt *testing.T) {
+	h := &HealthCheckSpec{}
+	h.GetTimeoutSeconds()
+	h = nil
+	h.GetTimeoutSeconds()
 }
 
 func TestImageSourceSpec_GetDeployOnPush(tt *testing.T) {
@@ -3369,11 +3614,116 @@ func TestImageSourceSpecDeployOnPush_GetEnabled(tt *testing.T) {
 	i.GetEnabled()
 }
 
+func TestInactivitySleepLoadingPage_GetCustomURL(tt *testing.T) {
+	i := &InactivitySleepLoadingPage{}
+	i.GetCustomURL()
+	i = nil
+	i.GetCustomURL()
+}
+
+func TestInactivitySleepLoadingPage_GetEnabled(tt *testing.T) {
+	i := &InactivitySleepLoadingPage{}
+	i.GetEnabled()
+	i = nil
+	i.GetEnabled()
+}
+
+func TestJobInvocation_GetCompletedAt(tt *testing.T) {
+	j := &JobInvocation{}
+	j.GetCompletedAt()
+	j = nil
+	j.GetCompletedAt()
+}
+
+func TestJobInvocation_GetCreatedAt(tt *testing.T) {
+	j := &JobInvocation{}
+	j.GetCreatedAt()
+	j = nil
+	j.GetCreatedAt()
+}
+
+func TestJobInvocation_GetDeploymentID(tt *testing.T) {
+	j := &JobInvocation{}
+	j.GetDeploymentID()
+	j = nil
+	j.GetDeploymentID()
+}
+
+func TestJobInvocation_GetID(tt *testing.T) {
+	j := &JobInvocation{}
+	j.GetID()
+	j = nil
+	j.GetID()
+}
+
+func TestJobInvocation_GetJobName(tt *testing.T) {
+	j := &JobInvocation{}
+	j.GetJobName()
+	j = nil
+	j.GetJobName()
+}
+
+func TestJobInvocation_GetPhase(tt *testing.T) {
+	j := &JobInvocation{}
+	j.GetPhase()
+	j = nil
+	j.GetPhase()
+}
+
+func TestJobInvocation_GetStartedAt(tt *testing.T) {
+	j := &JobInvocation{}
+	j.GetStartedAt()
+	j = nil
+	j.GetStartedAt()
+}
+
+func TestJobInvocation_GetTrigger(tt *testing.T) {
+	j := &JobInvocation{}
+	j.GetTrigger()
+	j = nil
+	j.GetTrigger()
+}
+
+func TestJobInvocationTrigger_GetManual(tt *testing.T) {
+	j := &JobInvocationTrigger{}
+	j.GetManual()
+	j = nil
+	j.GetManual()
+}
+
+func TestJobInvocationTrigger_GetScheduled(tt *testing.T) {
+	j := &JobInvocationTrigger{}
+	j.GetScheduled()
+	j = nil
+	j.GetScheduled()
+}
+
+func TestJobInvocationTrigger_GetType(tt *testing.T) {
+	j := &JobInvocationTrigger{}
+	j.GetType()
+	j = nil
+	j.GetType()
+}
+
 func TestListBuildpacksResponse_GetBuildpacks(tt *testing.T) {
 	l := &ListBuildpacksResponse{}
 	l.GetBuildpacks()
 	l = nil
 	l.GetBuildpacks()
+}
+
+func TestListJobInvocationsResponse_GetJobInvocations(tt *testing.T) {
+	l := &ListJobInvocationsResponse{}
+	l.GetJobInvocations()
+	l = nil
+	l.GetJobInvocations()
+}
+
+func TestListJobInvocationsResponse_GetPagination(tt *testing.T) {
+	l := &ListJobInvocationsResponse{}
+	l.GetPagination()
+	l = nil
+	l.GetPagination()
 }
 
 func TestOpenSearchBasicAuth_GetPassword(tt *testing.T) {
@@ -3388,6 +3738,69 @@ func TestOpenSearchBasicAuth_GetUser(tt *testing.T) {
 	o.GetUser()
 	o = nil
 	o.GetUser()
+}
+
+func TestPaginationRequest_GetPage(tt *testing.T) {
+	p := &PaginationRequest{}
+	p.GetPage()
+	p = nil
+	p.GetPage()
+}
+
+func TestPaginationRequest_GetPerPage(tt *testing.T) {
+	p := &PaginationRequest{}
+	p.GetPerPage()
+	p = nil
+	p.GetPerPage()
+}
+
+func TestPaginationRequest_GetSort(tt *testing.T) {
+	p := &PaginationRequest{}
+	p.GetSort()
+	p = nil
+	p.GetSort()
+}
+
+func TestPaginationRequest_GetSortDirection(tt *testing.T) {
+	p := &PaginationRequest{}
+	p.GetSortDirection()
+	p = nil
+	p.GetSortDirection()
+}
+
+func TestPaginationResponse_GetPage(tt *testing.T) {
+	p := &PaginationResponse{}
+	p.GetPage()
+	p = nil
+	p.GetPage()
+}
+
+func TestPaginationResponse_GetPages(tt *testing.T) {
+	p := &PaginationResponse{}
+	p.GetPages()
+	p = nil
+	p.GetPages()
+}
+
+func TestPaginationResponse_GetPerPage(tt *testing.T) {
+	p := &PaginationResponse{}
+	p.GetPerPage()
+	p = nil
+	p.GetPerPage()
+}
+
+func TestPaginationResponse_GetPublicApiPrefix(tt *testing.T) {
+	p := &PaginationResponse{}
+	p.GetPublicApiPrefix()
+	p = nil
+	p.GetPublicApiPrefix()
+}
+
+func TestPaginationResponse_GetTotal(tt *testing.T) {
+	p := &PaginationResponse{}
+	p.GetTotal()
+	p = nil
+	p.GetTotal()
 }
 
 func TestResetDatabasePasswordRequest_GetAppID(tt *testing.T) {
@@ -3437,6 +3850,20 @@ func TestToggleDatabaseTrustedSourceResponse_GetIsEnabled(tt *testing.T) {
 	t.GetIsEnabled()
 	t = nil
 	t.GetIsEnabled()
+}
+
+func TestTriggerMetadataManual_GetUser(tt *testing.T) {
+	t := &TriggerMetadataManual{}
+	t.GetUser()
+	t = nil
+	t.GetUser()
+}
+
+func TestTriggerMetadataScheduled_GetSchedule(tt *testing.T) {
+	t := &TriggerMetadataScheduled{}
+	t.GetSchedule()
+	t = nil
+	t.GetSchedule()
 }
 
 func TestUpgradeBuildpackResponse_GetAffectedComponents(tt *testing.T) {
