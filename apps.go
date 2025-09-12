@@ -78,6 +78,10 @@ type AppsService interface {
 	)
 
 	GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOpts) ([]*AppInstance, *Response, error)
+
+	ListJobInvocations(ctx context.Context, appID string, opts *ListJobInvocationsOptions) ([]*JobInvocation, *Response, error)
+	GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *ListJobInvocationsOptions) (*JobInvocation, *Response, error)
+	GetJobInvocationLogs(ctx context.Context, appID, jobName, jobInvocationId string, logType AppLogType, follow bool, tailLines int, pod_connection_timeout string) (*AppLogs, *Response, error)
 }
 
 // AppLogs represent app logs.
