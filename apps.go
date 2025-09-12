@@ -104,6 +104,15 @@ type AppGetExecOptions struct {
 	InstanceName string `json:"instance_name,omitempty"`
 }
 
+type ListJobInvocationsOptions struct {
+	ListOptions    PaginationRequest
+	// DeploymentID is an optional paramerter. This is used to filter job invocations to a specific deployment.
+	DeploymentID string `json:"deployment_id,omitempty"`
+
+	// JobName is an optional parameter. This is used to filter job invocations to a specific job.
+	JobName string `json:"job_name,omitempty"`
+}
+
 // DeploymentCreateRequest represents a request to create a deployment.
 type DeploymentCreateRequest struct {
 	ForceBuild bool `json:"force_build"`
@@ -154,6 +163,15 @@ type deploymentsRoot struct {
 	Deployments []*Deployment `json:"deployments"`
 	Links       *Links        `json:"links"`
 	Meta        *Meta         `json:"meta"`
+}
+
+type jobInvocationRoot struct {
+	JobInvocation *JobInvocation `json:"job_invocation,omitempty"`
+}
+
+type jobInvocationsRoot struct {
+	JobInvocations []*JobInvocation `json:"job_invocations"`
+	Pagination     *PaginationResponse `json:"pagination"`
 }
 
 type appTierRoot struct {
@@ -406,6 +424,81 @@ func (s *AppsServiceOp) CreateDeployment(ctx context.Context, appID string, crea
 	}
 	return root.Deployment, resp, nil
 }
+
+// ListJobInvocations lists all job invocations for a given app.
+func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, opts *ListJobInvocationsOptions) ([]*JobInvocation, *Response, error) {
+	var url string
+	if opts.JobName != "" && opts.DeploymentID != "" {
+		url = fmt.Sprintf("%s/%s/deployments/%s/jobs/%s/invocations", appsBasePath, appID, opts.DeploymentID, opts.JobName)
+	} else if opts.DeploymentID == "" && opts.JobName == "" {
+		url = fmt.Sprintf("%s/%s/job-invocations", appsBasePath, appID)
+	} else if opts.DeploymentID != "" {
+		url = fmt.Sprintf("%s/%s/deployments/%s/job-invocations", appsBasePath, appID, opts.DeploymentID)
+	} else if opts.JobName != "" {
+		url = fmt.Sprintf("%s/%s/jobs/%s/invocations", appsBasePath, appID, opts.JobName)
+	}
+
+	url, err := addOptions(url, &opts.ListOptions)
+
+	if err != nil {
+		return nil, nil, err
+	}
+	
+	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(jobInvocationsRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.JobInvocations, resp, nil
+}
+
+// GetJobInvocation gets a specific job invocation for a given app.
+func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *ListJobInvocationsOptions) (*JobInvocation, *Response, error) {
+
+	url := fmt.Sprintf("%s/%s/job-invocations/%s", appsBasePath, appID, jobInvocationId)
+
+	if opts.JobName != "" {
+		url = fmt.Sprintf("%s/%s/jobs/%s/invocations/%s", appsBasePath, appID, opts.JobName, jobInvocationId)
+	}
+	
+	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(jobInvocationRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.JobInvocation, resp, nil
+}
+
+// GetLogs retrieves app logs.
+func (s *AppsServiceOp) GetJobInvocationLogs(ctx context.Context, appID, jobName, jobInvocationId string, logType AppLogType, follow bool, tailLines int, pod_connection_timeout string) (*AppLogs, *Response, error) {
+	url := fmt.Sprintf("%s/%s/jobs/%s/invocations/%s/logs?type=%s&follow=%t&tail_lines=%d", appsBasePath, appID, jobName, jobInvocationId, logType, follow, tailLines)
+
+	if pod_connection_timeout != "" {
+		url = fmt.Sprintf("%s&pod_connection_timeout=%s", url, pod_connection_timeout)
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	logs := new(AppLogs)
+	resp, err := s.client.Do(ctx, req, logs)
+	if err != nil {
+		return nil, resp, err
+	}
+	return logs, resp, nil
+}
+
 
 // GetLogs retrieves app logs.
 func (s *AppsServiceOp) GetLogs(ctx context.Context, appID, deploymentID, component string, logType AppLogType, follow bool, tailLines int) (*AppLogs, *Response, error) {
