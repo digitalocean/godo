@@ -24,6 +24,8 @@ const (
 	AppLogTypeRun AppLogType = "RUN"
 	// AppLogTypeRunRestarted represents logs of crashed/restarted instances during runtime.
 	AppLogTypeRunRestarted AppLogType = "RUN_RESTARTED"
+	// AppLogTypeJobInvocation represents logs of job invocations.
+	AppLogTypeJobInvocation AppLogType = "JOB_INVOCATION"
 )
 
 // AppsService is an interface for interfacing with the App Platform endpoints
