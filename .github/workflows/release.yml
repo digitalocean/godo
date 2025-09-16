@@ -1,0 +1,142 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Get tag version
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Tag: $TAG, Version: $VERSION"
+
+      - name: Verify version consistency
+        run: |
+          GODO_VERSION=$(grep -E '^\s*libraryVersion\s*=' godo.go | sed 's/.*"\(.*\)".*/\1/')
+          if [ "$GODO_VERSION" != "${{ steps.version.outputs.version }}" ]; then
+            echo "❌ Version mismatch: tag ${{ steps.version.outputs.version }} vs godo.go $GODO_VERSION"
+            exit 1
+          fi
+          echo "✅ Version verified: $GODO_VERSION"
+
+      - name: Run tests
+        run: |
+          go test -mod=vendor -v ./...
+
+      - name: Run linting
+        run: |
+          go fmt ./...
+          go vet ./...
+
+      - name: Extract changelog
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          
+          # Extract changelog entries for this version
+          if [ -f "CHANGELOG.md" ]; then
+            CHANGELOG=$(awk -v version="$VERSION" '
+              $0 ~ "^## \\[" version "\\]" { found=1; next }
+              found && /^## \[/ { exit }
+              found && NF > 0 { print }
+            ' CHANGELOG.md)
+          else
+            CHANGELOG="No changelog available."
+          fi
+          
+          # Save to file to handle multiline content
+          echo "$CHANGELOG" > /tmp/changelog.txt
+          echo "changelog_file=/tmp/changelog.txt" >> $GITHUB_OUTPUT
+
+      - name: Check if release exists
+        id: release_check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ steps.version.outputs.tag }}" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release does not exist"
+          fi
+
+      - name: Create Release
+        if: steps.release_check.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          CHANGELOG_FILE="${{ steps.changelog.outputs.changelog_file }}"
+          
+          # Create draft release with changelog
+          gh release create "$TAG" \
+            --title "Release $VERSION" \
+            --notes-file "$CHANGELOG_FILE" \
+            --draft
+
+      - name: Update existing release
+        if: steps.release_check.outputs.exists == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          CHANGELOG_FILE="${{ steps.changelog.outputs.changelog_file }}"
+          
+          echo "Updating existing release $TAG as draft"
+          gh release edit "$TAG" \
+            --title "Release $VERSION" \
+            --notes-file "$CHANGELOG_FILE" \
+            --draft
+
+      - name: Verify release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          
+          # Wait a moment for release to be created
+          sleep 5
+          
+          # Verify draft release exists
+          if gh release view "$TAG" --json isDraft | jq -e '.isDraft == true'; then
+            echo "Draft release $TAG successfully created"
+          else
+            echo "Release created but may not be in draft state"
+            gh release view "$TAG"
+          fi
+
+      - name: Notify completion
+        run: |
+          echo "Draft release ${{ steps.version.outputs.tag }} created successfully!"
+          echo "📦 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
+          echo "⚠️  Please review the draft release and publish it manually when ready"
