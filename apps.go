@@ -111,7 +111,7 @@ type AppGetExecOptions struct {
 }
 
 type ListJobInvocationsOptions struct {
-	ListOptions    PaginationRequest
+	ListOptions PaginationRequest
 	// DeploymentID is an optional paramerter. This is used to filter job invocations to a specific deployment.
 	DeploymentID string `json:"deployment_id,omitempty"`
 
@@ -176,7 +176,7 @@ type jobInvocationRoot struct {
 }
 
 type jobInvocationsRoot struct {
-	JobInvocations []*JobInvocation `json:"job_invocations"`
+	JobInvocations []*JobInvocation    `json:"job_invocations"`
 	Pagination     *PaginationResponse `json:"pagination"`
 }
 
@@ -449,7 +449,7 @@ func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, op
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, nil, err
@@ -471,7 +471,7 @@ func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobI
 	if opts.JobName != "" {
 		url = fmt.Sprintf("%s/%s/jobs/%s/invocations/%s", appsBasePath, appID, opts.JobName, jobInvocationId)
 	}
-	
+
 	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, nil, err
@@ -504,7 +504,6 @@ func (s *AppsServiceOp) GetJobInvocationLogs(ctx context.Context, appID, jobName
 	}
 	return logs, resp, nil
 }
-
 
 // GetLogs retrieves app logs.
 func (s *AppsServiceOp) GetLogs(ctx context.Context, appID, deploymentID, component string, logType AppLogType, follow bool, tailLines int) (*AppLogs, *Response, error) {
