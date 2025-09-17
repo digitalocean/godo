@@ -1299,6 +1299,7 @@ func (s *GenAIServiceOp) DeleteAgentRoute(ctx context.Context, parentId string, 
 	return root, resp, nil
 }
 
+// ListAgentVersions retrieves a list of versions for the specified GenAI agent
 func (s *GenAIServiceOp) ListAgentVersions(ctx context.Context, agentId string, opt *ListOptions) ([]*AgentVersion, *Response, error) {
 	path := fmt.Sprintf("%s/%s/versions", genAIBasePath, agentId)
 	path, err := addOptions(path, opt)
