@@ -24,8 +24,6 @@ const (
 	AppLogTypeRun AppLogType = "RUN"
 	// AppLogTypeRunRestarted represents logs of crashed/restarted instances during runtime.
 	AppLogTypeRunRestarted AppLogType = "RUN_RESTARTED"
-	// AppLogTypeJobInvocation represents logs of job invocations.
-	AppLogTypeJobInvocation AppLogType = "JOB_INVOCATION"
 )
 
 // AppsService is an interface for interfacing with the App Platform endpoints
@@ -80,8 +78,8 @@ type AppsService interface {
 	GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOpts) ([]*AppInstance, *Response, error)
 
 	ListJobInvocations(ctx context.Context, appID string, opts *ListJobInvocationsOptions) ([]*JobInvocation, *Response, error)
-	GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *ListJobInvocationsOptions) (*JobInvocation, *Response, error)
-	GetJobInvocationLogs(ctx context.Context, appID, jobName, jobInvocationId string, logType AppLogType, follow bool, tailLines int, pod_connection_timeout string) (*AppLogs, *Response, error)
+	GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *GetJobInvocationsOptions) (*JobInvocation, *Response, error)
+	GetJobInvocationLogs(ctx context.Context, appID, jobInvocationId string, opts *GetJobInvocationLogsOptions) (*AppLogs, *Response, error)
 }
 
 // AppLogs represent app logs.
@@ -110,11 +108,20 @@ type AppGetExecOptions struct {
 	InstanceName string `json:"instance_name,omitempty"`
 }
 
+type GetJobInvocationLogsOptions struct {
+	JobName   string
+	Follow    bool
+	TailLines int
+}
+
+type GetJobInvocationsOptions struct {
+	JobName string
+}
+
 type ListJobInvocationsOptions struct {
 	ListOptions PaginationRequest
 	// DeploymentID is an optional paramerter. This is used to filter job invocations to a specific deployment.
 	DeploymentID string `json:"deployment_id,omitempty"`
-
 	// JobName is an optional parameter. This is used to filter job invocations to a specific job.
 	JobName string `json:"job_name,omitempty"`
 }
@@ -464,8 +471,7 @@ func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, op
 }
 
 // GetJobInvocation gets a specific job invocation for a given app.
-func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *ListJobInvocationsOptions) (*JobInvocation, *Response, error) {
-
+func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *GetJobInvocationsOptions) (*JobInvocation, *Response, error) {
 	url := fmt.Sprintf("%s/%s/job-invocations/%s", appsBasePath, appID, jobInvocationId)
 
 	if opts.JobName != "" {
@@ -485,12 +491,15 @@ func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobI
 	return root.JobInvocation, resp, nil
 }
 
-// GetLogs retrieves app logs.
-func (s *AppsServiceOp) GetJobInvocationLogs(ctx context.Context, appID, jobName, jobInvocationId string, logType AppLogType, follow bool, tailLines int, pod_connection_timeout string) (*AppLogs, *Response, error) {
-	url := fmt.Sprintf("%s/%s/jobs/%s/invocations/%s/logs?type=%s&follow=%t&tail_lines=%d", appsBasePath, appID, jobName, jobInvocationId, logType, follow, tailLines)
+// GetJobInvocationLogs retrieves job invocation logs.
+func (s *AppsServiceOp) GetJobInvocationLogs(ctx context.Context, appID, jobInvocationId string, opts *GetJobInvocationLogsOptions) (*AppLogs, *Response, error) {
+	url := fmt.Sprintf("%s/%s/jobs/%s/invocations/%s/logs?type=JOB_INVOCATION", appsBasePath, appID, opts.JobName, jobInvocationId)
 
-	if pod_connection_timeout != "" {
-		url = fmt.Sprintf("%s&pod_connection_timeout=%s", url, pod_connection_timeout)
+	if opts.Follow {
+		url += fmt.Sprintf("&follow=%t", opts.Follow)
+	}
+	if opts.TailLines > 0 {
+		url += fmt.Sprintf("&tail_lines=%d", opts.TailLines)
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
