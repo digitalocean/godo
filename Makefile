@@ -76,7 +76,11 @@ bump_version: ## Bumps the version
 	@ORIGIN=$(ORIGIN) scripts/bumpversion.sh
 
 .PHONY: tag
-tag: ## Tags a release
+tag: ## Tags a release and creates a draft GitHub release with changelog
 	@echo "==> ORIGIN=$(ORIGIN) COMMIT=$(COMMIT) tag"
 	@echo ""
 	@ORIGIN=$(ORIGIN) scripts/tag.sh
+	@echo "==> Generating changelog for new tag"
+	@github_changelog_generator --user digitalocean --project godo --future-release $$(git describe --tags --abbrev=0) --output CHANGELOG.md
+	@echo "==> Creating draft GitHub release with changelog"
+	@gh release create $$(git describe --tags --abbrev=0) --draft --notes-file CHANGELOG.md
