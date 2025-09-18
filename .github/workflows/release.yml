@@ -44,6 +44,9 @@ jobs:
             exit 1
           fi
           echo "✅ Version verified: $GODO_VERSION"
+      - name: Sync vendor directory
+        run: go mod vendor
+
       - name: Run tests
         run: |
           go test -mod=vendor -v ./...
