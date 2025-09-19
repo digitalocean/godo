@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	netURL "net/url"
+	"strconv"
 )
 
 const (
@@ -119,11 +121,14 @@ type GetJobInvocationsOptions struct {
 }
 
 type ListJobInvocationsOptions struct {
-	ListOptions PaginationRequest
+	// For paginated result sets, page of results to retrieve.
+	Page int `url:"page,omitempty"`
+	// For paginated result sets, the number of results to include per page.
+	PerPage int `url:"per_page,omitempty"`
 	// DeploymentID is an optional paramerter. This is used to filter job invocations to a specific deployment.
 	DeploymentID string `json:"deployment_id,omitempty"`
 	// JobName is an optional parameter. This is used to filter job invocations to a specific job.
-	JobName string `json:"job_name,omitempty"`
+	JobNames []string `url:"job_names,omitempty"`
 }
 
 // DeploymentCreateRequest represents a request to create a deployment.
@@ -440,24 +445,32 @@ func (s *AppsServiceOp) CreateDeployment(ctx context.Context, appID string, crea
 
 // ListJobInvocations lists all job invocations for a given app.
 func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, opts *ListJobInvocationsOptions) ([]*JobInvocation, *Response, error) {
-	var url string
-	if opts.JobName != "" && opts.DeploymentID != "" {
-		url = fmt.Sprintf("%s/%s/deployments/%s/jobs/%s/invocations", appsBasePath, appID, opts.DeploymentID, opts.JobName)
-	} else if opts.DeploymentID == "" && opts.JobName == "" {
-		url = fmt.Sprintf("%s/%s/job-invocations", appsBasePath, appID)
-	} else if opts.DeploymentID != "" {
-		url = fmt.Sprintf("%s/%s/deployments/%s/job-invocations", appsBasePath, appID, opts.DeploymentID)
-	} else if opts.JobName != "" {
-		url = fmt.Sprintf("%s/%s/jobs/%s/invocations", appsBasePath, appID, opts.JobName)
+	path := fmt.Sprintf("%s/%s/job-invocations", appsBasePath, appID)
+	if opts.DeploymentID != "" {
+		path = fmt.Sprintf("%s/%s/deployments/%s/job-invocations", appsBasePath, appID, opts.DeploymentID)
 	}
 
-	url, err := addOptions(url, &opts.ListOptions)
-
+	u, err := url.Parse(path)
 	if err != nil {
 		return nil, nil, err
 	}
+	// Add query parameters
+	q := u.Query()
+	for _, name := range opts.JobNames {
+		if name != "" {
+			q.Add("job_names", name)
+		}
+	}
+	if opts.Page > 0 {
+		q.Set("pagination.page", strconv.Itoa(opts.Page))
+	}
+	if opts.PerPage > 0 {
+		q.Set("pagination.per_page", strconv.Itoa(opts.PerPage))
+	}
+	u.RawQuery = q.Encode()
+	path = u.String()
 
-	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}

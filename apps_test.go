@@ -1303,11 +1303,12 @@ func TestApps_ListJobInvocations(t *testing.T) {
 	ctx := context.Background()
 
 	opts := ListJobInvocationsOptions{
-		JobName:      testJobInvocation.JobName,
+		JobNames:     []string{testJobInvocation.JobName},
 		DeploymentID: testJobInvocation.DeploymentID,
 	}
-	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/jobs/%s/invocations", testApp.ID, opts.DeploymentID, opts.JobName), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/job-invocations", testApp.ID, opts.DeploymentID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, strings.Join(opts.JobNames, ","), r.URL.Query().Get("job_names"))
 		json.NewEncoder(w).Encode(&jobInvocationsRoot{JobInvocations: []*JobInvocation{&testJobInvocation}})
 	})
 
