@@ -78,7 +78,7 @@ type AppsService interface {
 	GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOpts) ([]*AppInstance, *Response, error)
 
 	ListJobInvocations(ctx context.Context, appID string, opts *ListJobInvocationsOptions) ([]*JobInvocation, *Response, error)
-	GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *GetJobInvocationsOptions) (*JobInvocation, *Response, error)
+	GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *GetJobInvocationOptions) (*JobInvocation, *Response, error)
 	GetJobInvocationLogs(ctx context.Context, appID, jobInvocationId string, opts *GetJobInvocationLogsOptions) (*AppLogs, *Response, error)
 }
 
@@ -109,21 +109,27 @@ type AppGetExecOptions struct {
 }
 
 type GetJobInvocationLogsOptions struct {
-	JobName   string
-	Follow    bool
+	// JobName is the name of the job to retrieve logs for.
+	JobName string
+	// Follow indicates whether to stream the logs.
+	Follow bool
+	// TailLines is the number of lines from the end of the logs to retrieve.
 	TailLines int
 }
 
-type GetJobInvocationsOptions struct {
+type GetJobInvocationOptions struct {
 	JobName string
 }
 
 type ListJobInvocationsOptions struct {
-	ListOptions PaginationRequest
+	// For paginated result sets, page of results to retrieve.
+	Page int `url:"page,omitempty"`
+	// For paginated result sets, the number of results to include per page.
+	PerPage int `url:"per_page,omitempty"`
 	// DeploymentID is an optional paramerter. This is used to filter job invocations to a specific deployment.
 	DeploymentID string `json:"deployment_id,omitempty"`
 	// JobName is an optional parameter. This is used to filter job invocations to a specific job.
-	JobName string `json:"job_name,omitempty"`
+	JobNames []string `url:"job_names,omitempty"`
 }
 
 // DeploymentCreateRequest represents a request to create a deployment.
@@ -183,8 +189,9 @@ type jobInvocationRoot struct {
 }
 
 type jobInvocationsRoot struct {
-	JobInvocations []*JobInvocation    `json:"job_invocations"`
-	Pagination     *PaginationResponse `json:"pagination"`
+	JobInvocations []*JobInvocation `json:"job_invocations"`
+	Links          *Links           `json:"links"`
+	Meta           *Meta            `json:"meta"`
 }
 
 type appTierRoot struct {
@@ -440,24 +447,13 @@ func (s *AppsServiceOp) CreateDeployment(ctx context.Context, appID string, crea
 
 // ListJobInvocations lists all job invocations for a given app.
 func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, opts *ListJobInvocationsOptions) ([]*JobInvocation, *Response, error) {
-	var url string
-	if opts.JobName != "" && opts.DeploymentID != "" {
-		url = fmt.Sprintf("%s/%s/deployments/%s/jobs/%s/invocations", appsBasePath, appID, opts.DeploymentID, opts.JobName)
-	} else if opts.DeploymentID == "" && opts.JobName == "" {
-		url = fmt.Sprintf("%s/%s/job-invocations", appsBasePath, appID)
-	} else if opts.DeploymentID != "" {
-		url = fmt.Sprintf("%s/%s/deployments/%s/job-invocations", appsBasePath, appID, opts.DeploymentID)
-	} else if opts.JobName != "" {
-		url = fmt.Sprintf("%s/%s/jobs/%s/invocations", appsBasePath, appID, opts.JobName)
-	}
+	path := fmt.Sprintf("%s/%s/job-invocations", appsBasePath, appID)
 
-	url, err := addOptions(url, &opts.ListOptions)
-
+	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -467,11 +463,19 @@ func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, op
 	if err != nil {
 		return nil, resp, err
 	}
+
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
 	return root.JobInvocations, resp, nil
 }
 
 // GetJobInvocation gets a specific job invocation for a given app.
-func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *GetJobInvocationsOptions) (*JobInvocation, *Response, error) {
+func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *GetJobInvocationOptions) (*JobInvocation, *Response, error) {
 	url := fmt.Sprintf("%s/%s/job-invocations/%s", appsBasePath, appID, jobInvocationId)
 
 	if opts.JobName != "" {

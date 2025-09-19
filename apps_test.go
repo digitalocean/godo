@@ -1303,19 +1303,26 @@ func TestApps_ListJobInvocations(t *testing.T) {
 	ctx := context.Background()
 
 	opts := ListJobInvocationsOptions{
-		JobName:      testJobInvocation.JobName,
+		JobNames:     []string{testJobInvocation.JobName},
 		DeploymentID: testJobInvocation.DeploymentID,
+		Page:         1,
+		PerPage:      10,
 	}
-	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/deployments/%s/jobs/%s/invocations", testApp.ID, opts.DeploymentID, opts.JobName), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/job-invocations", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		json.NewEncoder(w).Encode(&jobInvocationsRoot{JobInvocations: []*JobInvocation{&testJobInvocation}})
+		assert.Equal(t, strings.Join(opts.JobNames, ","), r.URL.Query().Get("job_names"))
+		assert.Equal(t, fmt.Sprintf("%d", opts.Page), r.URL.Query().Get("page"))
+		assert.Equal(t, fmt.Sprintf("%d", opts.PerPage), r.URL.Query().Get("per_page"))
+		json.NewEncoder(w).Encode(&jobInvocationsRoot{JobInvocations: []*JobInvocation{&testJobInvocation}, Meta: &Meta{Total: 1}, Links: &Links{}})
 	})
 
-	appJobInvocations, _, err := client.Apps.ListJobInvocations(ctx, testApp.ID, &opts)
+	appJobInvocations, resp, err := client.Apps.ListJobInvocations(ctx, testApp.ID, &opts)
 	require.NoError(t, err)
-	require.Len(t, appJobInvocations, 1)
-	assert.Equal(t, testJobInvocation.ID, appJobInvocations[0].ID)
-
+	assert.Equal(t, []*JobInvocation{&testJobInvocation}, appJobInvocations)
+	assert.Equal(t, 1, resp.Meta.Total)
+	currentPage, err := resp.Links.CurrentPage()
+	require.NoError(t, err)
+	assert.Equal(t, 1, currentPage)
 }
 
 func TestApps_GetJobInvocation(t *testing.T) {
@@ -1323,7 +1330,7 @@ func TestApps_GetJobInvocation(t *testing.T) {
 	defer teardown()
 
 	ctx := context.Background()
-	opts := &GetJobInvocationsOptions{
+	opts := &GetJobInvocationOptions{
 		JobName: "job-name",
 	}
 	jobInvocationId := testJobInvocation.ID
@@ -1347,7 +1354,7 @@ func TestApps_GetJobInvocation(t *testing.T) {
 		json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &testJobInvocation})
 	})
 
-	jobInvocation, _, err = client.Apps.GetJobInvocation(ctx, testApp.ID, jobInvocationId, &GetJobInvocationsOptions{})
+	jobInvocation, _, err = client.Apps.GetJobInvocation(ctx, testApp.ID, jobInvocationId, &GetJobInvocationOptions{})
 	require.NoError(t, err)
 	assert.Equal(t, &testJobInvocation, jobInvocation)
 

@@ -3712,20 +3712,6 @@ func TestListBuildpacksResponse_GetBuildpacks(tt *testing.T) {
 	l.GetBuildpacks()
 }
 
-func TestListJobInvocationsResponse_GetJobInvocations(tt *testing.T) {
-	l := &ListJobInvocationsResponse{}
-	l.GetJobInvocations()
-	l = nil
-	l.GetJobInvocations()
-}
-
-func TestListJobInvocationsResponse_GetPagination(tt *testing.T) {
-	l := &ListJobInvocationsResponse{}
-	l.GetPagination()
-	l = nil
-	l.GetPagination()
-}
-
 func TestOpenSearchBasicAuth_GetPassword(tt *testing.T) {
 	o := &OpenSearchBasicAuth{}
 	o.GetPassword()
@@ -3738,69 +3724,6 @@ func TestOpenSearchBasicAuth_GetUser(tt *testing.T) {
 	o.GetUser()
 	o = nil
 	o.GetUser()
-}
-
-func TestPaginationRequest_GetPage(tt *testing.T) {
-	p := &PaginationRequest{}
-	p.GetPage()
-	p = nil
-	p.GetPage()
-}
-
-func TestPaginationRequest_GetPerPage(tt *testing.T) {
-	p := &PaginationRequest{}
-	p.GetPerPage()
-	p = nil
-	p.GetPerPage()
-}
-
-func TestPaginationRequest_GetSort(tt *testing.T) {
-	p := &PaginationRequest{}
-	p.GetSort()
-	p = nil
-	p.GetSort()
-}
-
-func TestPaginationRequest_GetSortDirection(tt *testing.T) {
-	p := &PaginationRequest{}
-	p.GetSortDirection()
-	p = nil
-	p.GetSortDirection()
-}
-
-func TestPaginationResponse_GetPage(tt *testing.T) {
-	p := &PaginationResponse{}
-	p.GetPage()
-	p = nil
-	p.GetPage()
-}
-
-func TestPaginationResponse_GetPages(tt *testing.T) {
-	p := &PaginationResponse{}
-	p.GetPages()
-	p = nil
-	p.GetPages()
-}
-
-func TestPaginationResponse_GetPerPage(tt *testing.T) {
-	p := &PaginationResponse{}
-	p.GetPerPage()
-	p = nil
-	p.GetPerPage()
-}
-
-func TestPaginationResponse_GetPublicApiPrefix(tt *testing.T) {
-	p := &PaginationResponse{}
-	p.GetPublicApiPrefix()
-	p = nil
-	p.GetPublicApiPrefix()
-}
-
-func TestPaginationResponse_GetTotal(tt *testing.T) {
-	p := &PaginationResponse{}
-	p.GetTotal()
-	p = nil
-	p.GetTotal()
 }
 
 func TestResetDatabasePasswordRequest_GetAppID(tt *testing.T) {

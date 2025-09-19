@@ -1431,36 +1431,12 @@ type ListBuildpacksResponse struct {
 	Buildpacks []*Buildpack `json:"buildpacks,omitempty"`
 }
 
-// ListJobInvocationsResponse struct for ListJobInvocationsResponse
-type ListJobInvocationsResponse struct {
-	JobInvocations []*JobInvocation    `json:"job_invocations,omitempty"`
-	Pagination     *PaginationResponse `json:"pagination,omitempty"`
-}
-
 // OpenSearchBasicAuth Configure Username and/or Password for Basic authentication.
 type OpenSearchBasicAuth struct {
 	// Username to authenticate with. Only required when `endpoint` is set. Defaults to `doadmin` when `cluster_name` is set.
 	User string `json:"user,omitempty"`
 	// Password for user defined in User. Is required when `endpoint` is set. Cannot be set if using a DigitalOcean DBaaS OpenSearch cluster.
 	Password string `json:"password,omitempty"`
-}
-
-// PaginationRequest Note: This field is not expressed in DigitalOcean's public API. Instead, pagination is handled according to DO API convention. https://developers.digitalocean.com/documentation/v2/#links
-type PaginationRequest struct {
-	Page          int64  `json:"page,omitempty"`
-	PerPage       int64  `json:"per_page,omitempty"`
-	Sort          string `json:"sort,omitempty"`
-	SortDirection string `json:"sort_direction,omitempty"`
-}
-
-// PaginationResponse Note: This field is not expressed in DigitalOcean's public API. Instead, pagination is handled according to DO API convention. https://developers.digitalocean.com/documentation/v2/#links
-type PaginationResponse struct {
-	Page    int64 `json:"page,omitempty"`
-	Pages   int64 `json:"pages,omitempty"`
-	PerPage int64 `json:"per_page,omitempty"`
-	Total   int64 `json:"total,omitempty"`
-	//
-	PublicApiPrefix string `json:"public_api_prefix,omitempty"`
 }
 
 // AppProposeRequest struct for AppProposeRequest

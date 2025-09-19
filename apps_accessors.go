@@ -4237,22 +4237,6 @@ func (l *ListBuildpacksResponse) GetBuildpacks() []*Buildpack {
 	return l.Buildpacks
 }
 
-// GetJobInvocations returns the JobInvocations field.
-func (l *ListJobInvocationsResponse) GetJobInvocations() []*JobInvocation {
-	if l == nil {
-		return nil
-	}
-	return l.JobInvocations
-}
-
-// GetPagination returns the Pagination field.
-func (l *ListJobInvocationsResponse) GetPagination() *PaginationResponse {
-	if l == nil {
-		return nil
-	}
-	return l.Pagination
-}
-
 // GetPassword returns the Password field.
 func (o *OpenSearchBasicAuth) GetPassword() string {
 	if o == nil {
@@ -4267,78 +4251,6 @@ func (o *OpenSearchBasicAuth) GetUser() string {
 		return ""
 	}
 	return o.User
-}
-
-// GetPage returns the Page field.
-func (p *PaginationRequest) GetPage() int64 {
-	if p == nil {
-		return 0
-	}
-	return p.Page
-}
-
-// GetPerPage returns the PerPage field.
-func (p *PaginationRequest) GetPerPage() int64 {
-	if p == nil {
-		return 0
-	}
-	return p.PerPage
-}
-
-// GetSort returns the Sort field.
-func (p *PaginationRequest) GetSort() string {
-	if p == nil {
-		return ""
-	}
-	return p.Sort
-}
-
-// GetSortDirection returns the SortDirection field.
-func (p *PaginationRequest) GetSortDirection() string {
-	if p == nil {
-		return ""
-	}
-	return p.SortDirection
-}
-
-// GetPage returns the Page field.
-func (p *PaginationResponse) GetPage() int64 {
-	if p == nil {
-		return 0
-	}
-	return p.Page
-}
-
-// GetPages returns the Pages field.
-func (p *PaginationResponse) GetPages() int64 {
-	if p == nil {
-		return 0
-	}
-	return p.Pages
-}
-
-// GetPerPage returns the PerPage field.
-func (p *PaginationResponse) GetPerPage() int64 {
-	if p == nil {
-		return 0
-	}
-	return p.PerPage
-}
-
-// GetPublicApiPrefix returns the PublicApiPrefix field.
-func (p *PaginationResponse) GetPublicApiPrefix() string {
-	if p == nil {
-		return ""
-	}
-	return p.PublicApiPrefix
-}
-
-// GetTotal returns the Total field.
-func (p *PaginationResponse) GetTotal() int64 {
-	if p == nil {
-		return 0
-	}
-	return p.Total
 }
 
 // GetAppID returns the AppID field.
