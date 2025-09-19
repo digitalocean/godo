@@ -4093,12 +4093,14 @@ func TestDatabases_CreateLogsink(t *testing.T) {
 	}
 
 	body := `{
-        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
-        "sink_name": "logs-sink",
-        "sink_type": "opensearch",
-        "config": {
-          "url": "https://user:passwd@192.168.0.1:25060",
-          "index_prefix": "opensearch-logs"
+        "sink": {
+          "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+          "sink_name": "logs-sink",
+          "sink_type": "opensearch",
+          "config": {
+            "url": "https://user:passwd@192.168.0.1:25060",
+            "index_prefix": "opensearch-logs"
+          }
         }
       }`
 
@@ -4123,6 +4125,57 @@ func TestDatabases_CreateLogsink(t *testing.T) {
 	require.Equal(t, want, log)
 }
 
+func TestDatabaseCreateLogsinkRequest_MarshalJSON(t *testing.T) {
+	// Test 1: rsyslog with TLS=false - should include TLS field
+	rsyslogReq := &DatabaseCreateLogsinkRequest{
+		Name: "test-rsyslog",
+		Type: "rsyslog",
+		Config: &DatabaseLogsinkConfig{
+			Server: "logs.example.com",
+			Port:   514,
+			TLS:    false,
+		},
+	}
+
+	data, err := json.Marshal(rsyslogReq)
+	require.NoError(t, err)
+	require.Contains(t, string(data), `"tls":false`)
+
+	// Test 2: rsyslog with TLS=true - should include TLS field
+	rsyslogReq.Config.TLS = true
+	data, err = json.Marshal(rsyslogReq)
+	require.NoError(t, err)
+	require.Contains(t, string(data), `"tls":true`)
+
+	// Test 3: opensearch with TLS=false - should NOT include TLS field
+	opensearchReq := &DatabaseCreateLogsinkRequest{
+		Name: "test-opensearch",
+		Type: "opensearch",
+		Config: &DatabaseLogsinkConfig{
+			URL: "https://example.com",
+			TLS: false,
+		},
+	}
+
+	data, err = json.Marshal(opensearchReq)
+	require.NoError(t, err)
+	require.NotContains(t, string(data), `"tls"`)
+
+	// Test 4: elasticsearch with TLS=false - should NOT include TLS field
+	elasticsearchReq := &DatabaseCreateLogsinkRequest{
+		Name: "test-elasticsearch",
+		Type: "elasticsearch",
+		Config: &DatabaseLogsinkConfig{
+			URL: "https://example.com",
+			TLS: false,
+		},
+	}
+
+	data, err = json.Marshal(elasticsearchReq)
+	require.NoError(t, err)
+	require.NotContains(t, string(data), `"tls"`)
+}
+
 func TestDatabases_GetLogsink(t *testing.T) {
 	setup()
 	defer teardown()
@@ -4143,12 +4196,14 @@ func TestDatabases_GetLogsink(t *testing.T) {
 	}
 
 	body := `{
-        "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
-        "sink_name": "logs-sink",
-        "sink_type": "opensearch",
-        "config": {
-          "url": "https://user:passwd@192.168.0.1:25060",
-          "index_prefix": "opensearch-logs"
+        "sink": {
+          "sink_id":"deadbeef-dead-4aa5-beef-deadbeef347d",
+          "sink_name": "logs-sink",
+          "sink_type": "opensearch",
+          "config": {
+            "url": "https://user:passwd@192.168.0.1:25060",
+            "index_prefix": "opensearch-logs"
+          }
         }
       }`
 
