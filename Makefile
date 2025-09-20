@@ -85,7 +85,7 @@ tag: ## Tags a release and creates a draft GitHub release with changelog
 	@github_changelog_generator --user digitalocean --project godo --future-release $$NEW_TAG --output CHANGELOG.md
 	@echo "==> Creating draft GitHub release for tag $$NEW_TAG with changelog"
 	@if gh release view $$NEW_TAG > /dev/null 2>&1; then \
-		gh release edit $$NEW_TAG --title "$$NEW_TAG" --notes-file CHANGELOG.md --draft; \
+		gh release edit $$NEW_TAG --notes-file CHANGELOG.md --draft --title "$$NEW_TAG"; \
 	else \
-		gh release create $$NEW_TAG --title "$$NEW_TAG" --draft --notes-file CHANGELOG.md; \
+		gh release create $$NEW_TAG --draft --notes-file CHANGELOG.md --title "$$NEW_TAG"; \
 	fi
