@@ -22,6 +22,8 @@ fi
 # Get version from godo.go
 version=$(grep -E '^\s*libraryVersion\s*=' godo.go | sed 's/.*"\(.*\)".*/\1/')
 tag="v${version}"
+changelog=$(awk -v ver="$version" '/^## \['ver'\]/{flag=1;next}/^## \[/{flag=0}flag' CHANGELOG.md)
+git tag -a "$tag" -m "release $tag\n$changelog" $COMMIT && git push "$ORIGIN" tag "$tag"
 
 if [ -z "$version" ]; then
     echo "Error: Could not find version in godo.go"
