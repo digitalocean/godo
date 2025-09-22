@@ -128,7 +128,7 @@ type ListJobInvocationsOptions struct {
 	PerPage int `url:"per_page,omitempty"`
 	// DeploymentID is an optional paramerter. This is used to filter job invocations to a specific deployment.
 	DeploymentID string `json:"deployment_id,omitempty"`
-	// JobName is an optional parameter. This is used to filter job invocations to a specific job.
+	// JobNames is an optional parameter. This is used to filter job invocations by job names.
 	JobNames []string `url:"job_names,omitempty"`
 }
 
