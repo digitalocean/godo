@@ -993,20 +993,6 @@ func TestAppInstanceSize_GetFeaturePreview(tt *testing.T) {
 	a.GetFeaturePreview()
 }
 
-func TestAppInstanceSize_GetIDleUSDPerMonth(tt *testing.T) {
-	a := &AppInstanceSize{}
-	a.GetIDleUSDPerMonth()
-	a = nil
-	a.GetIDleUSDPerMonth()
-}
-
-func TestAppInstanceSize_GetIDleUSDPerSecond(tt *testing.T) {
-	a := &AppInstanceSize{}
-	a.GetIDleUSDPerSecond()
-	a = nil
-	a.GetIDleUSDPerSecond()
-}
-
 func TestAppInstanceSize_GetMemoryBytes(tt *testing.T) {
 	a := &AppInstanceSize{}
 	a.GetMemoryBytes()
@@ -1385,13 +1371,6 @@ func TestAppMaintenanceSpec_GetOfflinePageURL(tt *testing.T) {
 	a.GetOfflinePageURL()
 }
 
-func TestAppPeeredVpcSpec_GetName(tt *testing.T) {
-	a := &AppPeeredVpcSpec{}
-	a.GetName()
-	a = nil
-	a.GetName()
-}
-
 func TestAppProposeRequest_GetAppID(tt *testing.T) {
 	a := &AppProposeRequest{}
 	a.GetAppID()
@@ -1658,13 +1637,6 @@ func TestAppServiceSpec_GetImage(tt *testing.T) {
 	a.GetImage()
 }
 
-func TestAppServiceSpec_GetInactivitySleep(tt *testing.T) {
-	a := &AppServiceSpec{}
-	a.GetInactivitySleep()
-	a = nil
-	a.GetInactivitySleep()
-}
-
 func TestAppServiceSpec_GetInstanceCount(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetInstanceCount()
@@ -1796,20 +1768,6 @@ func TestAppServiceSpecHealthCheck_GetTimeoutSeconds(tt *testing.T) {
 	a.GetTimeoutSeconds()
 	a = nil
 	a.GetTimeoutSeconds()
-}
-
-func TestAppServiceSpecInactivitySleep_GetAfterSeconds(tt *testing.T) {
-	a := &AppServiceSpecInactivitySleep{}
-	a.GetAfterSeconds()
-	a = nil
-	a.GetAfterSeconds()
-}
-
-func TestAppServiceSpecInactivitySleep_GetLoadingPage(tt *testing.T) {
-	a := &AppServiceSpecInactivitySleep{}
-	a.GetLoadingPage()
-	a = nil
-	a.GetLoadingPage()
 }
 
 func TestAppServiceSpecTermination_GetDrainSeconds(tt *testing.T) {
@@ -2174,13 +2132,6 @@ func TestAppVpcSpec_GetID(tt *testing.T) {
 	a.GetID()
 	a = nil
 	a.GetID()
-}
-
-func TestAppVpcSpec_GetPeeredVpcs(tt *testing.T) {
-	a := &AppVpcSpec{}
-	a.GetPeeredVpcs()
-	a = nil
-	a.GetPeeredVpcs()
 }
 
 func TestAppWorkerSpec_GetAlerts(tt *testing.T) {
@@ -3609,20 +3560,6 @@ func TestImageSourceSpec_GetTag(tt *testing.T) {
 
 func TestImageSourceSpecDeployOnPush_GetEnabled(tt *testing.T) {
 	i := &ImageSourceSpecDeployOnPush{}
-	i.GetEnabled()
-	i = nil
-	i.GetEnabled()
-}
-
-func TestInactivitySleepLoadingPage_GetCustomURL(tt *testing.T) {
-	i := &InactivitySleepLoadingPage{}
-	i.GetCustomURL()
-	i = nil
-	i.GetCustomURL()
-}
-
-func TestInactivitySleepLoadingPage_GetEnabled(tt *testing.T) {
-	i := &InactivitySleepLoadingPage{}
 	i.GetEnabled()
 	i = nil
 	i.GetEnabled()

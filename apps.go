@@ -118,7 +118,7 @@ type GetJobInvocationLogsOptions struct {
 }
 
 type GetJobInvocationOptions struct {
-	JobName string
+	JobName string `url:"job_name,omitempty"`
 }
 
 type ListJobInvocationsOptions struct {
@@ -127,7 +127,7 @@ type ListJobInvocationsOptions struct {
 	// For paginated result sets, the number of results to include per page.
 	PerPage int `url:"per_page,omitempty"`
 	// DeploymentID is an optional paramerter. This is used to filter job invocations to a specific deployment.
-	DeploymentID string `json:"deployment_id,omitempty"`
+	DeploymentID string `url:"deployment_id,omitempty"`
 	// JobNames is an optional parameter. This is used to filter job invocations by job names.
 	JobNames []string `url:"job_names,omitempty"`
 }
@@ -478,8 +478,9 @@ func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, op
 func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *GetJobInvocationOptions) (*JobInvocation, *Response, error) {
 	url := fmt.Sprintf("%s/%s/job-invocations/%s", appsBasePath, appID, jobInvocationId)
 
-	if opts.JobName != "" {
-		url = fmt.Sprintf("%s/%s/jobs/%s/invocations/%s", appsBasePath, appID, opts.JobName, jobInvocationId)
+	url, err := addOptions(url, opts)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)

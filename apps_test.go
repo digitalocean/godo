@@ -1336,8 +1336,10 @@ func TestApps_GetJobInvocation(t *testing.T) {
 	}
 	jobInvocationId := testJobInvocation.ID
 
-	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/jobs/%s/invocations/%s", testApp.ID, opts.JobName, jobInvocationId), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/job-invocations/%s", testApp.ID, jobInvocationId), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+
+		assert.Equal(t, opts.JobName, r.URL.Query().Get("job_name"))
 
 		if jobInvocationId == testJobInvocation.ID {
 			json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &testJobInvocation})
@@ -1348,17 +1350,6 @@ func TestApps_GetJobInvocation(t *testing.T) {
 	jobInvocation, _, err := client.Apps.GetJobInvocation(ctx, testApp.ID, jobInvocationId, opts)
 	require.NoError(t, err)
 	assert.Equal(t, &testJobInvocation, jobInvocation)
-
-	// Without the optional JobName parameter
-	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/job-invocations/%s", testApp.ID, jobInvocationId), func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &testJobInvocation})
-	})
-
-	jobInvocation, _, err = client.Apps.GetJobInvocation(ctx, testApp.ID, jobInvocationId, &GetJobInvocationOptions{})
-	require.NoError(t, err)
-	assert.Equal(t, &testJobInvocation, jobInvocation)
-
 }
 
 func TestApps_GetJobInvocationLogs(t *testing.T) {

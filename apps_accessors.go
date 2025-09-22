@@ -1133,22 +1133,6 @@ func (a *AppInstanceSize) GetFeaturePreview() bool {
 	return a.FeaturePreview
 }
 
-// GetIDleUSDPerMonth returns the IDleUSDPerMonth field.
-func (a *AppInstanceSize) GetIDleUSDPerMonth() string {
-	if a == nil {
-		return ""
-	}
-	return a.IDleUSDPerMonth
-}
-
-// GetIDleUSDPerSecond returns the IDleUSDPerSecond field.
-func (a *AppInstanceSize) GetIDleUSDPerSecond() string {
-	if a == nil {
-		return ""
-	}
-	return a.IDleUSDPerSecond
-}
-
 // GetMemoryBytes returns the MemoryBytes field.
 func (a *AppInstanceSize) GetMemoryBytes() string {
 	if a == nil {
@@ -1581,14 +1565,6 @@ func (a *AppMaintenanceSpec) GetOfflinePageURL() string {
 	return a.OfflinePageURL
 }
 
-// GetName returns the Name field.
-func (a *AppPeeredVpcSpec) GetName() string {
-	if a == nil {
-		return ""
-	}
-	return a.Name
-}
-
 // GetAppID returns the AppID field.
 func (a *AppProposeRequest) GetAppID() string {
 	if a == nil {
@@ -1893,14 +1869,6 @@ func (a *AppServiceSpec) GetImage() *ImageSourceSpec {
 	return a.Image
 }
 
-// GetInactivitySleep returns the InactivitySleep field.
-func (a *AppServiceSpec) GetInactivitySleep() *AppServiceSpecInactivitySleep {
-	if a == nil {
-		return nil
-	}
-	return a.InactivitySleep
-}
-
 // GetInstanceCount returns the InstanceCount field.
 func (a *AppServiceSpec) GetInstanceCount() int64 {
 	if a == nil {
@@ -2051,22 +2019,6 @@ func (a *AppServiceSpecHealthCheck) GetTimeoutSeconds() int32 {
 		return 0
 	}
 	return a.TimeoutSeconds
-}
-
-// GetAfterSeconds returns the AfterSeconds field.
-func (a *AppServiceSpecInactivitySleep) GetAfterSeconds() int32 {
-	if a == nil {
-		return 0
-	}
-	return a.AfterSeconds
-}
-
-// GetLoadingPage returns the LoadingPage field.
-func (a *AppServiceSpecInactivitySleep) GetLoadingPage() *InactivitySleepLoadingPage {
-	if a == nil {
-		return nil
-	}
-	return a.LoadingPage
 }
 
 // GetDrainSeconds returns the DrainSeconds field.
@@ -2483,14 +2435,6 @@ func (a *AppVpcSpec) GetID() string {
 		return ""
 	}
 	return a.ID
-}
-
-// GetPeeredVpcs returns the PeeredVpcs field.
-func (a *AppVpcSpec) GetPeeredVpcs() []*AppPeeredVpcSpec {
-	if a == nil {
-		return nil
-	}
-	return a.PeeredVpcs
 }
 
 // GetAlerts returns the Alerts field.
@@ -4119,22 +4063,6 @@ func (i *ImageSourceSpec) GetTag() string {
 
 // GetEnabled returns the Enabled field.
 func (i *ImageSourceSpecDeployOnPush) GetEnabled() bool {
-	if i == nil {
-		return false
-	}
-	return i.Enabled
-}
-
-// GetCustomURL returns the CustomURL field.
-func (i *InactivitySleepLoadingPage) GetCustomURL() string {
-	if i == nil {
-		return ""
-	}
-	return i.CustomURL
-}
-
-// GetEnabled returns the Enabled field.
-func (i *InactivitySleepLoadingPage) GetEnabled() bool {
 	if i == nil {
 		return false
 	}
