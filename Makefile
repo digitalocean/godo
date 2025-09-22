@@ -23,11 +23,6 @@ dev-dependencies: ## Install development tooling
 		echo "WARNING: GitHub CLI not found. Please install gh manually."; \
 	fi
 
-.PHONY: clean
-clean: ## Clean up temporary files
-	@printf "=== Cleaning up temporary files\n"
-	@rm -rf .release_temp/
-
 .PHONY: install
 install: ## Install dependencies
 ifneq (, $(shell which go))
@@ -49,10 +44,6 @@ test-verbose: install ## Run tests with verbose output
 lint: install ## Run linting
 	@go fmt ./...
 	@go vet ./...
-
-.PHONY: test-automation
-test-automation: ## Test the release automation setup
-	@./scripts/test_automation.sh
 
 .PHONY: _install_github_release_notes
 _install_github_release_notes:
@@ -76,7 +67,7 @@ bump_version: ## Bumps the version
 	@ORIGIN=$(ORIGIN) scripts/bumpversion.sh
 
 .PHONY: tag
-tag: ## Tags a release and creates a draft GitHub release with changelog
+tag: ## Tags a release and prints changelog info
 	@echo "==> ORIGIN=$(ORIGIN) COMMIT=$(COMMIT) tag"
 	@echo ""
 	@ORIGIN=$(ORIGIN) scripts/tag.sh; \

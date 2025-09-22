@@ -30,6 +30,3 @@ if [ -z "$version" ]; then
     exit 1
 fi
 
-git tag -m "$tag" -a "$tag" $COMMIT && git push "$ORIGIN" tag "$tag"
-
-echo ""

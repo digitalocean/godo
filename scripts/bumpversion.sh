@@ -44,53 +44,8 @@ if ! git ls-remote --exit-code "$ORIGIN" >/dev/null 2>&1; then
   exit 1
 fi  
 
-# Generate changelog for new version
-last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-if [ -n "$last_tag" ]; then
-    # Generate changelog from last tag to HEAD
-    if command -v github-changelog-generator >/dev/null 2>&1 && [ -n "${GITHUB_TOKEN:-}" ]; then
-        github-changelog-generator \
-            --user digitalocean \
-            --project godo \
-            --token "$GITHUB_TOKEN" \
-            --since-tag "$last_tag" \
-            --no-issues \
-            --no-verbose \
-            --output /tmp/new_changelog.md 2>/dev/null || true
-        # If changelog was generated, update CHANGELOG.md
-        if [ -f /tmp/new_changelog.md ] && [ -s /tmp/new_changelog.md ]; then
-            # Extract just the new entries (skip the header)
-            new_entries=$(sed '1,/^## \[/d' /tmp/new_changelog.md | sed '/^\\*/,$d' | head -n -1)
-            if [ -n "$new_entries" ]; then
-                cp CHANGELOG.md CHANGELOG.md.bak
-                # Prepend new version section to CHANGELOG.md
-                {
-                    head -n 1 CHANGELOG.md
-                    echo ""
-                    echo "## [$new_version] - $(date '+%Y-%m-%d')"
-                    echo ""
-                    echo "$new_entries"
-                    echo ""
-                    tail -n +2 CHANGELOG.md
-                } > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
-                echo "Changelog updated with new entries"
-            else
-                echo "No significant changes found for changelog"
-            fi
-            rm -f /tmp/new_changelog.md
-        fi
-    else
-        if [ -z "${GITHUB_TOKEN:-}" ]; then
-            echo "Warning: GITHUB_TOKEN not set, skipping automatic changelog generation"
-        else
-            echo "Warning: github-changelog-generator not found, skipping automatic changelog generation"
-        fi
-    fi
-else
-    echo "No previous tags found, skipping changelog generation"
-fi
 
-# Optionally, use make changes output for changelog if available
+# Update changelog using make changes output only
 make_changes_output=$(make changes 2>/dev/null | grep -v '^==> Merged PRs since last release$' | sed '/^$/d' || true)
 if [ -n "$make_changes_output" ]; then
     {
