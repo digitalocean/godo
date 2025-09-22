@@ -82,4 +82,3 @@ tag: ## Tags a release and creates a draft GitHub release with changelog
 	@ORIGIN=$(ORIGIN) scripts/tag.sh; \
 	NEW_TAG=$$(git describe --tags --abbrev=0); \
 	echo "==> Generating changelog for tag $$NEW_TAG"; \
-	NOTES=$$(tail -n +2 CHANGELOG.md)

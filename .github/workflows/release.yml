@@ -96,7 +96,7 @@ jobs:
           
           # Create draft release with changelog
           gh release create "$TAG" \
-            --title "Release $VERSION" \
+            --title "v$VERSION" \
             --notes-file "$CHANGELOG_FILE" \
             --draft
       - name: Update existing release
