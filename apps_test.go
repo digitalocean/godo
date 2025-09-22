@@ -1313,6 +1313,7 @@ func TestApps_ListJobInvocations(t *testing.T) {
 		assert.Equal(t, strings.Join(opts.JobNames, ","), r.URL.Query().Get("job_names"))
 		assert.Equal(t, fmt.Sprintf("%d", opts.Page), r.URL.Query().Get("page"))
 		assert.Equal(t, fmt.Sprintf("%d", opts.PerPage), r.URL.Query().Get("per_page"))
+		assert.Equal(t, opts.DeploymentID, r.URL.Query().Get("deployment_id"))
 		json.NewEncoder(w).Encode(&jobInvocationsRoot{JobInvocations: []*JobInvocation{&testJobInvocation}, Meta: &Meta{Total: 1}, Links: &Links{}})
 	})
 
