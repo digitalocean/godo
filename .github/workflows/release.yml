@@ -40,10 +40,10 @@ jobs:
         run: |
           GODO_VERSION=$(grep -E '^\s*libraryVersion\s*=' godo.go | sed 's/.*"\(.*\)".*/\1/')
           if [ "$GODO_VERSION" != "${{ steps.version.outputs.version }}" ]; then
-            echo "❌ Version mismatch: tag ${{ steps.version.outputs.version }} vs godo.go $GODO_VERSION"
+            echo "Version mismatch: tag ${{ steps.version.outputs.version }} vs godo.go $GODO_VERSION"
             exit 1
           fi
-          echo "✅ Version verified: $GODO_VERSION"
+          echo "Version verified: $GODO_VERSION"
       - name: Sync vendor directory
         run: go mod vendor
 
@@ -132,5 +132,5 @@ jobs:
       - name: Notify completion
         run: |
           echo "Draft release ${{ steps.version.outputs.tag }} created successfully!"
-          echo "📦 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
-          echo "⚠️  Please review the draft release and publish it manually when ready"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
+          echo "Please review the draft release and publish it manually when ready"
