@@ -79,11 +79,11 @@ bump_version: ## Bumps the version
 tag: ## Tags a release and creates a draft GitHub release with changelog
 	@echo "==> ORIGIN=$(ORIGIN) COMMIT=$(COMMIT) tag"
 	@echo ""
-	@ORIGIN=$(ORIGIN) scripts/tag.sh
-	@NEW_TAG=$$(git describe --tags --abbrev=0)
-	@RELEASE_TITLE=$$NEW_TAG
-	@echo "==> Generating changelog for tag $$NEW_TAG"
-	@NOTES=$$(tail -n +2 CHANGELOG.md); \
+	@ORIGIN=$(ORIGIN) scripts/tag.sh; \
+	NEW_TAG=$$(git describe --tags --abbrev=0); \
+	RELEASE_TITLE=$$NEW_TAG; \
+	echo "==> Generating changelog for tag $$NEW_TAG"; \
+	NOTES=$$(tail -n +2 CHANGELOG.md); \
 	if gh release view $$NEW_TAG > /dev/null 2>&1; then \
 		gh release edit $$NEW_TAG --notes "$$NOTES" --draft --title "$$RELEASE_TITLE"; \
 	else \
