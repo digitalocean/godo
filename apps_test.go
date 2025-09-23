@@ -247,6 +247,25 @@ var (
 			ComponentName: "example-service",
 		},
 	}
+
+	testJobInvocation = JobInvocation{
+		ID:           "invocation-uuid",
+		JobName:      "job-name",
+		DeploymentID: "08f10d33-94c3-4492-b9a3-1603e9ab7fe4",
+		Phase:        JOBINVOCATIONPHASE_Succeeded,
+		Trigger: &JobInvocationTrigger{
+			Type: JOBINVOCATIONTRIGGERTYPE_Scheduled,
+			Scheduled: &TriggerMetadataScheduled{
+				Schedule: &AppJobSpecSchedule{
+					Cron:     "0 0 * * *",
+					TimeZone: "America/New_York",
+				},
+			},
+		},
+		CreatedAt:   time.Unix(1595959200, 0).UTC(),
+		StartedAt:   time.Unix(1595959200, 0).UTC(),
+		CompletedAt: time.Unix(1595959260, 0).UTC(),
+	}
 )
 
 func TestApps_GetAppHealth(t *testing.T) {
@@ -1275,4 +1294,87 @@ func TestApps_GetAppInstances(t *testing.T) {
 	assert.Equal(t, "job-name", appInstances[2].ComponentName)
 	assert.True(t, strings.HasPrefix(appInstances[2].InstanceName, "job-name-"))
 	assert.Equal(t, APPINSTANCECOMPONENTTYPE_Job, appInstances[2].ComponentType)
+}
+
+func TestApps_ListJobInvocations(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	opts := ListJobInvocationsOptions{
+		JobNames:     []string{testJobInvocation.JobName},
+		DeploymentID: testJobInvocation.DeploymentID,
+		Page:         1,
+		PerPage:      10,
+	}
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/job-invocations", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, strings.Join(opts.JobNames, ","), r.URL.Query().Get("job_names"))
+		assert.Equal(t, fmt.Sprintf("%d", opts.Page), r.URL.Query().Get("page"))
+		assert.Equal(t, fmt.Sprintf("%d", opts.PerPage), r.URL.Query().Get("per_page"))
+		assert.Equal(t, opts.DeploymentID, r.URL.Query().Get("deployment_id"))
+		json.NewEncoder(w).Encode(&jobInvocationsRoot{JobInvocations: []*JobInvocation{&testJobInvocation}, Meta: &Meta{Total: 1}, Links: &Links{}})
+	})
+
+	appJobInvocations, resp, err := client.Apps.ListJobInvocations(ctx, testApp.ID, &opts)
+	require.NoError(t, err)
+	assert.Equal(t, []*JobInvocation{&testJobInvocation}, appJobInvocations)
+	assert.Equal(t, 1, resp.Meta.Total)
+	currentPage, err := resp.Links.CurrentPage()
+	require.NoError(t, err)
+	assert.Equal(t, 1, currentPage)
+}
+
+func TestApps_GetJobInvocation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+	opts := &GetJobInvocationOptions{
+		JobName: "job-name",
+	}
+	jobInvocationId := testJobInvocation.ID
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/job-invocations/%s", testApp.ID, jobInvocationId), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		assert.Equal(t, opts.JobName, r.URL.Query().Get("job_name"))
+
+		if jobInvocationId == testJobInvocation.ID {
+			json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &testJobInvocation})
+		} else {
+			json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &JobInvocation{}})
+		}
+	})
+	jobInvocation, _, err := client.Apps.GetJobInvocation(ctx, testApp.ID, jobInvocationId, opts)
+	require.NoError(t, err)
+	assert.Equal(t, &testJobInvocation, jobInvocation)
+}
+
+func TestApps_GetJobInvocationLogs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	opts := &GetJobInvocationLogsOptions{
+		JobName:   testJobInvocation.JobName,
+		Follow:    true,
+		TailLines: 1,
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/jobs/%s/invocations/%s/logs", testApp.ID, testJobInvocation.JobName, testJobInvocation.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		assert.Equal(t, "JOB_INVOCATION", r.URL.Query().Get("type"))
+		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+		assert.Equal(t, "1", r.URL.Query().Get("tail_lines"))
+
+		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://logs.example.com/job-invocation"})
+
+	})
+	jobInvocationLogs, _, err := client.Apps.GetJobInvocationLogs(ctx, testApp.ID, testJobInvocation.ID, opts)
+	require.NoError(t, err)
+	assert.NotEmpty(t, jobInvocationLogs.LiveURL)
 }
