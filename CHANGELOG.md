@@ -1,10 +1,5 @@
 # Change Log
 
-
-## [1.165.0] - 2025-09-18
-
-- #902 - @SSharma-10 - added comment for ListAgentVersions
-
 ## [1.164.0] - 2025-09-10
 
 - #897 - @DO-rrao - List remote route | removed id field from remote route
