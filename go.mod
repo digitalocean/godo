@@ -2,7 +2,7 @@ module github.com/digitalocean/godo
 
 go 1.23.0
 
-retract v1.164.0 // Contains retagging issue
+retract [v1.164.0, v1.165.0] // Contains retagging issue
 
 require (
 	github.com/google/go-querystring v1.1.0
