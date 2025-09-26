@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.165.0] - 2025-09-24
+## [1.165.1] - 2025-09-24
 
 - #906 - @do-joe - Fix Database Logsink API Response Parsing and TLS Field Marshaling
 - #904 - @SSharma-10 - Godo automate release
