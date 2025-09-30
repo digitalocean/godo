@@ -78,7 +78,7 @@ type Client struct {
 	Kubernetes          KubernetesService
 	LoadBalancers       LoadBalancersService
 	Monitoring          MonitoringService
-	Nfs					NfsService
+	Nfs                 NfsService
 	OneClick            OneClickService
 	Projects            ProjectsService
 	Regions             RegionsService
