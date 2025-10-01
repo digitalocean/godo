@@ -1079,3 +1079,95 @@ func TestDroplets_ListSupportedBackupPolicies(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, []*SupportedBackupPolicy{&testSupportedBackupPolicy}, policies)
 }
+
+func TestDroplets_ListAssociatedResourcesForDeletion(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	expectedResources := &DropletAssociatedResources{
+		ReservedIPs: []*DropletAssociatedResource{
+			{
+				ID:   "6186916",
+				Name: "45.55.96.47",
+				Cost: "4.00",
+			},
+		},
+		FloatingIPs: []*DropletAssociatedResource{
+			{
+				ID:   "6186916",
+				Name: "45.55.96.47",
+				Cost: "4.00",
+			},
+		},
+		Snapshots: []*DropletAssociatedResource{
+			{
+				ID:   "61486916",
+				Name: "ubuntu-s-1vcpu-1gb-nyc1-01-1585758823330",
+				Cost: "0.05",
+			},
+		},
+		Volumes: []*DropletAssociatedResource{
+			{
+				ID:   "ba49449a-7435-11ea-b89e-0a58ac14480f",
+				Name: "volume-nyc1-01",
+				Cost: "10.00",
+			},
+		},
+		VolumeSnapshots: []*DropletAssociatedResource{
+			{
+				ID:   "edb0478d-7436-11ea-86e6-0a58ac144b91",
+				Name: "volume-nyc1-01-1585758983629",
+				Cost: "0.04",
+			},
+		},
+	}
+
+	jBlob := `{
+		"reserved_ips": [
+			{
+				"id": "6186916",
+				"name": "45.55.96.47",
+				"cost": "4.00"
+			}
+		],
+		"floating_ips": [
+			{
+				"id": "6186916",
+				"name": "45.55.96.47",
+				"cost": "4.00"
+			}
+		],
+		"snapshots": [
+			{
+				"id": "61486916",
+				"name": "ubuntu-s-1vcpu-1gb-nyc1-01-1585758823330",
+				"cost": "0.05"
+			}
+		],
+		"volumes": [
+			{
+				"id": "ba49449a-7435-11ea-b89e-0a58ac14480f",
+				"name": "volume-nyc1-01",
+				"cost": "10.00"
+			}
+		],
+		"volume_snapshots": [
+			{
+				"id": "edb0478d-7436-11ea-86e6-0a58ac144b91",
+				"name": "volume-nyc1-01-1585758983629",
+				"cost": "0.04"
+			}
+		]
+	}`
+
+	mux.HandleFunc("/v2/droplets/12345/destroy_with_associated_resources", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, jBlob)
+	})
+
+	resources, _, err := client.Droplets.ListAssociatedResourcesForDeletion(ctx, 12345)
+	require.NoError(t, err)
+	require.Equal(t, expectedResources, resources)
+}
