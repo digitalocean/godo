@@ -979,7 +979,7 @@ func TestRegistries_Get(t *testing.T) {
 		Region:                     testRegion,
 	}
 
-	// We return `read_only` and `type` (only for multi-regsitry) -- check if we need to do this or not -- older tests don't add `read_only` to the response
+	// We return `read_only` and `type` (only for multi-registry) -- check if we need to do this or not -- older tests don't add `read_only` to the response
 	getResponseJSON := `
 {
 	"registry": {
