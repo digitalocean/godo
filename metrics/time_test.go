@@ -108,7 +108,7 @@ func TestTimeJSON(t *testing.T) {
 
 			var tm Time
 			if err := tm.UnmarshalJSON(b); err != nil {
-				t.Fatalf("Error Unmarshaling time: %v", err)
+				t.Fatalf("Error Unmarshalling time: %v", err)
 			}
 
 			if !test.in.Equal(tm) {
