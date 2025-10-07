@@ -43,8 +43,6 @@ type Nfs struct {
 	CreatedAt string `json:"created_at"`
 	// VpcIDs is a list of VPC IDs that have access to the NFS share
 	VpcIDs []string `json:"vpc_ids"`
-	// UserID is the identifier of the user who owns the NFS share
-	UserID int `json:"user_id"`
 }
 
 // NfsCreateRequest represents a request to create an NFS share.
@@ -53,7 +51,6 @@ type NfsCreateRequest struct {
 	SizeGib int      `json:"size_gib"`
 	Region  string   `json:"region"`
 	VpcIDs  []string `json:"vpc_ids,omitempty"`
-	UserID  int      `json:"user_id"`
 }
 
 // nfsRoot represents a response from the DigitalOcean API
