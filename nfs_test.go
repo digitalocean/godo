@@ -34,6 +34,19 @@ func TestNfsCreate(t *testing.T) {
 	assert.Equal(t, 50, share.SizeGib)
 	assert.Equal(t, "PROVISIONING", share.Status)
 	assert.Equal(t, 123, share.UserID)
+
+	invalidCreateRequest := &NfsCreateRequest{
+		Name:    "test-nfs-share-invalid-size",
+		SizeGib: 20,
+		Region:  "atl1",
+		UserID:  123,
+	}
+
+	share, resp, err = client.Nfs.Create(context.Background(), invalidCreateRequest)
+	assert.Error(t, err)
+	assert.Equal(t, "size_gib is invalid because it cannot be less than 50Gib", err.Error())
+	assert.Nil(t, share)
+	assert.Nil(t, resp)
 }
 
 func TestNfsDelete(t *testing.T) {
@@ -87,7 +100,7 @@ func TestNfsList(t *testing.T) {
 	})
 
 	// Test first page
-	shares, resp, err := client.Nfs.List(context.Background(), &ListOptions{Page: 1})
+	shares, resp, err := client.Nfs.List(context.Background(), &ListOptions{Page: 1}, "atl1")
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Len(t, shares, 1)
@@ -98,7 +111,7 @@ func TestNfsList(t *testing.T) {
 	assert.Equal(t, 123, shares[0].UserID)
 
 	// Test second page
-	shares, resp, err = client.Nfs.List(context.Background(), &ListOptions{Page: 2})
+	shares, resp, err = client.Nfs.List(context.Background(), &ListOptions{Page: 2}, "atl1")
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Len(t, shares, 1)
