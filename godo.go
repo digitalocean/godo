@@ -127,9 +127,9 @@ type Client struct {
 // Only the oauth2.TokenSource and Timeout will be maintained.
 type RetryConfig struct {
 	RetryMax     int
-	RetryWaitMin *float64    // Minimum time to wait
-	RetryWaitMax *float64    // Maximum time to wait
-	Logger       interface{} // Customer logger instance. Must implement either go-retryablehttp.Logger or go-retryablehttp.LeveledLogger
+	RetryWaitMin *float64 // Minimum time to wait
+	RetryWaitMax *float64 // Maximum time to wait
+	Logger       any      // Customer logger instance. Must implement either go-retryablehttp.Logger or go-retryablehttp.LeveledLogger
 }
 
 // RequestCompletionCallback defines the type of the request callback function
@@ -217,7 +217,7 @@ type Rate struct {
 	Reset Timestamp `json:"reset"`
 }
 
-func addOptions(s string, opt interface{}) (string, error) {
+func addOptions(s string, opt any) (string, error) {
 	v := reflect.ValueOf(opt)
 
 	if v.Kind() == reflect.Ptr && v.IsNil() {
@@ -455,7 +455,7 @@ func WithRetryAndBackoffs(retryConfig RetryConfig) ClientOpt {
 // NewRequest creates an API request. A relative URL can be provided in urlStr, which will be resolved to the
 // BaseURL of the Client. Relative URLS should always be specified without a preceding slash. If specified, the
 // value pointed to by body is JSON encoded and included in as the request body.
-func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body interface{}) (*http.Request, error) {
+func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body any) (*http.Request, error) {
 	u, err := c.BaseURL.Parse(urlStr)
 	if err != nil {
 		return nil, err
@@ -534,7 +534,7 @@ func (r *Response) populateRate() {
 // Do sends an API request and returns the API response. The API response is JSON decoded and stored in the value
 // pointed to by v, or returned as an error if an API error has occurred. If v implements the io.Writer interface,
 // the raw response will be written to v, without attempting to decode it.
-func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Response, error) {
+func (c *Client) Do(ctx context.Context, req *http.Request, v any) (*Response, error) {
 	if c.rateLimiter != nil {
 		err := c.rateLimiter.Wait(ctx)
 		if err != nil {
