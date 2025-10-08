@@ -280,6 +280,10 @@ type DropletAssociatedResources struct {
 	VolumeSnapshots []*DropletAssociatedResource `json:"volume_snapshots"`
 }
 
+func (a DropletAssociatedResources) String() string {
+	return Stringify(a)
+}
+
 func (d DropletCreateRequest) String() string {
 	return Stringify(d)
 }
