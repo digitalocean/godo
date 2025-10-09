@@ -37,7 +37,8 @@ var vpcNatGatewayGetJSONResponse = `
     "icmp_timeout_seconds": 30,
     "tcp_timeout_seconds": 300,
     "created_at": "2025-04-28T14:20:00Z",
-    "updated_at": "2025-04-28T14:20:03Z"
+    "updated_at": "2025-04-28T14:20:03Z",
+	"project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002"
   }
 }
 `
@@ -69,7 +70,8 @@ var vpcNatGatewayListJSONResponse = `
       "icmp_timeout_seconds": 30,
       "tcp_timeout_seconds": 300,
       "created_at": "2025-04-28T14:20:00Z",
-      "updated_at": "2025-04-28T14:20:03Z"
+      "updated_at": "2025-04-28T14:20:03Z",
+	  "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002"
     },
     {
       "id": "8e2fedf5-ce55-4ec3-82ca-e607be36ee08",
@@ -95,7 +97,8 @@ var vpcNatGatewayListJSONResponse = `
       "icmp_timeout_seconds": 30,
       "tcp_timeout_seconds": 300,
       "created_at": "2025-04-28T14:20:29Z",
-      "updated_at": "2025-04-28T14:20:32Z"
+      "updated_at": "2025-04-28T14:20:32Z",
+	  "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002"
     }
   ],
   "links": {},
@@ -131,7 +134,8 @@ var vpcNatGatewayUpdateJSONResponse = `
     "icmp_timeout_seconds": 30,
     "tcp_timeout_seconds": 300,
     "created_at": "2025-04-28T14:20:00Z",
-    "updated_at": "2025-04-28T14:20:03Z"
+    "updated_at": "2025-04-28T14:20:03Z",
+	"project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002"
   }
 }
 `
@@ -151,6 +155,7 @@ func TestVPCNATGateways_Create(t *testing.T) {
 		UDPTimeoutSeconds:  30,
 		ICMPTimeoutSeconds: 30,
 		TCPTimeoutSeconds:  300,
+		ProjectID:          "6929eef6-4e45-11ed-bdc3-0242ac120002",
 	}
 
 	mux.HandleFunc(vpcNatGatewaysBasePath, func(w http.ResponseWriter, r *http.Request) {
@@ -165,12 +170,13 @@ func TestVPCNATGateways_Create(t *testing.T) {
 	})
 
 	expectedGatewayResp := &VPCNATGateway{
-		ID:     "97c46619-1f53-493b-8638-00c899f30152",
-		Name:   "test-egress-gateway-01",
-		Type:   "PUBLIC",
-		State:  "STATE_ACTIVE",
-		Region: "nyc3",
-		Size:   1,
+		ID:        "97c46619-1f53-493b-8638-00c899f30152",
+		ProjectID: "6929eef6-4e45-11ed-bdc3-0242ac120002",
+		Name:      "test-egress-gateway-01",
+		Type:      "PUBLIC",
+		State:     "STATE_ACTIVE",
+		Region:    "nyc3",
+		Size:      1,
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
 		},
@@ -220,6 +226,7 @@ func TestVPCNATGateways_Get(t *testing.T) {
 		UDPTimeoutSeconds:  30,
 		ICMPTimeoutSeconds: 30,
 		TCPTimeoutSeconds:  300,
+		ProjectID:          "6929eef6-4e45-11ed-bdc3-0242ac120002",
 	}
 
 	getGatewayResp, _, err := client.VPCNATGateways.Get(ctx, gatewayID)
@@ -273,6 +280,7 @@ func TestVPCNATGateways_List(t *testing.T) {
 			UDPTimeoutSeconds:  30,
 			ICMPTimeoutSeconds: 30,
 			TCPTimeoutSeconds:  300,
+			ProjectID:          "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		},
 		{
 			ID:     "8e2fedf5-ce55-4ec3-82ca-e607be36ee08",
@@ -292,6 +300,7 @@ func TestVPCNATGateways_List(t *testing.T) {
 			UDPTimeoutSeconds:  30,
 			ICMPTimeoutSeconds: 30,
 			TCPTimeoutSeconds:  300,
+			ProjectID:          "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		},
 	}
 
@@ -360,6 +369,7 @@ func TestVPCNATGateways_Update(t *testing.T) {
 		UDPTimeoutSeconds:  30,
 		ICMPTimeoutSeconds: 30,
 		TCPTimeoutSeconds:  300,
+		ProjectID:          "6929eef6-4e45-11ed-bdc3-0242ac120002",
 	}
 
 	updateGatewayResp, _, err := client.VPCNATGateways.Update(ctx, gatewayID, updateReq)
