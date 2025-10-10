@@ -55,7 +55,7 @@ func TestNfsDelete(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-	resp, err := client.Nfs.Delete(context.Background(), "test-nfs-id")
+	resp, err := client.Nfs.Delete(context.Background(), "test-nfs-id", "atl1")
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 }
@@ -70,7 +70,7 @@ func TestNfsGet(t *testing.T) {
 		fmt.Fprint(w, `{"share": {"id": "test-nfs-id", "name": "test-nfs-share", "size_gib": 50, "region": "atl1", "status": "PROVISIONING", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}}`)
 	})
 
-	share, resp, err := client.Nfs.Get(context.Background(), "test-nfs-id")
+	share, resp, err := client.Nfs.Get(context.Background(), "test-nfs-id", "atl1")
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Equal(t, "test-nfs-share", share.Name)

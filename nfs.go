@@ -9,14 +9,14 @@ import (
 const nfsBasePath = "v2/nfs"
 
 type NfsService interface {
-	// List retrieves a list of NFS shares with optional filtering via ListOptions and a region string
+	// List retrieves a list of NFS shares with optional filtering via ListOptions and region
 	List(context.Context, *ListOptions, string) ([]*Nfs, *Response, error)
 	// Create creates a new NFS share with the provided configuration
 	Create(context.Context, *NfsCreateRequest) (*Nfs, *Response, error)
-	// Delete removes an NFS share by its ID
-	Delete(context.Context, string) (*Response, error)
-	// Get retrieves a specific NFS share by its ID
-	Get(context.Context, string) (*Nfs, *Response, error)
+	// Delete removes an NFS share by its ID and region
+	Delete(context.Context, string, string) (*Response, error)
+	// Get retrieves a specific NFS share by its ID and region
+	Get(context.Context, string, string) (*Nfs, *Response, error)
 }
 
 // NfsServiceOp handles communication with the NFS related methods of the
@@ -65,8 +65,8 @@ type nfsListRoot struct {
 	Meta   *Meta  `json:"meta"`
 }
 
-// nfsListOptions represents options for listing NFS shares
-type nfsListOptions struct {
+// nfsOptions represents the query param options for NFS operations
+type nfsOptions struct {
 	Region string `url:"region"`
 }
 
@@ -94,13 +94,23 @@ func (s *NfsServiceOp) Create(ctx context.Context, createRequest *NfsCreateReque
 	return root.Share, resp, nil
 }
 
-// Get retrieves an NFS share by ID.
-func (s *NfsServiceOp) Get(ctx context.Context, id string) (*Nfs, *Response, error) {
+// Get retrieves an NFS share by ID and region.
+func (s *NfsServiceOp) Get(ctx context.Context, id string, region string) (*Nfs, *Response, error) {
 	if id == "" {
 		return nil, nil, NewArgError("id", "cannot be empty")
 	}
+	if region == "" {
+		return nil, nil, NewArgError("region", "cannot be empty")
+	}
 
 	path := fmt.Sprintf("%s/%s", nfsBasePath, id)
+
+	getOpts := &nfsOptions{Region: region}
+	path, err := addOptions(path, getOpts)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -118,7 +128,7 @@ func (s *NfsServiceOp) Get(ctx context.Context, id string) (*Nfs, *Response, err
 // List returns a list of NFS shares.
 func (s *NfsServiceOp) List(ctx context.Context, opts *ListOptions, region string) ([]*Nfs, *Response, error) {
 	if region == "" {
-		return nil, nil, NewArgError("region", "it cannot be empty")
+		return nil, nil, NewArgError("region", "cannot be empty")
 	}
 
 	path, err := addOptions(nfsBasePath, opts)
@@ -126,8 +136,7 @@ func (s *NfsServiceOp) List(ctx context.Context, opts *ListOptions, region strin
 		return nil, nil, err
 	}
 
-	// Add region query parameter
-	listOpts := &nfsListOptions{Region: region}
+	listOpts := &nfsOptions{Region: region}
 	path, err = addOptions(path, listOpts)
 	if err != nil {
 		return nil, nil, err
@@ -154,13 +163,23 @@ func (s *NfsServiceOp) List(ctx context.Context, opts *ListOptions, region strin
 	return root.Shares, resp, nil
 }
 
-// Delete deletes an NFS share.
-func (s *NfsServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
+// Delete deletes an NFS share by ID and region.
+func (s *NfsServiceOp) Delete(ctx context.Context, id string, region string) (*Response, error) {
 	if id == "" {
 		return nil, NewArgError("id", "cannot be empty")
 	}
+	if region == "" {
+		return nil, NewArgError("region", "cannot be empty")
+	}
 
 	path := fmt.Sprintf("%s/%s", nfsBasePath, id)
+
+	deleteOpts := &nfsOptions{Region: region}
+	path, err := addOptions(path, deleteOpts)
+	if err != nil {
+		return nil, err
+	}
+
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
