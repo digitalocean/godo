@@ -1,0 +1,5 @@
+default: true
+MD013:
+  line_length: 120
+MD033: false  # Allow inline HTML
+MD041: false  # First line in file should be a top level header
