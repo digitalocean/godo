@@ -602,7 +602,7 @@ func TestDropletAction_EnableBackupsWithPolicy(t *testing.T) {
 		Hour:    PtrTo(20),
 	}
 
-	policy := map[string]interface{}{
+	policy := map[string]any{
 		"hour":    float64(20),
 		"plan":    "weekly",
 		"weekday": "TUE",
@@ -650,7 +650,7 @@ func TestDropletAction_ChangeBackupPolicy(t *testing.T) {
 		Hour:    PtrTo(0),
 	}
 
-	policy := map[string]interface{}{
+	policy := map[string]any{
 		"hour":    float64(0),
 		"plan":    "weekly",
 		"weekday": "SUN",

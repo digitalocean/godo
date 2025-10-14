@@ -77,8 +77,8 @@ type FunctionsTrigger struct {
 }
 
 type TriggerScheduledDetails struct {
-	Cron string                 `json:"cron,omitempty"`
-	Body map[string]interface{} `json:"body,omitempty"`
+	Cron string         `json:"cron,omitempty"`
+	Body map[string]any `json:"body,omitempty"`
 }
 
 type TriggerScheduledRuns struct {
