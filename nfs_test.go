@@ -115,3 +115,74 @@ func TestNfsList(t *testing.T) {
 	assert.Equal(t, 50, shares[0].SizeGib)
 	assert.Equal(t, "PROVISIONING", shares[0].Status)
 }
+
+func TestNfsSnapshotGet(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/nfs/snapshots/test-nfs-snapshot-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{ "snapshot": {"id": "test-nfs-snapshot-id", "name": "daily-backup", "size_gib": 1024, "region": "atl1", "status": "AVAILABLE", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}}`)
+	})
+
+	snapshot, resp, err := client.Nfs.GetSnapshot(context.Background(), "test-nfs-snapshot-id", "atl1")
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "daily-backup", snapshot.Name)
+	assert.Equal(t, "atl1", snapshot.Region)
+	assert.Equal(t, 1024, snapshot.SizeGib)
+	assert.Equal(t, "AVAILABLE", snapshot.Status)
+}
+
+func TestNfsListSnapshots(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/nfs/snapshots", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		// Check that region query parameter is present
+		page := r.URL.Query().Get("page")
+		if page == "2" {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, `{"snapshots": [{"id": "test-nfs-snapshot-id-2", "name": "daily-backup-2", "size_gib": 2048, "region": "atl1", "status": "AVAILABLE", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}]}`)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, `{"snapshots": [{"id": "test-nfs-snapshot-id-1", "name": "daily-backup-1", "size_gib": 1024, "region": "atl1", "status": "PROVISIONING", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}]}`)
+		}
+	})
+
+	// Test first page
+	snapshots, resp, err := client.Nfs.ListSnapshots(context.Background(), &ListOptions{Page: 1}, "", "atl1")
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Len(t, snapshots, 1)
+	assert.Equal(t, "daily-backup-1", snapshots[0].Name)
+	assert.Equal(t, "atl1", snapshots[0].Region)
+	assert.Equal(t, 1024, snapshots[0].SizeGib)
+	assert.Equal(t, "PROVISIONING", snapshots[0].Status)
+
+	// Test second page
+	snapshots, resp, err = client.Nfs.ListSnapshots(context.Background(), &ListOptions{Page: 2}, "", "atl1")
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Len(t, snapshots, 1)
+	assert.Equal(t, "daily-backup-2", snapshots[0].Name)
+	assert.Equal(t, "atl1", snapshots[0].Region)
+	assert.Equal(t, 2048, snapshots[0].SizeGib)
+	assert.Equal(t, "AVAILABLE", snapshots[0].Status)
+}
+
+func TestNfsSnapshotsDelete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/nfs/snapshots/my-snapshot-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	resp, err := client.Nfs.DeleteSnapshot(context.Background(), "my-snapshot-id", "atl1")
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+}

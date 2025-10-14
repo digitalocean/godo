@@ -8,8 +8,10 @@ import (
 
 const nfsBasePath = "v2/nfs"
 
+const nfsSnapshotsBasePath = "v2/nfs/snapshots"
+
 type NfsService interface {
-	// List retrieves a list of NFS shares with optional filtering via ListOptions and region
+	// List retrieves a list of NFS shares filtered by region
 	List(context.Context, *ListOptions, string) ([]*Nfs, *Response, error)
 	// Create creates a new NFS share with the provided configuration
 	Create(context.Context, *NfsCreateRequest) (*Nfs, *Response, error)
@@ -17,6 +19,12 @@ type NfsService interface {
 	Delete(context.Context, string, string) (*Response, error)
 	// Get retrieves a specific NFS share by its ID and region
 	Get(context.Context, string, string) (*Nfs, *Response, error)
+	// List retrieves a list of NFS snapshots filtered by an optional share ID and region
+	ListSnapshots(context.Context, *ListOptions, string, string) ([]*NfsSnapshot, *Response, error)
+	// Get retrieves a specific NFS snapshot by its ID and region
+	GetSnapshot(context.Context, string, string) (*NfsSnapshot, *Response, error)
+	// Delete removes an NFS snapshot by its ID and region
+	DeleteSnapshot(context.Context, string, string) (*Response, error)
 }
 
 // NfsServiceOp handles communication with the NFS related methods of the
@@ -45,6 +53,23 @@ type Nfs struct {
 	VpcIDs []string `json:"vpc_ids"`
 }
 
+type NfsSnapshot struct {
+	// ID is the unique identifier for the NFS snapshot
+	ID string `json:"id"`
+	// Name is the human-readable name for the NFS snapshot
+	Name string `json:"name"`
+	// SizeGib is the size of the NFS snapshot in gibibytes
+	SizeGib int `json:"size_gib"`
+	// Region is the datacenter region where the NFS snapshot is located
+	Region string `json:"region"`
+	// Status represents the current status of the NFS snapshot
+	Status string `json:"status"`
+	// CreatedAt is the timestamp when the NFS snapshot was created
+	CreatedAt string `json:"created_at"`
+	// ShareID is the unique identifier of the share from which this snapshot was created.
+	ShareID string `json:"share_id"`
+}
+
 // NfsCreateRequest represents a request to create an NFS share.
 type NfsCreateRequest struct {
 	Name    string   `json:"name"`
@@ -65,9 +90,24 @@ type nfsListRoot struct {
 	Meta   *Meta  `json:"meta"`
 }
 
+// nfsSnapshotRoot represents a response from the DigitalOcean API
+type nfsSnapshotRoot struct {
+	Snapshot *NfsSnapshot `json:"snapshot"`
+}
+
+// nfsSnapshotListRoot represents a response from the DigitalOcean API
+type nfsSnapshotListRoot struct {
+	Snapshots []*NfsSnapshot `json:"snapshots,omitempty"`
+	Links     *Links         `json:"links,omitempty"`
+	Meta      *Meta          `json:"meta"`
+}
+
 // nfsOptions represents the query param options for NFS operations
 type nfsOptions struct {
-	Region string `url:"region"`
+	// Region is the datacenter region where the NFS share/shapshot is located
+	Region  string `url:"region"`
+	// ShareID is the unique identifier of the share from which this snapshot was created.
+	ShareID string `url:"share_id,omitempty"`
 }
 
 // Create creates a new NFS share.
@@ -173,6 +213,105 @@ func (s *NfsServiceOp) Delete(ctx context.Context, id string, region string) (*R
 	}
 
 	path := fmt.Sprintf("%s/%s", nfsBasePath, id)
+
+	deleteOpts := &nfsOptions{Region: region}
+	path, err := addOptions(path, deleteOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+// Get retrieves an NFS snapshot by ID and region.
+func (s *NfsServiceOp) GetSnapshot(ctx context.Context, snapshotID string, region string) (*NfsSnapshot, *Response, error) {
+	if snapshotID == "" {
+		return nil, nil, NewArgError("snapshotID", "cannot be empty")
+	}
+	if region == "" {
+		return nil, nil, NewArgError("region", "cannot be empty")
+	}
+
+	path := fmt.Sprintf("%s/%s", nfsSnapshotsBasePath, snapshotID)
+
+	getOpts := &nfsOptions{Region: region}
+	path, err := addOptions(path, getOpts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(nfsSnapshotRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Snapshot, resp, nil
+}
+
+// List returns a list of NFS snapshots.
+func (s *NfsServiceOp) ListSnapshots(ctx context.Context, opts *ListOptions, id, region string) ([]*NfsSnapshot, *Response, error) {
+	if region == "" {
+		return nil, nil, NewArgError("region", "cannot be empty")
+	}
+
+	path, err := addOptions(nfsSnapshotsBasePath, opts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	listOpts := &nfsOptions{Region: region, ShareID: id}
+	path, err = addOptions(path, listOpts)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(nfsSnapshotListRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	if root.Links != nil {
+		resp.Links = root.Links
+	}
+	if root.Meta != nil {
+		resp.Meta = root.Meta
+	}
+
+	return root.Snapshots, resp, nil
+}
+
+// Delete deletes an NFS snapshot by ID and region.
+func (s *NfsServiceOp) DeleteSnapshot(ctx context.Context, snapshotID string, region string) (*Response, error) {
+	if snapshotID == "" {
+		return nil, NewArgError("snapshotID", "cannot be empty")
+	}
+	if region == "" {
+		return nil, NewArgError("region", "cannot be empty")
+	}
+
+	path := fmt.Sprintf("%s/%s", nfsSnapshotsBasePath, snapshotID)
 
 	deleteOpts := &nfsOptions{Region: region}
 	path, err := addOptions(path, deleteOpts)
