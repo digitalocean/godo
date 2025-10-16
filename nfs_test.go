@@ -22,7 +22,7 @@ func TestNfsCreate(t *testing.T) {
 	mux.HandleFunc("/v2/nfs", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprint(w, `{"share": {"id": "test-nfs-id", "name": "test-nfs-share", "size_gib": 50, "region": "atl1", "status": "PROVISIONING", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}}`)
+		fmt.Fprint(w, `{"share": {"id": "test-nfs-id", "name": "test-nfs-share", "size_gib": 50, "region": "atl1", "status": "CREATING", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}}`)
 	})
 
 	share, resp, err := client.Nfs.Create(context.Background(), createRequest)
@@ -31,7 +31,7 @@ func TestNfsCreate(t *testing.T) {
 	assert.Equal(t, "test-nfs-share", share.Name)
 	assert.Equal(t, "atl1", share.Region)
 	assert.Equal(t, 50, share.SizeGib)
-	assert.Equal(t, "PROVISIONING", share.Status)
+	assert.Equal(t, NfsShareCreating, share.Status)
 
 	invalidCreateRequest := &NfsCreateRequest{
 		Name:    "test-nfs-share-invalid-size",
@@ -67,7 +67,7 @@ func TestNfsGet(t *testing.T) {
 	mux.HandleFunc("/v2/nfs/test-nfs-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"share": {"id": "test-nfs-id", "name": "test-nfs-share", "size_gib": 50, "region": "atl1", "status": "PROVISIONING", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}}`)
+		fmt.Fprint(w, `{"share": {"id": "test-nfs-id", "name": "test-nfs-share", "size_gib": 50, "region": "atl1", "status": "ACTIVE", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}}`)
 	})
 
 	share, resp, err := client.Nfs.Get(context.Background(), "test-nfs-id", "atl1")
@@ -76,7 +76,7 @@ func TestNfsGet(t *testing.T) {
 	assert.Equal(t, "test-nfs-share", share.Name)
 	assert.Equal(t, "atl1", share.Region)
 	assert.Equal(t, 50, share.SizeGib)
-	assert.Equal(t, "PROVISIONING", share.Status)
+	assert.Equal(t, NfsShareActive, share.Status)
 }
 
 func TestNfsList(t *testing.T) {
@@ -88,10 +88,10 @@ func TestNfsList(t *testing.T) {
 		page := r.URL.Query().Get("page")
 		if page == "2" {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, `{"shares": [{"id": "test-nfs-id-2", "name": "test-nfs-share-2", "size_gib": 50, "region": "atl1", "status": "PROVISIONING", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}]}`)
+			fmt.Fprint(w, `{"shares": [{"id": "test-nfs-id-2", "name": "test-nfs-share-2", "size_gib": 50, "region": "atl1", "status": "ACTIVE", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}]}`)
 		} else {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, `{"shares": [{"id": "test-nfs-id-1", "name": "test-nfs-share-1", "size_gib": 50, "region": "atl1", "status": "PROVISIONING", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}]}`)
+			fmt.Fprint(w, `{"shares": [{"id": "test-nfs-id-1", "name": "test-nfs-share-1", "size_gib": 50, "region": "atl1", "status": "CREATING", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": []}]}`)
 		}
 	})
 
@@ -103,7 +103,7 @@ func TestNfsList(t *testing.T) {
 	assert.Equal(t, "test-nfs-share-1", shares[0].Name)
 	assert.Equal(t, "atl1", shares[0].Region)
 	assert.Equal(t, 50, shares[0].SizeGib)
-	assert.Equal(t, "PROVISIONING", shares[0].Status)
+	assert.Equal(t, NfsShareCreating, shares[0].Status)
 
 	// Test second page
 	shares, resp, err = client.Nfs.List(context.Background(), &ListOptions{Page: 2}, "atl1")
@@ -113,7 +113,7 @@ func TestNfsList(t *testing.T) {
 	assert.Equal(t, "test-nfs-share-2", shares[0].Name)
 	assert.Equal(t, "atl1", shares[0].Region)
 	assert.Equal(t, 50, shares[0].SizeGib)
-	assert.Equal(t, "PROVISIONING", shares[0].Status)
+	assert.Equal(t, NfsShareActive, shares[0].Status)
 }
 
 func TestNfsSnapshotGet(t *testing.T) {
@@ -123,7 +123,7 @@ func TestNfsSnapshotGet(t *testing.T) {
 	mux.HandleFunc("/v2/nfs/snapshots/test-nfs-snapshot-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{ "snapshot": {"id": "test-nfs-snapshot-id", "name": "daily-backup", "size_gib": 1024, "region": "atl1", "status": "AVAILABLE", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}}`)
+		fmt.Fprint(w, `{ "snapshot": {"id": "test-nfs-snapshot-id", "name": "daily-backup", "size_gib": 1024, "region": "atl1", "status": "ACTIVE", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}}`)
 	})
 
 	snapshot, resp, err := client.Nfs.GetSnapshot(context.Background(), "test-nfs-snapshot-id", "atl1")
@@ -132,7 +132,7 @@ func TestNfsSnapshotGet(t *testing.T) {
 	assert.Equal(t, "daily-backup", snapshot.Name)
 	assert.Equal(t, "atl1", snapshot.Region)
 	assert.Equal(t, 1024, snapshot.SizeGib)
-	assert.Equal(t, "AVAILABLE", snapshot.Status)
+	assert.Equal(t, NfsSnapshotActive, snapshot.Status)
 }
 
 func TestNfsListSnapshots(t *testing.T) {
@@ -145,10 +145,10 @@ func TestNfsListSnapshots(t *testing.T) {
 		page := r.URL.Query().Get("page")
 		if page == "2" {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, `{"snapshots": [{"id": "test-nfs-snapshot-id-2", "name": "daily-backup-2", "size_gib": 2048, "region": "atl1", "status": "AVAILABLE", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}]}`)
+			fmt.Fprint(w, `{"snapshots": [{"id": "test-nfs-snapshot-id-2", "name": "daily-backup-2", "size_gib": 2048, "region": "atl1", "status": "ACTIVE", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}]}`)
 		} else {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, `{"snapshots": [{"id": "test-nfs-snapshot-id-1", "name": "daily-backup-1", "size_gib": 1024, "region": "atl1", "status": "PROVISIONING", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}]}`)
+			fmt.Fprint(w, `{"snapshots": [{"id": "test-nfs-snapshot-id-1", "name": "daily-backup-1", "size_gib": 1024, "region": "atl1", "status": "CREATING", "created_at": "2023-11-14T16:29:21Z", "share_id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d"}]}`)
 		}
 	})
 
@@ -160,7 +160,7 @@ func TestNfsListSnapshots(t *testing.T) {
 	assert.Equal(t, "daily-backup-1", snapshots[0].Name)
 	assert.Equal(t, "atl1", snapshots[0].Region)
 	assert.Equal(t, 1024, snapshots[0].SizeGib)
-	assert.Equal(t, "PROVISIONING", snapshots[0].Status)
+	assert.Equal(t, NfsSnapshotCreating, snapshots[0].Status)
 
 	// Test second page
 	snapshots, resp, err = client.Nfs.ListSnapshots(context.Background(), &ListOptions{Page: 2}, "", "atl1")
@@ -170,7 +170,7 @@ func TestNfsListSnapshots(t *testing.T) {
 	assert.Equal(t, "daily-backup-2", snapshots[0].Name)
 	assert.Equal(t, "atl1", snapshots[0].Region)
 	assert.Equal(t, 2048, snapshots[0].SizeGib)
-	assert.Equal(t, "AVAILABLE", snapshots[0].Status)
+	assert.Equal(t, NfsSnapshotActive, snapshots[0].Status)
 }
 
 func TestNfsSnapshotsDelete(t *testing.T) {

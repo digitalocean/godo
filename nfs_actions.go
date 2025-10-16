@@ -6,12 +6,12 @@ import (
 	"net/http"
 )
 
-// NfsActionsService is an interface for interfacing with the NFS actions
+// NfsActionsService is an interface for interacting with the NFS actions
 // endpoints of the DigitalOcean API
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/NFS-Actions
 type NfsActionsService interface {
-	Resize(context.Context, string, uint64, string) (*Action, *Response, error)
-	Snapshot(context.Context, string, string, string) (*Action, *Response, error)
+	Resize(ctx context.Context, nfsShareId string, size uint64, region string) (*Action, *Response, error)
+	Snapshot(ctx context.Context, nfsShareId string, nfsSnapshotName string, region string) (*Action, *Response, error)
 }
 
 // NfsActionsServiceOp handles communication with the NFS action related
@@ -23,33 +23,33 @@ type NfsActionsServiceOp struct {
 var _ NfsActionsService = &NfsActionsServiceOp{}
 
 // Resize an NFS share
-func (s *NfsActionsServiceOp) Resize(ctx context.Context, id string, size uint64, region string) (*Action, *Response, error) {
+func (s *NfsActionsServiceOp) Resize(ctx context.Context, nfsShareId string, size uint64, region string) (*Action, *Response, error) {
 	requestType := "resize"
 	request := &ActionRequest{
 		"type":   requestType,
 		"region": region,
 		"size":   size,
 	}
-	return s.doAction(ctx, id, request)
+	return s.doAction(ctx, nfsShareId, request)
 }
 
 // Snapshot an NFS share
-func (s *NfsActionsServiceOp) Snapshot(ctx context.Context, id, name, region string) (*Action, *Response, error) {
+func (s *NfsActionsServiceOp) Snapshot(ctx context.Context, nfsShareId, nfsSnapshotName, region string) (*Action, *Response, error) {
 	requestType := "snapshot"
 	request := &ActionRequest{
 		"type":   requestType,
-		"name":   name,
+		"name":   nfsSnapshotName,
 		"region": region,
 	}
-	return s.doAction(ctx, id, request)
+	return s.doAction(ctx, nfsShareId, request)
 }
 
-func (s *NfsActionsServiceOp) doAction(ctx context.Context, id string, request *ActionRequest) (*Action, *Response, error) {
+func (s *NfsActionsServiceOp) doAction(ctx context.Context, nfsShareId string, request *ActionRequest) (*Action, *Response, error) {
 	if request == nil {
 		return nil, nil, NewArgError("request", "request can't be nil")
 	}
 
-	path := nfsActionPath(id)
+	path := nfsActionPath(nfsShareId)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, request)
 	if err != nil {
