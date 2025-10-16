@@ -105,7 +105,7 @@ type nfsSnapshotListRoot struct {
 // nfsOptions represents the query param options for NFS operations
 type nfsOptions struct {
 	// Region is the datacenter region where the NFS share/shapshot is located
-	Region  string `url:"region"`
+	Region string `url:"region"`
 	// ShareID is the unique identifier of the share from which this snapshot was created.
 	ShareID string `url:"share_id,omitempty"`
 }
