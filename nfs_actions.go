@@ -10,8 +10,8 @@ import (
 // endpoints of the DigitalOcean API
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/NFS-Actions
 type NfsActionsService interface {
-	Resize(ctx context.Context, nfsShareId string, size uint64, region string) (*Action, *Response, error)
-	Snapshot(ctx context.Context, nfsShareId string, nfsSnapshotName string, region string) (*Action, *Response, error)
+	Resize(ctx context.Context, nfsShareId string, size uint64, region string) (*NfsAction, *Response, error)
+	Snapshot(ctx context.Context, nfsShareId string, nfsSnapshotName string, region string) (*NfsAction, *Response, error)
 }
 
 // NfsActionsServiceOp handles communication with the NFS action related
@@ -22,29 +22,68 @@ type NfsActionsServiceOp struct {
 
 var _ NfsActionsService = &NfsActionsServiceOp{}
 
+// NfsAction represents an NFS action
+type NfsAction struct {
+	ID           int        `json:"id"`
+	Status       string     `json:"status"`
+	Type         string     `json:"type"`
+	StartedAt    *Timestamp `json:"started_at"`
+	CompletedAt  *Timestamp `json:"completed_at"`
+	ResourceID   string     `json:"resource_id"`
+	ResourceType string     `json:"resource_type"`
+	Region       *Region    `json:"region,omitempty"`
+	RegionSlug   string     `json:"region_slug,omitempty"`
+}
+
+// nfsActionRoot represents the response wrapper for NFS actions
+type nfsActionRoot struct {
+	Event *NfsAction `json:"action"`
+}
+
+// NfsActionRequest represents a generic NFS action request
+type NfsActionRequest struct {
+	Type   string      `json:"type"`
+	Region string      `json:"region"`
+	Params interface{} `json:"params"`
+}
+
+// NfsResizeParams represents parameters for resizing an NFS share
+type NfsResizeParams struct {
+	SizeGib uint64 `json:"size_gib"`
+}
+
+// NfsSnapshotParams represents parameters for creating an NFS snapshot
+type NfsSnapshotParams struct {
+	Name string `json:"name"`
+}
+
 // Resize an NFS share
-func (s *NfsActionsServiceOp) Resize(ctx context.Context, nfsShareId string, size uint64, region string) (*Action, *Response, error) {
-	requestType := "resize"
-	request := &ActionRequest{
-		"type":   requestType,
-		"region": region,
-		"size":   size,
+func (s *NfsActionsServiceOp) Resize(ctx context.Context, nfsShareId string, size uint64, region string) (*NfsAction, *Response, error) {
+	request := &NfsActionRequest{
+		Type:   "resize",
+		Region: region,
+		Params: &NfsResizeParams{
+			SizeGib: size,
+		},
 	}
+
 	return s.doAction(ctx, nfsShareId, request)
 }
 
 // Snapshot an NFS share
-func (s *NfsActionsServiceOp) Snapshot(ctx context.Context, nfsShareId, nfsSnapshotName, region string) (*Action, *Response, error) {
-	requestType := "snapshot"
-	request := &ActionRequest{
-		"type":   requestType,
-		"name":   nfsSnapshotName,
-		"region": region,
+func (s *NfsActionsServiceOp) Snapshot(ctx context.Context, nfsShareId, nfsSnapshotName, region string) (*NfsAction, *Response, error) {
+	request := &NfsActionRequest{
+		Type:   "snapshot",
+		Region: region,
+		Params: &NfsSnapshotParams{
+			Name: nfsSnapshotName,
+		},
 	}
+
 	return s.doAction(ctx, nfsShareId, request)
 }
 
-func (s *NfsActionsServiceOp) doAction(ctx context.Context, nfsShareId string, request *ActionRequest) (*Action, *Response, error) {
+func (s *NfsActionsServiceOp) doAction(ctx context.Context, nfsShareId string, request *NfsActionRequest) (*NfsAction, *Response, error) {
 	if request == nil {
 		return nil, nil, NewArgError("request", "request can't be nil")
 	}
@@ -56,7 +95,7 @@ func (s *NfsActionsServiceOp) doAction(ctx context.Context, nfsShareId string, r
 		return nil, nil, err
 	}
 
-	root := new(actionRoot)
+	root := new(nfsActionRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
