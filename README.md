@@ -9,6 +9,18 @@ You can view the client API docs here: [http://godoc.org/github.com/digitalocean
 
 You can view DigitalOcean API docs here: [https://docs.digitalocean.com/reference/api/api-reference/](https://docs.digitalocean.com/reference/api/api-reference/)
 
+## Table of Contents
+
+- [Install](#install)
+- [Usage](#usage)
+  - [Authentication](#authentication)
+- [Examples](#examples)
+  - [Pagination](#pagination)
+  - [Automatic Retries and Exponential Backoff](#automatic-retries-and-exponential-backoff)
+- [Versioning](#versioning)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+
 ## Install
 ```sh
 go get github.com/digitalocean/godo@vX.Y.Z
