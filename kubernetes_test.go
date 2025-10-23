@@ -1444,6 +1444,72 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 
 }
 
+func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
+	setup()
+	defer teardown()
+	kubeSvc := client.Kubernetes
+	want := &KubernetesNodePoolTemplate{
+		Template: &KubernetesNodeTemplate{
+			ClusterUUID: "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+			Name:        "pool-a",
+			Slug:        "s-1vcpu-2gb",
+			Taints:      []string{"some-key=some-value:NoSchedule"},
+			Labels: map[string]string{
+				"some-label": "some-value",
+			},
+			Capacity: &KubernetesNodePoolResources{
+				CPU:    1,
+				Memory: "2048Mi",
+				Pods:   110,
+			},
+			Allocatable: &KubernetesNodePoolResources{
+				CPU:    390,
+				Memory: "1024Mi",
+				Pods:   110,
+			},
+			Gpu: &KubernetesNodePoolGPUResources{
+				Model: "mi300x",
+				Count: 1,
+			},
+		},
+	}
+	jBlob := `
+{
+  "template": {
+    "cluster_uuid": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+    "name": "pool-a",
+    "slug": "s-1vcpu-2gb",
+    "labels": {
+      "some-label": "some-value"
+    },
+    "taints": ["some-key=some-value:NoSchedule"],
+    "capacity": {
+      "cpu": 1,
+      "memory": "2048Mi",
+      "pods": 110
+    },
+    "allocatable": {
+      "cpu": 390,
+      "memory": "1024Mi",
+      "pods": 110
+    },
+    "gpu": {
+      "model": "mi300x",
+      "count": 1
+    }
+  }
+}
+`
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8a/node_pools_template/pool-a", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, jBlob)
+	})
+	got, _, err := kubeSvc.GetNodePoolTemplate(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8a", "pool-a")
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+
+}
+
 func TestKubernetesClusters_ListNodePools(t *testing.T) {
 	setup()
 	defer teardown()

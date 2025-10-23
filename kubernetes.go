@@ -482,6 +482,12 @@ type KubernetesNodePoolResources struct {
 	Pods   int64  `json:"pods,omitempty"`
 }
 
+// KubernetesNodePoolGPUResources exposes model and GPU count of a node pool template
+type KubernetesNodePoolGPUResources struct {
+	Model string `json:"model"`
+	Count int64  `json:"count"`
+}
+
 // KubernetesNode represents a Node in a node pool in a Kubernetes cluster.
 type KubernetesNode struct {
 	ID        string                `json:"id,omitempty"`
@@ -495,13 +501,14 @@ type KubernetesNode struct {
 
 // KubernetesNodeTemplate represents a template in a node pool in a Kubernetes cluster.
 type KubernetesNodeTemplate struct {
-	ClusterUUID string                       `json:"cluster_uuid,omitempty"`
-	Name        string                       `json:"name,omitempty"`
-	Slug        string                       `json:"slug,omitempty"`
-	Labels      map[string]string            `json:"labels,omitempty"`
-	Taints      []string                     `json:"taints,omitempty"`
-	Capacity    *KubernetesNodePoolResources `json:"capacity,omitempty"`
-	Allocatable *KubernetesNodePoolResources `json:"allocatable,omitempty"`
+	ClusterUUID string                          `json:"cluster_uuid,omitempty"`
+	Name        string                          `json:"name,omitempty"`
+	Slug        string                          `json:"slug,omitempty"`
+	Labels      map[string]string               `json:"labels,omitempty"`
+	Taints      []string                        `json:"taints,omitempty"`
+	Capacity    *KubernetesNodePoolResources    `json:"capacity,omitempty"`
+	Allocatable *KubernetesNodePoolResources    `json:"allocatable,omitempty"`
+	Gpu         *KubernetesNodePoolGPUResources `json:"gpu,omitempty"`
 }
 
 // KubernetesNodeStatus represents the status of a particular Node in a Kubernetes cluster.
