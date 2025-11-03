@@ -64,7 +64,7 @@ type NfsAttachParams struct {
 	VpcID string `json:"vpc_id"`
 }
 
-// NfsSnapshotParams represents parameters for detaching an NFS share from a VPC
+// NfsDetachParams represents parameters for detaching an NFS share from a VPC
 type NfsDetachParams struct {
 	VpcID string `json:"vpc_id"`
 }
