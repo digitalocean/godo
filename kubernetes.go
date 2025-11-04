@@ -89,6 +89,8 @@ type KubernetesClusterCreateRequest struct {
 	RoutingAgent                      *KubernetesRoutingAgent                      `json:"routing_agent,omitempty"`
 	AmdGpuDevicePlugin                *KubernetesAmdGpuDevicePlugin                `json:"amd_gpu_device_plugin,omitempty"`
 	AmdGpuDeviceMetricsExporterPlugin *KubernetesAmdGpuDeviceMetricsExporterPlugin `json:"amd_gpu_device_metrics_exporter_plugin,omitempty"`
+	NvidiaGpuDevicePlugin             *KubernetesNvidiaGpuDevicePlugin             `json:"nvidia_gpu_device_plugin,omitempty"`
+	RdmaSharedDevicePlugin            *KubernetesRdmaSharedDevicePlugin            `json:"rdma_shared_dev_plugin,omitempty"`
 }
 
 // KubernetesClusterUpdateRequest represents a request to update a Kubernetes cluster.
@@ -103,6 +105,8 @@ type KubernetesClusterUpdateRequest struct {
 	RoutingAgent                      *KubernetesRoutingAgent                      `json:"routing_agent,omitempty"`
 	AmdGpuDevicePlugin                *KubernetesAmdGpuDevicePlugin                `json:"amd_gpu_device_plugin,omitempty"`
 	AmdGpuDeviceMetricsExporterPlugin *KubernetesAmdGpuDeviceMetricsExporterPlugin `json:"amd_gpu_device_metrics_exporter_plugin,omitempty"`
+	NvidiaGpuDevicePlugin             *KubernetesNvidiaGpuDevicePlugin             `json:"nvidia_gpu_device_plugin,omitempty"`
+	RdmaSharedDevicePlugin            *KubernetesRdmaSharedDevicePlugin            `json:"rdma_shared_dev_plugin,omitempty"`
 
 	// Convert cluster to run highly available control plane
 	HA *bool `json:"ha,omitempty"`
@@ -238,6 +242,8 @@ type KubernetesCluster struct {
 	RoutingAgent                      *KubernetesRoutingAgent                      `json:"routing_agent,omitempty"`
 	AmdGpuDevicePlugin                *KubernetesAmdGpuDevicePlugin                `json:"amd_gpu_device_plugin,omitempty"`
 	AmdGpuDeviceMetricsExporterPlugin *KubernetesAmdGpuDeviceMetricsExporterPlugin `json:"amd_gpu_device_metrics_exporter_plugin,omitempty"`
+	NvidiaGpuDevicePlugin             *KubernetesNvidiaGpuDevicePlugin             `json:"nvidia_gpu_device_plugin,omitempty"`
+	RdmaSharedDevicePlugin            *KubernetesRdmaSharedDevicePlugin            `json:"rdma_shared_dev_plugin,omitempty"`
 
 	Status    *KubernetesClusterStatus `json:"status,omitempty"`
 	CreatedAt time.Time                `json:"created_at,omitempty"`
@@ -280,6 +286,13 @@ type KubernetesControlPlaneFirewall struct {
 	AllowedAddresses []string `json:"allowed_addresses"`
 }
 
+// KubernetesClusterAutoscalerConfiguration represents Kubernetes cluster autoscaler configuration.
+type KubernetesClusterAutoscalerConfiguration struct {
+	ScaleDownUtilizationThreshold *float64 `json:"scale_down_utilization_threshold"`
+	ScaleDownUnneededTime         *string  `json:"scale_down_unneeded_time"`
+	Expanders                     []string `json:"expanders"`
+}
+
 // KubernetesRoutingAgent represents information about the routing-agent cluster plugin.
 type KubernetesRoutingAgent struct {
 	Enabled *bool `json:"enabled"`
@@ -296,11 +309,16 @@ type KubernetesAmdGpuDeviceMetricsExporterPlugin struct {
 	Enabled *bool `json:"enabled"`
 }
 
-// KubernetesClusterAutoscalerConfiguration represents Kubernetes cluster autoscaler configuration.
-type KubernetesClusterAutoscalerConfiguration struct {
-	ScaleDownUtilizationThreshold *float64 `json:"scale_down_utilization_threshold"`
-	ScaleDownUnneededTime         *string  `json:"scale_down_unneeded_time"`
-	Expanders                     []string `json:"expanders"`
+// KubernetesNvidiaGpuDevicePlugin represents information about the NVIDIA GPU Device Plugin cluster plugin.
+// If a cluster has a node pool with an NVIDIA GPU it will be enabled by default.
+type KubernetesNvidiaGpuDevicePlugin struct {
+	Enabled *bool `json:"enabled"`
+}
+
+// KubernetesRdmaSharedDevicePlugin represents information about the rdma-shared-dev cluster plugin.
+// If a cluster has a multi-node GPU ready slug it will be enabled by default.
+type KubernetesRdmaSharedDevicePlugin struct {
+	Enabled *bool `json:"enabled"`
 }
 
 // KubernetesMaintenancePolicyDay represents the possible days of a maintenance
