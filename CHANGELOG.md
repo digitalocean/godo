@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.169.0] - 2025-11-13
+
+- #928 - @do-joe - Fix GetLogsink API Response Parsing to Match Actual API Behavior
+
 ## [1.168.0] - 2025-11-06
 
 - #926 - @niket-dujari - added provision for attach and detach share
