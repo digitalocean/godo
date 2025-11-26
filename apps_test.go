@@ -1378,3 +1378,29 @@ func TestApps_GetJobInvocationLogs(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, jobInvocationLogs.LiveURL)
 }
+
+func TestApps_CancelJobInvocation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+	opts := &CancelJobInvocationOptions{
+		JobName: "job-name",
+	}
+	jobInvocationId := testJobInvocation.ID
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/job-invocations/%s/cancel", testApp.ID, jobInvocationId), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		assert.Equal(t, opts.JobName, r.URL.Query().Get("job_name"))
+
+		if jobInvocationId == testJobInvocation.ID {
+			json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &testJobInvocation})
+		} else {
+			json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &JobInvocation{}})
+		}
+	})
+	jobInvocation, _, err := client.Apps.CancelJobInvocation(ctx, testApp.ID, jobInvocationId, opts)
+	require.NoError(t, err)
+	assert.Equal(t, &testJobInvocation, jobInvocation)
+}
