@@ -464,16 +464,18 @@ type ModelVersion struct {
 
 // AgentCreateRequest represents the request to create a new Gen AI Agent
 type AgentCreateRequest struct {
-	AnthropicKeyUuid  string   `json:"anthropic_key_uuid,omitempty"`
-	Description       string   `json:"description,omitempty"`
-	Instruction       string   `json:"instruction,omitempty"`
-	KnowledgeBaseUuid []string `json:"knowledge_base_uuid,omitempty"`
-	ModelUuid         string   `json:"model_uuid,omitempty"`
-	Name              string   `json:"name,omitempty"`
-	OpenAiKeyUuid     string   `json:"open_ai_key_uuid,omitempty"`
-	ProjectId         string   `json:"project_id,omitempty"`
-	Region            string   `json:"region,omitempty"`
-	Tags              []string `json:"tags,omitempty"`
+	AnthropicKeyUuid     string   `json:"anthropic_key_uuid,omitempty"`
+	Description          string   `json:"description,omitempty"`
+	Instruction          string   `json:"instruction,omitempty"`
+	KnowledgeBaseUuid    []string `json:"knowledge_base_uuid,omitempty"`
+	ModelProviderKeyUuid string   `json:"model_provider_key_uuid,omitempty"`
+	ModelUuid            string   `json:"model_uuid,omitempty"`
+	Name                 string   `json:"name,omitempty"`
+	OpenAiKeyUuid        string   `json:"open_ai_key_uuid,omitempty"`
+	ProjectId            string   `json:"project_id,omitempty"`
+	Region               string   `json:"region,omitempty"`
+	Tags                 []string `json:"tags,omitempty"`
+	WorkspaceUuid        string   `json:"workspace_uuid,omitempty"`
 }
 
 // AgentAPIKeyCreateRequest represents the request to create a new Gen AI Agent API Key

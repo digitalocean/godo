@@ -1092,6 +1092,7 @@ func TestCreateAgent(t *testing.T) {
 		ProjectId:         "00000000-0000-0000-0000-000000000000",
 		Region:            "tor1",
 		Tags:              []string{"string"},
+		WorkspaceUuid:     "00000000-0000-0000-0000-000000000000",
 	}
 
 	res, _, err := client.GenAI.CreateAgent(ctx, req)
