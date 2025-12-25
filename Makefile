@@ -9,19 +9,28 @@ COMMIT ?= HEAD
 BUMP ?= patch
 
 .PHONY: help
-help:
+help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'; \
 	printf "\nNOTE: Use 'make BUMP=(bugfix|feature|breaking) bump_version' to create a release.\n"
 
 .PHONY: dev-dependencies
 dev-dependencies: ## Install development tooling
 	@go install github.com/digitalocean/github-changelog-generator@latest
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install golang.org/x/tools/cmd/goimports@latest
 	@if ! command -v jq &> /dev/null; then \
 		echo "WARNING: jq not found. Please install jq manually."; \
 	fi
 	@if ! command -v gh &> /dev/null; then \
 		echo "WARNING: GitHub CLI not found. Please install gh manually."; \
 	fi
+	@if ! command -v pre-commit &> /dev/null; then \
+		echo "WARNING: pre-commit not found. Please install: pip install pre-commit"; \
+	fi
+
+.PHONY: setup
+setup: dev-dependencies ## Setup development environment
+	@pre-commit install --install-hooks
 
 .PHONY: install
 install: ## Install dependencies
@@ -32,6 +41,11 @@ else
 	@(echo "go is not installed. See https://golang.org/doc/install for more info."; exit 1)
 endif
 
+.PHONY: fmt
+fmt: ## Format Go code
+	@go fmt ./...
+	@goimports -w .
+
 .PHONY: test
 test: install ## Run tests
 	@go test -mod=vendor .
@@ -40,10 +54,25 @@ test: install ## Run tests
 test-verbose: install ## Run tests with verbose output
 	@go test -mod=vendor -v .
 
+.PHONY: test-coverage
+test-coverage: install ## Run tests with coverage
+	@go test -race -coverprofile=coverage.out -covermode=atomic ./...
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
 .PHONY: lint
 lint: install ## Run linting
 	@go fmt ./...
 	@go vet ./...
+	@golangci-lint run
+
+.PHONY: check
+check: fmt lint test ## Run all checks (format, lint, test)
+
+.PHONY: clean
+clean: ## Clean build artifacts
+	@rm -f coverage.out coverage.html
+	@go clean -testcache
 
 .PHONY: _install_github_release_notes
 _install_github_release_notes:
@@ -72,4 +101,4 @@ tag: ## Tags a release and prints changelog info
 	@echo ""
 	@ORIGIN=$(ORIGIN) scripts/tag.sh; \
 	NEW_TAG=$$(git describe --tags --abbrev=0); \
-	echo "==> Generating changelog for tag $$NEW_TAG"; \
+	echo "==> Generating changelog for tag $$NEW_TAG";
