@@ -42,6 +42,12 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 				Enabled: PtrTo(true),
 			},
+			NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+				Enabled: PtrTo(true),
+			},
+			RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+				Enabled: PtrTo(true),
+			},
 			NodePools: []*KubernetesNodePool{
 				{
 					ID:    "1a17a012-cb31-4886-a787-deadbeef1191",
@@ -139,6 +145,12 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				"enabled": true
 			},
 			"amd_gpu_device_metrics_exporter_plugin": {
+				"enabled": true
+			},
+			"nvidia_gpu_device_plugin": {
+				"enabled": true
+			},
+			"rdma_shared_dev_plugin": {
 				"enabled": true
 			},
 			"node_pools": [
@@ -291,6 +303,12 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+			Enabled: PtrTo(true),
+		},
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:    "deadbeef-dead-beef-dead-deadbeefb4b3",
@@ -349,6 +367,12 @@ func TestKubernetesClusters_Get(t *testing.T) {
 			"enabled": true
 		},
 		"amd_gpu_device_metrics_exporter_plugin": {
+			"enabled": true
+		},
+		"nvidia_gpu_device_plugin": {
+			"enabled": true
+		},
+		"rdma_shared_dev_plugin": {
 			"enabled": true
 		},
 		"node_pools": [
@@ -605,6 +629,12 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+			Enabled: PtrTo(true),
+		},
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:     "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -642,6 +672,18 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		SurgeUpgrade:  true,
 		HA:            true,
 		RoutingAgent: &KubernetesRoutingAgent{
+			Enabled: PtrTo(true),
+		},
+		AmdGpuDevicePlugin: &KubernetesAmdGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
+			Enabled: PtrTo(true),
+		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
 			Enabled: PtrTo(true),
 		},
 		NodePools: []*KubernetesNodePoolCreateRequest{
@@ -683,6 +725,12 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			"enabled": true
 		},
 		"amd_gpu_device_metrics_exporter_plugin": {
+			"enabled": true
+		},
+		"nvidia_gpu_device_plugin": {
+			"enabled": true
+		},
+		"rdma_shared_dev_plugin": {
 			"enabled": true
 		},
 		"node_pools": [
@@ -893,6 +941,12 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+			Enabled: PtrTo(true),
+		},
 	}
 	updateRequest := &KubernetesClusterUpdateRequest{
 		Name:              want.Name,
@@ -917,6 +971,12 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
+			Enabled: PtrTo(true),
+		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
 			Enabled: PtrTo(true),
 		},
 	}
@@ -973,11 +1033,17 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		},
 		"amd_gpu_device_metrics_exporter_plugin": {
 			"enabled": true
+		},
+		"nvidia_gpu_device_plugin": {
+			"enabled": true
+		},
+		"rdma_shared_dev_plugin": {
+			"enabled": true
 		}
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
@@ -1430,6 +1496,72 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
       "cpu": 390,
       "memory": "1024Mi",
       "pods": 110
+    }
+  }
+}
+`
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8a/node_pools_template/pool-a", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, jBlob)
+	})
+	got, _, err := kubeSvc.GetNodePoolTemplate(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8a", "pool-a")
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+
+}
+
+func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
+	setup()
+	defer teardown()
+	kubeSvc := client.Kubernetes
+	want := &KubernetesNodePoolTemplate{
+		Template: &KubernetesNodeTemplate{
+			ClusterUUID: "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+			Name:        "pool-a",
+			Slug:        "s-1vcpu-2gb",
+			Taints:      []string{"some-key=some-value:NoSchedule"},
+			Labels: map[string]string{
+				"some-label": "some-value",
+			},
+			Capacity: &KubernetesNodePoolResources{
+				CPU:    1,
+				Memory: "2048Mi",
+				Pods:   110,
+			},
+			Allocatable: &KubernetesNodePoolResources{
+				CPU:    390,
+				Memory: "1024Mi",
+				Pods:   110,
+			},
+			Gpu: &KubernetesNodePoolGPUResources{
+				Model: "mi300x",
+				Count: 1,
+			},
+		},
+	}
+	jBlob := `
+{
+  "template": {
+    "cluster_uuid": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+    "name": "pool-a",
+    "slug": "s-1vcpu-2gb",
+    "labels": {
+      "some-label": "some-value"
+    },
+    "taints": ["some-key=some-value:NoSchedule"],
+    "capacity": {
+      "cpu": 1,
+      "memory": "2048Mi",
+      "pods": 110
+    },
+    "allocatable": {
+      "cpu": 390,
+      "memory": "1024Mi",
+      "pods": 110
+    },
+    "gpu": {
+      "model": "mi300x",
+      "count": 1
     }
   }
 }
