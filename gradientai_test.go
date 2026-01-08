@@ -1057,7 +1057,7 @@ func TestListAgents(t *testing.T) {
 		PerPage: 1,
 	}
 
-	agents, resp, err := client.GenAI.ListAgents(ctx, req)
+	agents, resp, err := client.GradientAI.ListAgents(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListAgents returned error: %v", err)
 	}
@@ -1095,7 +1095,7 @@ func TestCreateAgent(t *testing.T) {
 		WorkspaceUuid:     "00000000-0000-0000-0000-000000000000",
 	}
 
-	res, _, err := client.GenAI.CreateAgent(ctx, req)
+	res, _, err := client.GradientAI.CreateAgent(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.Create returned error: %v", err)
 	}
@@ -1113,7 +1113,7 @@ func TestListAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GenAI.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	keys, resp, err := client.GradientAI.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -1137,7 +1137,7 @@ func TestCreateAPIKey(t *testing.T) {
 		Name:      "Key One",
 	}
 
-	key, resp, err := client.GenAI.CreateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
+	key, resp, err := client.GradientAI.CreateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1159,7 +1159,7 @@ func TestUpdateAPIKey(t *testing.T) {
 		Name:       "Key One",
 	}
 
-	key, resp, err := client.GenAI.UpdateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	key, resp, err := client.GradientAI.UpdateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1175,7 +1175,7 @@ func TestDeleteAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.DeleteAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	key, resp, err := client.GradientAI.DeleteAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1191,7 +1191,7 @@ func TestRegenerateAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.RegenerateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	key, resp, err := client.GradientAI.RegenerateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1207,7 +1207,7 @@ func TestGetAgent(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
+	res, resp, err := client.GradientAI.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
 	if err != nil {
 		t.Errorf("GenAI.Get returned error: %v", err)
 	}
@@ -1227,7 +1227,7 @@ func TestDeleteAgent(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.DeleteAgent(ctx, "def5d52c-30c5-11f0-bf8f-4e013e2ddde4")
+	res, resp, err := client.GradientAI.DeleteAgent(ctx, "def5d52c-30c5-11f0-bf8f-4e013e2ddde4")
 	if err != nil {
 		t.Errorf("GenAI.Delete returned error: %v", err)
 	}
@@ -1249,7 +1249,7 @@ func TestUpdateAgent(t *testing.T) {
 		Tags: []string{"updated", "example"},
 	}
 
-	res, resp, err := client.GenAI.UpdateAgent(ctx, "00000000-0000-0000-0000-000000000000", req)
+	res, resp, err := client.GradientAI.UpdateAgent(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.Update returned error: %v", err)
 	}
@@ -1272,7 +1272,7 @@ func TestUpdateAgentVisibility(t *testing.T) {
 		Visibility: "VISIBILITY_PRIVATE",
 	}
 
-	res, resp, err := client.GenAI.UpdateAgentVisibility(ctx, "00000000-0000-0000-0000-000000000000", req)
+	res, resp, err := client.GradientAI.UpdateAgentVisibility(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateVisibility returned error: %v", err)
 	}
@@ -1301,7 +1301,7 @@ func TestListKnowledgeBases(t *testing.T) {
 		PerPage: 1,
 	}
 
-	knowledgeBases, resp, err := client.GenAI.ListKnowledgeBases(ctx, req)
+	knowledgeBases, resp, err := client.GradientAI.ListKnowledgeBases(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListKnowledgeBases returned error: %v", err)
 	}
@@ -1329,7 +1329,7 @@ func TestListIndexingJobs(t *testing.T) {
 		PerPage: 2,
 	}
 
-	result, resp, err := client.GenAI.ListIndexingJobs(ctx, req)
+	result, resp, err := client.GradientAI.ListIndexingJobs(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListIndexingJobs returned error: %v", err)
 	}
@@ -1357,7 +1357,7 @@ func TestListIndexingJobDataSources(t *testing.T) {
 		fmt.Fprint(w, indexingJobDataSourcesResponse)
 	})
 
-	result, resp, err := client.GenAI.ListIndexingJobDataSources(ctx, indexingJobUUID)
+	result, resp, err := client.GradientAI.ListIndexingJobDataSources(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.ListIndexingJobDataSources returned error: %v", err)
 	}
@@ -1401,7 +1401,7 @@ func TestGetIndexingJob(t *testing.T) {
 		fmt.Fprint(w, indexingJobResponse)
 	})
 
-	result, resp, err := client.GenAI.GetIndexingJob(ctx, indexingJobUUID)
+	result, resp, err := client.GradientAI.GetIndexingJob(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.GetIndexingJob returned error: %v", err)
 	}
@@ -1453,7 +1453,7 @@ func TestCancelIndexingJob(t *testing.T) {
 		fmt.Fprint(w, cancelIndexingJobResponse)
 	})
 
-	result, resp, err := client.GenAI.CancelIndexingJob(ctx, indexingJobUUID)
+	result, resp, err := client.GradientAI.CancelIndexingJob(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.CancelIndexingJob returned error: %v", err)
 	}
@@ -1505,7 +1505,7 @@ func TestCreateKnowledgeBase(t *testing.T) {
 		},
 	}
 
-	res, _, err := client.GenAI.CreateKnowledgeBase(ctx, req)
+	res, _, err := client.GradientAI.CreateKnowledgeBase(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.CreateKnowledgeBase returned error: %v", err)
 	}
@@ -1535,7 +1535,7 @@ func TestListDataSources(t *testing.T) {
 		PerPage: 1,
 	}
 
-	dataSources, resp, err := client.GenAI.ListKnowledgeBaseDataSources(ctx, "11111111-1111-1111-1111-111111111111", req)
+	dataSources, resp, err := client.GradientAI.ListKnowledgeBaseDataSources(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.ListDataSources returned error: %v", err)
 	}
@@ -1562,7 +1562,7 @@ func TestAddDataSource(t *testing.T) {
 		},
 	}
 
-	res, _, err := client.GenAI.AddKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", req)
+	res, _, err := client.GradientAI.AddKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.AddDataSource returned error: %v", err)
 	}
@@ -1580,7 +1580,7 @@ func TestDeleteDataSource(t *testing.T) {
 		fmt.Fprint(w, deleteDataSourceResponse)
 	})
 
-	kbUUID, dsUUID, resp, err := client.GenAI.DeleteKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222")
+	kbUUID, dsUUID, resp, err := client.GradientAI.DeleteKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222")
 	if err != nil {
 		t.Errorf("GenAI.DeleteDataSource returned error: %v", err)
 	}
@@ -1599,7 +1599,7 @@ func TestGetKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, knowledgeBaseGetResponse)
 	})
 
-	res, dbStatus, resp, err := client.GenAI.GetKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
+	res, dbStatus, resp, err := client.GradientAI.GetKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.GetKnowledgeBase returned error: %v", err)
 	}
@@ -1624,7 +1624,7 @@ func TestUpdateKnowledgeBase(t *testing.T) {
 		Tags: []string{"updated", "example"},
 	}
 
-	res, resp, err := client.GenAI.UpdateKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111", req)
+	res, resp, err := client.GradientAI.UpdateKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateKnowledgeBase returned error: %v", err)
 	}
@@ -1644,7 +1644,7 @@ func TestDeleteKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, deleteKnowledgeBaseResponse)
 	})
 
-	kbUUID, resp, err := client.GenAI.DeleteKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
+	kbUUID, resp, err := client.GradientAI.DeleteKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.DeleteKnowledgeBase returned error: %v", err)
 	}
@@ -1662,7 +1662,7 @@ func TestAttachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.AttachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.GradientAI.AttachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.AttachKnowledgBase returned error: %v", err)
 	}
@@ -1680,7 +1680,7 @@ func TestDetachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.DetachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.GradientAI.DetachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	fmt.Print(res)
 	fmt.Print(resp)
 
@@ -1712,7 +1712,7 @@ func TestAddAgentRoute(t *testing.T) {
 		RouteName:       "weather route app",
 	}
 
-	res, resp, err := client.GenAI.AddAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
+	res, resp, err := client.GradientAI.AddAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
 	if err != nil {
 		t.Errorf("GenAI.AddAgentRoute returned error: %v", err)
 	}
@@ -1730,7 +1730,7 @@ func TestDeleteAgentRoute(t *testing.T) {
 		fmt.Fprint(w, agentRouteResponse)
 	})
 
-	res, resp, err := client.GenAI.DeleteAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001")
+	res, resp, err := client.GradientAI.DeleteAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001")
 	if err != nil {
 		t.Errorf("GenAI.DeleteAgentRoute returned error: %v", err)
 	}
@@ -1755,7 +1755,7 @@ func TestUpdateAgentRoute(t *testing.T) {
 		RouteName:       "weather route app",
 	}
 
-	res, resp, err := client.GenAI.UpdateAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
+	res, resp, err := client.GradientAI.UpdateAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateAgentRoute returned error: %v", err)
 	}
@@ -1773,7 +1773,7 @@ func TestListVersions(t *testing.T) {
 		fmt.Fprint(w, listAgentVersionsResponse)
 	})
 
-	versions, resp, err := client.GenAI.ListAgentVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	versions, resp, err := client.GradientAI.ListAgentVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	if err != nil {
 		t.Errorf("GenAI.ListAgentVersions returned error: %v", err)
 	}
@@ -1792,7 +1792,7 @@ func TestRollbackVersion(t *testing.T) {
 		fmt.Fprint(w, rollbackResponse)
 	})
 
-	versions, resp, err := client.GenAI.RollbackAgentVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
+	versions, resp, err := client.GradientAI.RollbackAgentVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
 	if err != nil {
 		t.Errorf("GenAI.RollbackVersion returned error: %v", err)
 	}
@@ -1810,7 +1810,7 @@ func TestListAnthropicAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listAnthropicAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GenAI.ListAnthropicAPIKeys(ctx, nil)
+	keys, resp, err := client.GradientAI.ListAnthropicAPIKeys(ctx, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -1834,7 +1834,7 @@ func TestCreateAnthropicAPIKey(t *testing.T) {
 		ApiKey: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GenAI.CreateAnthropicAPIKey(ctx, req)
+	key, resp, err := client.GradientAI.CreateAnthropicAPIKey(ctx, req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1850,7 +1850,7 @@ func TestGetAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.GetAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.GradientAI.GetAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1872,7 +1872,7 @@ func TestUpdateAnthropicAPIKey(t *testing.T) {
 		ApiKeyUuid: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GenAI.UpdateAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
+	key, resp, err := client.GradientAI.UpdateAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1888,7 +1888,7 @@ func TestDeleteAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.DeleteAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.GradientAI.DeleteAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1904,7 +1904,7 @@ func TestListAgentsByAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, listAgentsByAnthropicAPIKeyResponse)
 	})
 
-	agents, resp, err := client.GenAI.ListAgentsByAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	agents, resp, err := client.GradientAI.ListAgentsByAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(agents))
@@ -1927,7 +1927,7 @@ func TestListOpenAIAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listOpenAIAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GenAI.ListOpenAIAPIKeys(ctx, nil)
+	keys, resp, err := client.GradientAI.ListOpenAIAPIKeys(ctx, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -1951,7 +1951,7 @@ func TestCreateOpenAIAPIKey(t *testing.T) {
 		ApiKey: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GenAI.CreateOpenAIAPIKey(ctx, req)
+	key, resp, err := client.GradientAI.CreateOpenAIAPIKey(ctx, req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -1967,7 +1967,7 @@ func TestGetOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, openaiAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.GetOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.GradientAI.GetOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -1989,7 +1989,7 @@ func TestUpdateOpenAIAPIKey(t *testing.T) {
 		ApiKeyUuid: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GenAI.UpdateOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
+	key, resp, err := client.GradientAI.UpdateOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -2005,7 +2005,7 @@ func TestDeleteOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, openaiAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.DeleteOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.GradientAI.DeleteOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -2021,7 +2021,7 @@ func TestListAgentsByOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, listAgentsByOpenAIAPIKeyResponse)
 	})
 
-	agents, resp, err := client.GenAI.ListAgentsByOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	agents, resp, err := client.GradientAI.ListAgentsByOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(agents))
@@ -2095,7 +2095,7 @@ func TestCreateFunctionRoute(t *testing.T) {
 }`),
 	}
 
-	agent, res, err := client.GenAI.CreateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", req)
+	agent, res, err := client.GradientAI.CreateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.Create returned error: %v", err)
 	}
@@ -2151,7 +2151,7 @@ func TestUpdateFunctionRoute(t *testing.T) {
         }`),
 	}
 
-	agent, resp, err := client.GenAI.UpdateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	agent, resp, err := client.GradientAI.UpdateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, req.Description, agent.Functions[0].Description)
@@ -2167,7 +2167,7 @@ func TestDeleteFunctionRoute(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	_, resp, err := client.GenAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	_, resp, err := client.GradientAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
@@ -2191,7 +2191,7 @@ func TestListAvailableModels(t *testing.T) {
 		PerPage: 1,
 	}
 
-	models, resp, err := client.GenAI.ListAvailableModels(ctx, req)
+	models, resp, err := client.GradientAI.ListAvailableModels(ctx, req)
 	if err != nil {
 		t.Fatalf("GenAI ListAvailableModels returned error: %v", err)
 	}
@@ -2212,7 +2212,7 @@ func TestListDatacenterRegions(t *testing.T) {
 		fmt.Fprint(w, listDatacenterRegionsResponse)
 	})
 
-	regions, resp, err := client.GenAI.ListDatacenterRegions(ctx, nil, nil)
+	regions, resp, err := client.GradientAI.ListDatacenterRegions(ctx, nil, nil)
 	if err != nil {
 		t.Fatalf("GenAI ListDatacenterRegions returned error: %v", err)
 	}
