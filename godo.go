@@ -100,6 +100,7 @@ type Client struct {
 	PartnerAttachment   PartnerAttachmentService
 	GenAI               GenAIService
 	BYOIPPrefixes       BYOIPPrefixesService
+	SaasAddons          SaasAddonsService
 	// Optional function called after every successful request made to the DO APIs
 	onRequestCompleted RequestCompletionCallback
 
@@ -329,6 +330,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.VPCs = &VPCsServiceOp{client: c}
 	c.PartnerAttachment = &PartnerAttachmentServiceOp{client: c}
 	c.GenAI = &GenAIServiceOp{client: c}
+	c.SaasAddons = &SaasAddonsServiceOp{client: c}
 
 	c.headers = make(map[string]string)
 
