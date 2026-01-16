@@ -53,7 +53,7 @@ type VPCUpdateRequest struct {
 
 // VPCSetField allows one to set individual fields within a VPC configuration.
 type VPCSetField interface {
-	vpcSetField(map[string]interface{})
+	vpcSetField(map[string]any)
 }
 
 // VPCSetName is used when one want to set the `name` field of a VPC.
@@ -189,22 +189,22 @@ func (v *VPCsServiceOp) Update(ctx context.Context, id string, update *VPCUpdate
 	return root.VPC, resp, nil
 }
 
-func (n VPCSetName) vpcSetField(in map[string]interface{}) {
+func (n VPCSetName) vpcSetField(in map[string]any) {
 	in["name"] = n
 }
 
-func (n VPCSetDescription) vpcSetField(in map[string]interface{}) {
+func (n VPCSetDescription) vpcSetField(in map[string]any) {
 	in["description"] = n
 }
 
-func (*vpcSetDefault) vpcSetField(in map[string]interface{}) {
+func (*vpcSetDefault) vpcSetField(in map[string]any) {
 	in["default"] = true
 }
 
 // Set updates specific properties of a Virtual Private Cloud.
 func (v *VPCsServiceOp) Set(ctx context.Context, id string, fields ...VPCSetField) (*VPC, *Response, error) {
 	path := vpcsBasePath + "/" + id
-	update := make(map[string]interface{}, len(fields))
+	update := make(map[string]any, len(fields))
 	for _, field := range fields {
 		field.vpcSetField(update)
 	}
