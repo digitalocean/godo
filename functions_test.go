@@ -216,7 +216,7 @@ func TestFunctions_ListTriggers(t *testing.T) {
 			UpdatedAt: time.Date(2022, 10, 17, 18, 41, 30, 0, time.UTC),
 			ScheduledDetails: &TriggerScheduledDetails{
 				Cron: "* * * * *",
-				Body: map[string]interface{}{
+				Body: map[string]any{
 					"foo": "bar",
 				},
 			},
@@ -234,7 +234,7 @@ func TestFunctions_ListTriggers(t *testing.T) {
 			UpdatedAt: time.Date(2022, 10, 14, 20, 29, 43, 0, time.UTC),
 			ScheduledDetails: &TriggerScheduledDetails{
 				Cron: "* * * * *",
-				Body: map[string]interface{}{},
+				Body: map[string]any{},
 			},
 			ScheduledRuns: &TriggerScheduledRuns{
 				LastRunAt: time.Date(2022, 11, 03, 17, 02, 43, 0, time.UTC),
@@ -286,7 +286,7 @@ func TestFunctions_GetTrigger(t *testing.T) {
 		UpdatedAt: time.Date(2022, 10, 17, 18, 41, 30, 0, time.UTC),
 		ScheduledDetails: &TriggerScheduledDetails{
 			Cron: "* * * * *",
-			Body: map[string]interface{}{
+			Body: map[string]any{
 				"foo": "bar",
 			},
 		},
@@ -332,7 +332,7 @@ func TestFunctions_CreateTrigger(t *testing.T) {
 		IsEnabled: true,
 		ScheduledDetails: &TriggerScheduledDetails{
 			Cron: "* * * * *",
-			Body: map[string]interface{}{
+			Body: map[string]any{
 				"foo": "bar",
 			},
 		},
@@ -349,7 +349,7 @@ func TestFunctions_CreateTrigger(t *testing.T) {
 		UpdatedAt: time.Date(2022, 10, 17, 18, 41, 30, 0, time.UTC),
 		ScheduledDetails: &TriggerScheduledDetails{
 			Cron: "* * * * *",
-			Body: map[string]interface{}{
+			Body: map[string]any{
 				"foo": "bar",
 			},
 		},
@@ -406,7 +406,7 @@ func TestFunctions_UpdateTrigger(t *testing.T) {
 		UpdatedAt: time.Date(2022, 10, 17, 18, 41, 30, 0, time.UTC),
 		ScheduledDetails: &TriggerScheduledDetails{
 			Cron: "* * * * *",
-			Body: map[string]interface{}{
+			Body: map[string]any{
 				"foo": "bar",
 			},
 		},
