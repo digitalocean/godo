@@ -567,6 +567,7 @@ type AppServiceSpec struct {
 	// A list of configured log forwarding destinations.
 	LogDestinations     []*AppLogDestinationSpec       `json:"log_destinations,omitempty"`
 	Termination         *AppServiceSpecTermination     `json:"termination,omitempty"`
+	// A configuration for putting the service to sleep after it has been inactive. Note: this is in Private Preview.
 	InactivitySleep     *AppServiceSpecInactivitySleep `json:"inactivity_sleep,omitempty"`
 	LivenessHealthCheck *HealthCheckSpec               `json:"liveness_health_check,omitempty"`
 }
