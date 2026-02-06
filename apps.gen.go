@@ -319,7 +319,8 @@ type AppIngressSpec struct {
 	LoadBalancer     AppIngressSpecLoadBalancer `json:"load_balancer,omitempty"`
 	LoadBalancerSize int64                      `json:"load_balancer_size,omitempty"`
 	// Rules for configuring HTTP ingress for component routes, CORS, rewrites, and redirects.
-	Rules []*AppIngressSpecRule `json:"rules,omitempty"`
+	Rules        []*AppIngressSpecRule `json:"rules,omitempty"`
+	SecureHeader *AppSecureHeaderSpec  `json:"secure_header,omitempty"`
 }
 
 // AppIngressSpecLoadBalancer the model 'AppIngressSpecLoadBalancer'
@@ -374,6 +375,13 @@ type AppIngressSpecRuleStringMatch struct {
 	// Prefix-based match. For example, `/api` will match `/api`, `/api/`, and any nested paths such as `/api/v1/endpoint`.
 	Prefix string `json:"prefix,omitempty"`
 	Exact  string `json:"exact,omitempty"`
+}
+
+type AppSecureHeaderSpec struct {
+	// The name of the header to set.
+	Key string `json:"key,omitempty"`
+	// The value of the header to set.
+	Value string `json:"value,omitempty"`
 }
 
 // AppInstance struct for AppInstance

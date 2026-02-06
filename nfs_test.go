@@ -14,9 +14,10 @@ func TestNfsCreate(t *testing.T) {
 	defer teardown()
 
 	createRequest := &NfsCreateRequest{
-		Name:    "test-nfs-share",
-		SizeGib: 50,
-		Region:  "atl1",
+		Name:            "test-nfs-share",
+		SizeGib:         50,
+		Region:          "atl1",
+		PerformanceTier: "standard",
 	}
 
 	mux.HandleFunc("/v2/nfs", func(w http.ResponseWriter, r *http.Request) {
