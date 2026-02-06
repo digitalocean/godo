@@ -755,6 +755,80 @@ func TestDatabases_Create(t *testing.T) {
 	}
 }`,
 		},
+		{
+			title: "create with do_settings",
+			createRequest: &DatabaseCreateRequest{
+				Name:       "backend-cname-test",
+				EngineSlug: "pg",
+				Version:    "14",
+				Region:     "nyc3",
+				SizeSlug:   "db-s-2vcpu-4gb",
+				NumNodes:   2,
+				Tags:       []string{"production"},
+				ProjectID:  "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				StorageSizeMib: 61440,
+				DOSettings: &DOSettings{
+					ServiceCnames: []string{"db.example.com", "database.myapp.io"},
+				},
+			},
+			want: &Database{
+				ID:          "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+				Name:        "backend-cname-test",
+				EngineSlug:  "pg",
+				VersionSlug: "14",
+				Connection: &DatabaseConnection{
+					URI:      "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+					Database: "defaultdb",
+					Host:     "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+					Port:     25060,
+					User:     "doadmin",
+					Password: "zt91mum075ofzyww",
+					SSL:      true,
+				},
+				NumNodes:          2,
+				RegionSlug:        "nyc3",
+				Status:            "creating",
+				CreatedAt:         time.Date(2019, 2, 26, 6, 12, 39, 0, time.UTC),
+				MaintenanceWindow: nil,
+				SizeSlug:          "db-s-2vcpu-4gb",
+				Tags:              []string{"production"},
+				ProjectID:         "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				StorageSizeMib:    61440,
+				DOSettings: &DOSettings{
+					ServiceCnames: []string{"db.example.com", "database.myapp.io"},
+				},
+			},
+			body: `
+{
+	"database": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		"name": "backend-cname-test",
+		"engine": "pg",
+		"version": "14",
+		"connection": {
+			"uri": "postgres://doadmin:zt91mum075ofzyww@dbtest-do-user-3342561-0.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+			"database": "defaultdb",
+			"host": "dbtest-do-user-3342561-0.db.ondigitalocean.com",
+			"port": 25060,
+			"user": "doadmin",
+			"password": "zt91mum075ofzyww",
+			"ssl": true
+		},
+		"num_nodes": 2,
+		"region": "nyc3",
+		"status": "creating",
+		"created_at": "2019-02-26T06:12:39Z",
+		"maintenance_window": null,
+		"size": "db-s-2vcpu-4gb",
+		"tags": ["production"],
+		"project_id": "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+		"storage_size_mib": 61440,
+		"do_settings": {
+			"service_cnames": ["db.example.com", "database.myapp.io"]
+		}
+	}
+}`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1938,6 +2012,9 @@ func TestDatabases_CreateReplica(t *testing.T) {
 		Tags:               []string{"production", "staging"},
 		StorageSizeMib:     51200,
 		Size:               "db-s-2vcpu-4gb",
+		DOSettings: &DOSettings{
+			ServiceCnames: []string{"replica-db.example.com", "read-replica.myapp.io"},
+		},
 	}
 
 	body := `
@@ -1968,7 +2045,10 @@ func TestDatabases_CreateReplica(t *testing.T) {
     "private_network_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
 	"tags": ["production", "staging"],
 	"storage_size_mib": 51200,
-	"size": "db-s-2vcpu-4gb"
+	"size": "db-s-2vcpu-4gb",
+	"do_settings": {
+		"service_cnames": ["replica-db.example.com", "read-replica.myapp.io"]
+	}
   }
 }
 `
@@ -1986,6 +2066,9 @@ func TestDatabases_CreateReplica(t *testing.T) {
 		PrivateNetworkUUID: privateNetworkUUID,
 		Tags:               []string{"production", "staging"},
 		StorageSizeMib:     uint64(51200),
+		DOSettings: &DOSettings{
+			ServiceCnames: []string{"replica-db.example.com", "read-replica.myapp.io"},
+		},
 	})
 	require.NoError(t, err)
 	require.Equal(t, want, got)
