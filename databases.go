@@ -535,13 +535,13 @@ type DatabaseCreateDBRequest struct {
 
 // DatabaseCreateReplicaRequest is used to create a new read-only replica
 type DatabaseCreateReplicaRequest struct {
-	Name               string   `json:"name"`
-	Region             string   `json:"region"`
-	Size               string   `json:"size"`
-	PrivateNetworkUUID string       `json:"private_network_uuid"`
-	Tags               []string     `json:"tags,omitempty"`
-	StorageSizeMib     uint64       `json:"storage_size_mib,omitempty"`
-	DOSettings         *DOSettings  `json:"do_settings,omitempty"`
+	Name               string      `json:"name"`
+	Region             string      `json:"region"`
+	Size               string      `json:"size"`
+	PrivateNetworkUUID string      `json:"private_network_uuid"`
+	Tags               []string    `json:"tags,omitempty"`
+	StorageSizeMib     uint64      `json:"storage_size_mib,omitempty"`
+	DOSettings         *DOSettings `json:"do_settings,omitempty"`
 }
 
 // DatabaseUpdateFirewallRulesRequest is used to set the firewall rules for a database

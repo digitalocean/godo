@@ -758,14 +758,14 @@ func TestDatabases_Create(t *testing.T) {
 		{
 			title: "create with do_settings",
 			createRequest: &DatabaseCreateRequest{
-				Name:       "backend-cname-test",
-				EngineSlug: "pg",
-				Version:    "14",
-				Region:     "nyc3",
-				SizeSlug:   "db-s-2vcpu-4gb",
-				NumNodes:   2,
-				Tags:       []string{"production"},
-				ProjectID:  "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
+				Name:           "backend-cname-test",
+				EngineSlug:     "pg",
+				Version:        "14",
+				Region:         "nyc3",
+				SizeSlug:       "db-s-2vcpu-4gb",
+				NumNodes:       2,
+				Tags:           []string{"production"},
+				ProjectID:      "05d84f74-db8c-4de5-ae72-2fd4823fb1c8",
 				StorageSizeMib: 61440,
 				DOSettings: &DOSettings{
 					ServiceCnames: []string{"db.example.com", "database.myapp.io"},
