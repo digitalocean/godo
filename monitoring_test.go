@@ -809,6 +809,47 @@ var (
 			},
 		},
 	}
+
+	testDbaasMysqlResponseJSON = `
+	{
+	  "status": "success",
+	  "data": {
+		"resultType": "matrix",
+		"result": [
+		  {
+			"metric": {
+			  "db_id": "example-db-uuid",
+			  "service": "mysql-primary"
+			},
+			"values": [
+			  [1635386880, "42.5"],
+			  [1635387000, "43.1"],
+			  [1635387120, "41.9"]
+			]
+		  }
+		]
+	  }
+	}`
+
+	testDbaasMysqlResponse = &MetricsResponse{
+		Status: "success",
+		Data: MetricsData{
+			ResultType: "matrix",
+			Result: []metrics.SampleStream{
+				{
+					Metric: metrics.Metric{
+						"db_id":   "example-db-uuid",
+						"service": "mysql-primary",
+					},
+					Values: []metrics.SamplePair{
+						{Timestamp: 1635386880000, Value: 42.5},
+						{Timestamp: 1635387000000, Value: 43.1},
+						{Timestamp: 1635387120000, Value: 41.9},
+					},
+				},
+			},
+		},
+	}
 )
 
 func TestAlertPolicies_List(t *testing.T) {
@@ -1508,4 +1549,87 @@ func TestGetLoadBalancerMetrics(t *testing.T) {
 
 		assert.Equal(t, testLBResponse, metricsResp)
 	}
+}
+
+func TestGetDbaasMysqlCpuUsage(t *testing.T) {
+	setup()
+	defer teardown()
+	now := time.Now()
+	metricReq := &DbaasMysqlCpuUsageRequest{
+		DbaasMysqlMetricsRequest: DbaasMysqlMetricsRequest{
+			DBID:  "example-db-uuid",
+			Start: now.Add(-300 * time.Second),
+			End:   now,
+		},
+		Aggregate: "avg",
+	}
+	mux.HandleFunc("/v2/monitoring/metrics/database/mysql/cpu_usage", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, metricReq.DBID, r.URL.Query().Get("db_id"))
+		assert.Equal(t, fmt.Sprintf("%d", metricReq.Start.Unix()), r.URL.Query().Get("start"))
+		assert.Equal(t, fmt.Sprintf("%d", metricReq.End.Unix()), r.URL.Query().Get("end"))
+		assert.Equal(t, metricReq.Aggregate, r.URL.Query().Get("aggregate"))
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, testDbaasMysqlResponseJSON)
+	})
+	metricsResp, _, err := client.Monitoring.GetDbaasMysqlCpuUsage(ctx, metricReq)
+	if err != nil {
+		t.Errorf("Monitoring.GetDbaasMysqlCpuUsage returned error: %v", err)
+	}
+	assert.Equal(t, testDbaasMysqlResponse, metricsResp)
+}
+
+func TestGetDbaasMysqlThreadsConnected(t *testing.T) {
+	setup()
+	defer teardown()
+	now := time.Now()
+	metricReq := &DbaasMysqlServiceMetricsRequest{
+		DBID:    "example-db-uuid",
+		Service: "mysql-primary",
+		Start:   now.Add(-300 * time.Second),
+		End:     now,
+	}
+	mux.HandleFunc("/v2/monitoring/metrics/database/mysql/threads_connected", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, metricReq.DBID, r.URL.Query().Get("db_id"))
+		assert.Equal(t, metricReq.Service, r.URL.Query().Get("service"))
+		assert.Equal(t, fmt.Sprintf("%d", metricReq.Start.Unix()), r.URL.Query().Get("start"))
+		assert.Equal(t, fmt.Sprintf("%d", metricReq.End.Unix()), r.URL.Query().Get("end"))
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, testDbaasMysqlResponseJSON)
+	})
+	metricsResp, _, err := client.Monitoring.GetDbaasMysqlThreadsConnected(ctx, metricReq)
+	if err != nil {
+		t.Errorf("Monitoring.GetDbaasMysqlThreadsConnected returned error: %v", err)
+	}
+	assert.Equal(t, testDbaasMysqlResponse, metricsResp)
+}
+
+func TestGetDbaasMysqlSchemaThroughput(t *testing.T) {
+	setup()
+	defer teardown()
+	now := time.Now()
+	metricReq := &DbaasMysqlSchemaThroughputRequest{
+		DbaasMysqlSchemaMetricsRequest: DbaasMysqlSchemaMetricsRequest{
+			DBID:    "example-db-uuid",
+			Service: "mysql-primary",
+			Schema:  "mydb",
+			Start:   now.Add(-300 * time.Second),
+			End:     now,
+		},
+		Metric: "insert",
+	}
+	mux.HandleFunc("/v2/monitoring/metrics/database/mysql/schema_throughput", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, metricReq.DBID, r.URL.Query().Get("db_id"))
+		assert.Equal(t, metricReq.Service, r.URL.Query().Get("service"))
+		assert.Equal(t, metricReq.Schema, r.URL.Query().Get("schema"))
+		assert.Equal(t, metricReq.Metric, r.URL.Query().Get("metric"))
+		assert.Equal(t, fmt.Sprintf("%d", metricReq.Start.Unix()), r.URL.Query().Get("start"))
+		assert.Equal(t, fmt.Sprintf("%d", metricReq.End.Unix()), r.URL.Query().Get("end"))
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, testDbaasMysqlResponseJSON)
+	})
+	metricsResp, _, err := client.Monitoring.GetDbaasMysqlSchemaThroughput(ctx, metricReq)
+	if err != nil {
+		t.Errorf("Monitoring.GetDbaasMysqlSchemaThroughput returned error: %v", err)
+	}
+	assert.Equal(t, testDbaasMysqlResponse, metricsResp)
 }
