@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	monitoringBasePath             = "v2/monitoring"
-	alertPolicyBasePath            = monitoringBasePath + "/alerts"
-	dropletMetricsBasePath         = monitoringBasePath + "/metrics/droplet"
-	loadBalancerMetricsBasePath    = monitoringBasePath + "/metrics/load_balancer"
-	dbaasMysqlMetricsBasePath      = monitoringBasePath + "/metrics/database/mysql"
+	monitoringBasePath          = "v2/monitoring"
+	alertPolicyBasePath         = monitoringBasePath + "/alerts"
+	dropletMetricsBasePath      = monitoringBasePath + "/metrics/droplet"
+	loadBalancerMetricsBasePath = monitoringBasePath + "/metrics/load_balancer"
+	dbaasMysqlMetricsBasePath   = monitoringBasePath + "/metrics/database/mysql"
 
 	DropletCPUUtilizationPercent        = "v1/insights/droplet/cpu"
 	DropletMemoryUtilizationPercent     = "v1/insights/droplet/memory_utilization_percent"
