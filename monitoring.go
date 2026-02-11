@@ -666,9 +666,9 @@ func (s *MonitoringServiceOp) getDbaasMysqlMetrics(ctx context.Context, path str
 // GetDbaasMysqlCpuUsage retrieves CPU usage (percent) for a MySQL cluster. Aggregate: avg, max, min.
 func (s *MonitoringServiceOp) GetDbaasMysqlCpuUsage(ctx context.Context, args *DbaasMysqlCpuUsageRequest) (*MetricsResponse, *Response, error) {
 	params := map[string]string{
-		"db_id":    args.DBID,
-		"start":    fmt.Sprintf("%d", args.Start.Unix()),
-		"end":      fmt.Sprintf("%d", args.End.Unix()),
+		"db_id":     args.DBID,
+		"start":     fmt.Sprintf("%d", args.Start.Unix()),
+		"end":       fmt.Sprintf("%d", args.End.Unix()),
 		"aggregate": args.Aggregate,
 	}
 	return s.getDbaasMysqlMetrics(ctx, "/cpu_usage", params)
