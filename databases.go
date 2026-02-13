@@ -1029,7 +1029,7 @@ type ListDatabaseEvents struct {
 	Events []DatabaseEvent `json:"events"`
 }
 
-// DatbaseEvent contains the information about a Datbase event.
+// DatabaseEvent contains the information about a Database event.
 type DatabaseEvent struct {
 	ID          string `json:"id"`
 	ServiceName string `json:"cluster_name"`
