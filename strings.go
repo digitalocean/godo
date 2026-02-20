@@ -18,12 +18,12 @@ type ResourceWithURN interface {
 }
 
 // ToURN converts the resource type and ID to a valid DO API URN.
-func ToURN(resourceType string, id interface{}) string {
+func ToURN(resourceType string, id any) string {
 	return fmt.Sprintf("%s:%s:%v", "do", strings.ToLower(resourceType), id)
 }
 
 // Stringify attempts to create a string representation of DigitalOcean types
-func Stringify(message interface{}) string {
+func Stringify(message any) string {
 	var buf bytes.Buffer
 	v := reflect.ValueOf(message)
 	stringifyValue(&buf, v)

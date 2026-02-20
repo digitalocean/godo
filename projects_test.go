@@ -470,7 +470,7 @@ func TestProjects_AssignFleetResourcesWithTypes(t *testing.T) {
 	setup()
 	defer teardown()
 
-	assignableResources := []interface{}{
+	assignableResources := []any{
 		&Droplet{ID: 1234},
 		&FloatingIP{IP: "1.2.3.4"},
 		&ReservedIP{IP: "1.2.3.4"},
@@ -529,7 +529,7 @@ func TestProjects_AssignFleetResourcesWithStrings(t *testing.T) {
 	setup()
 	defer teardown()
 
-	assignableResources := []interface{}{
+	assignableResources := []any{
 		"do:droplet:1234",
 		"do:floatingip:1.2.3.4",
 		"do:reservedip:1.2.3.4",
@@ -588,7 +588,7 @@ func TestProjects_AssignFleetResourcesWithStringsAndTypes(t *testing.T) {
 	setup()
 	defer teardown()
 
-	assignableResources := []interface{}{
+	assignableResources := []any{
 		"do:droplet:1234",
 		&FloatingIP{IP: "1.2.3.4"},
 		&ReservedIP{IP: "1.2.3.4"},
@@ -649,7 +649,7 @@ func TestProjects_AssignFleetResourcesWithTypeWithoutURNReturnsError(t *testing.
 
 	type fakeType struct{}
 
-	assignableResources := []interface{}{
+	assignableResources := []any{
 		fakeType{},
 	}
 

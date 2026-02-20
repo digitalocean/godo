@@ -999,7 +999,7 @@ func TestApps_ToURN(t *testing.T) {
 
 func TestApps_Interfaces(t *testing.T) {
 	t.Run("AppComponentSpec", func(t *testing.T) {
-		for _, impl := range []interface{}{
+		for _, impl := range []any{
 			&AppServiceSpec{},
 			&AppWorkerSpec{},
 			&AppJobSpec{},
@@ -1109,7 +1109,7 @@ func TestApps_Interfaces(t *testing.T) {
 	})
 
 	t.Run("SourceSpec", func(t *testing.T) {
-		for _, impl := range []interface{}{
+		for _, impl := range []any{
 			&GitSourceSpec{},
 			&GitHubSourceSpec{},
 			&GitLabSourceSpec{},
@@ -1123,7 +1123,7 @@ func TestApps_Interfaces(t *testing.T) {
 	})
 
 	t.Run("VCSSourceSpec", func(t *testing.T) {
-		for _, impl := range []interface{}{
+		for _, impl := range []any{
 			&GitSourceSpec{},
 			&GitHubSourceSpec{},
 			&GitLabSourceSpec{},

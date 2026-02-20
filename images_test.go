@@ -316,16 +316,16 @@ func TestImages_Create(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/images", func(w http.ResponseWriter, r *http.Request) {
-		expected := map[string]interface{}{
+		expected := map[string]any{
 			"name":         "my-new-image",
 			"url":          "http://example.com/distro-amd64.img",
 			"region":       "nyc3",
 			"distribution": "Ubuntu",
 			"description":  "My new custom image",
-			"tags":         []interface{}{"foo", "bar"},
+			"tags":         []any{"foo", "bar"},
 		}
 
-		var v map[string]interface{}
+		var v map[string]any
 		err := json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
 			t.Fatalf("decode json: %v", err)
@@ -359,13 +359,13 @@ func TestImages_Update(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/images/12345", func(w http.ResponseWriter, r *http.Request) {
-		expected := map[string]interface{}{
+		expected := map[string]any{
 			"name":         "name",
 			"distribution": "Fedora",
 			"description":  "Just testing...",
 		}
 
-		var v map[string]interface{}
+		var v map[string]any
 		err := json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
 			t.Fatalf("decode json: %v", err)

@@ -549,7 +549,7 @@ func TestRegistry_DeleteManifest(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func reifyTemplateStr(t *testing.T, tmplStr string, v interface{}) string {
+func reifyTemplateStr(t *testing.T, tmplStr string, v any) string {
 	tmpl, err := template.New("meow").Parse(tmplStr)
 	require.NoError(t, err)
 

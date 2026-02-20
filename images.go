@@ -122,7 +122,7 @@ func (s *ImagesServiceOp) GetByID(ctx context.Context, imageID int) (*Image, *Re
 		return nil, nil, NewArgError("imageID", "cannot be less than 1")
 	}
 
-	return s.get(ctx, interface{}(imageID))
+	return s.get(ctx, any(imageID))
 }
 
 // GetBySlug retrieves an image by slug.
@@ -131,7 +131,7 @@ func (s *ImagesServiceOp) GetBySlug(ctx context.Context, slug string) (*Image, *
 		return nil, nil, NewArgError("slug", "cannot be blank")
 	}
 
-	return s.get(ctx, interface{}(slug))
+	return s.get(ctx, any(slug))
 }
 
 // Create a new image
@@ -198,7 +198,7 @@ func (s *ImagesServiceOp) Delete(ctx context.Context, imageID int) (*Response, e
 }
 
 // Helper method for getting an individual image
-func (s *ImagesServiceOp) get(ctx context.Context, ID interface{}) (*Image, *Response, error) {
+func (s *ImagesServiceOp) get(ctx context.Context, ID any) (*Image, *Response, error) {
 	path := fmt.Sprintf("%s/%v", imageBasePath, ID)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
