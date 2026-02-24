@@ -91,6 +91,7 @@ func testClientServices(t *testing.T, c *Client) {
 		"Invoices",
 		"Keys",
 		"Monitoring",
+		"Security",
 		"Regions",
 		"Sizes",
 		"FloatingIPs",
