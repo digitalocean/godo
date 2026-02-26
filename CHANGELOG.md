@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.176.0] - 2026-02-26
+
+- #953 - @kamleshsahu - Add dbaas metrics client
+
 ## [1.175.0] - 2026-02-12
 
 - #952 - @bentranter - security: add cspm scanning functionality for public preview
