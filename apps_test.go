@@ -1404,3 +1404,81 @@ func TestApps_CancelJobInvocation(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, &testJobInvocation, jobInvocation)
 }
+
+func TestApps_ListEvents(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	testEvent := Event{
+		ID:           "event-uuid",
+		Type:         EVENTTYPE_Autoscaling,
+		DeploymentID: "08f10d33-94c3-4492-b9a3-1603e9ab7fe4",
+	}
+
+	opts := &ListEventsOptions{
+		Page:    1,
+		PerPage: 10,
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/events", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "1", r.URL.Query().Get("page"))
+		assert.Equal(t, "10", r.URL.Query().Get("per_page"))
+		json.NewEncoder(w).Encode(&eventsRoot{Events: []*Event{&testEvent}, Meta: &Meta{Total: 1}, Links: &Links{}})
+	})
+
+	events, resp, err := client.Apps.ListEvents(ctx, testApp.ID, opts)
+	require.NoError(t, err)
+	assert.Equal(t, []*Event{&testEvent}, events)
+	assert.Equal(t, 1, resp.Meta.Total)
+}
+
+func TestApps_CancelEvent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	testEvent := Event{
+		ID:           "event-uuid",
+		Type:         EVENTTYPE_Autoscaling,
+		DeploymentID: "08f10d33-94c3-4492-b9a3-1603e9ab7fe4",
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/events/%s/cancel", testApp.ID, testEvent.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		json.NewEncoder(w).Encode(&eventRoot{Event: &testEvent})
+	})
+
+	event, _, err := client.Apps.CancelEvent(ctx, testApp.ID, testEvent.ID)
+	require.NoError(t, err)
+	assert.Equal(t, &testEvent, event)
+}
+
+func TestApps_GetEventLogs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	eventID := "event-uuid"
+
+	opts := &GetEventLogsOptions{
+		Follow:    true,
+		TailLines: 10,
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/events/%s/logs", testApp.ID, eventID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "AUTOSCALE_EVENT", r.URL.Query().Get("type"))
+		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+		assert.Equal(t, "10", r.URL.Query().Get("tail_lines"))
+		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://logs.example.com/event"})
+	})
+
+	logs, _, err := client.Apps.GetEventLogs(ctx, testApp.ID, eventID, opts)
+	require.NoError(t, err)
+	assert.NotEmpty(t, logs.LiveURL)
+}
