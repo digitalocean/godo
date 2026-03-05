@@ -151,8 +151,6 @@ type ListEventsOptions struct {
 	EventTypes []string `url:"event_types,omitempty"`
 	// DeploymentTypes filters deployment events by deployment cause type.
 	DeploymentTypes []string `url:"deployment_types,omitempty"`
-	// WithDeploymentRollbackValidation runs rollback validation checks on deployments attached to events.
-	WithDeploymentRollbackValidation bool `url:"with_deployment_rollback_validation,omitempty"`
 }
 
 // GetEventLogsOptions specifies the optional parameters to the GetEventLogs method.
