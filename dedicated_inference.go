@@ -24,8 +24,8 @@ var _ DedicatedInferenceService = &DedicatedInferenceServiceOp{}
 
 // DedicatedInferenceCreateRequest represents a request to create a Dedicated Inference.
 type DedicatedInferenceCreateRequest struct {
-	Spec    *DedicatedInferenceSpecRequest `json:"spec"`
-	Secrets *DedicatedInferenceSecrets     `json:"secrets,omitempty"`
+	Spec         *DedicatedInferenceSpecRequest  `json:"spec"`
+	AccessTokens *DedicatedInferenceAccessTokens `json:"access_tokens,omitempty"`
 }
 
 // DedicatedInferenceSpecRequest represents the deployment specification in a create/update request.
@@ -62,8 +62,8 @@ type DedicatedInferenceAcceleratorRequest struct {
 	Type            string `json:"type"`
 }
 
-// DedicatedInferenceSecrets represents secrets for external model providers.
-type DedicatedInferenceSecrets struct {
+// DedicatedInferenceAccessTokens represents access tokens for external model providers.
+type DedicatedInferenceAccessTokens struct {
 	HuggingFaceToken string `json:"hugging_face_token,omitempty"`
 }
 
