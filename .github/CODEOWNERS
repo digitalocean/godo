@@ -1,0 +1,16 @@
+# Global owners
+* @digitalocean/api-team
+
+# Go modules and dependencies
+go.mod @digitalocean/api-team
+go.sum @digitalocean/api-team
+
+# GitHub workflows and CI/CD
+/.github/ @digitalocean/api-team
+
+# Documentation
+*.md @digitalocean/api-team @digitalocean/technical-writing
+
+# Release and versioning
+/scripts/ @digitalocean/api-team
+Makefile @digitalocean/api-team
