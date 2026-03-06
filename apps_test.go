@@ -1457,6 +1457,28 @@ func TestApps_CancelEvent(t *testing.T) {
 	assert.Equal(t, &testEvent, event)
 }
 
+func TestApps_GetEvent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	testEvent := Event{
+		ID:           "event-uuid",
+		Type:         EVENTTYPE_Autoscaling,
+		DeploymentID: "08f10d33-94c3-4492-b9a3-1603e9ab7fe4",
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/events/%s", testApp.ID, testEvent.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		json.NewEncoder(w).Encode(&eventRoot{Event: &testEvent})
+	})
+
+	event, _, err := client.Apps.GetEvent(ctx, testApp.ID, testEvent.ID)
+	require.NoError(t, err)
+	assert.Equal(t, &testEvent, event)
+}
+
 func TestApps_GetEventLogs(t *testing.T) {
 	setup()
 	defer teardown()

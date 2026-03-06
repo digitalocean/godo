@@ -85,6 +85,7 @@ type AppsService interface {
 	CancelJobInvocation(ctx context.Context, appID, jobInvocationID string, opts *CancelJobInvocationOptions) (*JobInvocation, *Response, error)
 
 	ListEvents(ctx context.Context, appID string, opts *ListEventsOptions) ([]*Event, *Response, error)
+	GetEvent(ctx context.Context, appID, eventID string) (*Event, *Response, error)
 	CancelEvent(ctx context.Context, appID, eventID string) (*Event, *Response, error)
 	GetEventLogs(ctx context.Context, appID, eventID string, opts *GetEventLogsOptions) (*AppLogs, *Response, error)
 }
@@ -606,6 +607,23 @@ func (s *AppsServiceOp) ListEvents(ctx context.Context, appID string, opts *List
 		resp.Meta = m
 	}
 	return root.Events, resp, nil
+}
+
+// GetEvent retrieves a single event for an app.
+func (s *AppsServiceOp) GetEvent(ctx context.Context, appID, eventID string) (*Event, *Response, error) {
+	url := fmt.Sprintf("%s/%s/events/%s", appsBasePath, appID, eventID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(eventRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Event, resp, nil
 }
 
 // CancelEvent cancels an in-progress autoscaling event.
