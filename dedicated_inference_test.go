@@ -132,7 +132,7 @@ func TestDedicatedInference_Create(t *testing.T) {
 				},
 			},
 		},
-		AccessTokens: &DedicatedInferenceAccessTokens{
+		Secrets: &DedicatedInferenceSecrets{
 			HuggingFaceToken: "hf_test-token",
 		},
 	}
