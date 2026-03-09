@@ -350,3 +350,24 @@ func TestDedicatedInferenceToken_String(t *testing.T) {
 		t.Error("DedicatedInferenceToken.String() returned empty string")
 	}
 }
+
+func TestDedicatedInference_Delete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	diID := "di-uuid"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/dedicated-inferences/%s", diID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusAccepted)
+	})
+
+	resp, err := client.DedicatedInference.Delete(ctx, diID)
+	if err != nil {
+		t.Errorf("DedicatedInference.Delete returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusAccepted {
+		t.Errorf("expected status %d, got %d", http.StatusAccepted, resp.StatusCode)
+	}
+}
