@@ -13,6 +13,7 @@ const dedicatedInferenceBasePath = "/v2/dedicated-inferences"
 type DedicatedInferenceService interface {
 	Create(context.Context, *DedicatedInferenceCreateRequest) (*DedicatedInference, *DedicatedInferenceToken, *Response, error)
 	Get(context.Context, string) (*DedicatedInference, *Response, error)
+	List(context.Context, *DedicatedInferenceListOptions) ([]DedicatedInferenceListItem, *Response, error)
 }
 
 // DedicatedInferenceServiceOp handles communication with Dedicated Inference methods of the DigitalOcean API.
@@ -67,7 +68,26 @@ type DedicatedInferenceSecrets struct {
 	HuggingFaceToken string `json:"hugging_face_token,omitempty"`
 }
 
+// DedicatedInferenceListOptions specifies optional parameters for listing Dedicated Inferences.
+type DedicatedInferenceListOptions struct {
+	Region string `url:"region,omitempty"`
+	Name   string `url:"name,omitempty"`
+	ListOptions
+}
+
 // -- Response types (what the API returns) --
+
+// DedicatedInferenceListItem represents a Dedicated Inference item in a list response.
+type DedicatedInferenceListItem struct {
+	ID        string                       `json:"id"`
+	Name      string                       `json:"name"`
+	Region    string                       `json:"region"`
+	Status    string                       `json:"status"`
+	VPCUUID   string                       `json:"vpc_uuid"`
+	Endpoints *DedicatedInferenceEndpoints `json:"endpoints,omitempty"`
+	CreatedAt time.Time                    `json:"created_at,omitempty"`
+	UpdatedAt time.Time                    `json:"updated_at,omitempty"`
+}
 
 // DedicatedInference represents a Dedicated Inference resource returned by the API.
 type DedicatedInference struct {
@@ -147,6 +167,12 @@ type dedicatedInferenceRoot struct {
 	Token              *DedicatedInferenceToken `json:"token,omitempty"`
 }
 
+type dedicatedInferencesRoot struct {
+	DedicatedInferences []DedicatedInferenceListItem `json:"dedicated_inferences"`
+	Links               *Links                       `json:"links"`
+	Meta                *Meta                        `json:"meta"`
+}
+
 // -- Service methods --
 
 // Create a new Dedicated Inference with the given configuration.
@@ -181,4 +207,31 @@ func (s *DedicatedInferenceServiceOp) Get(ctx context.Context, id string) (*Dedi
 	}
 
 	return root.DedicatedInference, resp, nil
+}
+
+// List all Dedicated Inferences.
+func (s *DedicatedInferenceServiceOp) List(ctx context.Context, opt *DedicatedInferenceListOptions) ([]DedicatedInferenceListItem, *Response, error) {
+	path, err := addOptions(dedicatedInferenceBasePath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dedicatedInferencesRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.DedicatedInferences, resp, nil
 }
