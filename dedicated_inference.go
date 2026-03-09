@@ -14,6 +14,7 @@ type DedicatedInferenceService interface {
 	Create(context.Context, *DedicatedInferenceCreateRequest) (*DedicatedInference, *DedicatedInferenceToken, *Response, error)
 	Get(context.Context, string) (*DedicatedInference, *Response, error)
 	Update(context.Context, string, *DedicatedInferenceUpdateRequest) (*DedicatedInference, *Response, error)
+	Delete(context.Context, string) (*Response, error)
 }
 
 // DedicatedInferenceServiceOp handles communication with Dedicated Inference methods of the DigitalOcean API.
@@ -206,4 +207,16 @@ func (s *DedicatedInferenceServiceOp) Update(ctx context.Context, id string, upd
 	}
 
 	return root.DedicatedInference, resp, nil
+}
+
+// Delete an existing Dedicated Inference by its UUID.
+func (s *DedicatedInferenceServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
+	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, id)
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.Do(ctx, req, nil)
 }
