@@ -10,6 +10,35 @@ import (
 )
 
 var (
+	diListAcceleratorsJSONResponse = `
+{
+  "accelerators": [
+    {
+      "id": "acc-uuid-1",
+      "name": "gpu-acc-1",
+      "slug": "gpu-mi300x1-192gb",
+      "status": "running",
+      "created_at": "2024-01-09T20:44:32Z"
+    },
+    {
+      "id": "acc-uuid-2",
+      "name": "gpu-acc-2",
+      "slug": "gpu-mi300x1-192gb",
+      "status": "provisioning",
+      "created_at": "2024-01-09T21:00:00Z"
+    }
+  ],
+  "links": {
+    "pages": {
+      "last": "https://api.digitalocean.com/v2/dedicated-inferences/di-uuid/accelerators?page=1",
+      "next": ""
+    }
+  },
+  "meta": {
+    "total": 2
+  }
+}
+`
 	diCreateJSONResponse = `
 {
   "dedicated_inference": {
@@ -348,5 +377,90 @@ func TestDedicatedInferenceToken_String(t *testing.T) {
 
 	if token.String() == "" {
 		t.Error("DedicatedInferenceToken.String() returned empty string")
+	}
+}
+
+func TestDedicatedInference_ListAccelerators(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/accelerators", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListAcceleratorsJSONResponse)
+	})
+
+	accelerators, resp, err := client.DedicatedInference.ListAccelerators(ctx, "di-uuid", nil)
+	if err != nil {
+		t.Fatalf("DedicatedInference.ListAccelerators returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(accelerators) != 2 {
+		t.Fatalf("expected 2 accelerators, got %d", len(accelerators))
+	}
+
+	if accelerators[0].ID != "acc-uuid-1" {
+		t.Errorf("expected ID %q, got %q", "acc-uuid-1", accelerators[0].ID)
+	}
+
+	if accelerators[0].Slug != "gpu-mi300x1-192gb" {
+		t.Errorf("expected Slug %q, got %q", "gpu-mi300x1-192gb", accelerators[0].Slug)
+	}
+
+	if accelerators[0].Status != "running" {
+		t.Errorf("expected Status %q, got %q", "running", accelerators[0].Status)
+	}
+
+	if accelerators[1].Status != "provisioning" {
+		t.Errorf("expected Status %q, got %q", "provisioning", accelerators[1].Status)
+	}
+
+	if resp.Meta == nil || resp.Meta.Total != 2 {
+		t.Errorf("expected Meta.Total to be 2")
+	}
+}
+
+func TestDedicatedInference_ListAcceleratorsWithOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/accelerators", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		if got := r.URL.Query().Get("slug"); got != "gpu-mi300x1-192gb" {
+			t.Errorf("expected slug query param %q, got %q", "gpu-mi300x1-192gb", got)
+		}
+		if got := r.URL.Query().Get("page"); got != "1" {
+			t.Errorf("expected page query param %q, got %q", "1", got)
+		}
+		if got := r.URL.Query().Get("per_page"); got != "20" {
+			t.Errorf("expected per_page query param %q, got %q", "20", got)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListAcceleratorsJSONResponse)
+	})
+
+	opts := &DedicatedInferenceListAcceleratorsOptions{
+		Slug: "gpu-mi300x1-192gb",
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 20,
+		},
+	}
+
+	accelerators, _, err := client.DedicatedInference.ListAccelerators(ctx, "di-uuid", opts)
+	if err != nil {
+		t.Fatalf("DedicatedInference.ListAccelerators returned error: %v", err)
+	}
+
+	if len(accelerators) != 2 {
+		t.Fatalf("expected 2 accelerators, got %d", len(accelerators))
 	}
 }

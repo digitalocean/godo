@@ -13,6 +13,7 @@ const dedicatedInferenceBasePath = "/v2/dedicated-inferences"
 type DedicatedInferenceService interface {
 	Create(context.Context, *DedicatedInferenceCreateRequest) (*DedicatedInference, *DedicatedInferenceToken, *Response, error)
 	Get(context.Context, string) (*DedicatedInference, *Response, error)
+	ListAccelerators(context.Context, string, *DedicatedInferenceListAcceleratorsOptions) ([]DedicatedInferenceAcceleratorInfo, *Response, error)
 }
 
 // DedicatedInferenceServiceOp handles communication with Dedicated Inference methods of the DigitalOcean API.
@@ -67,7 +68,22 @@ type DedicatedInferenceSecrets struct {
 	HuggingFaceToken string `json:"hugging_face_token,omitempty"`
 }
 
+// DedicatedInferenceListAcceleratorsOptions specifies optional parameters for listing accelerators.
+type DedicatedInferenceListAcceleratorsOptions struct {
+	Slug string `url:"slug,omitempty"`
+	ListOptions
+}
+
 // -- Response types (what the API returns) --
+
+// DedicatedInferenceAcceleratorInfo represents an accelerator in a list accelerators response.
+type DedicatedInferenceAcceleratorInfo struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Slug      string    `json:"slug"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+}
 
 // DedicatedInference represents a Dedicated Inference resource returned by the API.
 type DedicatedInference struct {
@@ -147,6 +163,12 @@ type dedicatedInferenceRoot struct {
 	Token              *DedicatedInferenceToken `json:"token,omitempty"`
 }
 
+type dedicatedInferenceAcceleratorsRoot struct {
+	Accelerators []DedicatedInferenceAcceleratorInfo `json:"accelerators"`
+	Links        *Links                              `json:"links"`
+	Meta         *Meta                               `json:"meta"`
+}
+
 // -- Service methods --
 
 // Create a new Dedicated Inference with the given configuration.
@@ -181,4 +203,32 @@ func (s *DedicatedInferenceServiceOp) Get(ctx context.Context, id string) (*Dedi
 	}
 
 	return root.DedicatedInference, resp, nil
+}
+
+// ListAccelerators lists accelerators for a Dedicated Inference.
+func (s *DedicatedInferenceServiceOp) ListAccelerators(ctx context.Context, diID string, opt *DedicatedInferenceListAcceleratorsOptions) ([]DedicatedInferenceAcceleratorInfo, *Response, error) {
+	basePath := fmt.Sprintf("%s/%s/accelerators", dedicatedInferenceBasePath, diID)
+	path, err := addOptions(basePath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dedicatedInferenceAcceleratorsRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.Accelerators, resp, nil
 }
