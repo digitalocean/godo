@@ -382,6 +382,8 @@ type AppSecureHeaderSpec struct {
 	Key string `json:"key,omitempty"`
 	// The value of the header to set.
 	Value string `json:"value,omitempty"`
+	// Remove the header from incoming requests before forwarding to the app.
+	RemoveHeader bool `json:"remove_header,omitempty"`
 }
 
 // AppInstance struct for AppInstance
