@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.177.0] - 2026-03-11
+
+- #959 - @blesswinsamuel - Add ListEvents, CancelEvent, and GetEventLogs APIs for App Platform
+- #960 - @ZachEddy - apps: Add secure_header.remove_header to app spec definition
+
 ## [1.176.0] - 2026-02-26
 
 - #953 - @kamleshsahu - Add dbaas metrics client
