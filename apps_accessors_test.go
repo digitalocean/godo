@@ -2309,6 +2309,27 @@ func TestAutoscalerActionScaleChange_GetTo(tt *testing.T) {
 	a.GetTo()
 }
 
+func TestAutoscalingEventComponentScaleChange_GetFrom(tt *testing.T) {
+	a := &AutoscalingEventComponentScaleChange{}
+	a.GetFrom()
+	a = nil
+	a.GetFrom()
+}
+
+func TestAutoscalingEventComponentScaleChange_GetTo(tt *testing.T) {
+	a := &AutoscalingEventComponentScaleChange{}
+	a.GetTo()
+	a = nil
+	a.GetTo()
+}
+
+func TestAutoscalingEventComponentScaleChange_GetTriggeringMetric(tt *testing.T) {
+	a := &AutoscalingEventComponentScaleChange{}
+	a.GetTriggeringMetric()
+	a = nil
+	a.GetTriggeringMetric()
+}
+
 func TestBitbucketSourceSpec_GetBranch(tt *testing.T) {
 	b := &BitbucketSourceSpec{}
 	b.GetBranch()
@@ -3234,6 +3255,62 @@ func TestDetectResponseServerlessPackage_GetName(tt *testing.T) {
 	d.GetName()
 	d = nil
 	d.GetName()
+}
+
+func TestEvent_GetAutoscaling(tt *testing.T) {
+	e := &Event{}
+	e.GetAutoscaling()
+	e = nil
+	e.GetAutoscaling()
+}
+
+func TestEvent_GetCreatedAt(tt *testing.T) {
+	e := &Event{}
+	e.GetCreatedAt()
+	e = nil
+	e.GetCreatedAt()
+}
+
+func TestEvent_GetDeployment(tt *testing.T) {
+	e := &Event{}
+	e.GetDeployment()
+	e = nil
+	e.GetDeployment()
+}
+
+func TestEvent_GetDeploymentID(tt *testing.T) {
+	e := &Event{}
+	e.GetDeploymentID()
+	e = nil
+	e.GetDeploymentID()
+}
+
+func TestEvent_GetID(tt *testing.T) {
+	e := &Event{}
+	e.GetID()
+	e = nil
+	e.GetID()
+}
+
+func TestEvent_GetType(tt *testing.T) {
+	e := &Event{}
+	e.GetType()
+	e = nil
+	e.GetType()
+}
+
+func TestEventAutoscalingEvent_GetComponents(tt *testing.T) {
+	e := &EventAutoscalingEvent{}
+	e.GetComponents()
+	e = nil
+	e.GetComponents()
+}
+
+func TestEventAutoscalingEvent_GetPhase(tt *testing.T) {
+	e := &EventAutoscalingEvent{}
+	e.GetPhase()
+	e = nil
+	e.GetPhase()
 }
 
 func TestFunctionsComponentHealth_GetFunctionsComponentHealthMetrics(tt *testing.T) {
