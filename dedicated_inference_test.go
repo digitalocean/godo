@@ -350,3 +350,73 @@ func TestDedicatedInferenceToken_String(t *testing.T) {
 		t.Error("DedicatedInferenceToken.String() returned empty string")
 	}
 }
+
+var diGetGPUModelConfigJSONResponse = `
+{
+  "gpu_model_configs": [
+    {
+      "gpu_slugs": ["gpu-mi300x1-192gb", "gpu-mi300x8-1536gb"],
+      "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
+      "model_name": "Llama 3.1 8B Instruct",
+      "is_model_gated": true
+    },
+    {
+      "gpu_slugs": ["gpu-h100x1-80gb"],
+      "model_slug": "mistralai/Mistral-7B-Instruct-v0.3",
+      "model_name": "Mistral 7B Instruct v0.3",
+      "is_model_gated": false
+    }
+  ]
+}
+`
+
+func TestDedicatedInference_GetGPUModelConfig(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/gpu-model-config", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diGetGPUModelConfigJSONResponse)
+	})
+
+	config, resp, err := client.DedicatedInference.GetGPUModelConfig(ctx)
+	if err != nil {
+		t.Fatalf("DedicatedInference.GetGPUModelConfig returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(config.GPUModelConfigs) != 2 {
+		t.Fatalf("expected 2 GPU model configs, got %d", len(config.GPUModelConfigs))
+	}
+
+	firstConfig := config.GPUModelConfigs[0]
+	if len(firstConfig.GPUSlugs) != 2 {
+		t.Fatalf("expected 2 GPU slugs in first config, got %d", len(firstConfig.GPUSlugs))
+	}
+
+	if firstConfig.GPUSlugs[0] != "gpu-mi300x1-192gb" {
+		t.Errorf("expected first GPU slug %q, got %q", "gpu-mi300x1-192gb", firstConfig.GPUSlugs[0])
+	}
+
+	if firstConfig.ModelSlug != "meta-llama/Llama-3.1-8B-Instruct" {
+		t.Errorf("expected ModelSlug %q, got %q", "meta-llama/Llama-3.1-8B-Instruct", firstConfig.ModelSlug)
+	}
+
+	if firstConfig.ModelName != "Llama 3.1 8B Instruct" {
+		t.Errorf("expected ModelName %q, got %q", "Llama 3.1 8B Instruct", firstConfig.ModelName)
+	}
+
+	if !firstConfig.IsModelGated {
+		t.Error("expected IsModelGated to be true for first config")
+	}
+
+	secondConfig := config.GPUModelConfigs[1]
+	if secondConfig.IsModelGated {
+		t.Error("expected IsModelGated to be false for second config")
+	}
+}

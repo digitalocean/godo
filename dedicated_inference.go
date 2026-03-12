@@ -13,6 +13,7 @@ const dedicatedInferenceBasePath = "/v2/dedicated-inferences"
 type DedicatedInferenceService interface {
 	Create(context.Context, *DedicatedInferenceCreateRequest) (*DedicatedInference, *DedicatedInferenceToken, *Response, error)
 	Get(context.Context, string) (*DedicatedInference, *Response, error)
+	GetGPUModelConfig(context.Context) (*DedicatedInferenceGPUModelConfigResponse, *Response, error)
 }
 
 // DedicatedInferenceServiceOp handles communication with Dedicated Inference methods of the DigitalOcean API.
@@ -140,6 +141,19 @@ func (t DedicatedInferenceToken) String() string {
 	return Stringify(t)
 }
 
+// DedicatedInferenceGPUModelConfigResponse represents the response from GetGPUModelConfig.
+type DedicatedInferenceGPUModelConfigResponse struct {
+	GPUModelConfigs []*DedicatedInferenceGPUModelConfig `json:"gpu_model_configs"`
+}
+
+// DedicatedInferenceGPUModelConfig represents a GPU model configuration.
+type DedicatedInferenceGPUModelConfig struct {
+	GPUSlugs     []string `json:"gpu_slugs"`
+	ModelSlug    string   `json:"model_slug"`
+	ModelName    string   `json:"model_name"`
+	IsModelGated bool     `json:"is_model_gated"`
+}
+
 // -- Root types for JSON deserialization --
 
 type dedicatedInferenceRoot struct {
@@ -181,4 +195,22 @@ func (s *DedicatedInferenceServiceOp) Get(ctx context.Context, id string) (*Dedi
 	}
 
 	return root.DedicatedInference, resp, nil
+}
+
+// GetGPUModelConfig returns supported GPU model configurations.
+func (s *DedicatedInferenceServiceOp) GetGPUModelConfig(ctx context.Context) (*DedicatedInferenceGPUModelConfigResponse, *Response, error) {
+	path := fmt.Sprintf("%s/gpu-model-config", dedicatedInferenceBasePath)
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(DedicatedInferenceGPUModelConfigResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
 }
