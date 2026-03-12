@@ -350,3 +350,147 @@ func TestDedicatedInferenceToken_String(t *testing.T) {
 		t.Error("DedicatedInferenceToken.String() returned empty string")
 	}
 }
+
+var diGetSizesJSONResponse = `
+{
+  "enabled_regions": ["atl1", "nyc2"],
+  "sizes": [
+    {
+      "gpu_slug": "gpu-mi300x1-192gb",
+      "price_per_hour": "1.99",
+      "regions": ["atl1", "nyc2"],
+      "currency": "USD",
+      "cpu": 20,
+      "memory": 128000,
+      "gpu": {
+        "count": 1,
+        "vram_gb": 192,
+        "slug": "gpu-mi300x1-192gb"
+      },
+      "size_category": {
+        "name": "AMD MI300X",
+        "fleet_name": "do:compute-fleet:gpu-amd-mi300x"
+      },
+      "disks": [
+        {
+          "type": "Local",
+          "size_gb": 720
+        },
+        {
+          "type": "Scratch",
+          "size_gb": 5120
+        }
+      ]
+    },
+    {
+      "gpu_slug": "gpu-h100x1-80gb",
+      "price_per_hour": "3.39",
+      "regions": ["nyc2", "tor1"],
+      "currency": "USD",
+      "cpu": 26,
+      "memory": 200000,
+      "gpu": {
+        "count": 1,
+        "vram_gb": 80,
+        "slug": "gpu-h100x1-80gb"
+      },
+      "size_category": {
+        "name": "NVIDIA H100",
+        "fleet_name": "do:compute-fleet:gpu-nvidia-h100"
+      },
+      "disks": [
+        {
+          "type": "Local",
+          "size_gb": 480
+        }
+      ]
+    }
+  ]
+}
+`
+
+func TestDedicatedInference_GetSizes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/sizes", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diGetSizesJSONResponse)
+	})
+
+	sizes, resp, err := client.DedicatedInference.GetSizes(ctx)
+	if err != nil {
+		t.Fatalf("DedicatedInference.GetSizes returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(sizes.EnabledRegions) != 2 {
+		t.Fatalf("expected 2 enabled regions, got %d", len(sizes.EnabledRegions))
+	}
+
+	if sizes.EnabledRegions[0] != "atl1" {
+		t.Errorf("expected first enabled region %q, got %q", "atl1", sizes.EnabledRegions[0])
+	}
+
+	if len(sizes.Sizes) != 2 {
+		t.Fatalf("expected 2 sizes, got %d", len(sizes.Sizes))
+	}
+
+	size := sizes.Sizes[0]
+	if size.GPUSlug != "gpu-mi300x1-192gb" {
+		t.Errorf("expected GPUSlug %q, got %q", "gpu-mi300x1-192gb", size.GPUSlug)
+	}
+
+	if size.PricePerHour != "1.99" {
+		t.Errorf("expected PricePerHour %q, got %q", "1.99", size.PricePerHour)
+	}
+
+	if size.Currency != "USD" {
+		t.Errorf("expected Currency %q, got %q", "USD", size.Currency)
+	}
+
+	if size.CPU != 20 {
+		t.Errorf("expected CPU %d, got %d", 20, size.CPU)
+	}
+
+	if size.Memory != 128000 {
+		t.Errorf("expected Memory %d, got %d", 128000, size.Memory)
+	}
+
+	if size.GPU == nil {
+		t.Fatal("expected GPU to be non-nil")
+	}
+
+	if size.GPU.Count != 1 {
+		t.Errorf("expected GPU Count %d, got %d", 1, size.GPU.Count)
+	}
+
+	if size.GPU.VramGb != 192 {
+		t.Errorf("expected GPU VramGb %d, got %d", 192, size.GPU.VramGb)
+	}
+
+	if size.SizeCategory == nil {
+		t.Fatal("expected SizeCategory to be non-nil")
+	}
+
+	if size.SizeCategory.Name != "AMD MI300X" {
+		t.Errorf("expected SizeCategory Name %q, got %q", "AMD MI300X", size.SizeCategory.Name)
+	}
+
+	if len(size.Disks) != 2 {
+		t.Fatalf("expected 2 disks, got %d", len(size.Disks))
+	}
+
+	if size.Disks[0].Type != "Local" {
+		t.Errorf("expected first disk type %q, got %q", "Local", size.Disks[0].Type)
+	}
+
+	if size.Disks[0].SizeGb != 720 {
+		t.Errorf("expected first disk size %d, got %d", 720, size.Disks[0].SizeGb)
+	}
+}

@@ -13,6 +13,7 @@ const dedicatedInferenceBasePath = "/v2/dedicated-inferences"
 type DedicatedInferenceService interface {
 	Create(context.Context, *DedicatedInferenceCreateRequest) (*DedicatedInference, *DedicatedInferenceToken, *Response, error)
 	Get(context.Context, string) (*DedicatedInference, *Response, error)
+	GetSizes(context.Context) (*DedicatedInferenceSizesResponse, *Response, error)
 }
 
 // DedicatedInferenceServiceOp handles communication with Dedicated Inference methods of the DigitalOcean API.
@@ -140,6 +141,44 @@ func (t DedicatedInferenceToken) String() string {
 	return Stringify(t)
 }
 
+// DedicatedInferenceSizesResponse represents the response from GetSizes.
+type DedicatedInferenceSizesResponse struct {
+	EnabledRegions []string                  `json:"enabled_regions"`
+	Sizes          []*DedicatedInferenceSize `json:"sizes"`
+}
+
+// DedicatedInferenceSize represents a GPU size with pricing information.
+type DedicatedInferenceSize struct {
+	GPUSlug      string                          `json:"gpu_slug"`
+	PricePerHour string                          `json:"price_per_hour"`
+	Regions      []string                        `json:"regions"`
+	Currency     string                          `json:"currency"`
+	CPU          uint32                          `json:"cpu"`
+	Memory       uint32                          `json:"memory"`
+	GPU          *DedicatedInferenceSizeGPU      `json:"gpu"`
+	SizeCategory *DedicatedInferenceSizeCategory `json:"size_category"`
+	Disks        []*DedicatedInferenceSizeDisk   `json:"disks"`
+}
+
+// DedicatedInferenceSizeGPU represents GPU details in a size.
+type DedicatedInferenceSizeGPU struct {
+	Count  uint32 `json:"count"`
+	VramGb uint32 `json:"vram_gb"`
+	Slug   string `json:"slug"`
+}
+
+// DedicatedInferenceSizeCategory represents the category of a size.
+type DedicatedInferenceSizeCategory struct {
+	Name      string `json:"name"`
+	FleetName string `json:"fleet_name"`
+}
+
+// DedicatedInferenceSizeDisk represents a disk in a size.
+type DedicatedInferenceSizeDisk struct {
+	Type   string `json:"type"`
+	SizeGb uint64 `json:"size_gb"`
+}
+
 // -- Root types for JSON deserialization --
 
 type dedicatedInferenceRoot struct {
@@ -181,4 +220,22 @@ func (s *DedicatedInferenceServiceOp) Get(ctx context.Context, id string) (*Dedi
 	}
 
 	return root.DedicatedInference, resp, nil
+}
+
+// GetSizes returns available Dedicated Inference sizes and pricing.
+func (s *DedicatedInferenceServiceOp) GetSizes(ctx context.Context) (*DedicatedInferenceSizesResponse, *Response, error) {
+	path := fmt.Sprintf("%s/sizes", dedicatedInferenceBasePath)
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(DedicatedInferenceSizesResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
 }
