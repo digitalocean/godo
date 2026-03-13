@@ -10,6 +10,43 @@ import (
 )
 
 var (
+	diListJSONResponse = `
+{
+  "dedicated_inferences": [
+    {
+      "id": "di-uuid-1",
+      "name": "test-di-1",
+      "region": "s2r1",
+      "status": "active",
+      "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367",
+      "endpoints": {
+        "public_endpoint_fqdn": "test-di-1.di.s2r1.digitalocean.com",
+        "private_endpoint_fqdn": "test-di-1.internal.di.s2r1.digitalocean.com"
+      },
+      "created_at": "2024-01-09T20:44:32Z",
+      "updated_at": "2024-01-09T20:44:32Z"
+    },
+    {
+      "id": "di-uuid-2",
+      "name": "test-di-2",
+      "region": "s2r1",
+      "status": "provisioning",
+      "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367",
+      "created_at": "2024-01-09T21:00:00Z",
+      "updated_at": "2024-01-09T21:00:00Z"
+    }
+  ],
+  "links": {
+    "pages": {
+      "last": "https://api.digitalocean.com/v2/dedicated-inferences?page=1",
+      "next": ""
+    }
+  },
+  "meta": {
+    "total": 2
+  }
+}
+`
 	diUpdateJSONResponse = `
 {
   "dedicated_inference": {
@@ -523,5 +560,90 @@ func TestDedicatedInference_Delete(t *testing.T) {
 
 	if resp.StatusCode != http.StatusAccepted {
 		t.Errorf("expected status %d, got %d", http.StatusAccepted, resp.StatusCode)
+	}
+}
+
+func TestDedicatedInference_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListJSONResponse)
+	})
+
+	diList, resp, err := client.DedicatedInference.List(ctx, nil)
+	if err != nil {
+		t.Fatalf("DedicatedInference.List returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(diList) != 2 {
+		t.Fatalf("expected 2 dedicated inferences, got %d", len(diList))
+	}
+
+	if diList[0].ID != "di-uuid-1" {
+		t.Errorf("expected ID %q, got %q", "di-uuid-1", diList[0].ID)
+	}
+
+	if diList[0].Name != "test-di-1" {
+		t.Errorf("expected Name %q, got %q", "test-di-1", diList[0].Name)
+	}
+
+	if diList[0].Status != "active" {
+		t.Errorf("expected Status %q, got %q", "active", diList[0].Status)
+	}
+
+	if diList[1].Status != "provisioning" {
+		t.Errorf("expected Status %q, got %q", "provisioning", diList[1].Status)
+	}
+
+	if resp.Meta == nil || resp.Meta.Total != 2 {
+		t.Errorf("expected Meta.Total to be 2")
+	}
+}
+
+func TestDedicatedInference_ListWithOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		if got := r.URL.Query().Get("region"); got != "s2r1" {
+			t.Errorf("expected region query param %q, got %q", "s2r1", got)
+		}
+		if got := r.URL.Query().Get("page"); got != "1" {
+			t.Errorf("expected page query param %q, got %q", "1", got)
+		}
+		if got := r.URL.Query().Get("per_page"); got != "10" {
+			t.Errorf("expected per_page query param %q, got %q", "10", got)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListJSONResponse)
+	})
+
+	opts := &DedicatedInferenceListOptions{
+		Region: "s2r1",
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 10,
+		},
+	}
+
+	diList, _, err := client.DedicatedInference.List(ctx, opts)
+	if err != nil {
+		t.Fatalf("DedicatedInference.List returned error: %v", err)
+	}
+
+	if len(diList) != 2 {
+		t.Fatalf("expected 2 dedicated inferences, got %d", len(diList))
 	}
 }
