@@ -10,6 +10,79 @@ import (
 )
 
 var (
+	diUpdateJSONResponse = `
+{
+  "dedicated_inference": {
+    "id": "di-uuid",
+    "name": "test-di-updated",
+    "region": "s2r1",
+    "status": "updating",
+    "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367",
+    "endpoints": {
+      "public_endpoint_fqdn": "test-di.di.s2r1.digitalocean.com",
+      "private_endpoint_fqdn": "test-di.internal.di.s2r1.digitalocean.com"
+    },
+    "spec": {
+      "version": 1,
+      "id": "spec-uuid",
+      "dedicated_inference_id": "di-uuid",
+      "state": "active",
+      "enable_public_endpoint": true,
+      "vpc_config": {
+        "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367"
+      },
+      "model_deployments": [
+        {
+          "model_id": "model-uuid",
+          "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
+          "model_provider": "hugging_face",
+          "accelerators": [
+            {
+              "accelerator_id": "acc-uuid",
+              "accelerator_slug": "gpu-mi300x1-192gb",
+              "state": "active",
+              "type": "prefill_decode",
+              "scale": 1
+            }
+          ]
+        }
+      ],
+      "created_at": "2024-01-09T20:44:32Z",
+      "updated_at": "2024-01-09T20:44:32Z"
+    },
+    "pending_deployment_spec": {
+      "version": 2,
+      "id": "spec-uuid-2",
+      "dedicated_inference_id": "di-uuid",
+      "state": "pending",
+      "enable_public_endpoint": true,
+      "vpc_config": {
+        "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367"
+      },
+      "model_deployments": [
+        {
+          "model_id": "model-uuid",
+          "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
+          "model_provider": "hugging_face",
+          "accelerators": [
+            {
+              "accelerator_id": "acc-uuid",
+              "accelerator_slug": "gpu-mi300x1-192gb",
+              "state": "pending",
+              "type": "prefill_decode",
+              "scale": 2
+            }
+          ]
+        }
+      ],
+      "created_at": "2024-01-09T20:50:00Z",
+      "updated_at": "2024-01-09T20:50:00Z"
+    },
+    "created_at": "2024-01-09T20:44:32Z",
+    "updated_at": "2024-01-09T20:50:00Z"
+  }
+}
+`
 	diCreateJSONResponse = `
 {
   "dedicated_inference": {
@@ -348,6 +421,87 @@ func TestDedicatedInferenceToken_String(t *testing.T) {
 
 	if token.String() == "" {
 		t.Error("DedicatedInferenceToken.String() returned empty string")
+	}
+}
+
+func TestDedicatedInference_Update(t *testing.T) {
+	setup()
+	defer teardown()
+
+	diID := "di-uuid"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/dedicated-inferences/%s", diID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var req DedicatedInferenceUpdateRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Errorf("failed to decode request body: %v", err)
+		}
+
+		if req.Spec == nil {
+			t.Error("expected spec in request")
+		}
+
+		if req.Spec.Name != "test-di-updated" {
+			t.Errorf("expected name %q, got %q", "test-di-updated", req.Spec.Name)
+		}
+
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, diUpdateJSONResponse)
+	})
+
+	updateReq := &DedicatedInferenceUpdateRequest{
+		Spec: &DedicatedInferenceSpecRequest{
+			Version:              2,
+			Name:                 "test-di-updated",
+			Region:               "s2r1",
+			EnablePublicEndpoint: true,
+			VPC: &DedicatedInferenceVPCRequest{
+				UUID: "246de291-05af-461f-956a-a7be58f65367",
+			},
+			ModelDeployments: []*DedicatedInferenceModelRequest{
+				{
+					ModelID:       "model-uuid",
+					ModelSlug:     "meta-llama/Llama-3.1-8B-Instruct",
+					ModelProvider: "hugging_face",
+					Accelerators: []*DedicatedInferenceAcceleratorRequest{
+						{
+							AcceleratorSlug: "gpu-mi300x1-192gb",
+							Scale:           2,
+							Type:            "prefill_decode",
+						},
+					},
+				},
+			},
+		},
+		Secrets: &DedicatedInferenceSecrets{
+			HuggingFaceToken: "hf_test-token",
+		},
+	}
+
+	di, _, err := client.DedicatedInference.Update(ctx, diID, updateReq)
+	if err != nil {
+		t.Errorf("DedicatedInference.Update returned error: %v", err)
+	}
+
+	if di.ID != diID {
+		t.Errorf("expected ID %q, got %q", diID, di.ID)
+	}
+
+	if di.Name != "test-di-updated" {
+		t.Errorf("expected name %q, got %q", "test-di-updated", di.Name)
+	}
+
+	if di.Status != "updating" {
+		t.Errorf("expected status %q, got %q", "updating", di.Status)
+	}
+
+	if di.PendingDeploymentSpec == nil {
+		t.Fatal("expected pending_deployment_spec, got nil")
+	}
+
+	if di.PendingDeploymentSpec.ModelDeployments[0].Accelerators[0].Scale != 2 {
+		t.Errorf("expected scale 2, got %d", di.PendingDeploymentSpec.ModelDeployments[0].Accelerators[0].Scale)
 	}
 }
 

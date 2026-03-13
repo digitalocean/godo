@@ -14,6 +14,7 @@ type DedicatedInferenceService interface {
 	Create(context.Context, *DedicatedInferenceCreateRequest) (*DedicatedInference, *DedicatedInferenceToken, *Response, error)
 	Get(context.Context, string) (*DedicatedInference, *Response, error)
 	Delete(context.Context, string) (*Response, error)
+	Update(context.Context, string, *DedicatedInferenceUpdateRequest) (*DedicatedInference, *Response, error)
 }
 
 // DedicatedInferenceServiceOp handles communication with Dedicated Inference methods of the DigitalOcean API.
@@ -66,6 +67,12 @@ type DedicatedInferenceAcceleratorRequest struct {
 // DedicatedInferenceSecrets represents secrets for external model providers.
 type DedicatedInferenceSecrets struct {
 	HuggingFaceToken string `json:"hugging_face_token,omitempty"`
+}
+
+// DedicatedInferenceUpdateRequest represents a request to update a Dedicated Inference.
+type DedicatedInferenceUpdateRequest struct {
+	Spec    *DedicatedInferenceSpecRequest `json:"spec"`
+	Secrets *DedicatedInferenceSecrets     `json:"secrets,omitempty"`
 }
 
 // -- Response types (what the API returns) --
@@ -194,4 +201,20 @@ func (s *DedicatedInferenceServiceOp) Delete(ctx context.Context, id string) (*R
 	}
 
 	return s.client.Do(ctx, req, nil)
+// Update an existing Dedicated Inference.
+func (s *DedicatedInferenceServiceOp) Update(ctx context.Context, id string, updateRequest *DedicatedInferenceUpdateRequest) (*DedicatedInference, *Response, error) {
+	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, id)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, updateRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dedicatedInferenceRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.DedicatedInference, resp, nil
 }
