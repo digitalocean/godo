@@ -201,6 +201,8 @@ func (s *DedicatedInferenceServiceOp) Delete(ctx context.Context, id string) (*R
 	}
 
 	return s.client.Do(ctx, req, nil)
+}
+
 // Update an existing Dedicated Inference.
 func (s *DedicatedInferenceServiceOp) Update(ctx context.Context, id string, updateRequest *DedicatedInferenceUpdateRequest) (*DedicatedInference, *Response, error) {
 	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, id)
