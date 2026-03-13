@@ -10,7 +10,7 @@ import (
 )
 
 var (
-  diListJSONResponse = `
+	diListJSONResponse = `
 {
   "dedicated_inferences": [
     {
