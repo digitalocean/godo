@@ -78,6 +78,12 @@ type DedicatedInferenceListOptions struct {
 	ListOptions
 }
 
+// DedicatedInferenceListAcceleratorsOptions specifies optional parameters for listing accelerators.
+type DedicatedInferenceListAcceleratorsOptions struct {
+	Slug string `url:"slug,omitempty"`
+	ListOptions
+}
+
 // DedicatedInferenceUpdateRequest represents a request to update a Dedicated Inference.
 type DedicatedInferenceUpdateRequest struct {
 	Spec    *DedicatedInferenceSpecRequest `json:"spec"`
@@ -97,14 +103,6 @@ type DedicatedInferenceListItem struct {
 	CreatedAt time.Time                    `json:"created_at,omitempty"`
 	UpdatedAt time.Time                    `json:"updated_at,omitempty"`
 }
-
-// DedicatedInferenceListAcceleratorsOptions specifies optional parameters for listing accelerators.
-type DedicatedInferenceListAcceleratorsOptions struct {
-	Slug string `url:"slug,omitempty"`
-	ListOptions
-}
-
-// -- Response types (what the API returns) --
 
 // DedicatedInferenceAcceleratorInfo represents an accelerator in a list accelerators response.
 type DedicatedInferenceAcceleratorInfo struct {
@@ -198,6 +196,7 @@ type dedicatedInferencesRoot struct {
 	Links               *Links                       `json:"links"`
 	Meta                *Meta                        `json:"meta"`
 }
+
 type dedicatedInferenceAcceleratorsRoot struct {
 	Accelerators []DedicatedInferenceAcceleratorInfo `json:"accelerators"`
 	Links        *Links                              `json:"links"`
