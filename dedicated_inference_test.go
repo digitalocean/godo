@@ -10,6 +10,116 @@ import (
 )
 
 var (
+	diListJSONResponse = `
+{
+  "dedicated_inferences": [
+    {
+      "id": "di-uuid-1",
+      "name": "test-di-1",
+      "region": "s2r1",
+      "status": "active",
+      "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367",
+      "endpoints": {
+        "public_endpoint_fqdn": "test-di-1.di.s2r1.digitalocean.com",
+        "private_endpoint_fqdn": "test-di-1.internal.di.s2r1.digitalocean.com"
+      },
+      "created_at": "2024-01-09T20:44:32Z",
+      "updated_at": "2024-01-09T20:44:32Z"
+    },
+    {
+      "id": "di-uuid-2",
+      "name": "test-di-2",
+      "region": "s2r1",
+      "status": "provisioning",
+      "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367",
+      "created_at": "2024-01-09T21:00:00Z",
+      "updated_at": "2024-01-09T21:00:00Z"
+    }
+  ],
+  "links": {
+    "pages": {
+      "last": "https://api.digitalocean.com/v2/dedicated-inferences?page=1",
+      "next": ""
+    }
+  },
+  "meta": {
+    "total": 2
+  }
+}
+`
+	diUpdateJSONResponse = `
+{
+  "dedicated_inference": {
+    "id": "di-uuid",
+    "name": "test-di-updated",
+    "region": "s2r1",
+    "status": "updating",
+    "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367",
+    "endpoints": {
+      "public_endpoint_fqdn": "test-di.di.s2r1.digitalocean.com",
+      "private_endpoint_fqdn": "test-di.internal.di.s2r1.digitalocean.com"
+    },
+    "spec": {
+      "version": 1,
+      "id": "spec-uuid",
+      "dedicated_inference_id": "di-uuid",
+      "state": "active",
+      "enable_public_endpoint": true,
+      "vpc_config": {
+        "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367"
+      },
+      "model_deployments": [
+        {
+          "model_id": "model-uuid",
+          "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
+          "model_provider": "hugging_face",
+          "accelerators": [
+            {
+              "accelerator_id": "acc-uuid",
+              "accelerator_slug": "gpu-mi300x1-192gb",
+              "state": "active",
+              "type": "prefill_decode",
+              "scale": 1
+            }
+          ]
+        }
+      ],
+      "created_at": "2024-01-09T20:44:32Z",
+      "updated_at": "2024-01-09T20:44:32Z"
+    },
+    "pending_deployment_spec": {
+      "version": 2,
+      "id": "spec-uuid-2",
+      "dedicated_inference_id": "di-uuid",
+      "state": "pending",
+      "enable_public_endpoint": true,
+      "vpc_config": {
+        "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367"
+      },
+      "model_deployments": [
+        {
+          "model_id": "model-uuid",
+          "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
+          "model_provider": "hugging_face",
+          "accelerators": [
+            {
+              "accelerator_id": "acc-uuid",
+              "accelerator_slug": "gpu-mi300x1-192gb",
+              "state": "pending",
+              "type": "prefill_decode",
+              "scale": 2
+            }
+          ]
+        }
+      ],
+      "created_at": "2024-01-09T20:50:00Z",
+      "updated_at": "2024-01-09T20:50:00Z"
+    },
+    "created_at": "2024-01-09T20:44:32Z",
+    "updated_at": "2024-01-09T20:50:00Z"
+  }
+}
+`
 	diCreateJSONResponse = `
 {
   "dedicated_inference": {
@@ -102,6 +212,146 @@ var (
   }
 }
 `
+	diListAcceleratorsJSONResponse = `
+{
+  "accelerators": [
+    {
+      "id": "acc-uuid-1",
+      "name": "gpu-acc-1",
+      "slug": "gpu-mi300x1-192gb",
+      "status": "running",
+      "created_at": "2024-01-09T20:44:32Z"
+    },
+    {
+      "id": "acc-uuid-2",
+      "name": "gpu-acc-2",
+      "slug": "gpu-mi300x1-192gb",
+      "status": "provisioning",
+      "created_at": "2024-01-09T21:00:00Z"
+    }
+  ],
+  "links": {
+    "pages": {
+      "last": "https://api.digitalocean.com/v2/dedicated-inferences/di-uuid/accelerators?page=1",
+      "next": ""
+    }
+  },
+  "meta": {
+    "total": 2
+  }
+}
+`
+	diCreateTokenJSONResponse = `
+{
+  "token": {
+    "id": "token-uuid-123",
+    "name": "new-inference-token",
+    "value": "test-token-value-placeholder",
+    "created_at": "2024-01-09T20:44:32Z"
+  }
+}
+`
+	diListTokensJSONResponse = `
+{
+  "tokens": [
+    {
+      "id": "token-uuid-1",
+      "name": "first-token",
+      "created_at": "2024-01-09T20:44:32Z"
+    },
+    {
+      "id": "token-uuid-2",
+      "name": "second-token",
+      "created_at": "2024-01-09T21:00:00Z"
+    }
+  ],
+  "links": {
+    "pages": {
+      "last": "https://api.digitalocean.com/v2/dedicated-inferences/di-uuid/tokens?page=1",
+      "next": ""
+    }
+  },
+  "meta": {
+    "total": 2
+  }
+}
+`
+
+	diGetSizesJSONResponse = `
+{
+  "enabled_regions": ["atl1", "nyc2"],
+  "sizes": [
+    {
+      "gpu_slug": "gpu-mi300x1-192gb",
+      "price_per_hour": "1.99",
+      "regions": ["atl1", "nyc2"],
+      "currency": "USD",
+      "cpu": 20,
+      "memory": 128000,
+      "gpu": {
+        "count": 1,
+        "vram_gb": 192,
+        "slug": "gpu-mi300x1-192gb"
+      },
+      "size_category": {
+        "name": "AMD MI300X",
+        "fleet_name": "do:compute-fleet:gpu-amd-mi300x"
+      },
+      "disks": [
+        {
+          "type": "Local",
+          "size_gb": 720
+        },
+        {
+          "type": "Scratch",
+          "size_gb": 5120
+        }
+      ]
+    },
+    {
+      "gpu_slug": "gpu-h100x1-80gb",
+      "price_per_hour": "3.39",
+      "regions": ["nyc2", "tor1"],
+      "currency": "USD",
+      "cpu": 26,
+      "memory": 200000,
+      "gpu": {
+        "count": 1,
+        "vram_gb": 80,
+        "slug": "gpu-h100x1-80gb"
+      },
+      "size_category": {
+        "name": "NVIDIA H100",
+        "fleet_name": "do:compute-fleet:gpu-nvidia-h100"
+      },
+      "disks": [
+        {
+          "type": "Local",
+          "size_gb": 480
+        }
+      ]
+    }
+  ]
+}
+`
+	diGetGPUModelConfigJSONResponse = `
+{
+  "gpu_model_configs": [
+    {
+      "gpu_slugs": ["gpu-mi300x1-192gb", "gpu-mi300x8-1536gb"],
+      "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
+      "model_name": "Llama 3.1 8B Instruct",
+      "is_model_gated": true
+    },
+    {
+      "gpu_slugs": ["gpu-h100x1-80gb"],
+      "model_slug": "mistralai/Mistral-7B-Instruct-v0.3",
+      "model_name": "Mistral 7B Instruct v0.3",
+      "is_model_gated": false
+    }
+  ]
+}
+`
 )
 
 func TestDedicatedInference_Create(t *testing.T) {
@@ -133,7 +383,7 @@ func TestDedicatedInference_Create(t *testing.T) {
 			},
 		},
 		Secrets: &DedicatedInferenceSecrets{
-			HuggingFaceToken: "hf_test-token",
+			HuggingFaceToken: "test-hf-token-placeholder",
 		},
 	}
 
@@ -351,24 +601,505 @@ func TestDedicatedInferenceToken_String(t *testing.T) {
 	}
 }
 
-var diGetGPUModelConfigJSONResponse = `
-{
-  "gpu_model_configs": [
-    {
-      "gpu_slugs": ["gpu-mi300x1-192gb", "gpu-mi300x8-1536gb"],
-      "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
-      "model_name": "Llama 3.1 8B Instruct",
-      "is_model_gated": true
-    },
-    {
-      "gpu_slugs": ["gpu-h100x1-80gb"],
-      "model_slug": "mistralai/Mistral-7B-Instruct-v0.3",
-      "model_name": "Mistral 7B Instruct v0.3",
-      "is_model_gated": false
-    }
-  ]
+func TestDedicatedInference_Update(t *testing.T) {
+	setup()
+	defer teardown()
+
+	diID := "di-uuid"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/dedicated-inferences/%s", diID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var req DedicatedInferenceUpdateRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Errorf("failed to decode request body: %v", err)
+		}
+
+		if req.Spec == nil {
+			t.Error("expected spec in request")
+		}
+
+		if req.Spec.Name != "test-di-updated" {
+			t.Errorf("expected name %q, got %q", "test-di-updated", req.Spec.Name)
+		}
+
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, diUpdateJSONResponse)
+	})
+
+	updateReq := &DedicatedInferenceUpdateRequest{
+		Spec: &DedicatedInferenceSpecRequest{
+			Version:              2,
+			Name:                 "test-di-updated",
+			Region:               "s2r1",
+			EnablePublicEndpoint: true,
+			VPC: &DedicatedInferenceVPCRequest{
+				UUID: "246de291-05af-461f-956a-a7be58f65367",
+			},
+			ModelDeployments: []*DedicatedInferenceModelRequest{
+				{
+					ModelID:       "model-uuid",
+					ModelSlug:     "meta-llama/Llama-3.1-8B-Instruct",
+					ModelProvider: "hugging_face",
+					Accelerators: []*DedicatedInferenceAcceleratorRequest{
+						{
+							AcceleratorSlug: "gpu-mi300x1-192gb",
+							Scale:           2,
+							Type:            "prefill_decode",
+						},
+					},
+				},
+			},
+		},
+		Secrets: &DedicatedInferenceSecrets{
+			HuggingFaceToken: "test-hf-token-placeholder",
+		},
+	}
+
+	di, _, err := client.DedicatedInference.Update(ctx, diID, updateReq)
+	if err != nil {
+		t.Errorf("DedicatedInference.Update returned error: %v", err)
+	}
+
+	if di.ID != diID {
+		t.Errorf("expected ID %q, got %q", diID, di.ID)
+	}
+
+	if di.Name != "test-di-updated" {
+		t.Errorf("expected name %q, got %q", "test-di-updated", di.Name)
+	}
+
+	if di.Status != "updating" {
+		t.Errorf("expected status %q, got %q", "updating", di.Status)
+	}
+
+	if di.PendingDeploymentSpec == nil {
+		t.Fatal("expected pending_deployment_spec, got nil")
+	}
+
+	if di.PendingDeploymentSpec.ModelDeployments[0].Accelerators[0].Scale != 2 {
+		t.Errorf("expected scale 2, got %d", di.PendingDeploymentSpec.ModelDeployments[0].Accelerators[0].Scale)
+	}
 }
-`
+
+func TestDedicatedInference_Delete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	diID := "di-uuid"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/dedicated-inferences/%s", diID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusAccepted)
+	})
+
+	resp, err := client.DedicatedInference.Delete(ctx, diID)
+	if err != nil {
+		t.Errorf("DedicatedInference.Delete returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusAccepted {
+		t.Errorf("expected status %d, got %d", http.StatusAccepted, resp.StatusCode)
+	}
+}
+
+func TestDedicatedInference_List(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListJSONResponse)
+	})
+
+	diList, resp, err := client.DedicatedInference.List(ctx, nil)
+	if err != nil {
+		t.Fatalf("DedicatedInference.List returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(diList) != 2 {
+		t.Fatalf("expected 2 dedicated inferences, got %d", len(diList))
+	}
+
+	if diList[0].ID != "di-uuid-1" {
+		t.Errorf("expected ID %q, got %q", "di-uuid-1", diList[0].ID)
+	}
+
+	if diList[0].Name != "test-di-1" {
+		t.Errorf("expected Name %q, got %q", "test-di-1", diList[0].Name)
+	}
+
+	if diList[0].Status != "active" {
+		t.Errorf("expected Status %q, got %q", "active", diList[0].Status)
+	}
+
+	if diList[1].Status != "provisioning" {
+		t.Errorf("expected Status %q, got %q", "provisioning", diList[1].Status)
+	}
+
+	if resp.Meta == nil || resp.Meta.Total != 2 {
+		t.Errorf("expected Meta.Total to be 2")
+	}
+}
+
+func TestDedicatedInference_ListWithOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		if got := r.URL.Query().Get("region"); got != "s2r1" {
+			t.Errorf("expected region query param %q, got %q", "s2r1", got)
+		}
+		if got := r.URL.Query().Get("page"); got != "1" {
+			t.Errorf("expected page query param %q, got %q", "1", got)
+		}
+		if got := r.URL.Query().Get("per_page"); got != "10" {
+			t.Errorf("expected per_page query param %q, got %q", "10", got)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListJSONResponse)
+	})
+
+	opts := &DedicatedInferenceListOptions{
+		Region: "s2r1",
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 10,
+		},
+	}
+
+	diList, _, err := client.DedicatedInference.List(ctx, opts)
+	if err != nil {
+		t.Fatalf("DedicatedInference.List returned error: %v", err)
+	}
+
+	if len(diList) != 2 {
+		t.Fatalf("expected 2 dedicated inferences, got %d", len(diList))
+	}
+}
+
+func TestDedicatedInference_ListAccelerators(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/accelerators", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListAcceleratorsJSONResponse)
+	})
+
+	accelerators, resp, err := client.DedicatedInference.ListAccelerators(ctx, "di-uuid", nil)
+	if err != nil {
+		t.Fatalf("DedicatedInference.ListAccelerators returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(accelerators) != 2 {
+		t.Fatalf("expected 2 accelerators, got %d", len(accelerators))
+	}
+
+	if accelerators[0].ID != "acc-uuid-1" {
+		t.Errorf("expected ID %q, got %q", "acc-uuid-1", accelerators[0].ID)
+	}
+
+	if accelerators[0].Slug != "gpu-mi300x1-192gb" {
+		t.Errorf("expected Slug %q, got %q", "gpu-mi300x1-192gb", accelerators[0].Slug)
+	}
+
+	if accelerators[0].Status != "running" {
+		t.Errorf("expected Status %q, got %q", "running", accelerators[0].Status)
+	}
+
+	if accelerators[1].Status != "provisioning" {
+		t.Errorf("expected Status %q, got %q", "provisioning", accelerators[1].Status)
+	}
+
+	if resp.Meta == nil || resp.Meta.Total != 2 {
+		t.Errorf("expected Meta.Total to be 2")
+	}
+}
+
+func TestDedicatedInference_ListAcceleratorsWithOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/accelerators", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		if got := r.URL.Query().Get("slug"); got != "gpu-mi300x1-192gb" {
+			t.Errorf("expected slug query param %q, got %q", "gpu-mi300x1-192gb", got)
+		}
+		if got := r.URL.Query().Get("page"); got != "1" {
+			t.Errorf("expected page query param %q, got %q", "1", got)
+		}
+		if got := r.URL.Query().Get("per_page"); got != "20" {
+			t.Errorf("expected per_page query param %q, got %q", "20", got)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListAcceleratorsJSONResponse)
+	})
+
+	opts := &DedicatedInferenceListAcceleratorsOptions{
+		Slug: "gpu-mi300x1-192gb",
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 20,
+		},
+	}
+
+	accelerators, _, err := client.DedicatedInference.ListAccelerators(ctx, "di-uuid", opts)
+	if err != nil {
+		t.Fatalf("DedicatedInference.ListAccelerators returned error: %v", err)
+	}
+
+	if len(accelerators) != 2 {
+		t.Fatalf("expected 2 accelerators, got %d", len(accelerators))
+	}
+}
+
+func TestDedicatedInference_CreateToken(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/tokens", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		var req DedicatedInferenceTokenCreateRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
+
+		if req.Name != "new-inference-token" {
+			t.Errorf("expected name %q, got %q", "new-inference-token", req.Name)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, diCreateTokenJSONResponse)
+	})
+
+	createReq := &DedicatedInferenceTokenCreateRequest{
+		Name: "new-inference-token",
+	}
+
+	token, resp, err := client.DedicatedInference.CreateToken(ctx, "di-uuid", createReq)
+	if err != nil {
+		t.Fatalf("DedicatedInference.CreateToken returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		t.Errorf("expected status code %d, got %d", http.StatusCreated, resp.StatusCode)
+	}
+
+	if token.ID != "token-uuid-123" {
+		t.Errorf("expected ID %q, got %q", "token-uuid-123", token.ID)
+	}
+
+	if token.Name != "new-inference-token" {
+		t.Errorf("expected Name %q, got %q", "new-inference-token", token.Name)
+	}
+
+	if token.Value != "test-token-value-placeholder" {
+		t.Errorf("expected Value %q, got %q", "test-token-value-placeholder", token.Value)
+	}
+}
+
+func TestDedicatedInference_ListTokens(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/tokens", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListTokensJSONResponse)
+	})
+
+	tokens, resp, err := client.DedicatedInference.ListTokens(ctx, "di-uuid", nil)
+	if err != nil {
+		t.Fatalf("DedicatedInference.ListTokens returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(tokens) != 2 {
+		t.Fatalf("expected 2 tokens, got %d", len(tokens))
+	}
+
+	if tokens[0].ID != "token-uuid-1" {
+		t.Errorf("expected ID %q, got %q", "token-uuid-1", tokens[0].ID)
+	}
+
+	if tokens[0].Name != "first-token" {
+		t.Errorf("expected Name %q, got %q", "first-token", tokens[0].Name)
+	}
+
+	if tokens[1].Name != "second-token" {
+		t.Errorf("expected Name %q, got %q", "second-token", tokens[1].Name)
+	}
+
+	if resp.Meta == nil || resp.Meta.Total != 2 {
+		t.Errorf("expected Meta.Total to be 2")
+	}
+}
+
+func TestDedicatedInference_ListTokensWithPagination(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/tokens", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		if got := r.URL.Query().Get("page"); got != "2" {
+			t.Errorf("expected page query param %q, got %q", "2", got)
+		}
+		if got := r.URL.Query().Get("per_page"); got != "10" {
+			t.Errorf("expected per_page query param %q, got %q", "10", got)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListTokensJSONResponse)
+	})
+
+	opts := &ListOptions{
+		Page:    2,
+		PerPage: 10,
+	}
+
+	tokens, _, err := client.DedicatedInference.ListTokens(ctx, "di-uuid", opts)
+	if err != nil {
+		t.Fatalf("DedicatedInference.ListTokens returned error: %v", err)
+	}
+
+	if len(tokens) != 2 {
+		t.Fatalf("expected 2 tokens, got %d", len(tokens))
+	}
+}
+
+func TestDedicatedInference_RevokeToken(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/tokens/token-uuid-123", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	resp, err := client.DedicatedInference.RevokeToken(ctx, "di-uuid", "token-uuid-123")
+	if err != nil {
+		t.Fatalf("DedicatedInference.RevokeToken returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		t.Errorf("expected status code %d, got %d", http.StatusNoContent, resp.StatusCode)
+	}
+}
+
+func TestDedicatedInference_GetSizes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/sizes", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diGetSizesJSONResponse)
+	})
+
+	sizes, resp, err := client.DedicatedInference.GetSizes(ctx)
+	if err != nil {
+		t.Fatalf("DedicatedInference.GetSizes returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(sizes.EnabledRegions) != 2 {
+		t.Fatalf("expected 2 enabled regions, got %d", len(sizes.EnabledRegions))
+	}
+
+	if sizes.EnabledRegions[0] != "atl1" {
+		t.Errorf("expected first enabled region %q, got %q", "atl1", sizes.EnabledRegions[0])
+	}
+
+	if len(sizes.Sizes) != 2 {
+		t.Fatalf("expected 2 sizes, got %d", len(sizes.Sizes))
+	}
+
+	size := sizes.Sizes[0]
+	if size.GPUSlug != "gpu-mi300x1-192gb" {
+		t.Errorf("expected GPUSlug %q, got %q", "gpu-mi300x1-192gb", size.GPUSlug)
+	}
+
+	if size.PricePerHour != "1.99" {
+		t.Errorf("expected PricePerHour %q, got %q", "1.99", size.PricePerHour)
+	}
+
+	if size.Currency != "USD" {
+		t.Errorf("expected Currency %q, got %q", "USD", size.Currency)
+	}
+
+	if size.CPU != 20 {
+		t.Errorf("expected CPU %d, got %d", 20, size.CPU)
+	}
+
+	if size.Memory != 128000 {
+		t.Errorf("expected Memory %d, got %d", 128000, size.Memory)
+	}
+
+	if size.GPU == nil {
+		t.Fatal("expected GPU to be non-nil")
+	}
+
+	if size.GPU.Count != 1 {
+		t.Errorf("expected GPU Count %d, got %d", 1, size.GPU.Count)
+	}
+
+	if size.GPU.VramGb != 192 {
+		t.Errorf("expected GPU VramGb %d, got %d", 192, size.GPU.VramGb)
+	}
+
+	if size.SizeCategory == nil {
+		t.Fatal("expected SizeCategory to be non-nil")
+	}
+
+	if size.SizeCategory.Name != "AMD MI300X" {
+		t.Errorf("expected SizeCategory Name %q, got %q", "AMD MI300X", size.SizeCategory.Name)
+	}
+
+	if len(size.Disks) != 2 {
+		t.Fatalf("expected 2 disks, got %d", len(size.Disks))
+	}
+
+	if size.Disks[0].Type != "Local" {
+		t.Errorf("expected first disk type %q, got %q", "Local", size.Disks[0].Type)
+	}
+
+	if size.Disks[0].SizeGb != 720 {
+		t.Errorf("expected first disk size %d, got %d", 720, size.Disks[0].SizeGb)
+	}
+}
 
 func TestDedicatedInference_GetGPUModelConfig(t *testing.T) {
 	setup()
