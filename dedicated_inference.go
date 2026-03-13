@@ -21,6 +21,7 @@ type DedicatedInferenceService interface {
 	ListTokens(context.Context, string, *ListOptions) ([]DedicatedInferenceToken, *Response, error)
 	RevokeToken(context.Context, string, string) (*Response, error)
 	GetSizes(context.Context) (*DedicatedInferenceSizesResponse, *Response, error)
+	GetGPUModelConfig(context.Context) (*DedicatedInferenceGPUModelConfigResponse, *Response, error)
 }
 
 // DedicatedInferenceServiceOp handles communication with Dedicated Inference methods of the DigitalOcean API.
@@ -229,6 +230,19 @@ type DedicatedInferenceSizeCategory struct {
 type DedicatedInferenceSizeDisk struct {
 	Type   string `json:"type"`
 	SizeGb uint64 `json:"size_gb"`
+}
+
+// DedicatedInferenceGPUModelConfigResponse represents the response from GetGPUModelConfig.
+type DedicatedInferenceGPUModelConfigResponse struct {
+	GPUModelConfigs []*DedicatedInferenceGPUModelConfig `json:"gpu_model_configs"`
+}
+
+// DedicatedInferenceGPUModelConfig represents a GPU model configuration.
+type DedicatedInferenceGPUModelConfig struct {
+	GPUSlugs     []string `json:"gpu_slugs"`
+	ModelSlug    string   `json:"model_slug"`
+	ModelName    string   `json:"model_name"`
+	IsModelGated bool     `json:"is_model_gated"`
 }
 
 // -- Root types for JSON deserialization --
@@ -449,6 +463,24 @@ func (s *DedicatedInferenceServiceOp) GetSizes(ctx context.Context) (*DedicatedI
 	}
 
 	root := new(DedicatedInferenceSizesResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
+}
+
+// GetGPUModelConfig returns supported GPU model configurations.
+func (s *DedicatedInferenceServiceOp) GetGPUModelConfig(ctx context.Context) (*DedicatedInferenceGPUModelConfigResponse, *Response, error) {
+	path := fmt.Sprintf("%s/gpu-model-config", dedicatedInferenceBasePath)
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(DedicatedInferenceGPUModelConfigResponse)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
