@@ -13,6 +13,9 @@ const dedicatedInferenceBasePath = "/v2/dedicated-inferences"
 type DedicatedInferenceService interface {
 	Create(context.Context, *DedicatedInferenceCreateRequest) (*DedicatedInference, *DedicatedInferenceToken, *Response, error)
 	Get(context.Context, string) (*DedicatedInference, *Response, error)
+	List(context.Context, *DedicatedInferenceListOptions) ([]DedicatedInferenceListItem, *Response, error)
+	Delete(context.Context, string) (*Response, error)
+	Update(context.Context, string, *DedicatedInferenceUpdateRequest) (*DedicatedInference, *Response, error)
 	ListAccelerators(context.Context, string, *DedicatedInferenceListAcceleratorsOptions) ([]DedicatedInferenceAcceleratorInfo, *Response, error)
 }
 
@@ -66,6 +69,33 @@ type DedicatedInferenceAcceleratorRequest struct {
 // DedicatedInferenceSecrets represents secrets for external model providers.
 type DedicatedInferenceSecrets struct {
 	HuggingFaceToken string `json:"hugging_face_token,omitempty"`
+}
+
+// DedicatedInferenceListOptions specifies optional parameters for listing Dedicated Inferences.
+type DedicatedInferenceListOptions struct {
+	Region string `url:"region,omitempty"`
+	Name   string `url:"name,omitempty"`
+	ListOptions
+}
+
+// DedicatedInferenceUpdateRequest represents a request to update a Dedicated Inference.
+type DedicatedInferenceUpdateRequest struct {
+	Spec    *DedicatedInferenceSpecRequest `json:"spec"`
+	Secrets *DedicatedInferenceSecrets     `json:"secrets,omitempty"`
+}
+
+// -- Response types (what the API returns) --
+
+// DedicatedInferenceListItem represents a Dedicated Inference item in a list response.
+type DedicatedInferenceListItem struct {
+	ID        string                       `json:"id"`
+	Name      string                       `json:"name"`
+	Region    string                       `json:"region"`
+	Status    string                       `json:"status"`
+	VPCUUID   string                       `json:"vpc_uuid"`
+	Endpoints *DedicatedInferenceEndpoints `json:"endpoints,omitempty"`
+	CreatedAt time.Time                    `json:"created_at,omitempty"`
+	UpdatedAt time.Time                    `json:"updated_at,omitempty"`
 }
 
 // DedicatedInferenceListAcceleratorsOptions specifies optional parameters for listing accelerators.
@@ -163,6 +193,11 @@ type dedicatedInferenceRoot struct {
 	Token              *DedicatedInferenceToken `json:"token,omitempty"`
 }
 
+type dedicatedInferencesRoot struct {
+	DedicatedInferences []DedicatedInferenceListItem `json:"dedicated_inferences"`
+	Links               *Links                       `json:"links"`
+	Meta                *Meta                        `json:"meta"`
+}
 type dedicatedInferenceAcceleratorsRoot struct {
 	Accelerators []DedicatedInferenceAcceleratorInfo `json:"accelerators"`
 	Links        *Links                              `json:"links"`
@@ -203,6 +238,63 @@ func (s *DedicatedInferenceServiceOp) Get(ctx context.Context, id string) (*Dedi
 	}
 
 	return root.DedicatedInference, resp, nil
+}
+
+// Delete an existing Dedicated Inference by its UUID.
+func (s *DedicatedInferenceServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
+	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, id)
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.Do(ctx, req, nil)
+}
+
+// Update an existing Dedicated Inference.
+func (s *DedicatedInferenceServiceOp) Update(ctx context.Context, id string, updateRequest *DedicatedInferenceUpdateRequest) (*DedicatedInference, *Response, error) {
+	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, id)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, updateRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dedicatedInferenceRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.DedicatedInference, resp, nil
+}
+
+// List all Dedicated Inferences.
+func (s *DedicatedInferenceServiceOp) List(ctx context.Context, opt *DedicatedInferenceListOptions) ([]DedicatedInferenceListItem, *Response, error) {
+	path, err := addOptions(dedicatedInferenceBasePath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dedicatedInferencesRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.DedicatedInferences, resp, nil
 }
 
 // ListAccelerators lists accelerators for a Dedicated Inference.
