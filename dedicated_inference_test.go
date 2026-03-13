@@ -504,3 +504,24 @@ func TestDedicatedInference_Update(t *testing.T) {
 		t.Errorf("expected scale 2, got %d", di.PendingDeploymentSpec.ModelDeployments[0].Accelerators[0].Scale)
 	}
 }
+
+func TestDedicatedInference_Delete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	diID := "di-uuid"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/dedicated-inferences/%s", diID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusAccepted)
+	})
+
+	resp, err := client.DedicatedInference.Delete(ctx, diID)
+	if err != nil {
+		t.Errorf("DedicatedInference.Delete returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusAccepted {
+		t.Errorf("expected status %d, got %d", http.StatusAccepted, resp.StatusCode)
+	}
+}
