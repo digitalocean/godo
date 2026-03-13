@@ -241,6 +241,41 @@ var (
   }
 }
 `
+	diCreateTokenJSONResponse = `
+{
+  "token": {
+    "id": "token-uuid-123",
+    "name": "new-inference-token",
+    "value": "test-token-value-placeholder",
+    "created_at": "2024-01-09T20:44:32Z"
+  }
+}
+`
+	diListTokensJSONResponse = `
+{
+  "tokens": [
+    {
+      "id": "token-uuid-1",
+      "name": "first-token",
+      "created_at": "2024-01-09T20:44:32Z"
+    },
+    {
+      "id": "token-uuid-2",
+      "name": "second-token",
+      "created_at": "2024-01-09T21:00:00Z"
+    }
+  ],
+  "links": {
+    "pages": {
+      "last": "https://api.digitalocean.com/v2/dedicated-inferences/di-uuid/tokens?page=1",
+      "next": ""
+    }
+  },
+  "meta": {
+    "total": 2
+  }
+}
+`
 )
 
 func TestDedicatedInference_Create(t *testing.T) {
@@ -272,7 +307,7 @@ func TestDedicatedInference_Create(t *testing.T) {
 			},
 		},
 		Secrets: &DedicatedInferenceSecrets{
-			HuggingFaceToken: "hf_test-token",
+			HuggingFaceToken: "test-hf-token-placeholder",
 		},
 	}
 
@@ -541,7 +576,7 @@ func TestDedicatedInference_Update(t *testing.T) {
 			},
 		},
 		Secrets: &DedicatedInferenceSecrets{
-			HuggingFaceToken: "hf_test-token",
+			HuggingFaceToken: "test-hf-token-placeholder",
 		},
 	}
 
@@ -759,5 +794,147 @@ func TestDedicatedInference_ListAcceleratorsWithOptions(t *testing.T) {
 
 	if len(accelerators) != 2 {
 		t.Fatalf("expected 2 accelerators, got %d", len(accelerators))
+	}
+}
+
+func TestDedicatedInference_CreateToken(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/tokens", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		var req DedicatedInferenceTokenCreateRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
+
+		if req.Name != "new-inference-token" {
+			t.Errorf("expected name %q, got %q", "new-inference-token", req.Name)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, diCreateTokenJSONResponse)
+	})
+
+	createReq := &DedicatedInferenceTokenCreateRequest{
+		Name: "new-inference-token",
+	}
+
+	token, resp, err := client.DedicatedInference.CreateToken(ctx, "di-uuid", createReq)
+	if err != nil {
+		t.Fatalf("DedicatedInference.CreateToken returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		t.Errorf("expected status code %d, got %d", http.StatusCreated, resp.StatusCode)
+	}
+
+	if token.ID != "token-uuid-123" {
+		t.Errorf("expected ID %q, got %q", "token-uuid-123", token.ID)
+	}
+
+	if token.Name != "new-inference-token" {
+		t.Errorf("expected Name %q, got %q", "new-inference-token", token.Name)
+	}
+
+	if token.Value != "test-token-value-placeholder" {
+		t.Errorf("expected Value %q, got %q", "test-token-value-placeholder", token.Value)
+	}
+}
+
+func TestDedicatedInference_ListTokens(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/tokens", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListTokensJSONResponse)
+	})
+
+	tokens, resp, err := client.DedicatedInference.ListTokens(ctx, "di-uuid", nil)
+	if err != nil {
+		t.Fatalf("DedicatedInference.ListTokens returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
+	}
+
+	if len(tokens) != 2 {
+		t.Fatalf("expected 2 tokens, got %d", len(tokens))
+	}
+
+	if tokens[0].ID != "token-uuid-1" {
+		t.Errorf("expected ID %q, got %q", "token-uuid-1", tokens[0].ID)
+	}
+
+	if tokens[0].Name != "first-token" {
+		t.Errorf("expected Name %q, got %q", "first-token", tokens[0].Name)
+	}
+
+	if tokens[1].Name != "second-token" {
+		t.Errorf("expected Name %q, got %q", "second-token", tokens[1].Name)
+	}
+
+	if resp.Meta == nil || resp.Meta.Total != 2 {
+		t.Errorf("expected Meta.Total to be 2")
+	}
+}
+
+func TestDedicatedInference_ListTokensWithPagination(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/tokens", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+
+		if got := r.URL.Query().Get("page"); got != "2" {
+			t.Errorf("expected page query param %q, got %q", "2", got)
+		}
+		if got := r.URL.Query().Get("per_page"); got != "10" {
+			t.Errorf("expected per_page query param %q, got %q", "10", got)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, diListTokensJSONResponse)
+	})
+
+	opts := &ListOptions{
+		Page:    2,
+		PerPage: 10,
+	}
+
+	tokens, _, err := client.DedicatedInference.ListTokens(ctx, "di-uuid", opts)
+	if err != nil {
+		t.Fatalf("DedicatedInference.ListTokens returned error: %v", err)
+	}
+
+	if len(tokens) != 2 {
+		t.Fatalf("expected 2 tokens, got %d", len(tokens))
+	}
+}
+
+func TestDedicatedInference_RevokeToken(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/dedicated-inferences/di-uuid/tokens/token-uuid-123", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	resp, err := client.DedicatedInference.RevokeToken(ctx, "di-uuid", "token-uuid-123")
+	if err != nil {
+		t.Fatalf("DedicatedInference.RevokeToken returned error: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusNoContent {
+		t.Errorf("expected status code %d, got %d", http.StatusNoContent, resp.StatusCode)
 	}
 }

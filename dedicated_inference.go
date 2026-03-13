@@ -17,6 +17,9 @@ type DedicatedInferenceService interface {
 	Delete(context.Context, string) (*Response, error)
 	Update(context.Context, string, *DedicatedInferenceUpdateRequest) (*DedicatedInference, *Response, error)
 	ListAccelerators(context.Context, string, *DedicatedInferenceListAcceleratorsOptions) ([]DedicatedInferenceAcceleratorInfo, *Response, error)
+	CreateToken(context.Context, string, *DedicatedInferenceTokenCreateRequest) (*DedicatedInferenceToken, *Response, error)
+	ListTokens(context.Context, string, *ListOptions) ([]DedicatedInferenceToken, *Response, error)
+	RevokeToken(context.Context, string, string) (*Response, error)
 }
 
 // DedicatedInferenceServiceOp handles communication with Dedicated Inference methods of the DigitalOcean API.
@@ -88,6 +91,11 @@ type DedicatedInferenceListAcceleratorsOptions struct {
 type DedicatedInferenceUpdateRequest struct {
 	Spec    *DedicatedInferenceSpecRequest `json:"spec"`
 	Secrets *DedicatedInferenceSecrets     `json:"secrets,omitempty"`
+}
+
+// DedicatedInferenceTokenCreateRequest represents a request to create an auth token.
+type DedicatedInferenceTokenCreateRequest struct {
+	Name string `json:"name"`
 }
 
 // -- Response types (what the API returns) --
@@ -201,6 +209,16 @@ type dedicatedInferenceAcceleratorsRoot struct {
 	Accelerators []DedicatedInferenceAcceleratorInfo `json:"accelerators"`
 	Links        *Links                              `json:"links"`
 	Meta         *Meta                               `json:"meta"`
+}
+
+type dedicatedInferenceTokenRoot struct {
+	Token *DedicatedInferenceToken `json:"token"`
+}
+
+type dedicatedInferenceTokensRoot struct {
+	Tokens []DedicatedInferenceToken `json:"tokens"`
+	Links  *Links                    `json:"links"`
+	Meta   *Meta                     `json:"meta"`
 }
 
 // -- Service methods --
@@ -322,4 +340,62 @@ func (s *DedicatedInferenceServiceOp) ListAccelerators(ctx context.Context, diID
 	}
 
 	return root.Accelerators, resp, nil
+}
+
+// CreateToken creates a new auth token for a Dedicated Inference.
+func (s *DedicatedInferenceServiceOp) CreateToken(ctx context.Context, diID string, createRequest *DedicatedInferenceTokenCreateRequest) (*DedicatedInferenceToken, *Response, error) {
+	path := fmt.Sprintf("%s/%s/tokens", dedicatedInferenceBasePath, diID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dedicatedInferenceTokenRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Token, resp, nil
+}
+
+// ListTokens lists all auth tokens for a Dedicated Inference.
+func (s *DedicatedInferenceServiceOp) ListTokens(ctx context.Context, diID string, opt *ListOptions) ([]DedicatedInferenceToken, *Response, error) {
+	basePath := fmt.Sprintf("%s/%s/tokens", dedicatedInferenceBasePath, diID)
+	path, err := addOptions(basePath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(dedicatedInferenceTokensRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.Tokens, resp, nil
+}
+
+// RevokeToken revokes (deletes) an auth token for a Dedicated Inference.
+func (s *DedicatedInferenceServiceOp) RevokeToken(ctx context.Context, diID string, tokenID string) (*Response, error) {
+	path := fmt.Sprintf("%s/%s/tokens/%s", dedicatedInferenceBasePath, diID, tokenID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.Do(ctx, req, nil)
 }
