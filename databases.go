@@ -49,6 +49,7 @@ const (
 	databaseKafkaSchemaRegistrySubjectPath       = databaseBasePath + "/%s/schema-registry/%s"
 	databaseKafkaSchemaRegistryConfigPath        = databaseBasePath + "/%s/schema-registry/config"
 	databaseKafkaSchemaRegistrySubjectConfigPath = databaseBasePath + "/%s/schema-registry/config/%s"
+	databaseStorageAutoscalePath                 = databaseBasePath + "/%s/autoscale"
 )
 
 // SQL Mode constants allow for MySQL-specific SQL flavor configuration.
@@ -129,6 +130,7 @@ type DatabasesService interface {
 	Resize(context.Context, string, *DatabaseResizeRequest) (*Response, error)
 	Migrate(context.Context, string, *DatabaseMigrateRequest) (*Response, error)
 	UpdateMaintenance(context.Context, string, *DatabaseUpdateMaintenanceRequest) (*Response, error)
+	UpdateStorageAutoscale(context.Context, string, *DatabaseStorageAutoscale) (*Response, error)
 	InstallUpdate(context.Context, string) (*Response, error)
 	ListBackups(context.Context, string, *ListOptions) ([]DatabaseBackup, *Response, error)
 	GetUser(context.Context, string, string) (*DatabaseUser, *Response, error)
@@ -236,6 +238,7 @@ type Database struct {
 	Tags                     []string                   `json:"tags,omitempty"`
 	ProjectID                string                     `json:"project_id,omitempty"`
 	StorageSizeMib           uint64                     `json:"storage_size_mib,omitempty"`
+	StorageAutoscale         *DatabaseStorageAutoscale  `json:"storage_autoscale,omitempty"`
 	MetricsEndpoints         []*ServiceAddress          `json:"metrics_endpoints,omitempty"`
 	DOSettings               *DOSettings                `json:"do_settings,omitempty"`
 }
@@ -326,6 +329,13 @@ type DatabaseBackup struct {
 	SizeGigabytes float64   `json:"size_gigabytes,omitempty"`
 }
 
+// DatabaseStorageAutoscale represents the storage autoscaling configuration for a database cluster
+type DatabaseStorageAutoscale struct {
+	Enabled          bool    `json:"enabled"`
+	ThresholdPercent *int    `json:"threshold_percent,omitempty"`
+	IncrementGib     *uint64 `json:"increment_gib,omitempty"`
+}
+
 // DatabaseBackupRestore contains information needed to restore a backup.
 type DatabaseBackupRestore struct {
 	DatabaseName    string `json:"database_name,omitempty"`
@@ -352,6 +362,7 @@ type DatabaseCreateRequest struct {
 	BackupRestore      *DatabaseBackupRestore        `json:"backup_restore,omitempty"`
 	ProjectID          string                        `json:"project_id"`
 	StorageSizeMib     uint64                        `json:"storage_size_mib,omitempty"`
+	StorageAutoscale   *DatabaseStorageAutoscale     `json:"storage_autoscale,omitempty"`
 	Rules              []*DatabaseCreateFirewallRule `json:"rules"`
 	DOSettings         *DOSettings                   `json:"do_settings,omitempty"`
 }
@@ -1205,6 +1216,20 @@ func (svc *DatabasesServiceOp) Migrate(ctx context.Context, databaseID string, m
 func (svc *DatabasesServiceOp) UpdateMaintenance(ctx context.Context, databaseID string, maintenance *DatabaseUpdateMaintenanceRequest) (*Response, error) {
 	path := fmt.Sprintf(databaseMaintenancePath, databaseID)
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, maintenance)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := svc.client.Do(ctx, req, nil)
+	if err != nil {
+		return resp, err
+	}
+	return resp, nil
+}
+
+// UpdateStorageAutoscale updates the storage autoscaling configuration on a cluster
+func (svc *DatabasesServiceOp) UpdateStorageAutoscale(ctx context.Context, databaseID string, autoscale *DatabaseStorageAutoscale) (*Response, error) {
+	path := fmt.Sprintf(databaseStorageAutoscalePath, databaseID)
+	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, autoscale)
 	if err != nil {
 		return nil, err
 	}
