@@ -183,7 +183,7 @@ func TestNewRequest(t *testing.T) {
 	inBody, outBody := &DropletCreateRequest{Name: "l"},
 		`{"name":"l","region":"","size":"","image":0,`+
 			`"ssh_keys":null,"backups":false,"ipv6":false,`+
-			`"private_networking":false,"monitoring":false,"tags":null}`+"\n"
+			`"private_networking":false,"monitoring":false,"project_id":"","tags":null}`+"\n"
 	req, _ := c.NewRequest(ctx, http.MethodPost, inURL, inBody)
 
 	// test relative URL was expanded
@@ -234,7 +234,7 @@ func TestNewRequest_withUserData(t *testing.T) {
 	inBody, outBody := &DropletCreateRequest{Name: "l", UserData: "u"},
 		`{"name":"l","region":"","size":"","image":0,`+
 			`"ssh_keys":null,"backups":false,"ipv6":false,`+
-			`"private_networking":false,"monitoring":false,"user_data":"u","tags":null}`+"\n"
+			`"private_networking":false,"monitoring":false,"project_id":"","user_data":"u","tags":null}`+"\n"
 	req, _ := c.NewRequest(ctx, http.MethodPost, inURL, inBody)
 
 	// test relative URL was expanded
@@ -263,7 +263,7 @@ func TestNewRequest_withDropletAgent(t *testing.T) {
 	inBody, outBody := &DropletCreateRequest{Name: "l", WithDropletAgent: &boolVal},
 		`{"name":"l","region":"","size":"","image":0,`+
 			`"ssh_keys":null,"backups":false,"ipv6":false,`+
-			`"private_networking":false,"monitoring":false,"tags":null,"with_droplet_agent":true}`+"\n"
+			`"private_networking":false,"monitoring":false,"project_id":"","tags":null,"with_droplet_agent":true}`+"\n"
 	req, _ := c.NewRequest(ctx, http.MethodPost, inURL, inBody)
 
 	// test relative URL was expanded
