@@ -614,6 +614,43 @@ func TestKubernetesClusters_GetUpgrades(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestKubernetesClusterCreateRequest_HA_JsonMarshal(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      *KubernetesClusterCreateRequest
+		contains string // substring that must be in JSON
+		omits    string // substring that must NOT be in JSON
+	}{
+		{
+			name:  "HA nil - field omitted",
+			req:   &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36"},
+			omits: `"ha"`,
+		},
+		{
+			name:     "HA true - field present",
+			req:      &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36", HA: PtrTo(true)},
+			contains: `"ha":true`,
+		},
+		{
+			name:     "HA false - field present",
+			req:      &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36", HA: PtrTo(false)},
+			contains: `"ha":false`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+			if tt.contains != "" {
+				require.Contains(t, string(data), tt.contains)
+			}
+			if tt.omits != "" {
+				require.NotContains(t, string(data), tt.omits)
+			}
+		})
+	}
+}
+
 func TestKubernetesClusters_Create(t *testing.T) {
 	setup()
 	defer teardown()
@@ -688,7 +725,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		ClusterSubnet: want.ClusterSubnet,
 		ServiceSubnet: want.ServiceSubnet,
 		SurgeUpgrade:  true,
-		HA:            true,
+		HA:            PtrTo(true),
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
 		},
