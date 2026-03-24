@@ -2203,6 +2203,73 @@ func TestListAvailableModels(t *testing.T) {
 	assert.Equal(t, expectedString, models[0].String())
 }
 
+func TestMCPSearchModels(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	// Test matching query
+	uuids, resp, err := client.GradientAI.MCPSearchModels(ctx, "llama")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, 1, len(uuids))
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", uuids[0])
+}
+
+func TestMCPSearchModelsNoMatch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	// Test non-matching query
+	uuids, resp, err := client.GradientAI.MCPSearchModels(ctx, "nonexistent")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, 0, len(uuids))
+}
+
+func TestGetModelByUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	// Test existing UUID
+	model, resp, err := client.GradientAI.GetModelByUUID(ctx, "00000000-0000-0000-0000-000000000000")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.NotNil(t, model)
+	assert.Equal(t, "Llama 3.3 Instruct (70B)", model.Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", model.Uuid)
+}
+
+func TestGetModelByUUIDNotFound(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	// Test non-existing UUID
+	model, resp, err := client.GradientAI.GetModelByUUID(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Nil(t, model)
+}
+
 func TestListDatacenterRegions(t *testing.T) {
 	setup()
 	defer teardown()
