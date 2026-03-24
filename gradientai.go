@@ -82,6 +82,8 @@ type GradientAIService interface {
 	DeleteFunctionRoute(context.Context, string, string) (*Agent, *Response, error)
 	UpdateFunctionRoute(context.Context, string, string, *FunctionRouteUpdateRequest) (*Agent, *Response, error)
 	ListAvailableModels(context.Context, *ListOptions) ([]*Model, *Response, error)
+	MCPSearchModels(context.Context, string) ([]string, *Response, error)
+	GetModelByUUID(context.Context, string) (*Model, *Response, error)
 	ListDatacenterRegions(context.Context, *bool, *bool) ([]*DatacenterRegions, *Response, error)
 }
 
@@ -1810,6 +1812,40 @@ func (g *GradientAIServiceOp) ListAvailableModels(ctx context.Context, opt *List
 	}
 
 	return root.Models, resp, nil
+}
+
+// MCPSearchModels searches available models by name and returns the list of matching UUIDs.
+func (g *GradientAIServiceOp) MCPSearchModels(ctx context.Context, query string) ([]string, *Response, error) {
+	models, resp, err := g.ListAvailableModels(ctx, nil)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	var uuids []string
+	lowerQuery := strings.ToLower(query)
+	for _, model := range models {
+		if strings.Contains(strings.ToLower(model.Name), lowerQuery) {
+			uuids = append(uuids, model.Uuid)
+		}
+	}
+
+	return uuids, resp, nil
+}
+
+// MCPSearchModelByUUID searches available models for a specific UUID and returns the model if it exists.
+func (g *GradientAIServiceOp) GetModelByUUID(ctx context.Context, uuid string) (*Model, *Response, error) {
+	models, resp, err := g.ListAvailableModels(ctx, nil)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	for _, model := range models {
+		if model.Uuid == uuid {
+			return model, resp, nil
+		}
+	}
+
+	return nil, resp, nil
 }
 
 // ListDatacenterRegions returns a list of available datacenter regions for Gradient AI services
