@@ -2203,7 +2203,7 @@ func TestListAvailableModels(t *testing.T) {
 	assert.Equal(t, expectedString, models[0].String())
 }
 
-func TestMCPSearchModels(t *testing.T) {
+func TestSearchModels(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -2213,14 +2213,14 @@ func TestMCPSearchModels(t *testing.T) {
 	})
 
 	// Test matching query
-	uuids, resp, err := client.GradientAI.MCPSearchModels(ctx, "llama")
+	uuids, resp, err := client.GradientAI.SearchModels(ctx, "llama")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, 1, len(uuids))
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", uuids[0])
 }
 
-func TestMCPSearchModelsNoMatch(t *testing.T) {
+func TestSearchModelsNoMatch(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -2230,7 +2230,7 @@ func TestMCPSearchModelsNoMatch(t *testing.T) {
 	})
 
 	// Test non-matching query
-	uuids, resp, err := client.GradientAI.MCPSearchModels(ctx, "nonexistent")
+	uuids, resp, err := client.GradientAI.SearchModels(ctx, "nonexistent")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, 0, len(uuids))

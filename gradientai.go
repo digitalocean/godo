@@ -82,7 +82,7 @@ type GradientAIService interface {
 	DeleteFunctionRoute(context.Context, string, string) (*Agent, *Response, error)
 	UpdateFunctionRoute(context.Context, string, string, *FunctionRouteUpdateRequest) (*Agent, *Response, error)
 	ListAvailableModels(context.Context, *ListOptions) ([]*Model, *Response, error)
-	MCPSearchModels(context.Context, string) ([]string, *Response, error)
+	SearchModels(context.Context, string) ([]string, *Response, error)
 	GetModelByUUID(context.Context, string) (*Model, *Response, error)
 	ListDatacenterRegions(context.Context, *bool, *bool) ([]*DatacenterRegions, *Response, error)
 }
@@ -1815,7 +1815,7 @@ func (g *GradientAIServiceOp) ListAvailableModels(ctx context.Context, opt *List
 }
 
 // MCPSearchModels searches available models by name and returns the list of matching UUIDs.
-func (g *GradientAIServiceOp) MCPSearchModels(ctx context.Context, query string) ([]string, *Response, error) {
+func (g *GradientAIServiceOp) SearchModels(ctx context.Context, query string) ([]string, *Response, error) {
 	models, resp, err := g.ListAvailableModels(ctx, nil)
 	if err != nil {
 		return nil, resp, err
