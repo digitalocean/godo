@@ -404,7 +404,8 @@ var listAvailableModelsResponse = `
 				"name": "Meta Llama 3.3 Community License",
 				"description": "Meta Llama 3.3 is licensed under the Meta Llama 3.3 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved. By purchasing, deploying, accessing, or using this model, you agree to comply with the",
 				"url": "https://www.llama.com/llama3_3/license/"
-			}
+			},
+			"model_availability": "SERVERLESS"
 		}
 	],
 	"links": {
@@ -2198,6 +2199,7 @@ func TestListAvailableModels(t *testing.T) {
 
 	assert.Equal(t, "Llama 3.3 Instruct (70B)", models[0].Name)
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", models[0].Uuid)
+	assert.Equal(t, "SERVERLESS", models[0].ModelAvailability)
 	expectedString := fmt.Sprintf("%v", models[0])
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, expectedString, models[0].String())
