@@ -540,20 +540,21 @@ type ChatBot struct {
 
 // Model represents a Gradient AI Model
 type Model struct {
-	Agreement        *Agreement    `json:"agreement,omitempty"`
-	CreatedAt        *Timestamp    `json:"created_at,omitempty"`
-	InferenceName    string        `json:"inference_name,omitempty"`
-	InferenceVersion string        `json:"inference_version,omitempty"`
-	IsFoundational   bool          `json:"is_foundational,omitempty"`
-	Name             string        `json:"name,omitempty"`
-	ParentUuid       string        `json:"parent_uuid,omitempty"`
-	Provider         string        `json:"provider,omitempty"`
-	UpdatedAt        *Timestamp    `json:"updated_at,omitempty"`
-	UploadComplete   bool          `json:"upload_complete,omitempty"`
-	Url              string        `json:"url,omitempty"`
-	Usecases         []string      `json:"usecases,omitempty"`
-	Uuid             string        `json:"uuid,omitempty"`
-	Version          *ModelVersion `json:"version,omitempty"`
+	Agreement         *Agreement    `json:"agreement,omitempty"`
+	CreatedAt         *Timestamp    `json:"created_at,omitempty"`
+	InferenceName     string        `json:"inference_name,omitempty"`
+	InferenceVersion  string        `json:"inference_version,omitempty"`
+	IsFoundational    bool          `json:"is_foundational,omitempty"`
+	Name              string        `json:"name,omitempty"`
+	ParentUuid        string        `json:"parent_uuid,omitempty"`
+	Provider          string        `json:"provider,omitempty"`
+	UpdatedAt         *Timestamp    `json:"updated_at,omitempty"`
+	UploadComplete    bool          `json:"upload_complete,omitempty"`
+	Url               string        `json:"url,omitempty"`
+	Usecases          []string      `json:"usecases,omitempty"`
+	Uuid              string        `json:"uuid,omitempty"`
+	Version           *ModelVersion `json:"version,omitempty"`
+	ModelAvailability string        `json:"model_availability,omitempty"`
 }
 
 // Agreement represents the agreement information of a Gradient AI Model
