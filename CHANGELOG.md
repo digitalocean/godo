@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.180.0] - 2026-03-27
+
+- #975 - @venkatranabothu - Add ModelAvailability to Model struct in GradientAI
+
 ## [1.179.0] - 2026-03-25
 
 - #973 - @chandrudo - Added two functions for model retrieval
