@@ -67,6 +67,7 @@ type Droplet struct {
 	Tags             []string      `json:"tags,omitempty"`
 	VolumeIDs        []string      `json:"volume_ids"`
 	VPCUUID          string        `json:"vpc_uuid,omitempty"`
+	ProjectID        string        `json:"project_id,omitempty"`
 }
 
 // PublicIPv4 returns the public IPv4 address for the Droplet.
@@ -231,6 +232,7 @@ type DropletCreateRequest struct {
 	IPv6              bool                        `json:"ipv6"`
 	PrivateNetworking bool                        `json:"private_networking"`
 	Monitoring        bool                        `json:"monitoring"`
+	ProjectID         string                      `json:"project_id"`
 	UserData          string                      `json:"user_data,omitempty"`
 	Volumes           []DropletCreateVolume       `json:"volumes,omitempty"`
 	Tags              []string                    `json:"tags"`
@@ -250,6 +252,7 @@ type DropletMultiCreateRequest struct {
 	IPv6              bool                        `json:"ipv6"`
 	PrivateNetworking bool                        `json:"private_networking"`
 	Monitoring        bool                        `json:"monitoring"`
+	ProjectID         string                      `json:"project_id"`
 	UserData          string                      `json:"user_data,omitempty"`
 	Tags              []string                    `json:"tags"`
 	VPCUUID           string                      `json:"vpc_uuid,omitempty"`
