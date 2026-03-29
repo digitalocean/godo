@@ -469,7 +469,7 @@ func (svc *RegistryServiceOp) DeleteManifest(ctx context.Context, registry, repo
 // registry.
 func (svc *RegistryServiceOp) StartGarbageCollection(ctx context.Context, registry string, request ...*StartGarbageCollectionRequest) (*GarbageCollection, *Response, error) {
 	path := fmt.Sprintf("%s/%s/garbage-collection", registryPath, registry)
-	var requestParams interface{}
+	var requestParams any
 	if len(request) < 1 {
 		// default to only garbage collecting unreferenced blobs for backwards
 		// compatibility
@@ -853,7 +853,7 @@ func (svc *RegistriesServiceOp) DeleteManifest(ctx context.Context, registry, re
 // StartGarbageCollection starts a garbage collection process
 func (svc *RegistriesServiceOp) StartGarbageCollection(ctx context.Context, registry string, request ...*StartGarbageCollectionRequest) (*GarbageCollection, *Response, error) {
 	path := fmt.Sprintf("%s/%s/garbage-collection", registriesPath, registry)
-	var requestParams interface{}
+	var requestParams any
 	if len(request) < 1 {
 		// default to only garbage collecting unreferenced blobs for backwards
 		// compatibility

@@ -330,7 +330,7 @@ func TestDroplets_Create(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
-		expected := map[string]interface{}{
+		expected := map[string]any{
 			"name":               "name",
 			"region":             "region",
 			"size":               "size",
@@ -339,14 +339,14 @@ func TestDroplets_Create(t *testing.T) {
 			"ipv6":               false,
 			"private_networking": false,
 			"monitoring":         false,
-			"volumes": []interface{}{
-				map[string]interface{}{"id": "hello-im-another-volume"},
-				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
+			"volumes": []any{
+				map[string]any{"id": "hello-im-another-volume"},
+				map[string]any{"id": "aaa-111-bbb-222-ccc"},
 			},
-			"tags":          []interface{}{"one", "two"},
+			"tags":          []any{"one", "two"},
 			"vpc_uuid":      "880b7f98-f062-404d-b33c-458d545696f6",
 			"backups":       true,
-			"backup_policy": map[string]interface{}{"plan": "weekly", "weekday": "MON", "hour": float64(0)},
+			"backup_policy": map[string]any{"plan": "weekly", "weekday": "MON", "hour": float64(0)},
 		}
 		jsonBlob := `
 {
@@ -366,7 +366,7 @@ func TestDroplets_Create(t *testing.T) {
 }
 `
 
-		var v map[string]interface{}
+		var v map[string]any
 		err := json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
 			t.Fatalf("decode json: %v", err)
@@ -420,7 +420,7 @@ func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
-		expected := map[string]interface{}{
+		expected := map[string]any{
 			"name":               "name",
 			"region":             "region",
 			"size":               "size",
@@ -430,11 +430,11 @@ func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 			"ipv6":               false,
 			"private_networking": false,
 			"monitoring":         false,
-			"volumes": []interface{}{
-				map[string]interface{}{"id": "hello-im-another-volume"},
-				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
+			"volumes": []any{
+				map[string]any{"id": "hello-im-another-volume"},
+				map[string]any{"id": "aaa-111-bbb-222-ccc"},
 			},
-			"tags":               []interface{}{"one", "two"},
+			"tags":               []any{"one", "two"},
 			"vpc_uuid":           "880b7f98-f062-404d-b33c-458d545696f6",
 			"with_droplet_agent": false,
 		}
@@ -456,7 +456,7 @@ func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 }
 `
 
-		var v map[string]interface{}
+		var v map[string]any
 		err := json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
 			t.Fatalf("decode json: %v", err)
@@ -540,7 +540,7 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
-		expected := map[string]interface{}{
+		expected := map[string]any{
 			"name":               "name",
 			"region":             "region",
 			"size":               "size",
@@ -550,11 +550,11 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 			"ipv6":               false,
 			"private_networking": false,
 			"monitoring":         false,
-			"volumes": []interface{}{
-				map[string]interface{}{"id": "hello-im-another-volume"},
-				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
+			"volumes": []any{
+				map[string]any{"id": "hello-im-another-volume"},
+				map[string]any{"id": "aaa-111-bbb-222-ccc"},
 			},
-			"tags":     []interface{}{"one", "two"},
+			"tags":     []any{"one", "two"},
 			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
 		}
 		jsonBlob := `
@@ -575,7 +575,7 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 }
 `
 
-		var v map[string]interface{}
+		var v map[string]any
 		err := json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
 			t.Fatalf("decode json: %v", err)
@@ -614,8 +614,8 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
-		expected := map[string]interface{}{
-			"names":              []interface{}{"name1", "name2"},
+		expected := map[string]any{
+			"names":              []any{"name1", "name2"},
 			"region":             "region",
 			"size":               "size",
 			"image":              float64(1),
@@ -624,7 +624,7 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 			"ipv6":               false,
 			"private_networking": false,
 			"monitoring":         false,
-			"tags":               []interface{}{"one", "two"},
+			"tags":               []any{"one", "two"},
 			"vpc_uuid":           "880b7f98-f062-404d-b33c-458d545696f6",
 		}
 		jsonBlob := `
@@ -651,7 +651,7 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 }
 `
 
-		var v map[string]interface{}
+		var v map[string]any
 		err := json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
 			t.Fatalf("decode json: %v", err)

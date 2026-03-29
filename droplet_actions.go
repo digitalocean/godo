@@ -8,7 +8,7 @@ import (
 )
 
 // ActionRequest represents DigitalOcean Action Request
-type ActionRequest map[string]interface{}
+type ActionRequest map[string]any
 
 // DropletActionsService is an interface for interfacing with the Droplet actions
 // endpoints of the DigitalOcean API
@@ -177,7 +177,7 @@ func (s *DropletActionsServiceOp) EnableBackupsWithPolicy(ctx context.Context, i
 		return nil, nil, NewArgError("policy", "policy can't be nil")
 	}
 
-	policyMap := map[string]interface{}{
+	policyMap := map[string]any{
 		"plan":    policy.Plan,
 		"weekday": policy.Weekday,
 	}
@@ -195,7 +195,7 @@ func (s *DropletActionsServiceOp) ChangeBackupPolicy(ctx context.Context, id int
 		return nil, nil, NewArgError("policy", "policy can't be nil")
 	}
 
-	policyMap := map[string]interface{}{
+	policyMap := map[string]any{
 		"plan":    policy.Plan,
 		"weekday": policy.Weekday,
 	}

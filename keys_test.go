@@ -175,11 +175,11 @@ func TestKeys_UpdateByID(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/account/keys/12345", func(w http.ResponseWriter, r *http.Request) {
-		expected := map[string]interface{}{
+		expected := map[string]any{
 			"name": "name",
 		}
 
-		var v map[string]interface{}
+		var v map[string]any
 		err := json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
 			t.Fatalf("decode json: %v", err)
@@ -211,11 +211,11 @@ func TestKeys_UpdateByFingerprint(t *testing.T) {
 	}
 
 	mux.HandleFunc("/v2/account/keys/3b:16:bf:e4:8b:00:8b:b8:59:8c:a9:d3:f0:19:45:fa", func(w http.ResponseWriter, r *http.Request) {
-		expected := map[string]interface{}{
+		expected := map[string]any{
 			"name": "name",
 		}
 
-		var v map[string]interface{}
+		var v map[string]any
 		err := json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
 			t.Fatalf("decode json: %v", err)

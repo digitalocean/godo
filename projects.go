@@ -27,7 +27,7 @@ type ProjectsService interface {
 	Delete(context.Context, string) (*Response, error)
 
 	ListResources(context.Context, string, *ListOptions) ([]ProjectResource, *Response, error)
-	AssignResources(context.Context, string, ...interface{}) ([]ProjectResource, *Response, error)
+	AssignResources(context.Context, string, ...any) ([]ProjectResource, *Response, error)
 }
 
 // ProjectsServiceOp handles communication with Projects methods of the DigitalOcean API.
@@ -66,11 +66,11 @@ type CreateProjectRequest struct {
 // This type expects certain attribute types, but is built this way to allow
 // nil values as well. See `updateProjectRequest` for the "real" types.
 type UpdateProjectRequest struct {
-	Name        interface{}
-	Description interface{}
-	Purpose     interface{}
-	Environment interface{}
-	IsDefault   interface{}
+	Name        any
+	Description any
+	Purpose     any
+	Environment any
+	IsDefault   any
 }
 
 type updateProjectRequest struct {
@@ -257,7 +257,7 @@ func (p *ProjectsServiceOp) ListResources(ctx context.Context, projectID string,
 //
 // There is no unassign. To move a resource to another project, just assign
 // it to that other project.
-func (p *ProjectsServiceOp) AssignResources(ctx context.Context, projectID string, resources ...interface{}) ([]ProjectResource, *Response, error) {
+func (p *ProjectsServiceOp) AssignResources(ctx context.Context, projectID string, resources ...any) ([]ProjectResource, *Response, error) {
 	path := path.Join(projectsBasePath, projectID, "resources")
 
 	ar := &assignResourcesRequest{
