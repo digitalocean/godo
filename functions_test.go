@@ -1,6 +1,7 @@
 package godo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"testing"
@@ -425,5 +426,153 @@ func TestFunctions_DeleteTrigger(t *testing.T) {
 	})
 
 	_, err := client.Functions.DeleteTrigger(ctx, "123-abc", "my-trigger")
+	assert.NoError(t, err)
+}
+
+func TestFunctions_ListAccessKeys(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/functions/namespaces/123-abc/keys", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+			"access_keys": [
+				{
+					"id": "dof_v1_key1",
+					"name": "my-key-1",
+					"expires_at": "2025-06-16T12:09:13Z",
+					"created_at": "2024-06-16T12:09:13Z",
+					"updated_at": "2024-06-16T12:09:13Z"
+				},
+				{
+					"id": "dof_v1_key2",
+					"name": "my-key-2",
+					"expires_at": "2025-11-02T18:33:44Z",
+					"created_at": "2024-11-02T18:33:44Z",
+					"updated_at": "2024-11-02T18:33:44Z"
+				}
+			],
+			"count": 2
+		}`)
+	})
+
+	accessKeys, _, err := client.Functions.ListAccessKeys(ctx, "123-abc")
+	require.NoError(t, err)
+
+	expectedKeys := []FunctionsAccessKey{
+		{
+			ID:        "dof_v1_key1",
+			Name:      "my-key-1",
+			ExpiresAt: time.Date(2025, 6, 16, 12, 9, 13, 0, time.UTC),
+			CreatedAt: time.Date(2024, 6, 16, 12, 9, 13, 0, time.UTC),
+			UpdatedAt: time.Date(2024, 6, 16, 12, 9, 13, 0, time.UTC),
+		},
+		{
+			ID:        "dof_v1_key2",
+			Name:      "my-key-2",
+			ExpiresAt: time.Date(2025, 11, 2, 18, 33, 44, 0, time.UTC),
+			CreatedAt: time.Date(2024, 11, 2, 18, 33, 44, 0, time.UTC),
+			UpdatedAt: time.Date(2024, 11, 2, 18, 33, 44, 0, time.UTC),
+		},
+	}
+	assert.Equal(t, expectedKeys, accessKeys)
+}
+
+func TestFunctions_CreateAccessKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	opts := &FunctionsAccessKeyCreateRequest{
+		Name:      "my-new-key",
+		ExpiresIn: "1h",
+	}
+
+	mux.HandleFunc("/v2/functions/namespaces/123-abc/keys", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		v := new(FunctionsAccessKeyCreateRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, opts, v)
+
+		fmt.Fprint(w, `{
+			"access_key": {
+				"id": "dof_v1_newkey",
+				"name": "my-new-key",
+				"secret": "dof_v1_newkey:secret123",
+				"expires_at": "2025-06-16T12:09:13Z",
+				"created_at": "2024-06-16T12:09:13Z",
+				"updated_at": "2024-06-16T12:09:13Z"
+			}
+		}`)
+	})
+
+	accessKey, _, err := client.Functions.CreateAccessKey(ctx, "123-abc", opts)
+	require.NoError(t, err)
+
+	expectedKey := &FunctionsAccessKey{
+		ID:        "dof_v1_newkey",
+		Name:      "my-new-key",
+		Secret:    "dof_v1_newkey:secret123",
+		ExpiresAt: time.Date(2025, 6, 16, 12, 9, 13, 0, time.UTC),
+		CreatedAt: time.Date(2024, 6, 16, 12, 9, 13, 0, time.UTC),
+		UpdatedAt: time.Date(2024, 6, 16, 12, 9, 13, 0, time.UTC),
+	}
+	assert.Equal(t, expectedKey, accessKey)
+}
+
+func TestFunctions_UpdateAccessKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	opts := &FunctionsAccessKeyUpdateRequest{
+		Name: "renamed-key",
+	}
+
+	mux.HandleFunc("/v2/functions/namespaces/123-abc/keys/dof_v1_key1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		v := new(FunctionsAccessKeyUpdateRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, opts, v)
+
+		fmt.Fprint(w, `{
+			"access_key": {
+				"id": "dof_v1_key1",
+				"name": "renamed-key",
+				"expires_at": "2025-06-16T12:09:13Z",
+				"created_at": "2024-06-16T12:09:13Z",
+				"updated_at": "2024-08-20T10:00:00Z"
+			}
+		}`)
+	})
+
+	accessKey, _, err := client.Functions.UpdateAccessKey(ctx, "123-abc", "dof_v1_key1", opts)
+	require.NoError(t, err)
+
+	expectedKey := &FunctionsAccessKey{
+		ID:        "dof_v1_key1",
+		Name:      "renamed-key",
+		ExpiresAt: time.Date(2025, 6, 16, 12, 9, 13, 0, time.UTC),
+		CreatedAt: time.Date(2024, 6, 16, 12, 9, 13, 0, time.UTC),
+		UpdatedAt: time.Date(2024, 8, 20, 10, 0, 0, 0, time.UTC),
+	}
+	assert.Equal(t, expectedKey, accessKey)
+}
+
+func TestFunctions_DeleteAccessKey(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/functions/namespaces/123-abc/keys/dof_v1_key1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+	})
+
+	_, err := client.Functions.DeleteAccessKey(ctx, "123-abc", "dof_v1_key1")
 	assert.NoError(t, err)
 }
