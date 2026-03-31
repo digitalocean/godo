@@ -391,6 +391,7 @@ var listAvailableModelsResponse = `
 		{
 			"uuid": "00000000-0000-0000-0000-000000000000",
 			"name": "Llama 3.3 Instruct (70B)",
+			"description": "An advanced language model with greater capabilities due to its larger size.",
 			"version": {
 				"major": 1
 			},
@@ -405,7 +406,15 @@ var listAvailableModelsResponse = `
 				"description": "Meta Llama 3.3 is licensed under the Meta Llama 3.3 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved. By purchasing, deploying, accessing, or using this model, you agree to comply with the",
 				"url": "https://www.llama.com/llama3_3/license/"
 			},
-			"model_availability": "SERVERLESS"
+			"model_availability": "SERVERLESS",
+			"context_window": 131072,
+			"capabilities": ["inference", "chat"],
+			"modalities": {
+				"input": ["text"],
+				"output": ["text"]
+			},
+			"parameter_count": 70.0,
+			"type": "chat"
 		}
 	],
 	"links": {
@@ -2200,6 +2209,14 @@ func TestListAvailableModels(t *testing.T) {
 	assert.Equal(t, "Llama 3.3 Instruct (70B)", models[0].Name)
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", models[0].Uuid)
 	assert.Equal(t, "SERVERLESS", models[0].ModelAvailability)
+	assert.Equal(t, "An advanced language model with greater capabilities due to its larger size.", models[0].Description)
+	assert.Equal(t, int64(131072), models[0].ContextWindow)
+	assert.Equal(t, []string{"inference", "chat"}, models[0].Capabilities)
+	assert.Equal(t, 70.0, models[0].ParameterCount)
+	assert.Equal(t, "chat", models[0].Type)
+	assert.NotNil(t, models[0].Modalities)
+	assert.Equal(t, []string{"text"}, models[0].Modalities.Input)
+	assert.Equal(t, []string{"text"}, models[0].Modalities.Output)
 	expectedString := fmt.Sprintf("%v", models[0])
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, expectedString, models[0].String())
