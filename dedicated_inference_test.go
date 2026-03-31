@@ -257,11 +257,13 @@ var (
     {
       "id": "token-uuid-1",
       "name": "first-token",
+      "is_managed": true,
       "created_at": "2024-01-09T20:44:32Z"
     },
     {
       "id": "token-uuid-2",
       "name": "second-token",
+      "is_managed": false,
       "created_at": "2024-01-09T21:00:00Z"
     }
   ],
@@ -953,8 +955,16 @@ func TestDedicatedInference_ListTokens(t *testing.T) {
 		t.Errorf("expected Name %q, got %q", "first-token", tokens[0].Name)
 	}
 
+	if !tokens[0].IsManaged {
+		t.Errorf("expected first token IsManaged true, got false")
+	}
+
 	if tokens[1].Name != "second-token" {
 		t.Errorf("expected Name %q, got %q", "second-token", tokens[1].Name)
+	}
+
+	if tokens[1].IsManaged {
+		t.Errorf("expected second token IsManaged false, got true")
 	}
 
 	if resp.Meta == nil || resp.Meta.Total != 2 {
