@@ -542,7 +542,7 @@ type ChatBot struct {
 type Model struct {
 	Agreement         *Agreement       `json:"agreement,omitempty"`
 	Capabilities      []string         `json:"capabilities,omitempty"`
-	ContextWindow     int64            `json:"context_window,omitempty"`
+	ContextWindow     string           `json:"context_window,omitempty"`
 	CreatedAt         *Timestamp       `json:"created_at,omitempty"`
 	Description       string           `json:"description,omitempty"`
 	InferenceName     string           `json:"inference_name,omitempty"`

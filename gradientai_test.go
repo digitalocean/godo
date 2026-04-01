@@ -407,7 +407,7 @@ var listAvailableModelsResponse = `
 				"url": "https://www.llama.com/llama3_3/license/"
 			},
 			"model_availability": "SERVERLESS",
-			"context_window": 131072,
+			"context_window": "131072",
 			"capabilities": ["inference", "chat"],
 			"modalities": {
 				"input": ["text"],
@@ -2210,7 +2210,7 @@ func TestListAvailableModels(t *testing.T) {
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", models[0].Uuid)
 	assert.Equal(t, "SERVERLESS", models[0].ModelAvailability)
 	assert.Equal(t, "An advanced language model with greater capabilities due to its larger size.", models[0].Description)
-	assert.Equal(t, int64(131072), models[0].ContextWindow)
+	assert.Equal(t, "131072", models[0].ContextWindow)
 	assert.Equal(t, []string{"inference", "chat"}, models[0].Capabilities)
 	assert.Equal(t, 70.0, models[0].ParameterCount)
 	assert.Equal(t, "chat", models[0].Type)
