@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.184.0] - 2026-04-01
+
+- #984 - Change ContextWindow to string
+
 ## [1.183.0] - 2026-04-01
 
 - #982 - @venkatranabothu - GenAI: Expand Model struct with metadata and modalities
