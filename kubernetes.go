@@ -335,7 +335,7 @@ type KubernetesRdmaSharedDevicePlugin struct {
 	Enabled *bool `json:"enabled"`
 }
 
-// KubernetesCorednsAutoscaler represents information about the CoreDNS Cluster Proportional Autoscaler plugin.
+// KubernetesCorednsAutoscaler represents information about the CoreDNS Cluster Proportional Autoscaler cluster plugin.
 type KubernetesCorednsAutoscaler struct {
 	Enabled *bool `json:"enabled"`
 }
