@@ -19,6 +19,7 @@ var (
       "region": "s2r1",
       "status": "active",
       "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367",
+	  "provider_model_id": ["meta-llama/Llama-3.1-8B-Instruct"],
       "endpoints": {
         "public_endpoint_fqdn": "test-di-1.di.s2r1.digitalocean.com",
         "private_endpoint_fqdn": "test-di-1.internal.di.s2r1.digitalocean.com"
@@ -32,6 +33,7 @@ var (
       "region": "s2r1",
       "status": "provisioning",
       "vpc_uuid": "246de291-05af-461f-956a-a7be58f65367",
+	  "provider_model_id": ["mistralai/Mistral-7B-Instruct-v0.3"],
       "created_at": "2024-01-09T21:00:00Z",
       "updated_at": "2024-01-09T21:00:00Z"
     }
@@ -73,6 +75,7 @@ var (
           "model_id": "model-uuid",
           "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
           "model_provider": "hugging_face",
+		  "provider_model_id": "meta-llama/Llama-3.1-8B-Instruct",
           "accelerators": [
             {
               "accelerator_id": "acc-uuid",
@@ -101,6 +104,7 @@ var (
           "model_id": "model-uuid",
           "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
           "model_provider": "hugging_face",
+		  "provider_model_id": "meta-llama/Llama-3.1-8B-Instruct",
           "accelerators": [
             {
               "accelerator_id": "acc-uuid",
@@ -142,6 +146,7 @@ var (
           "model_id": "",
           "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
           "model_provider": "hugging_face",
+		  "provider_model_id": "meta-llama/Llama-3.1-8B-Instruct",
           "accelerators": [
             {
               "accelerator_id": "",
@@ -193,6 +198,7 @@ var (
           "model_id": "model-uuid",
           "model_slug": "meta-llama/Llama-3.1-8B-Instruct",
           "model_provider": "hugging_face",
+		  "provider_model_id": "meta-llama/Llama-3.1-8B-Instruct",
           "accelerators": [
             {
               "accelerator_id": "acc-uuid",
@@ -371,9 +377,10 @@ func TestDedicatedInference_Create(t *testing.T) {
 			},
 			ModelDeployments: []*DedicatedInferenceModelRequest{
 				{
-					ModelSlug:      "meta-llama/Llama-3.1-8B-Instruct",
-					ModelProvider:  "hugging_face",
-					WorkloadConfig: &DedicatedInferenceWorkloadConfig{},
+					ModelSlug:       "meta-llama/Llama-3.1-8B-Instruct",
+					ModelProvider:   "hugging_face",
+					ProviderModelID: "meta-llama/Llama-3.1-8B-Instruct",
+					WorkloadConfig:  &DedicatedInferenceWorkloadConfig{},
 					Accelerators: []*DedicatedInferenceAcceleratorRequest{
 						{
 							AcceleratorSlug: "gpu-mi300x1-192gb",
@@ -413,6 +420,9 @@ func TestDedicatedInference_Create(t *testing.T) {
 		if v.Spec.ModelDeployments[0].ModelSlug != "meta-llama/Llama-3.1-8B-Instruct" {
 			t.Errorf("Request body model slug = %q, expected %q", v.Spec.ModelDeployments[0].ModelSlug, "meta-llama/Llama-3.1-8B-Instruct")
 		}
+		if v.Spec.ModelDeployments[0].ProviderModelID != "meta-llama/Llama-3.1-8B-Instruct" {
+			t.Errorf("Request body provider model id = %q, expected %q", v.Spec.ModelDeployments[0].ProviderModelID, "meta-llama/Llama-3.1-8B-Instruct")
+		}
 
 		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprint(w, diCreateJSONResponse)
@@ -446,9 +456,10 @@ func TestDedicatedInference_Create(t *testing.T) {
 			},
 			ModelDeployments: []*DedicatedInferenceModelDeployment{
 				{
-					ModelID:       "",
-					ModelSlug:     "meta-llama/Llama-3.1-8B-Instruct",
-					ModelProvider: "hugging_face",
+					ModelID:         "",
+					ModelSlug:       "meta-llama/Llama-3.1-8B-Instruct",
+					ModelProvider:   "hugging_face",
+					ProviderModelID: "meta-llama/Llama-3.1-8B-Instruct",
 					Accelerators: []*DedicatedInferenceAccelerator{
 						{
 							AcceleratorID:   "",
@@ -522,9 +533,10 @@ func TestDedicatedInference_Get(t *testing.T) {
 			},
 			ModelDeployments: []*DedicatedInferenceModelDeployment{
 				{
-					ModelID:       "model-uuid",
-					ModelSlug:     "meta-llama/Llama-3.1-8B-Instruct",
-					ModelProvider: "hugging_face",
+					ModelID:         "model-uuid",
+					ModelSlug:       "meta-llama/Llama-3.1-8B-Instruct",
+					ModelProvider:   "hugging_face",
+					ProviderModelID: "meta-llama/Llama-3.1-8B-Instruct",
 					Accelerators: []*DedicatedInferenceAccelerator{
 						{
 							AcceleratorID:   "acc-uuid",
@@ -625,6 +637,10 @@ func TestDedicatedInference_Update(t *testing.T) {
 			t.Errorf("expected name %q, got %q", "test-di-updated", req.Spec.Name)
 		}
 
+		if req.Spec.ModelDeployments[0].ProviderModelID != "meta-llama/Llama-3.1-8B-Instruct" {
+			t.Errorf("expected provider model id %q, got %q", "meta-llama/Llama-3.1-8B-Instruct", req.Spec.ModelDeployments[0].ProviderModelID)
+		}
+
 		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprint(w, diUpdateJSONResponse)
 	})
@@ -640,9 +656,10 @@ func TestDedicatedInference_Update(t *testing.T) {
 			},
 			ModelDeployments: []*DedicatedInferenceModelRequest{
 				{
-					ModelID:       "model-uuid",
-					ModelSlug:     "meta-llama/Llama-3.1-8B-Instruct",
-					ModelProvider: "hugging_face",
+					ModelID:         "model-uuid",
+					ModelSlug:       "meta-llama/Llama-3.1-8B-Instruct",
+					ModelProvider:   "hugging_face",
+					ProviderModelID: "meta-llama/Llama-3.1-8B-Instruct",
 					Accelerators: []*DedicatedInferenceAcceleratorRequest{
 						{
 							AcceleratorSlug: "gpu-mi300x1-192gb",
@@ -681,6 +698,10 @@ func TestDedicatedInference_Update(t *testing.T) {
 
 	if di.PendingDeploymentSpec.ModelDeployments[0].Accelerators[0].Scale != 2 {
 		t.Errorf("expected scale 2, got %d", di.PendingDeploymentSpec.ModelDeployments[0].Accelerators[0].Scale)
+	}
+
+	if di.PendingDeploymentSpec.ModelDeployments[0].ProviderModelID != "meta-llama/Llama-3.1-8B-Instruct" {
+		t.Errorf("expected provider model id %q, got %q", "meta-llama/Llama-3.1-8B-Instruct", di.PendingDeploymentSpec.ModelDeployments[0].ProviderModelID)
 	}
 }
 
@@ -741,8 +762,16 @@ func TestDedicatedInference_List(t *testing.T) {
 		t.Errorf("expected Status %q, got %q", "active", diList[0].Status)
 	}
 
+	if !reflect.DeepEqual(diList[0].ProviderModelID, []string{"meta-llama/Llama-3.1-8B-Instruct"}) {
+		t.Errorf("expected provider_model_id for item 0 to match")
+	}
+
 	if diList[1].Status != "provisioning" {
 		t.Errorf("expected Status %q, got %q", "provisioning", diList[1].Status)
+	}
+
+	if !reflect.DeepEqual(diList[1].ProviderModelID, []string{"mistralai/Mistral-7B-Instruct-v0.3"}) {
+		t.Errorf("expected provider_model_id for item 1 to match")
 	}
 
 	if resp.Meta == nil || resp.Meta.Total != 2 {
