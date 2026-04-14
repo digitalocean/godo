@@ -356,11 +356,39 @@ func TestAppAutoscalingSpecMetricCPU_GetPercent(tt *testing.T) {
 	a.GetPercent()
 }
 
+func TestAppAutoscalingSpecMetricRequestDuration_GetP95Milliseconds(tt *testing.T) {
+	a := &AppAutoscalingSpecMetricRequestDuration{}
+	a.GetP95Milliseconds()
+	a = nil
+	a.GetP95Milliseconds()
+}
+
+func TestAppAutoscalingSpecMetricRequestsPerSecond_GetPerInstance(tt *testing.T) {
+	a := &AppAutoscalingSpecMetricRequestsPerSecond{}
+	a.GetPerInstance()
+	a = nil
+	a.GetPerInstance()
+}
+
 func TestAppAutoscalingSpecMetrics_GetCPU(tt *testing.T) {
 	a := &AppAutoscalingSpecMetrics{}
 	a.GetCPU()
 	a = nil
 	a.GetCPU()
+}
+
+func TestAppAutoscalingSpecMetrics_GetRequestDuration(tt *testing.T) {
+	a := &AppAutoscalingSpecMetrics{}
+	a.GetRequestDuration()
+	a = nil
+	a.GetRequestDuration()
+}
+
+func TestAppAutoscalingSpecMetrics_GetRequestsPerSecond(tt *testing.T) {
+	a := &AppAutoscalingSpecMetrics{}
+	a.GetRequestsPerSecond()
+	a = nil
+	a.GetRequestsPerSecond()
 }
 
 func TestAppBuildConfig_GetCNBVersioning(tt *testing.T) {
@@ -2309,6 +2337,13 @@ func TestAutoscalerActionScaleChange_GetTo(tt *testing.T) {
 	a.GetTo()
 }
 
+func TestAutoscalerActionScaleChange_GetTriggeringMetric(tt *testing.T) {
+	a := &AutoscalerActionScaleChange{}
+	a.GetTriggeringMetric()
+	a = nil
+	a.GetTriggeringMetric()
+}
+
 func TestAutoscalingEventComponentScaleChange_GetFrom(tt *testing.T) {
 	a := &AutoscalingEventComponentScaleChange{}
 	a.GetFrom()
@@ -3300,7 +3335,10 @@ func TestEvent_GetType(tt *testing.T) {
 }
 
 func TestEventAutoscalingEvent_GetComponents(tt *testing.T) {
-	e := &EventAutoscalingEvent{}
+	zeroValue := map[string]AutoscalingEventComponentScaleChange{}
+	e := &EventAutoscalingEvent{Components: zeroValue}
+	e.GetComponents()
+	e = &EventAutoscalingEvent{}
 	e.GetComponents()
 	e = nil
 	e.GetComponents()
