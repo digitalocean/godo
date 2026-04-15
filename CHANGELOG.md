@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.186.0] - 2026-04-15
+
+- #992 - @venkatranabothu - Add model benchmark_score and pricing
+
 ## [1.185.0] - 2026-04-14
 
 - #990 - @greeshmapill - APPS-12973: Add request based autoscaling changes to app spec
