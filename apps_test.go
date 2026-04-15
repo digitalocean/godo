@@ -730,6 +730,7 @@ func TestApps_GetLogs_component(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, logs.LiveURL)
 }
+
 // TestAppIngressSpecRuleMatchAuthorityJSON ensures ingress rule match JSON from the API
 // decodes authority and path prefix fields as expected, including empty strings.
 func TestAppIngressSpecRuleMatchAuthorityJSON(t *testing.T) {
