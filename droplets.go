@@ -261,9 +261,11 @@ type DropletMultiCreateRequest struct {
 
 // DropletBackupPolicyRequest defines the backup policy when creating a Droplet.
 type DropletBackupPolicyRequest struct {
-	Plan    string `json:"plan,omitempty"`
-	Weekday string `json:"weekday,omitempty"`
-	Hour    *int   `json:"hour,omitempty"`
+	Plan                string `json:"plan,omitempty"`
+	Weekday             string `json:"weekday,omitempty"`
+	Hour                *int   `json:"hour,omitempty"`
+	WindowLengthHours   int    `json:"window_length_hours,omitempty"`
+	RetentionPeriodDays int    `json:"retention_period_days,omitempty"`
 }
 
 // DropletAssociatedResource represents a billable resource associated with a Droplet.

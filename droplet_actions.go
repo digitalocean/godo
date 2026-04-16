@@ -177,15 +177,7 @@ func (s *DropletActionsServiceOp) EnableBackupsWithPolicy(ctx context.Context, i
 		return nil, nil, NewArgError("policy", "policy can't be nil")
 	}
 
-	policyMap := map[string]interface{}{
-		"plan":    policy.Plan,
-		"weekday": policy.Weekday,
-	}
-	if policy.Hour != nil {
-		policyMap["hour"] = policy.Hour
-	}
-
-	request := &ActionRequest{"type": "enable_backups", "backup_policy": policyMap}
+	request := &ActionRequest{"type": "enable_backups", "backup_policy": dropletBackupPolicyActionRequest(policy)}
 	return s.doAction(ctx, id, request)
 }
 
@@ -195,16 +187,28 @@ func (s *DropletActionsServiceOp) ChangeBackupPolicy(ctx context.Context, id int
 		return nil, nil, NewArgError("policy", "policy can't be nil")
 	}
 
+	request := &ActionRequest{"type": "change_backup_policy", "backup_policy": dropletBackupPolicyActionRequest(policy)}
+	return s.doAction(ctx, id, request)
+}
+
+func dropletBackupPolicyActionRequest(policy *DropletBackupPolicyRequest) map[string]interface{} {
 	policyMap := map[string]interface{}{
-		"plan":    policy.Plan,
-		"weekday": policy.Weekday,
+		"plan": policy.Plan,
+	}
+	if policy.Weekday != "" {
+		policyMap["weekday"] = policy.Weekday
 	}
 	if policy.Hour != nil {
 		policyMap["hour"] = policy.Hour
 	}
+	if policy.WindowLengthHours != 0 {
+		policyMap["window_length_hours"] = policy.WindowLengthHours
+	}
+	if policy.RetentionPeriodDays != 0 {
+		policyMap["retention_period_days"] = policy.RetentionPeriodDays
+	}
 
-	request := &ActionRequest{"type": "change_backup_policy", "backup_policy": policyMap}
-	return s.doAction(ctx, id, request)
+	return policyMap
 }
 
 // DisableBackups disables backups for a Droplet.
