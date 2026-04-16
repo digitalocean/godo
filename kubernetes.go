@@ -325,11 +325,11 @@ type KubernetesRdmaSharedDevicePlugin struct {
 }
 
 // KubernetesClusterSSO configures Single Sign-On (SSO) for a Kubernetes cluster.
-// Identity Provider (IDP) settings for SSO are set up on the team level,
-// whereas on a per-cluster level, users can enable or require SSO for the cluster.
 type KubernetesClusterSSO struct {
-	Enabled  *bool `json:"enabled,omitempty"`
-	Required *bool `json:"required,omitempty"`
+	Enabled   bool   `json:"enabled"`
+	Required  bool   `json:"required"`
+	IssuerURL string `json:"issuer_url,omitempty"`
+	ClientID  string `json:"client_id,omitempty"`
 }
 
 // KubernetesMaintenancePolicyDay represents the possible days of a maintenance
