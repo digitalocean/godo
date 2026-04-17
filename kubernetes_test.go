@@ -49,7 +49,9 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				Enabled: PtrTo(true),
 			},
 			SSO: &KubernetesClusterSSO{
-				Enabled: PtrTo(true),
+				Enabled:   true,
+				IssuerURL: "https://example.com/issuer",
+				ClientID:  "client-id",
 			},
 			NodePools: []*KubernetesNodePool{
 				{
@@ -157,7 +159,10 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				"enabled": true
 			},
 			"sso": {
-			    "enabled": true
+			    "enabled": true,
+				"required": false,
+				"issuer_url": "https://example.com/issuer",
+				"client_id": "client-id"
 			},
 			"node_pools": [
 				{
@@ -316,8 +321,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled:  PtrTo(true),
-			Required: PtrTo(false),
+			Enabled:   true,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePool{
 			{
@@ -387,7 +393,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		},
 		"sso": {
 			"enabled": true,
-			"required": false
+			"required": false,
+			"issuer_url": "https://example.com/issuer",
+			"client_id": "client-id"
 		},
 		"node_pools": [
 			{
@@ -491,9 +499,30 @@ func TestKubernetesClusters_GetKubeConfig(t *testing.T) {
 	blob := []byte(want)
 	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+		_, isTypeQueryParamSet := r.URL.Query()["type"]
+		assert.False(t, isTypeQueryParamSet)
 		fmt.Fprint(w, want)
 	})
-	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterKubeconfigGetRequest{})
+	require.NoError(t, err)
+	require.Equal(t, blob, got.KubeconfigYAML)
+}
+
+func TestKubernetesClusters_GetKubeConfig_WithType(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "some YAML"
+	blob := []byte(want)
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "token", r.URL.Query().Get("type"))
+		fmt.Fprint(w, want)
+	})
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterKubeconfigGetRequest{
+		Type: "token",
+	})
 	require.NoError(t, err)
 	require.Equal(t, blob, got.KubeconfigYAML)
 }
@@ -650,8 +679,10 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled:  PtrTo(true),
-			Required: PtrTo(false),
+			Enabled:   true,
+			Required:  false,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePool{
 			{
@@ -705,7 +736,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled: PtrTo(true),
+			Enabled:   true,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			{
@@ -756,7 +789,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		},
 		"sso": {
 			"enabled": true,
-			"required": false
+			"required": false,
+			"issuer_url": "https://example.com/issuer",
+			"client_id": "client-id"
 		},
 		"node_pools": [
 			{
@@ -973,7 +1008,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled: PtrTo(false),
+			Enabled: false,
 		},
 	}
 	updateRequest := &KubernetesClusterUpdateRequest{
@@ -1008,7 +1043,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled: PtrTo(false),
+			Enabled: false,
 		},
 	}
 
@@ -1072,12 +1107,13 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			"enabled": true
 		},
 		"sso": {
-			"enabled": false
+			"enabled": false,
+			"required": false
 		}
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"sso":{"enabled":false}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"sso":{"enabled":false,"required":false}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
