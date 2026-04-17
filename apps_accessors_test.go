@@ -945,14 +945,20 @@ func TestAppIngressSpecRuleRoutingRedirect_GetUri(tt *testing.T) {
 }
 
 func TestAppIngressSpecRuleStringMatch_GetExact(tt *testing.T) {
-	a := &AppIngressSpecRuleStringMatch{}
+	var zeroValue string
+	a := &AppIngressSpecRuleStringMatch{Exact: &zeroValue}
+	a.GetExact()
+	a = &AppIngressSpecRuleStringMatch{}
 	a.GetExact()
 	a = nil
 	a.GetExact()
 }
 
 func TestAppIngressSpecRuleStringMatch_GetPrefix(tt *testing.T) {
-	a := &AppIngressSpecRuleStringMatch{}
+	var zeroValue string
+	a := &AppIngressSpecRuleStringMatch{Prefix: &zeroValue}
+	a.GetPrefix()
+	a = &AppIngressSpecRuleStringMatch{}
 	a.GetPrefix()
 	a = nil
 	a.GetPrefix()
