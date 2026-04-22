@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.187.0] - 2026-04-22
+
+- #998 - @nhenning-do - Add BatchInferenceService for the inference proxy batch API
+- #995 - @d-honeybadger - DOKS: per cluster sso config
+
 ## [1.186.0] - 2026-04-15
 
 - #992 - @venkatranabothu - Add model benchmark_score and pricing
