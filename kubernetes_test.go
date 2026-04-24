@@ -540,6 +540,7 @@ func TestKubernetesClusters_GetKubeConfigWithExpiry(t *testing.T) {
 		assert.True(t, ok)
 		assert.Len(t, expirySeconds, 1)
 		assert.Contains(t, expirySeconds, "3600")
+		assert.Equal(t, r.URL.Query()["type"], []string{"token"})
 		fmt.Fprint(w, want)
 	})
 	got, _, err := kubeSvc.GetKubeConfigWithExpiry(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", 3600)

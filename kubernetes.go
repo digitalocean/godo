@@ -830,6 +830,7 @@ func (svc *KubernetesServiceOp) GetKubeConfigWithExpiry(ctx context.Context, clu
 	}
 	q := req.URL.Query()
 	q.Add("expiry_seconds", fmt.Sprintf("%d", expirySeconds))
+	q.Add("type", "token")
 	req.URL.RawQuery = q.Encode()
 	configBytes := bytes.NewBuffer(nil)
 	resp, err := svc.client.Do(ctx, req, configBytes)
