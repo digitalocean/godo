@@ -805,7 +805,7 @@ func (svc *KubernetesServiceOp) GetKubeConfig(ctx context.Context, clusterID str
 		return nil, nil, err
 	}
 	q := req.URL.Query()
-	if get.Type != "" {
+	if get != nil && get.Type != "" {
 		q.Add("type", get.Type)
 	}
 	req.URL.RawQuery = q.Encode()
