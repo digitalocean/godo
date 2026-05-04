@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.188.0] - 2026-04-27
+
+- #1000 - @m3co-code - add new fields to k8s node pool template for auto-scaler
+
 ## [1.187.0] - 2026-04-22
 
 - #998 - @nhenning-do - Add BatchInferenceService for the inference proxy batch API

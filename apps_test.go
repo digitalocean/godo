@@ -731,6 +731,62 @@ func TestApps_GetLogs_component(t *testing.T) {
 	assert.NotEmpty(t, logs.LiveURL)
 }
 
+// TestAppIngressSpecRuleMatchAuthorityJSON ensures ingress rule match JSON from the API
+// decodes authority and path prefix fields as expected, including empty strings.
+func TestAppIngressSpecRuleMatchAuthorityJSON(t *testing.T) {
+	exactEmpty := ""
+	exactDomain := "example.com"
+	pathSlash := "/"
+	pathEmpty := ""
+
+	tests := []struct {
+		name  string
+		input string
+		want  AppIngressSpecRuleMatch
+	}{
+		{
+			name:  "authority with empty exact string",
+			input: `{"path":{"prefix":"/"},"authority":{"exact":""}}`,
+			want: AppIngressSpecRuleMatch{
+				Path:      &AppIngressSpecRuleStringMatch{Prefix: &pathSlash},
+				Authority: &AppIngressSpecRuleStringMatch{Exact: &exactEmpty},
+			},
+		},
+		{
+			name:  "authority with non-empty exact string",
+			input: `{"path":{"prefix":"/"},"authority":{"exact":"example.com"}}`,
+			want: AppIngressSpecRuleMatch{
+				Path:      &AppIngressSpecRuleStringMatch{Prefix: &pathSlash},
+				Authority: &AppIngressSpecRuleStringMatch{Exact: &exactDomain},
+			},
+		},
+		{
+			name:  "no authority set",
+			input: `{"path":{"prefix":"/"}}`,
+			want: AppIngressSpecRuleMatch{
+				Path:      &AppIngressSpecRuleStringMatch{Prefix: &pathSlash},
+				Authority: nil,
+			},
+		},
+		{
+			name:  "authority with empty exact string and empty path prefix",
+			input: `{"path":{"prefix":""},"authority":{"exact":""}}`,
+			want: AppIngressSpecRuleMatch{
+				Path:      &AppIngressSpecRuleStringMatch{Prefix: &pathEmpty},
+				Authority: &AppIngressSpecRuleStringMatch{Exact: &exactEmpty},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var got AppIngressSpecRuleMatch
+			err := json.Unmarshal([]byte(tc.input), &got)
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
 func TestApps_ListRegions(t *testing.T) {
 	setup()
 	defer teardown()
