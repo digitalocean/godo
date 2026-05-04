@@ -1536,14 +1536,16 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 				"some-label": "some-value",
 			},
 			Capacity: &KubernetesNodePoolResources{
-				CPU:    1,
-				Memory: "2048Mi",
-				Pods:   110,
+				CPU:           1,
+				CpuMilliCores: 1000,
+				Memory:        "2048Mi",
+				Pods:          110,
 			},
 			Allocatable: &KubernetesNodePoolResources{
-				CPU:    390,
-				Memory: "1024Mi",
-				Pods:   110,
+				CPU:           1,
+				CpuMilliCores: 390,
+				Memory:        "1024Mi",
+				Pods:          110,
 			},
 		},
 	}
@@ -1559,11 +1561,13 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
     "taints": ["some-key=some-value:NoSchedule"],
     "capacity": {
       "cpu": 1,
+      "cpu_milli_cores": 1000,
       "memory": "2048Mi",
       "pods": 110
     },
     "allocatable": {
-      "cpu": 390,
+      "cpu": 1,
+	  "cpu_milli_cores": 390,
       "memory": "1024Mi",
       "pods": 110
     }
@@ -1577,7 +1581,6 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 	got, _, err := kubeSvc.GetNodePoolTemplate(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8a", "pool-a")
 	require.NoError(t, err)
 	require.Equal(t, want, got)
-
 }
 
 func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
@@ -1588,24 +1591,28 @@ func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
 		Template: &KubernetesNodeTemplate{
 			ClusterUUID: "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
 			Name:        "pool-a",
-			Slug:        "s-1vcpu-2gb",
+			Slug:        "gpu-mi300x8-1536gb",
 			Taints:      []string{"some-key=some-value:NoSchedule"},
 			Labels: map[string]string{
 				"some-label": "some-value",
 			},
 			Capacity: &KubernetesNodePoolResources{
-				CPU:    1,
-				Memory: "2048Mi",
-				Pods:   110,
+				CPU:           160,
+				CpuMilliCores: 160_000,
+				Memory:        "1966080Mi",
+				Pods:          110,
 			},
 			Allocatable: &KubernetesNodePoolResources{
-				CPU:    390,
-				Memory: "1024Mi",
-				Pods:   110,
+				// made up values for testing
+				CPU:           145,
+				CpuMilliCores: 145_000,
+				Memory:        "1750000Mi",
+				Pods:          110,
 			},
 			Gpu: &KubernetesNodePoolGPUResources{
-				Model: "mi300x",
-				Count: 1,
+				Model:  "mi300x",
+				Count:  8,
+				Vendor: "amd",
 			},
 		},
 	}
@@ -1614,24 +1621,27 @@ func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
   "template": {
     "cluster_uuid": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
     "name": "pool-a",
-    "slug": "s-1vcpu-2gb",
+    "slug": "gpu-mi300x8-1536gb",
     "labels": {
       "some-label": "some-value"
     },
     "taints": ["some-key=some-value:NoSchedule"],
     "capacity": {
-      "cpu": 1,
-      "memory": "2048Mi",
+      "cpu": 160,
+      "cpu_milli_cores": 160000,
+      "memory": "1966080Mi",
       "pods": 110
     },
     "allocatable": {
-      "cpu": 390,
-      "memory": "1024Mi",
+      "cpu": 145,
+      "cpu_milli_cores": 145000,
+      "memory": "1750000Mi",
       "pods": 110
     },
     "gpu": {
       "model": "mi300x",
-      "count": 1
+      "count": 8,
+	  "vendor": "amd"
     }
   }
 }
