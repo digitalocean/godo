@@ -527,6 +527,24 @@ func TestKubernetesClusters_GetKubeConfig_WithType(t *testing.T) {
 	require.Equal(t, blob, got.KubeconfigYAML)
 }
 
+func TestKubernetesClusters_GetKubeConfig_NilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "some YAML"
+	blob := []byte(want)
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		_, isTypeQueryParamSet := r.URL.Query()["type"]
+		assert.False(t, isTypeQueryParamSet)
+		fmt.Fprint(w, want)
+	})
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", nil)
+	require.NoError(t, err)
+	require.Equal(t, blob, got.KubeconfigYAML)
+}
+
 func TestKubernetesClusters_GetKubeConfigWithExpiry(t *testing.T) {
 	setup()
 	defer teardown()
@@ -540,6 +558,7 @@ func TestKubernetesClusters_GetKubeConfigWithExpiry(t *testing.T) {
 		assert.True(t, ok)
 		assert.Len(t, expirySeconds, 1)
 		assert.Contains(t, expirySeconds, "3600")
+		assert.Equal(t, "token", r.URL.Query().Get("type"))
 		fmt.Fprint(w, want)
 	})
 	got, _, err := kubeSvc.GetKubeConfigWithExpiry(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", 3600)
@@ -600,6 +619,32 @@ func TestKubernetesClusters_GetCredentials_WithExpirySeconds(t *testing.T) {
 	got, _, err := kubeSvc.GetCredentials(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterCredentialsGetRequest{
 		ExpirySeconds: PtrTo(60 * 60),
 	})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestKubernetesClusters_GetCredentials_NilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	timestamp, err := time.Parse(time.RFC3339, "2014-11-12T11:45:26.371Z")
+	require.NoError(t, err)
+	want := &KubernetesClusterCredentials{
+		Token:     "secret",
+		ExpiresAt: timestamp,
+	}
+	jBlob := `
+{
+	"token": "secret",
+	"expires_at": "2014-11-12T11:45:26.371Z"
+}`
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/credentials", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Empty(t, r.URL.Query())
+		fmt.Fprint(w, jBlob)
+	})
+	got, _, err := kubeSvc.GetCredentials(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", nil)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }

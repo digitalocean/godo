@@ -807,7 +807,7 @@ func (svc *KubernetesServiceOp) GetKubeConfig(ctx context.Context, clusterID str
 		return nil, nil, err
 	}
 	q := req.URL.Query()
-	if get.Type != "" {
+	if get != nil && get.Type != "" {
 		q.Add("type", get.Type)
 	}
 	req.URL.RawQuery = q.Encode()
@@ -832,6 +832,7 @@ func (svc *KubernetesServiceOp) GetKubeConfigWithExpiry(ctx context.Context, clu
 	}
 	q := req.URL.Query()
 	q.Add("expiry_seconds", fmt.Sprintf("%d", expirySeconds))
+	q.Add("type", "token")
 	req.URL.RawQuery = q.Encode()
 	configBytes := bytes.NewBuffer(nil)
 	resp, err := svc.client.Do(ctx, req, configBytes)
@@ -852,7 +853,7 @@ func (svc *KubernetesServiceOp) GetCredentials(ctx context.Context, clusterID st
 		return nil, nil, err
 	}
 	q := req.URL.Query()
-	if get.ExpirySeconds != nil {
+	if get != nil && get.ExpirySeconds != nil {
 		q.Add("expiry_seconds", strconv.Itoa(*get.ExpirySeconds))
 	}
 	req.URL.RawQuery = q.Encode()
