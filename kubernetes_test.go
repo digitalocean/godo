@@ -49,7 +49,9 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				Enabled: PtrTo(true),
 			},
 			SSO: &KubernetesClusterSSO{
-				Enabled: PtrTo(true),
+				Enabled:   true,
+				IssuerURL: "https://example.com/issuer",
+				ClientID:  "client-id",
 			},
 			NodePools: []*KubernetesNodePool{
 				{
@@ -157,7 +159,10 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				"enabled": true
 			},
 			"sso": {
-			    "enabled": true
+			    "enabled": true,
+				"required": false,
+				"issuer_url": "https://example.com/issuer",
+				"client_id": "client-id"
 			},
 			"node_pools": [
 				{
@@ -316,8 +321,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled:  PtrTo(true),
-			Required: PtrTo(false),
+			Enabled:   true,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePool{
 			{
@@ -387,7 +393,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		},
 		"sso": {
 			"enabled": true,
-			"required": false
+			"required": false,
+			"issuer_url": "https://example.com/issuer",
+			"client_id": "client-id"
 		},
 		"node_pools": [
 			{
@@ -491,9 +499,48 @@ func TestKubernetesClusters_GetKubeConfig(t *testing.T) {
 	blob := []byte(want)
 	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+		_, isTypeQueryParamSet := r.URL.Query()["type"]
+		assert.False(t, isTypeQueryParamSet)
 		fmt.Fprint(w, want)
 	})
-	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterKubeconfigGetRequest{})
+	require.NoError(t, err)
+	require.Equal(t, blob, got.KubeconfigYAML)
+}
+
+func TestKubernetesClusters_GetKubeConfig_WithType(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "some YAML"
+	blob := []byte(want)
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "token", r.URL.Query().Get("type"))
+		fmt.Fprint(w, want)
+	})
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterKubeconfigGetRequest{
+		Type: "token",
+	})
+	require.NoError(t, err)
+	require.Equal(t, blob, got.KubeconfigYAML)
+}
+
+func TestKubernetesClusters_GetKubeConfig_NilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "some YAML"
+	blob := []byte(want)
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		_, isTypeQueryParamSet := r.URL.Query()["type"]
+		assert.False(t, isTypeQueryParamSet)
+		fmt.Fprint(w, want)
+	})
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", nil)
 	require.NoError(t, err)
 	require.Equal(t, blob, got.KubeconfigYAML)
 }
@@ -511,6 +558,7 @@ func TestKubernetesClusters_GetKubeConfigWithExpiry(t *testing.T) {
 		assert.True(t, ok)
 		assert.Len(t, expirySeconds, 1)
 		assert.Contains(t, expirySeconds, "3600")
+		assert.Equal(t, "token", r.URL.Query().Get("type"))
 		fmt.Fprint(w, want)
 	})
 	got, _, err := kubeSvc.GetKubeConfigWithExpiry(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", 3600)
@@ -571,6 +619,32 @@ func TestKubernetesClusters_GetCredentials_WithExpirySeconds(t *testing.T) {
 	got, _, err := kubeSvc.GetCredentials(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterCredentialsGetRequest{
 		ExpirySeconds: PtrTo(60 * 60),
 	})
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestKubernetesClusters_GetCredentials_NilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	timestamp, err := time.Parse(time.RFC3339, "2014-11-12T11:45:26.371Z")
+	require.NoError(t, err)
+	want := &KubernetesClusterCredentials{
+		Token:     "secret",
+		ExpiresAt: timestamp,
+	}
+	jBlob := `
+{
+	"token": "secret",
+	"expires_at": "2014-11-12T11:45:26.371Z"
+}`
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/credentials", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Empty(t, r.URL.Query())
+		fmt.Fprint(w, jBlob)
+	})
+	got, _, err := kubeSvc.GetCredentials(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", nil)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
 }
@@ -687,8 +761,10 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled:  PtrTo(true),
-			Required: PtrTo(false),
+			Enabled:   true,
+			Required:  false,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePool{
 			{
@@ -742,7 +818,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled: PtrTo(true),
+			Enabled:   true,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			{
@@ -793,7 +871,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		},
 		"sso": {
 			"enabled": true,
-			"required": false
+			"required": false,
+			"issuer_url": "https://example.com/issuer",
+			"client_id": "client-id"
 		},
 		"node_pools": [
 			{
@@ -1010,7 +1090,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled: PtrTo(false),
+			Enabled: false,
 		},
 	}
 	updateRequest := &KubernetesClusterUpdateRequest{
@@ -1045,7 +1125,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		SSO: &KubernetesClusterSSO{
-			Enabled: PtrTo(false),
+			Enabled: false,
 		},
 	}
 
@@ -1109,12 +1189,13 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			"enabled": true
 		},
 		"sso": {
-			"enabled": false
+			"enabled": false,
+			"required": false
 		}
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"sso":{"enabled":false}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"sso":{"enabled":false,"required":false}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
@@ -1537,14 +1618,16 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 				"some-label": "some-value",
 			},
 			Capacity: &KubernetesNodePoolResources{
-				CPU:    1,
-				Memory: "2048Mi",
-				Pods:   110,
+				CPU:           1,
+				CpuMilliCores: 1000,
+				Memory:        "2048Mi",
+				Pods:          110,
 			},
 			Allocatable: &KubernetesNodePoolResources{
-				CPU:    390,
-				Memory: "1024Mi",
-				Pods:   110,
+				CPU:           1,
+				CpuMilliCores: 390,
+				Memory:        "1024Mi",
+				Pods:          110,
 			},
 		},
 	}
@@ -1560,11 +1643,13 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
     "taints": ["some-key=some-value:NoSchedule"],
     "capacity": {
       "cpu": 1,
+      "cpu_milli_cores": 1000,
       "memory": "2048Mi",
       "pods": 110
     },
     "allocatable": {
-      "cpu": 390,
+      "cpu": 1,
+	  "cpu_milli_cores": 390,
       "memory": "1024Mi",
       "pods": 110
     }
@@ -1578,7 +1663,6 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 	got, _, err := kubeSvc.GetNodePoolTemplate(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8a", "pool-a")
 	require.NoError(t, err)
 	require.Equal(t, want, got)
-
 }
 
 func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
@@ -1589,24 +1673,28 @@ func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
 		Template: &KubernetesNodeTemplate{
 			ClusterUUID: "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
 			Name:        "pool-a",
-			Slug:        "s-1vcpu-2gb",
+			Slug:        "gpu-mi300x8-1536gb",
 			Taints:      []string{"some-key=some-value:NoSchedule"},
 			Labels: map[string]string{
 				"some-label": "some-value",
 			},
 			Capacity: &KubernetesNodePoolResources{
-				CPU:    1,
-				Memory: "2048Mi",
-				Pods:   110,
+				CPU:           160,
+				CpuMilliCores: 160_000,
+				Memory:        "1966080Mi",
+				Pods:          110,
 			},
 			Allocatable: &KubernetesNodePoolResources{
-				CPU:    390,
-				Memory: "1024Mi",
-				Pods:   110,
+				// made up values for testing
+				CPU:           145,
+				CpuMilliCores: 145_000,
+				Memory:        "1750000Mi",
+				Pods:          110,
 			},
 			Gpu: &KubernetesNodePoolGPUResources{
-				Model: "mi300x",
-				Count: 1,
+				Model:  "mi300x",
+				Count:  8,
+				Vendor: "amd",
 			},
 		},
 	}
@@ -1615,24 +1703,27 @@ func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
   "template": {
     "cluster_uuid": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
     "name": "pool-a",
-    "slug": "s-1vcpu-2gb",
+    "slug": "gpu-mi300x8-1536gb",
     "labels": {
       "some-label": "some-value"
     },
     "taints": ["some-key=some-value:NoSchedule"],
     "capacity": {
-      "cpu": 1,
-      "memory": "2048Mi",
+      "cpu": 160,
+      "cpu_milli_cores": 160000,
+      "memory": "1966080Mi",
       "pods": 110
     },
     "allocatable": {
-      "cpu": 390,
-      "memory": "1024Mi",
+      "cpu": 145,
+      "cpu_milli_cores": 145000,
+      "memory": "1750000Mi",
       "pods": 110
     },
     "gpu": {
       "model": "mi300x",
-      "count": 1
+      "count": 8,
+	  "vendor": "amd"
     }
   }
 }

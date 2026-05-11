@@ -524,6 +524,8 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 	setup()
 	defer teardown()
 
+	falseVal := false
+
 	createRequest := &DropletCreateRequest{
 		Name:   "name",
 		Region: "region",
@@ -535,8 +537,9 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 			{ID: "hello-im-another-volume"},
 			{Name: "should be ignored due to Name", ID: "aaa-111-bbb-222-ccc"},
 		},
-		Tags:    []string{"one", "two"},
-		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
+		Tags:             []string{"one", "two"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		PublicNetworking: &falseVal,
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
@@ -554,8 +557,9 @@ func TestDroplets_CreateWithDisabledPublicNetworking(t *testing.T) {
 				map[string]interface{}{"id": "hello-im-another-volume"},
 				map[string]interface{}{"id": "aaa-111-bbb-222-ccc"},
 			},
-			"tags":     []interface{}{"one", "two"},
-			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+			"tags":              []interface{}{"one", "two"},
+			"vpc_uuid":          "880b7f98-f062-404d-b33c-458d545696f6",
+			"public_networking": false,
 		}
 		jsonBlob := `
 {
