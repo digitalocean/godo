@@ -29,7 +29,7 @@ func TestImages_List(t *testing.T) {
 		}`)
 	})
 
-	images, resp, err := client.Images.List(ctx, nil)
+	images, resp, err := client.DropletImages.List(ctx, nil)
 	if err != nil {
 		t.Errorf("Images.List returned error: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestImages_ListDistribution(t *testing.T) {
 		}`)
 	})
 
-	images, resp, err := client.Images.ListDistribution(ctx, nil)
+	images, resp, err := client.DropletImages.ListDistribution(ctx, nil)
 	if err != nil {
 		t.Errorf("Images.ListDistribution returned error: %v", err)
 	}
@@ -113,7 +113,7 @@ func TestImages_ListApplication(t *testing.T) {
 		}`)
 	})
 
-	images, resp, err := client.Images.ListApplication(ctx, nil)
+	images, resp, err := client.DropletImages.ListApplication(ctx, nil)
 	if err != nil {
 		t.Errorf("Images.ListApplication returned error: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestImages_ListUser(t *testing.T) {
 		}`)
 	})
 
-	images, resp, err := client.Images.ListUser(ctx, nil)
+	images, resp, err := client.DropletImages.ListUser(ctx, nil)
 	if err != nil {
 		t.Errorf("Images.ListUser returned error: %v", err)
 	}
@@ -199,7 +199,7 @@ func TestImages_ListByTag(t *testing.T) {
 		}`)
 	})
 
-	images, resp, err := client.Images.ListByTag(ctx, "foo", nil)
+	images, resp, err := client.DropletImages.ListByTag(ctx, "foo", nil)
 	if err != nil {
 		t.Errorf("Images.ListByTag returned error: %v", err)
 	}
@@ -224,7 +224,7 @@ func TestImages_ListImagesMultiplePages(t *testing.T) {
 		fmt.Fprint(w, `{"images": [{"id":1},{"id":2}], "links":{"pages":{"next":"http://example.com/v2/images/?page=2"}}}`)
 	})
 
-	_, resp, err := client.Images.List(ctx, &ListOptions{Page: 2})
+	_, resp, err := client.DropletImages.List(ctx, &ListOptions{Page: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +254,7 @@ func TestImages_RetrievePageByNumber(t *testing.T) {
 	})
 
 	opt := &ListOptions{Page: 2}
-	_, resp, err := client.Images.List(ctx, opt)
+	_, resp, err := client.DropletImages.List(ctx, opt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -271,7 +271,7 @@ func TestImages_GetImageByID(t *testing.T) {
 		fmt.Fprint(w, `{"image":{"id":12345}}`)
 	})
 
-	images, _, err := client.Images.GetByID(ctx, 12345)
+	images, _, err := client.DropletImages.GetByID(ctx, 12345)
 	if err != nil {
 		t.Errorf("Image.GetByID returned error: %v", err)
 	}
@@ -291,7 +291,7 @@ func TestImages_GetImageBySlug(t *testing.T) {
 		fmt.Fprint(w, `{"image":{"id":12345}}`)
 	})
 
-	images, _, err := client.Images.GetBySlug(ctx, "ubuntu")
+	images, _, err := client.DropletImages.GetBySlug(ctx, "ubuntu")
 	if err != nil {
 		t.Errorf("Image.GetBySlug returned error: %v", err)
 	}
@@ -338,7 +338,7 @@ func TestImages_Create(t *testing.T) {
 		fmt.Fprintf(w, `{"image": {"id": 1,"created_at": "2018-09-20T19:28:00Z","description": "A custom image","distribution": "Ubuntu","error_message": "","regions": [],"type": "custom","tags":["foo","bar"],"status": "NEW"}}`)
 	})
 
-	image, _, err := client.Images.Create(ctx, createRequest)
+	image, _, err := client.DropletImages.Create(ctx, createRequest)
 	if err != nil {
 		t.Errorf("Images.Create returned error: %v", err)
 	}
@@ -378,7 +378,7 @@ func TestImages_Update(t *testing.T) {
 		fmt.Fprintf(w, `{"image":{"id":1}}`)
 	})
 
-	image, _, err := client.Images.Update(ctx, 12345, updateRequest)
+	image, _, err := client.DropletImages.Update(ctx, 12345, updateRequest)
 	if err != nil {
 		t.Errorf("Images.Update returned error: %v", err)
 	} else {
@@ -396,7 +396,7 @@ func TestImages_Destroy(t *testing.T) {
 		testMethod(t, r, http.MethodDelete)
 	})
 
-	_, err := client.Images.Delete(ctx, 12345)
+	_, err := client.DropletImages.Delete(ctx, 12345)
 	if err != nil {
 		t.Errorf("Image.Delete returned error: %v", err)
 	}
