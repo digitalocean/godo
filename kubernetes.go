@@ -77,7 +77,7 @@ type KubernetesClusterCreateRequest struct {
 	ServiceSubnet string   `json:"service_subnet,omitempty"`
 
 	// HA enables a highly available control plane. When omitted, the API applies
-	// version-based defaults: false for versions <= 1.36, true for versions > 1.36.
+	// version-based defaults: false for versions < 1.36, true for versions >= 1.36.
 	HA *bool `json:"ha,omitempty"`
 
 	NodePools []*KubernetesNodePoolCreateRequest `json:"node_pools,omitempty"`
