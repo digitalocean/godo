@@ -21,7 +21,7 @@ func main() {
 	println(prompt)
 	println()
 
-	image, _, err := client.Images.Generate(ctx, &godo.ImageGenerateParams{
+	image, _, err := client.ImageGenerations.Generate(ctx, &godo.ImageGenerateParams{
 		Model:  "stable-diffusion-3.5-large",
 		Prompt: prompt,
 		N:      1,

@@ -86,7 +86,7 @@ func testClientServices(t *testing.T, c *Client) {
 		"Domains",
 		"Droplets",
 		"DropletActions",
-		"DropletImages",
+		"Images",
 		"ImageActions",
 		"Invoices",
 		"Keys",

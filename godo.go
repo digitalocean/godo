@@ -71,7 +71,7 @@ type Client struct {
 	FloatingIPs         FloatingIPsService
 	FloatingIPActions   FloatingIPActionsService
 	Functions           FunctionsService
-	DropletImages       ImagesService
+	Images              ImagesService
 	ImageActions        ImageActionsService
 	Invoices            InvoicesService
 	Keys                KeysService
@@ -105,10 +105,9 @@ type Client struct {
 	BYOIPPrefixes       BYOIPPrefixesService
 
 	// Serverless Inference resources at https://inference.do-ai.run.
-	// Method naming mirrors the openai-go SDK; see serverless_inference.go.
 	Chat             *ChatService
 	Embeddings       *EmbeddingService
-	Images           *ImageService
+	ImageGenerations *ImageGenerationService
 	Messages         *MessageService
 	Models           *ModelService
 	Responses        *ResponseService
@@ -312,7 +311,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.FloatingIPs = &FloatingIPsServiceOp{client: c}
 	c.FloatingIPActions = &FloatingIPActionsServiceOp{client: c}
 	c.Functions = &FunctionsServiceOp{client: c}
-	c.DropletImages = &ImagesServiceOp{client: c}
+	c.Images = &ImagesServiceOp{client: c}
 	c.ImageActions = &ImageActionsServiceOp{client: c}
 	c.Invoices = &InvoicesServiceOp{client: c}
 	c.Keys = &KeysServiceOp{client: c}
@@ -350,7 +349,7 @@ func NewClient(httpClient *http.Client) *Client {
 	t := newInferenceTransport(c, serverlessInferenceURL)
 	c.Chat = &ChatService{Completions: &ChatCompletionService{inferenceTransport: t}}
 	c.Embeddings = &EmbeddingService{inferenceTransport: t}
-	c.Images = &ImageService{inferenceTransport: t}
+	c.ImageGenerations = &ImageGenerationService{inferenceTransport: t}
 	c.Messages = &MessageService{inferenceTransport: t}
 	c.Models = &ModelService{inferenceTransport: t}
 	c.Responses = &ResponseService{inferenceTransport: t}

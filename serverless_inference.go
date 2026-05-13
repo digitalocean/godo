@@ -24,7 +24,7 @@ const (
 )
 
 // Serverless Inference resources at https://inference.do-ai.run are exposed
-// as top-level fields on godo.Client (Models, Chat, Embeddings, Images,
+// as top-level fields on godo.Client (Models, Chat, Embeddings, ImageGenerations,
 // Messages, Responses, AsyncInvocations)
 // See https://docs.digitalocean.com/reference/api/reference/serverless-inference/.
 
@@ -342,7 +342,6 @@ type ChatCompletionChunkChoiceDelta struct {
 }
 
 // ChatCompletionStream is a typed iterator over a /v1/chat/completions SSE stream.
-// The OpenAI "[DONE]" sentinel and io.EOF both terminate iteration; call Err to distinguish them.
 type ChatCompletionStream struct {
 	raw     *InferenceStream
 	current ChatCompletionChunk
@@ -454,8 +453,8 @@ func (s *EmbeddingService) New(ctx context.Context, body *EmbeddingNewParams) (*
 // /v1/images/generations
 // =====================================================================
 
-// ImageService exposes POST /v1/images/generations (no edits/variations upstream yet).
-type ImageService struct {
+// ImageGenerationService exposes POST /v1/images/generations
+type ImageGenerationService struct {
 	*inferenceTransport
 }
 
@@ -507,7 +506,7 @@ type ImagesResponse struct {
 }
 
 // Generate creates one or more images from a text prompt.
-func (s *ImageService) Generate(ctx context.Context, body *ImageGenerateParams) (*ImagesResponse, *Response, error) {
+func (s *ImageGenerationService) Generate(ctx context.Context, body *ImageGenerateParams) (*ImagesResponse, *Response, error) {
 	req, err := s.newRequest(ctx, http.MethodPost, serverlessInferenceImagesGenerations, body)
 	if err != nil {
 		return nil, nil, err
@@ -576,7 +575,7 @@ func (s *ImageGenerationStream) Close() error { return s.raw.Close() }
 
 // GenerateStreaming opens an SSE stream of partial-image then completed events.
 // body.Stream is forced to true; callers MUST Close the returned stream.
-func (s *ImageService) GenerateStreaming(ctx context.Context, body *ImageGenerateParams) (*ImageGenerationStream, *Response, error) {
+func (s *ImageGenerationService) GenerateStreaming(ctx context.Context, body *ImageGenerateParams) (*ImageGenerationStream, *Response, error) {
 	body.Stream = PtrTo(true)
 	raw, resp, err := s.stream(ctx, serverlessInferenceImagesGenerations, body)
 	if err != nil {

@@ -37,7 +37,6 @@ type AgentInferenceClient struct {
 // AgentInferenceClientOpt is a functional option for an AgentInferenceClient.
 type AgentInferenceClientOpt func(*AgentInferenceClient) error
 
-// AgentChatService hosts the Completions sub-service to mirror openai-go's namespace.
 type AgentChatService struct {
 	Completions *AgentChatCompletionService
 }

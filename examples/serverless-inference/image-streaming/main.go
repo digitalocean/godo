@@ -22,7 +22,7 @@ func main() {
 
 	fmt.Println("Starting image streaming example...")
 
-	stream, _, err := client.Images.GenerateStreaming(ctx, &godo.ImageGenerateParams{
+	stream, _, err := client.ImageGenerations.GenerateStreaming(ctx, &godo.ImageGenerateParams{
 		Model:         model,
 		Prompt:        "A cute baby sea otter",
 		N:             1,

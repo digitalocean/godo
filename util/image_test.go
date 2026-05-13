@@ -13,7 +13,7 @@ func ExampleWaitForAvailable() {
 	client := godo.NewFromToken("dop_v1_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 
 	// Create an Image.
-	image, resp, err := client.DropletImages.Create(context.Background(), &godo.CustomImageCreateRequest{
+	image, resp, err := client.Images.Create(context.Background(), &godo.CustomImageCreateRequest{
 		Name:   "test-image",
 		Url:    "https://cloud-images.ubuntu.com/releases/focal/release/ubuntu-20.04-server-cloudimg-amd64.vmdk",
 		Region: "nyc3",
