@@ -12,7 +12,7 @@ import (
 type StorageActionsService interface {
 	Attach(ctx context.Context, volumeID string, dropletID int) (*Action, *Response, error)
 	DetachByDropletID(ctx context.Context, volumeID string, dropletID int) (*Action, *Response, error)
-	Get(ctx context.Context, volumeID string, actionID int) (*Action, *Response, error)
+	Get(ctx context.Context, volumeID string, actionID int64) (*Action, *Response, error)
 	List(ctx context.Context, volumeID string, opt *ListOptions) ([]Action, *Response, error)
 	Resize(ctx context.Context, volumeID string, sizeGigabytes int, regionSlug string) (*Action, *Response, error)
 }
@@ -48,7 +48,7 @@ func (s *StorageActionsServiceOp) DetachByDropletID(ctx context.Context, volumeI
 }
 
 // Get an action for a particular storage volume by id.
-func (s *StorageActionsServiceOp) Get(ctx context.Context, volumeID string, actionID int) (*Action, *Response, error) {
+func (s *StorageActionsServiceOp) Get(ctx context.Context, volumeID string, actionID int64) (*Action, *Response, error) {
 	path := fmt.Sprintf("%s/%d", storageAllocationActionPath(volumeID), actionID)
 	return s.get(ctx, path)
 }

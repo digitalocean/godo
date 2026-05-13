@@ -398,6 +398,44 @@ func TestDroplets_Create(t *testing.T) {
 	}
 }
 
+func TestDroplets_CreateWithLargeActionID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &DropletCreateRequest{
+		Name:   "name",
+		Region: "region",
+		Size:   "size",
+		Image:  DropletCreateImage{Slug: "ubuntu-22-04-x64"},
+	}
+
+	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{
+			"droplet": {"id": 12345},
+			"links": {
+				"actions": [{"id": 3169590176, "href": "http://example.com", "rel": "create"}]
+			}
+		}`)
+	})
+
+	droplet, resp, err := client.Droplets.Create(ctx, createRequest)
+	if err != nil {
+		t.Fatalf("Droplets.Create returned error: %v", err)
+	}
+
+	if droplet.ID != 12345 {
+		t.Errorf("expected droplet ID 12345, got %d", droplet.ID)
+	}
+
+	if len(resp.Links.Actions) != 1 {
+		t.Fatalf("expected 1 link action, got %d", len(resp.Links.Actions))
+	}
+	if resp.Links.Actions[0].ID != 3169590176 {
+		t.Errorf("expected link action ID 3169590176, got %d", resp.Links.Actions[0].ID)
+	}
+}
+
 func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 	setup()
 	defer teardown()

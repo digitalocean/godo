@@ -1,6 +1,7 @@
 package godo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -125,6 +126,39 @@ func TestAction_Get(t *testing.T) {
 
 	if action.RegionSlug != "slug" {
 		t.Fatalf("unexpected response, invalid region slug")
+	}
+}
+
+func TestAction_UnmarshalLargeID(t *testing.T) {
+	jsonBlob := `{"action":{"id":3169590176,"status":"completed","type":"create","resource_id":12345,"resource_type":"droplet"}}`
+
+	var root actionRoot
+	err := json.Unmarshal([]byte(jsonBlob), &root)
+	if err != nil {
+		t.Fatalf("failed to unmarshal Action with large ID: %v", err)
+	}
+
+	if root.Event.ID != 3169590176 {
+		t.Errorf("expected ID 3169590176, got %d", root.Event.ID)
+	}
+}
+
+func TestAction_GetLargeID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/actions/3169590176", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"action":{"id":3169590176,"status":"completed","type":"create"}}`)
+	})
+
+	action, _, err := client.Actions.Get(ctx, 3169590176)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	if action.ID != 3169590176 {
+		t.Errorf("expected ID 3169590176, got %d", action.ID)
 	}
 }
 
