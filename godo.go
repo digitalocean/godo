@@ -648,6 +648,7 @@ func (c *Client) DoStream(ctx context.Context, req *http.Request) (*Response, er
 	c.ratemtx.Unlock()
 
 	if err := CheckResponse(resp); err != nil {
+		_, _ = io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()
 		return response, err
 	}

@@ -54,6 +54,8 @@ func (t *inferenceTransport) stream(ctx context.Context, path string, body inter
 		return nil, nil, err
 	}
 	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Connection", "keep-alive")
 
 	resp, err := t.client.DoStream(ctx, req)
 	if err != nil {
@@ -127,6 +129,9 @@ type AsyncInvocation struct {
 
 // New starts an asynchronous fal model invocation.
 func (s *AsyncInvocationService) New(ctx context.Context, body *AsyncInvocationNewParams) (*AsyncInvocation, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	req, err := s.newRequest(ctx, http.MethodPost, serverlessInferenceAsyncInvokePath, body)
 	if err != nil {
 		return nil, nil, err
@@ -301,6 +306,9 @@ type ChatCompletion struct {
 
 // New creates a non-streaming chat completion.
 func (s *ChatCompletionService) New(ctx context.Context, body *ChatCompletionNewParams) (*ChatCompletion, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	req, err := s.newRequest(ctx, http.MethodPost, serverlessInferenceChatCompletions, body)
 	if err != nil {
 		return nil, nil, err
@@ -388,6 +396,9 @@ func (s *ChatCompletionStream) Close() error { return s.raw.Close() }
 // NewStreaming opens an SSE stream of chat completion chunks; body.Stream is forced to true.
 // Callers MUST Close the returned stream.
 func (s *ChatCompletionService) NewStreaming(ctx context.Context, body *ChatCompletionNewParams) (*ChatCompletionStream, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	body.Stream = PtrTo(true)
 	raw, resp, err := s.stream(ctx, serverlessInferenceChatCompletions, body)
 	if err != nil {
@@ -437,6 +448,9 @@ type CreateEmbeddingResponse struct {
 
 // New creates one or more embedding vectors. There is no streaming variant.
 func (s *EmbeddingService) New(ctx context.Context, body *EmbeddingNewParams) (*CreateEmbeddingResponse, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	req, err := s.newRequest(ctx, http.MethodPost, serverlessInferenceEmbeddingsPath, body)
 	if err != nil {
 		return nil, nil, err
@@ -507,6 +521,9 @@ type ImagesResponse struct {
 
 // Generate creates one or more images from a text prompt.
 func (s *ImageGenerationService) Generate(ctx context.Context, body *ImageGenerateParams) (*ImagesResponse, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	req, err := s.newRequest(ctx, http.MethodPost, serverlessInferenceImagesGenerations, body)
 	if err != nil {
 		return nil, nil, err
@@ -576,6 +593,9 @@ func (s *ImageGenerationStream) Close() error { return s.raw.Close() }
 // GenerateStreaming opens an SSE stream of partial-image then completed events.
 // body.Stream is forced to true; callers MUST Close the returned stream.
 func (s *ImageGenerationService) GenerateStreaming(ctx context.Context, body *ImageGenerateParams) (*ImageGenerationStream, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	body.Stream = PtrTo(true)
 	raw, resp, err := s.stream(ctx, serverlessInferenceImagesGenerations, body)
 	if err != nil {
@@ -680,6 +700,9 @@ type Message struct {
 
 // New creates a non-streaming message.
 func (s *MessageService) New(ctx context.Context, body *MessageNewParams) (*Message, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	req, err := s.newRequest(ctx, http.MethodPost, serverlessInferenceMessagesPath, body)
 	if err != nil {
 		return nil, nil, err
@@ -756,6 +779,9 @@ func (s *MessageStream) Close() error { return s.raw.Close() }
 // NewStreaming opens an SSE stream of /v1/messages events; body.Stream is forced to true.
 // Callers MUST Close the returned stream.
 func (s *MessageService) NewStreaming(ctx context.Context, body *MessageNewParams) (*MessageStream, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	body.Stream = PtrTo(true)
 	raw, resp, err := s.stream(ctx, serverlessInferenceMessagesPath, body)
 	if err != nil {
@@ -919,6 +945,9 @@ func (r *ResponsesResponse) OutputText() string {
 
 // New creates a non-streaming Responses API result.
 func (s *ResponseService) New(ctx context.Context, body *ResponseNewParams) (*ResponsesResponse, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	req, err := s.newRequest(ctx, http.MethodPost, serverlessInferenceResponsesPath, body)
 	if err != nil {
 		return nil, nil, err
@@ -990,6 +1019,9 @@ func (s *ResponseStream) Close() error { return s.raw.Close() }
 // NewStreaming opens an SSE stream of /v1/responses events; body.Stream is forced to true.
 // Callers MUST Close the returned stream.
 func (s *ResponseService) NewStreaming(ctx context.Context, body *ResponseNewParams) (*ResponseStream, *Response, error) {
+	if body == nil {
+		return nil, nil, errors.New("serverless inference: body is required")
+	}
 	body.Stream = PtrTo(true)
 	raw, resp, err := s.stream(ctx, serverlessInferenceResponsesPath, body)
 	if err != nil {
