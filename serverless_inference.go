@@ -572,6 +572,10 @@ func (s *ImageGenerationStream) Next() bool {
 		s.err = err
 		return false
 	}
+	if bytes.Equal(ev.Data, []byte("[DONE]")) {
+		s.done = true
+		return false
+	}
 	var event ImageGenerationStreamEvent
 	if err := json.Unmarshal(ev.Data, &event); err != nil {
 		s.err = err
@@ -756,6 +760,10 @@ func (s *MessageStream) Next() bool {
 	}
 	if err != nil {
 		s.err = err
+		return false
+	}
+	if bytes.Equal(ev.Data, []byte("[DONE]")) {
+		s.done = true
 		return false
 	}
 	var event MessageStreamEvent
@@ -996,6 +1004,10 @@ func (s *ResponseStream) Next() bool {
 	}
 	if err != nil {
 		s.err = err
+		return false
+	}
+	if bytes.Equal(ev.Data, []byte("[DONE]")) {
+		s.done = true
 		return false
 	}
 	var event ResponseStreamEvent
