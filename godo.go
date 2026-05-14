@@ -35,6 +35,11 @@ const (
 	defaultRetryMax     = 4
 	defaultRetryWaitMax = 30
 	defaultRetryWaitMin = 1
+
+	// Connection pool settings for better performance
+	defaultMaxIdleConns        = 100
+	defaultMaxIdleConnsPerHost = 10
+	defaultIdleConnTimeout     = 90 * time.Second
 )
 
 // Client manages communication with DigitalOcean V2 API.
