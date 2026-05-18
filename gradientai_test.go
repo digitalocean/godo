@@ -2392,6 +2392,52 @@ var listCustomModelsResponse = `
 }
 `
 
+var getCustomModelResponse = `
+{
+	"model": {
+		"uuid": "11111111-1111-1111-1111-111111111111",
+		"name": "team/my-model",
+		"description": "An imported HuggingFace model",
+		"status": "STATUS_READY",
+		"architecture": "LlamaForCausalLM",
+		"source_type": "SOURCE_TYPE_HUGGINGFACE",
+		"source_ref": {
+			"repo_id": "team/my-model",
+			"commit_sha": "abc123",
+			"access_type": "ACCESS_TYPE_PUBLIC"
+		},
+		"total_size_bytes": "1073741824",
+		"file_count": 7,
+		"license": "apache-2.0",
+		"tags": {"tags": ["llama", "chat"]},
+		"created_at": "2026-01-02T03:04:05Z",
+		"updated_at": "2026-01-02T04:05:06Z",
+		"active_deployments": [
+			{
+				"id": "dep-1",
+				"name": "primary",
+				"region_slug": "tor1",
+				"state": "ACTIVE",
+				"endpoints": {
+					"public_endpoint_fqdn": "public.example.com",
+					"private_endpoint_fqdn": "private.example.com"
+				},
+				"created_at": "2026-01-02T03:04:05Z",
+				"updated_at": "2026-01-02T04:05:06Z"
+			}
+		],
+		"context_length": 131072,
+		"cost_estimate_per_month": 123,
+		"input_modalities": ["text"],
+		"output_modalities": ["text"],
+		"parameters": "70000000000",
+		"team_id": "42",
+		"config_json": {"architectures": ["LlamaForCausalLM"]},
+		"storage_region": "nyc3"
+	}
+}
+`
+
 var importCustomModelResponse = `
 {
 	"model": {
@@ -2531,6 +2577,93 @@ func TestListCustomModelsNoOptions(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, 2, len(out.Models))
+}
+
+func TestGetCustomModel(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getCustomModelResponse)
+	})
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "11111111-1111-1111-1111-111111111111")
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", model.Uuid)
+	assert.Equal(t, "team/my-model", model.Name)
+	assert.Equal(t, "An imported HuggingFace model", model.Description)
+	assert.Equal(t, CustomModelStatusReady, model.Status)
+	assert.Equal(t, "LlamaForCausalLM", model.Architecture)
+	assert.Equal(t, CustomModelSourceTypeHuggingFace, model.SourceType)
+
+	assert.NotNil(t, model.SourceRef)
+	assert.Equal(t, "team/my-model", model.SourceRef.RepoId)
+	assert.Equal(t, "abc123", model.SourceRef.CommitSha)
+	assert.Equal(t, CustomModelSourceRefAccessTypePublic, model.SourceRef.AccessType)
+
+	assert.Equal(t, "1073741824", model.TotalSizeBytes)
+	assert.Equal(t, 7, model.FileCount)
+	assert.Equal(t, "apache-2.0", model.License)
+	assert.NotNil(t, model.Tags)
+	assert.Equal(t, []string{"llama", "chat"}, model.Tags.Tags)
+	assert.Equal(t, 131072, model.ContextLength)
+	assert.Equal(t, 123, model.CostEstimatePerMonth)
+	assert.Equal(t, "70000000000", model.Parameters)
+	assert.Equal(t, "42", model.TeamId)
+	assert.Equal(t, "nyc3", model.StorageRegion)
+	assert.NotNil(t, model.ConfigJson)
+	assert.Equal(t, []string{"text"}, model.InputModalities)
+	assert.Equal(t, []string{"text"}, model.OutputModalities)
+
+	assert.Equal(t, 1, len(model.ActiveDeployments))
+	dep := model.ActiveDeployments[0]
+	assert.Equal(t, "dep-1", dep.Id)
+	assert.Equal(t, "primary", dep.Name)
+	assert.Equal(t, "tor1", dep.RegionSlug)
+	assert.Equal(t, "ACTIVE", dep.State)
+	assert.NotNil(t, dep.Endpoints)
+	assert.Equal(t, "public.example.com", dep.Endpoints.PublicEndpointFqdn)
+	assert.Equal(t, "private.example.com", dep.Endpoints.PrivateEndpointFqdn)
+}
+
+func TestGetCustomModelMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.Nil(t, resp)
+}
+
+func TestGetCustomModelInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.Nil(t, resp)
+}
+
+func TestGetCustomModelServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"not_found","message":"missing"}`, http.StatusNotFound)
+	})
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
 }
 
 func TestImportCustomModel(t *testing.T) {
