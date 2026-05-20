@@ -21,15 +21,16 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 
 	wantClusters := []*KubernetesCluster{
 		{
-			ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-			Name:          "blablabla",
-			RegionSlug:    "nyc1",
-			VersionSlug:   "1.10.0-gen0",
-			ClusterSubnet: "10.244.0.0/16",
-			ServiceSubnet: "10.245.0.0/16",
-			IPv4:          "",
-			Tags:          []string(nil),
-			VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+			ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+			Name:             "blablabla",
+			RegionSlug:       "nyc1",
+			VersionSlug:      "1.10.0-gen0",
+			ClusterSubnet:    "10.244.0.0/16",
+			ServiceSubnet:    "10.245.0.0/16",
+			IPv4:             "",
+			Tags:             []string(nil),
+			VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+			WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 			Status: &KubernetesClusterStatus{
 				State: KubernetesClusterStatusRunning,
 			},
@@ -83,14 +84,15 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			UpdatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 		},
 		{
-			ID:            "deadbeef-dead-4aa5-beef-deadbeef347d",
-			Name:          "antoine",
-			RegionSlug:    "nyc1",
-			VersionSlug:   "1.10.0-gen0",
-			ClusterSubnet: "10.244.0.0/16",
-			ServiceSubnet: "10.245.0.0/16",
-			IPv4:          "1.2.3.4",
-			VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f7",
+			ID:               "deadbeef-dead-4aa5-beef-deadbeef347d",
+			Name:             "antoine",
+			RegionSlug:       "nyc1",
+			VersionSlug:      "1.10.0-gen0",
+			ClusterSubnet:    "10.244.0.0/16",
+			ServiceSubnet:    "10.245.0.0/16",
+			IPv4:             "1.2.3.4",
+			VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f7",
+			WorkerSubnetUUID: "2b3c4d5e-6f70-8901-bcde-f12345678901",
 			Status: &KubernetesClusterStatus{
 				State: KubernetesClusterStatusRunning,
 			},
@@ -140,6 +142,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			"ipv4": "",
 			"tags": null,
 			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+			"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 			"status": {
 				"state": "running"
 			},
@@ -213,6 +216,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				"state": "running"
 			},
 			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f7",
+			"worker_subnet_uuid": "2b3c4d5e-6f70-8901-bcde-f12345678901",
 			"node_pools": [
 				{
 					"id": "deadbeef-dead-beef-dead-deadbeefb4b3",
@@ -294,14 +298,15 @@ func TestKubernetesClusters_Get(t *testing.T) {
 
 	kubeSvc := client.Kubernetes
 	want := &KubernetesCluster{
-		ID:            "deadbeef-dead-4aa5-beef-deadbeef347d",
-		Name:          "antoine",
-		RegionSlug:    "nyc1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
-		IPv4:          "1.2.3.4",
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		ID:               "deadbeef-dead-4aa5-beef-deadbeef347d",
+		Name:             "antoine",
+		RegionSlug:       "nyc1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		IPv4:             "1.2.3.4",
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		Status: &KubernetesClusterStatus{
 			State: KubernetesClusterStatusRunning,
 		},
@@ -373,6 +378,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		"ipv4": "1.2.3.4",
 		"tags": null,
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"status": {
 			"state": "running"
 		},
@@ -934,14 +940,15 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 	kubeSvc := client.Kubernetes
 
 	want := &KubernetesCluster{
-		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:          "antoine-test-cluster",
-		RegionSlug:    "s2r1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
-		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "antoine-test-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		Tags:             []string{"cluster-tag-1", "cluster-tag-2"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:        "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -993,6 +1000,7 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"node_pools": [
 			{
 				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -1041,16 +1049,17 @@ func TestKubernetesClusters_Update(t *testing.T) {
 	scaleDownUnneededTime := "1m27s"
 
 	want := &KubernetesCluster{
-		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:          "antoine-test-cluster",
-		RegionSlug:    "s2r1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
-		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
-		SurgeUpgrade:  true,
-		HA:            true,
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "antoine-test-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		Tags:             []string{"cluster-tag-1", "cluster-tag-2"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+		SurgeUpgrade:     true,
+		HA:               true,
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -1146,6 +1155,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"ha": true,
 		"surge_upgrade": true,
 		"node_pools": [
@@ -1227,14 +1237,15 @@ func TestKubernetesClusters_Update_FalseAutoUpgrade(t *testing.T) {
 	kubeSvc := client.Kubernetes
 
 	want := &KubernetesCluster{
-		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:          "antoine-test-cluster",
-		RegionSlug:    "s2r1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
-		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "antoine-test-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		Tags:             []string{"cluster-tag-1", "cluster-tag-2"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -1267,6 +1278,7 @@ func TestKubernetesClusters_Update_FalseAutoUpgrade(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"node_pools": [
 			{
 				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
