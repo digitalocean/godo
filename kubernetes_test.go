@@ -735,16 +735,17 @@ func TestKubernetesClusters_Create(t *testing.T) {
 	scaleDownUnneededTime := "1m30s"
 
 	want := &KubernetesCluster{
-		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:          "antoine-test-cluster",
-		RegionSlug:    "s2r1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "192.168.0.0/16",
-		ServiceSubnet: "192.169.0.0/16",
-		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
-		HA:            true,
-		SurgeUpgrade:  true,
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "antoine-test-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "192.168.0.0/16",
+		ServiceSubnet:    "192.169.0.0/16",
+		Tags:             []string{"cluster-tag-1", "cluster-tag-2"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+		HA:               true,
+		SurgeUpgrade:     true,
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
 		},
@@ -793,15 +794,16 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		},
 	}
 	createRequest := &KubernetesClusterCreateRequest{
-		Name:          want.Name,
-		RegionSlug:    want.RegionSlug,
-		VersionSlug:   want.VersionSlug,
-		Tags:          want.Tags,
-		VPCUUID:       want.VPCUUID,
-		ClusterSubnet: want.ClusterSubnet,
-		ServiceSubnet: want.ServiceSubnet,
-		SurgeUpgrade:  true,
-		HA:            PtrTo(true),
+		Name:             want.Name,
+		RegionSlug:       want.RegionSlug,
+		VersionSlug:      want.VersionSlug,
+		Tags:             want.Tags,
+		VPCUUID:          want.VPCUUID,
+		WorkerSubnetUUID: want.WorkerSubnetUUID,
+		ClusterSubnet:    want.ClusterSubnet,
+		ServiceSubnet:    want.ServiceSubnet,
+		SurgeUpgrade:     true,
+		HA:               PtrTo(true),
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
 		},
@@ -852,6 +854,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"ha": true,
 		"surge_upgrade": true,
 		"routing_agent": {
