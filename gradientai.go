@@ -647,10 +647,22 @@ type ModelVersion struct {
 	Patch int `json:"patch,omitempty"`
 }
 
-// ModelPricing represents the pricing per million tokens for a model
+// ModelPricing represents token- and unit-based pricing for a model.
 type ModelPricing struct {
-	InputPricePerMillion  float64 `json:"input_price_per_million,omitempty"`
-	OutputPricePerMillion float64 `json:"output_price_per_million,omitempty"`
+	InputPricePerMillion               float64 `json:"input_price_per_million,omitempty"`
+	OutputPricePerMillion              float64 `json:"output_price_per_million,omitempty"`
+	PricePerImage                      float64 `json:"price_per_image,omitempty"`
+	PricePerMegapixel                  float64 `json:"price_per_megapixel,omitempty"`
+	PricePerSecond                     float64 `json:"price_per_second,omitempty"`
+	PricePerVideo                      float64 `json:"price_per_video,omitempty"`
+	PricePerAudio                      float64 `json:"price_per_audio,omitempty"`
+	PricePerThousandCharacters         float64 `json:"price_per_thousand_characters,omitempty"`
+	TextInputPricePerMillion           float64 `json:"text_input_price_per_million,omitempty"`
+	TextOutputPricePerMillion          float64 `json:"text_output_price_per_million,omitempty"`
+	TextCacheReadInputPricePerMillion  float64 `json:"text_cache_read_input_price_per_million,omitempty"`
+	ImageInputPricePerMillion          float64 `json:"image_input_price_per_million,omitempty"`
+	ImageOutputPricePerMillion         float64 `json:"image_output_price_per_million,omitempty"`
+	ImageCacheReadInputPricePerMillion float64 `json:"image_cache_read_input_price_per_million,omitempty"`
 }
 
 // AgentCreateRequest represents the request to create a new Gradient AI Agent
