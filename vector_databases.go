@@ -44,17 +44,17 @@ var _ VectorDBsService = &VectorDBsServiceOp{}
 
 // VectorDB represents a provisioned vector database instance.
 type VectorDB struct {
-	ID         string              `json:"id,omitempty"`
-	Name       string              `json:"name,omitempty"`
-	Region     string              `json:"region,omitempty"`
-	OwnerUUID  string              `json:"owner_uuid,omitempty"`
-	Status     string              `json:"status,omitempty"`
-	Config     *VectorDBConfig     `json:"config,omitempty"`
-	CreatedAt  time.Time           `json:"created_at,omitempty"`
-	UpdatedAt  time.Time           `json:"updated_at,omitempty"`
-	Endpoints  *VectorDBEndpoints  `json:"endpoints,omitempty"`
-	Size       string              `json:"size,omitempty"`
-	Tags       []string            `json:"tags,omitempty"`
+	ID        string             `json:"id,omitempty"`
+	Name      string             `json:"name,omitempty"`
+	Region    string             `json:"region,omitempty"`
+	OwnerUUID string             `json:"owner_uuid,omitempty"`
+	Status    string             `json:"status,omitempty"`
+	Config    *VectorDBConfig    `json:"config,omitempty"`
+	CreatedAt time.Time          `json:"created_at,omitempty"`
+	UpdatedAt time.Time          `json:"updated_at,omitempty"`
+	Endpoints *VectorDBEndpoints `json:"endpoints,omitempty"`
+	Size      string             `json:"size,omitempty"`
+	Tags      []string           `json:"tags,omitempty"`
 }
 
 // VectorDBConfig holds optional, advanced cluster settings.
