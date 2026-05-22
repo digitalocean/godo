@@ -34,6 +34,8 @@ const (
 	customModelImportPath        = customModelsBasePath + "/import"
 	customModelByIDPath          = customModelsBasePath + "/%s"
 	customModelMetadataPath      = customModelsBasePath + "/%s/metadata"
+	modelEvaluationRunsBasePath  = "/v2/gen-ai/model_evaluation_runs"
+	modelEvaluationRunByIDPath   = modelEvaluationRunsBasePath + "/%s"
 )
 
 // CustomModelStatus represents the status of a custom model.
@@ -75,6 +77,15 @@ const (
 	DeleteCustomModelStatusUnspecified DeleteCustomModelStatus = "DELETE_CUSTOM_MODEL_STATUS_UNSPECIFIED"
 	DeleteCustomModelStatusSuccess     DeleteCustomModelStatus = "DELETE_CUSTOM_MODEL_STATUS_SUCCESS"
 	DeleteCustomModelStatusFail        DeleteCustomModelStatus = "DELETE_CUSTOM_MODEL_STATUS_FAIL"
+)
+
+// DeleteModelEvaluationRunStatus represents the status of a delete model evaluation run operation.
+type DeleteModelEvaluationRunStatus string
+
+const (
+	DeleteModelEvaluationRunStatusUnspecified DeleteModelEvaluationRunStatus = "DELETE_MODEL_EVALUATION_RUN_STATUS_UNSPECIFIED"
+	DeleteModelEvaluationRunStatusSuccess     DeleteModelEvaluationRunStatus = "DELETE_MODEL_EVALUATION_RUN_STATUS_SUCCESS"
+	DeleteModelEvaluationRunStatusFail        DeleteModelEvaluationRunStatus = "DELETE_MODEL_EVALUATION_RUN_STATUS_FAIL"
 )
 
 // GradientAIService is an interface for interfacing with the Gradient AI Agent endpoints
@@ -135,6 +146,7 @@ type GradientAIService interface {
 	ImportCustomModel(ctx context.Context, importRequest *CustomModelImportRequest) (*CustomModelImportResponse, *Response, error)
 	DeleteCustomModel(ctx context.Context, uuid string) (*CustomModelDeleteResponse, *Response, error)
 	UpdateCustomModelMetadata(ctx context.Context, uuid string, updateRequest *CustomModelMetadataUpdateRequest) (*CustomModel, *Response, error)
+	DeleteModelEvaluationRun(ctx context.Context, evalRunUUID string) (*ModelEvaluationRunDeleteResponse, *Response, error)
 }
 
 var _ GradientAIService = &GradientAIServiceOp{}
@@ -2173,6 +2185,35 @@ func (s *GradientAIServiceOp) DeleteCustomModel(ctx context.Context, uuid string
 	}
 
 	root := new(CustomModelDeleteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// ModelEvaluationRunDeleteResponse is the response returned by DeleteModelEvaluationRun.
+type ModelEvaluationRunDeleteResponse struct {
+	Status DeleteModelEvaluationRunStatus `json:"status,omitempty"`
+	Error  string                         `json:"error,omitempty"`
+}
+
+// DeleteModelEvaluationRun deletes the model evaluation run with the given UUID.
+// The run must be in a terminal status (successful, partially_successful, failed,
+// or cancelled). For runs still in progress, either wait for the run to finish or
+// cancel it, then retry the delete.
+func (s *GradientAIServiceOp) DeleteModelEvaluationRun(ctx context.Context, evalRunUUID string) (*ModelEvaluationRunDeleteResponse, *Response, error) {
+	if evalRunUUID == "" {
+		return nil, nil, fmt.Errorf("eval run uuid is required")
+	}
+	path := fmt.Sprintf(modelEvaluationRunByIDPath, evalRunUUID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(ModelEvaluationRunDeleteResponse)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err

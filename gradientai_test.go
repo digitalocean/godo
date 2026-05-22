@@ -2935,3 +2935,63 @@ func TestUpdateCustomModelMetadataInvalidURL(t *testing.T) {
 	assert.Nil(t, model)
 	assert.Nil(t, resp)
 }
+
+var deleteModelEvaluationRunResponse = `
+{
+	"status": "DELETE_MODEL_EVALUATION_RUN_STATUS_SUCCESS",
+	"error": ""
+}
+`
+
+func TestDeleteModelEvaluationRun(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/12345678-1234-1234-1234-123456789012", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, deleteModelEvaluationRunResponse)
+	})
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "12345678-1234-1234-1234-123456789012")
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, DeleteModelEvaluationRunStatusSuccess, out.Status)
+	assert.Empty(t, out.Error)
+}
+
+func TestDeleteModelEvaluationRunMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestDeleteModelEvaluationRunServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestDeleteModelEvaluationRunInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
