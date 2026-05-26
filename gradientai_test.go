@@ -3580,16 +3580,39 @@ func TestListModelEvaluationRuns(t *testing.T) {
 
 	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		assert.Equal(t, "preset-uuid", r.URL.Query().Get("eval_preset_uuid"))
-		assert.Equal(t, string(ModelEvaluationRunSuccessful), r.URL.Query().Get("status"))
-		assert.Equal(t, "1", r.URL.Query().Get("page"))
-		assert.Equal(t, "10", r.URL.Query().Get("per_page"))
+		q := r.URL.Query()
+		assert.Equal(t, "preset-uuid", q.Get("eval_preset_uuid"))
+		assert.Equal(t, string(ModelEvaluationRunSuccessful), q.Get("status"))
+		assert.Equal(t, "1", q.Get("page"))
+		assert.Equal(t, "10", q.Get("per_page"))
+		assert.Equal(t, []string{
+			string(ModelEvaluationRunSuccessful),
+			string(ModelEvaluationRunPartiallySuccessful),
+		}, q["statuses"])
+		assert.Equal(t, []string{
+			string(CandidateModelSourceServerless),
+			string(CandidateModelSourceDedicated),
+		}, q["candidate_types"])
+		assert.Equal(t, "needle", q.Get("search"))
+		assert.Equal(t, string(ModelEvaluationRunSortFieldCreatedAt), q.Get("sort_by"))
+		assert.Equal(t, string(ModelEvaluationRunSortDirectionDesc), q.Get("sort_direction"))
 		fmt.Fprint(w, listModelEvaluationRunsResponse)
 	})
 
 	out, resp, err := client.GradientAI.ListModelEvaluationRuns(ctx, &ModelEvaluationRunListOptions{
 		EvalPresetUUID: "preset-uuid",
 		Status:         ModelEvaluationRunSuccessful,
+		Statuses: []ModelEvaluationRunStatus{
+			ModelEvaluationRunSuccessful,
+			ModelEvaluationRunPartiallySuccessful,
+		},
+		CandidateTypes: []CandidateModelSource{
+			CandidateModelSourceServerless,
+			CandidateModelSourceDedicated,
+		},
+		Search:        "needle",
+		SortBy:        ModelEvaluationRunSortFieldCreatedAt,
+		SortDirection: ModelEvaluationRunSortDirectionDesc,
 		ListOptions: ListOptions{
 			Page:    1,
 			PerPage: 10,
@@ -3612,8 +3635,14 @@ func TestListModelEvaluationRunsNoOptions(t *testing.T) {
 
 	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		assert.Empty(t, r.URL.Query().Get("eval_preset_uuid"))
-		assert.Empty(t, r.URL.Query().Get("status"))
+		q := r.URL.Query()
+		assert.Empty(t, q.Get("eval_preset_uuid"))
+		assert.Empty(t, q.Get("status"))
+		assert.Empty(t, q["statuses"])
+		assert.Empty(t, q["candidate_types"])
+		assert.Empty(t, q.Get("search"))
+		assert.Empty(t, q.Get("sort_by"))
+		assert.Empty(t, q.Get("sort_direction"))
 		fmt.Fprint(w, listModelEvaluationRunsResponse)
 	})
 

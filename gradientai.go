@@ -119,6 +119,26 @@ const (
 	CandidateModelSourceRouter     CandidateModelSource = "CANDIDATE_MODEL_SOURCE_ROUTER"
 )
 
+// ModelEvaluationRunSortField is the field used to sort model evaluation run
+// list results.
+type ModelEvaluationRunSortField string
+
+const (
+	ModelEvaluationRunSortFieldUnspecified ModelEvaluationRunSortField = "MODEL_EVALUATION_RUN_SORT_FIELD_UNSPECIFIED"
+	ModelEvaluationRunSortFieldCreatedAt   ModelEvaluationRunSortField = "MODEL_EVALUATION_RUN_SORT_FIELD_CREATED_AT"
+	ModelEvaluationRunSortFieldStatus      ModelEvaluationRunSortField = "MODEL_EVALUATION_RUN_SORT_FIELD_STATUS"
+)
+
+// ModelEvaluationRunSortDirection is the sort direction for model evaluation
+// run list results.
+type ModelEvaluationRunSortDirection string
+
+const (
+	ModelEvaluationRunSortDirectionUnspecified ModelEvaluationRunSortDirection = "SORT_DIRECTION_UNSPECIFIED"
+	ModelEvaluationRunSortDirectionAsc         ModelEvaluationRunSortDirection = "SORT_DIRECTION_ASC"
+	ModelEvaluationRunSortDirectionDesc        ModelEvaluationRunSortDirection = "SORT_DIRECTION_DESC"
+)
+
 // GradientAIService is an interface for interfacing with the Gradient AI Agent endpoints
 // of the DigitalOcean API.
 // See https://docs.digitalocean.com/reference/api/digitalocean/#tag/GradientAI-Platform for more details.
@@ -2601,8 +2621,13 @@ type ModelEvaluationRunResultsDownloadURLResponse struct {
 // ModelEvaluationRunListOptions specifies optional parameters for listing
 // model evaluation runs.
 type ModelEvaluationRunListOptions struct {
-	EvalPresetUUID string                   `url:"eval_preset_uuid,omitempty"`
-	Status         ModelEvaluationRunStatus `url:"status,omitempty"`
+	EvalPresetUUID string                          `url:"eval_preset_uuid,omitempty"`
+	Status         ModelEvaluationRunStatus        `url:"status,omitempty"`
+	Statuses       []ModelEvaluationRunStatus      `url:"statuses,omitempty"`
+	CandidateTypes []CandidateModelSource          `url:"candidate_types,omitempty"`
+	Search         string                          `url:"search,omitempty"`
+	SortBy         ModelEvaluationRunSortField     `url:"sort_by,omitempty"`
+	SortDirection  ModelEvaluationRunSortDirection `url:"sort_direction,omitempty"`
 	ListOptions
 }
 
@@ -2738,8 +2763,10 @@ func (s *GradientAIServiceOp) GetModelEvaluationRunResultsDownloadURL(ctx contex
 	return root, resp, nil
 }
 
-// ListModelEvaluationRuns lists model evaluation runs, optionally filtered by
-// preset UUID and status.
+// ListModelEvaluationRuns lists model evaluation runs. Results can be filtered
+// by preset UUID, status (single or multiple), candidate model source types,
+// and a free-text search across run, candidate model, and dataset names. The
+// result set can also be sorted via SortBy / SortDirection.
 func (s *GradientAIServiceOp) ListModelEvaluationRuns(ctx context.Context, opt *ModelEvaluationRunListOptions) (*ModelEvaluationRunListResponse, *Response, error) {
 	path, err := addOptions(modelEvaluationRunsBasePath, opt)
 	if err != nil {
