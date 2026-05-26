@@ -38,6 +38,9 @@ const (
 	customModelMetadataPath        = customModelsBasePath + "/%s/metadata"
 	modelEvaluationRunsBasePath    = "/v2/gen-ai/model_evaluation_runs"
 	modelEvaluationRunByIDPath     = modelEvaluationRunsBasePath + "/%s"
+	modelEvaluationRunCancelPath   = modelEvaluationRunsBasePath + "/%s/cancel"
+	modelEvaluationPresetsBasePath = "/v2/gen-ai/model_evaluation_presets"
+	modelEvaluationPresetByIDPath  = modelEvaluationPresetsBasePath + "/%s"
 )
 
 // CustomModelStatus represents the status of a custom model.
@@ -88,6 +91,31 @@ const (
 	DeleteModelEvaluationRunStatusUnspecified DeleteModelEvaluationRunStatus = "DELETE_MODEL_EVALUATION_RUN_STATUS_UNSPECIFIED"
 	DeleteModelEvaluationRunStatusSuccess     DeleteModelEvaluationRunStatus = "DELETE_MODEL_EVALUATION_RUN_STATUS_SUCCESS"
 	DeleteModelEvaluationRunStatusFail        DeleteModelEvaluationRunStatus = "DELETE_MODEL_EVALUATION_RUN_STATUS_FAIL"
+)
+
+// ModelEvaluationRunStatus represents the lifecycle status of a model evaluation run.
+type ModelEvaluationRunStatus string
+
+const (
+	ModelEvaluationRunStatusUnspecified   ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_STATUS_UNSPECIFIED"
+	ModelEvaluationRunQueued              ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_QUEUED"
+	ModelEvaluationRunRunningDataset      ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_RUNNING_DATASET"
+	ModelEvaluationRunEvaluatingResults   ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_EVALUATING_RESULTS"
+	ModelEvaluationRunCancelling          ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_CANCELLING"
+	ModelEvaluationRunCancelled           ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_CANCELLED"
+	ModelEvaluationRunSuccessful          ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_SUCCESSFUL"
+	ModelEvaluationRunPartiallySuccessful ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_PARTIALLY_SUCCESSFUL"
+	ModelEvaluationRunFailed              ModelEvaluationRunStatus = "MODEL_EVALUATION_RUN_FAILED"
+)
+
+// CandidateModelSource indicates whether evaluation inference runs against the
+// serverless platform, a dedicated deployment, or a model router.
+type CandidateModelSource string
+
+const (
+	CandidateModelSourceServerless CandidateModelSource = "CANDIDATE_MODEL_SOURCE_SERVERLESS"
+	CandidateModelSourceDedicated  CandidateModelSource = "CANDIDATE_MODEL_SOURCE_DEDICATED"
+	CandidateModelSourceRouter     CandidateModelSource = "CANDIDATE_MODEL_SOURCE_ROUTER"
 )
 
 // GradientAIService is an interface for interfacing with the Gradient AI Agent endpoints
@@ -155,6 +183,8 @@ type GradientAIService interface {
 	DeleteCustomModel(ctx context.Context, uuid string) (*CustomModelDeleteResponse, *Response, error)
 	UpdateCustomModelMetadata(ctx context.Context, uuid string, updateRequest *CustomModelMetadataUpdateRequest) (*CustomModel, *Response, error)
 	DeleteModelEvaluationRun(ctx context.Context, evalRunUUID string) (*ModelEvaluationRunDeleteResponse, *Response, error)
+	DeleteModelEvaluationPreset(ctx context.Context, evalPresetUUID string) (*ModelEvaluationPresetDeleteResponse, *Response, error)
+	CancelModelEvaluationRun(ctx context.Context, evalRunUUID string) (*ModelEvaluationRunCancelResponse, *Response, error)
 }
 
 var _ GradientAIService = &GradientAIServiceOp{}
@@ -2436,6 +2466,39 @@ type ModelEvaluationRunDeleteResponse struct {
 	Error  string                         `json:"error,omitempty"`
 }
 
+// ModelEvaluationRunSummary is a lightweight view of an evaluation run used in
+// run history listings and the cancel response.
+type ModelEvaluationRunSummary struct {
+	CandidateModelName   string                   `json:"candidate_model_name,omitempty"`
+	CandidateModelSource CandidateModelSource     `json:"candidate_model_source,omitempty"`
+	CandidateModelUuid   string                   `json:"candidate_model_uuid,omitempty"`
+	CreatedAt            *Timestamp               `json:"created_at,omitempty"`
+	DatasetName          string                   `json:"dataset_name,omitempty"`
+	DatasetUuid          string                   `json:"dataset_uuid,omitempty"`
+	EvalRunUuid          string                   `json:"eval_run_uuid,omitempty"`
+	JudgeModelName       string                   `json:"judge_model_name,omitempty"`
+	JudgeModelUuid       string                   `json:"judge_model_uuid,omitempty"`
+	Name                 string                   `json:"name,omitempty"`
+	Status               ModelEvaluationRunStatus `json:"status,omitempty"`
+}
+
+// CancelModelEvaluationRunRequest represents the request payload for cancelling
+// a model evaluation run.
+type CancelModelEvaluationRunRequest struct {
+	EvalRunUUID string `json:"eval_run_uuid"`
+}
+
+// ModelEvaluationRunCancelResponse is the response returned by CancelModelEvaluationRun.
+type ModelEvaluationRunCancelResponse struct {
+	Run *ModelEvaluationRunSummary `json:"run,omitempty"`
+}
+
+// ModelEvaluationPresetDeleteResponse is the response returned by
+// DeleteModelEvaluationPreset. The underlying API returns an empty object on
+// success; this struct exists for forward compatibility and to keep the SDK
+// signature consistent with sibling delete operations.
+type ModelEvaluationPresetDeleteResponse struct{}
+
 // DeleteModelEvaluationRun deletes the model evaluation run with the given UUID.
 // The run must be in a terminal status (successful, partially_successful, failed,
 // or cancelled). For runs still in progress, either wait for the run to finish or
@@ -2452,6 +2515,55 @@ func (s *GradientAIServiceOp) DeleteModelEvaluationRun(ctx context.Context, eval
 	}
 
 	root := new(ModelEvaluationRunDeleteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// DeleteModelEvaluationPreset deletes the saved model evaluation preset with
+// the given UUID.
+func (s *GradientAIServiceOp) DeleteModelEvaluationPreset(ctx context.Context, evalPresetUUID string) (*ModelEvaluationPresetDeleteResponse, *Response, error) {
+	if evalPresetUUID == "" {
+		return nil, nil, fmt.Errorf("eval preset uuid is required")
+	}
+	path := fmt.Sprintf(modelEvaluationPresetByIDPath, evalPresetUUID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(ModelEvaluationPresetDeleteResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// CancelModelEvaluationRun cancels an in-progress model evaluation run. The run
+// must be in a non-terminal status (queued, running_dataset, or
+// evaluating_results); already-terminal runs return an error. The returned
+// summary's status is `cancelling` while the underlying workflow is being torn
+// down and transitions to `cancelled` once cluster-side teardown completes.
+func (s *GradientAIServiceOp) CancelModelEvaluationRun(ctx context.Context, evalRunUUID string) (*ModelEvaluationRunCancelResponse, *Response, error) {
+	if evalRunUUID == "" {
+		return nil, nil, fmt.Errorf("eval run uuid is required")
+	}
+	path := fmt.Sprintf(modelEvaluationRunCancelPath, evalRunUUID)
+
+	cancelRequest := &CancelModelEvaluationRunRequest{
+		EvalRunUUID: evalRunUUID,
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, cancelRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(ModelEvaluationRunCancelResponse)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
