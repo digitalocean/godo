@@ -4810,3 +4810,72 @@ func TestDatabases_GetKafkaSchemaRegistrySubjectConfig(t *testing.T) {
 	require.Equal(t, subjectName, resp.SubjectName)
 	require.Equal(t, "FULL", resp.CompatibilityLevel)
 }
+
+func TestDatabases_UpdateStorageAutoscale(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/autoscale", dbID)
+
+	thresholdPercent := 80
+	incrementGib := uint64(10)
+
+	autoscaleConfig := &DatabaseStorageAutoscale{
+		Enabled:          true,
+		ThresholdPercent: &thresholdPercent,
+		IncrementGib:     &incrementGib,
+	}
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		var b databaseStorageAutoscaleRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, autoscaleConfig, b.StorageAutoscale)
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateStorageAutoscale(ctx, dbID, autoscaleConfig)
+	require.NoError(t, err)
+}
+
+func TestDatabases_GetStorageAutoscale(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+
+	path := fmt.Sprintf("/v2/databases/%s/autoscale", dbID)
+
+	thresholdPercent := 80
+	incrementGib := uint64(10)
+
+	want := &DatabaseStorageAutoscale{
+		Enabled:          true,
+		ThresholdPercent: &thresholdPercent,
+		IncrementGib:     &incrementGib,
+	}
+
+	body := `{
+		"storage": {
+			"enabled": true,
+			"threshold_percent": 80,
+			"increment_gib": 10
+		}
+	}`
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetStorageAutoscale(ctx, dbID)
+	require.NoError(t, err)
+	assert.Equal(t, want, got)
+}
