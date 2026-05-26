@@ -2995,3 +2995,143 @@ func TestDeleteModelEvaluationRunInvalidURL(t *testing.T) {
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
 }
+
+func TestDeleteModelEvaluationPreset(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_presets/12345678-1234-1234-1234-123456789012", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, `{}`)
+	})
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "12345678-1234-1234-1234-123456789012")
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestDeleteModelEvaluationPresetMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestDeleteModelEvaluationPresetServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_presets/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		http.Error(w, `{"id":"not_found","message":"evaluation preset not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestDeleteModelEvaluationPresetInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+var cancelModelEvaluationRunResponse = `
+{
+	"run": {
+		"eval_run_uuid": "12345678-1234-1234-1234-123456789012",
+		"name": "my-eval-run",
+		"status": "MODEL_EVALUATION_RUN_CANCELLING",
+		"candidate_model_uuid": "00000000-0000-0000-0000-000000000001",
+		"candidate_model_name": "candidate-model",
+		"candidate_model_source": "CANDIDATE_MODEL_SOURCE_SERVERLESS",
+		"judge_model_uuid": "00000000-0000-0000-0000-000000000002",
+		"judge_model_name": "judge-model",
+		"dataset_uuid": "00000000-0000-0000-0000-000000000003",
+		"dataset_name": "eval-dataset",
+		"created_at": "2025-05-08T03:37:28Z"
+	}
+}
+`
+
+func TestCancelModelEvaluationRun(t *testing.T) {
+	setup()
+	defer teardown()
+
+	evalRunUUID := "12345678-1234-1234-1234-123456789012"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/model_evaluation_runs/%s/cancel", evalRunUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		v := new(CancelModelEvaluationRunRequest)
+		if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+			t.Errorf("Error decoding request body: %v", err)
+		}
+		assert.Equal(t, evalRunUUID, v.EvalRunUUID)
+
+		fmt.Fprint(w, cancelModelEvaluationRunResponse)
+	})
+
+	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, evalRunUUID)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.NotNil(t, out.Run)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	run := out.Run
+	assert.Equal(t, evalRunUUID, run.EvalRunUuid)
+	assert.Equal(t, "my-eval-run", run.Name)
+	assert.Equal(t, ModelEvaluationRunCancelling, run.Status)
+	assert.Equal(t, "candidate-model", run.CandidateModelName)
+	assert.Equal(t, CandidateModelSourceServerless, run.CandidateModelSource)
+	assert.Equal(t, "judge-model", run.JudgeModelName)
+	assert.Equal(t, "eval-dataset", run.DatasetName)
+	assert.NotNil(t, run.CreatedAt)
+}
+
+func TestCancelModelEvaluationRunMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestCancelModelEvaluationRunServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/99999999-9999-9999-9999-999999999999/cancel", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestCancelModelEvaluationRunInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
