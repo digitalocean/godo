@@ -7,7 +7,7 @@
 - #1016 - @ritheek-pitti-do - Added Cancel Eval and DeletePreset Endpoints
 - #1014 - @venkatranabothu - Add Delete Model Evaluation Run API support
 - #1013 - @d-honeybadger - add worker_subnet_uuid field to doks methods
-- #1012 - @sshirolkar - add pricing for non-token based models in godo
+- #1012 - @sshirolkar - add pricing for non-token based models in godo 
 
 ## [1.192.0] - 2026-05-19
 
