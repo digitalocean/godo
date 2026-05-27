@@ -94,13 +94,13 @@ const (
 type HostedAgentHITLActionKind string
 
 const (
-	HostedAgentHITLActionUnspecified              HostedAgentHITLActionKind = "HITL_ACTION_KIND_UNSPECIFIED"
-	HostedAgentHITLActionBash                     HostedAgentHITLActionKind = "HITL_ACTION_BASH"
+	HostedAgentHITLActionUnspecified               HostedAgentHITLActionKind = "HITL_ACTION_KIND_UNSPECIFIED"
+	HostedAgentHITLActionBash                      HostedAgentHITLActionKind = "HITL_ACTION_BASH"
 	HostedAgentHITLActionFileWriteOutsideWorkspace HostedAgentHITLActionKind = "HITL_ACTION_FILE_WRITE_OUTSIDE_WORKSPACE"
-	HostedAgentHITLActionGitHubCommitPush         HostedAgentHITLActionKind = "HITL_ACTION_GITHUB_COMMIT_PUSH"
-	HostedAgentHITLActionGitHubCreatePR           HostedAgentHITLActionKind = "HITL_ACTION_GITHUB_CREATE_PR"
-	HostedAgentHITLActionGitHubBranchDelete       HostedAgentHITLActionKind = "HITL_ACTION_GITHUB_BRANCH_DELETE"
-	HostedAgentHITLActionGitHubForcePush          HostedAgentHITLActionKind = "HITL_ACTION_GITHUB_FORCE_PUSH"
+	HostedAgentHITLActionGitHubCommitPush          HostedAgentHITLActionKind = "HITL_ACTION_GITHUB_COMMIT_PUSH"
+	HostedAgentHITLActionGitHubCreatePR            HostedAgentHITLActionKind = "HITL_ACTION_GITHUB_CREATE_PR"
+	HostedAgentHITLActionGitHubBranchDelete        HostedAgentHITLActionKind = "HITL_ACTION_GITHUB_BRANCH_DELETE"
+	HostedAgentHITLActionGitHubForcePush           HostedAgentHITLActionKind = "HITL_ACTION_GITHUB_FORCE_PUSH"
 )
 
 // HostedAgentHITLOutcome is the user's decision on a HITL request.
@@ -163,15 +163,15 @@ const (
 
 // HostedAgentSession is a provisioned hosted-agent sandbox session.
 type HostedAgentSession struct {
-	SessionID    string                                          `json:"session_id"`
-	TeamID       uint64                                          `json:"team_id"`
-	AgentKind    HostedAgentKind                                 `json:"agent_kind"`
-	Status       HostedAgentSessionStatus                        `json:"status"`
-	SandboxID    string                                          `json:"sandbox_id,omitempty"`
-	CreatedAt    Timestamp                                       `json:"created_at"`
-	LastEventAt  Timestamp                                       `json:"last_event_at"`
-	RepoHint     string                                          `json:"repo_hint,omitempty"`
-	ProviderAuth map[string]HostedAgentProviderAuthState         `json:"provider_auth,omitempty"`
+	SessionID    string                                  `json:"session_id"`
+	TeamID       uint64                                  `json:"team_id"`
+	AgentKind    HostedAgentKind                         `json:"agent_kind"`
+	Status       HostedAgentSessionStatus                `json:"status"`
+	SandboxID    string                                  `json:"sandbox_id,omitempty"`
+	CreatedAt    Timestamp                               `json:"created_at"`
+	LastEventAt  Timestamp                               `json:"last_event_at"`
+	RepoHint     string                                  `json:"repo_hint,omitempty"`
+	ProviderAuth map[string]HostedAgentProviderAuthState `json:"provider_auth,omitempty"`
 }
 
 // HostedAgentRun represents a single execution within a session.
@@ -190,18 +190,18 @@ type HostedAgentHITLRequest struct {
 	SessionID string                    `json:"session_id"`
 	RunID     string                    `json:"run_id"`
 	Action    HostedAgentHITLActionKind `json:"action"`
-	Details   map[string]interface{}  `json:"details,omitempty"`
+	Details   map[string]interface{}    `json:"details,omitempty"`
 	Workdir   string                    `json:"workdir,omitempty"`
 	Deadline  *Timestamp                `json:"deadline,omitempty"`
 }
 
 // HostedAgentHITLDecision records a resolved HITL request.
 type HostedAgentHITLDecision struct {
-	RequestID string                      `json:"request_id"`
-	Outcome   HostedAgentHITLOutcome      `json:"outcome"`
-	Actor     string                      `json:"actor,omitempty"`
-	At        Timestamp                   `json:"at"`
-	Reason    string                      `json:"reason,omitempty"`
+	RequestID string                 `json:"request_id"`
+	Outcome   HostedAgentHITLOutcome `json:"outcome"`
+	Actor     string                 `json:"actor,omitempty"`
+	At        Timestamp              `json:"at"`
+	Reason    string                 `json:"reason,omitempty"`
 }
 
 // HostedAgentEvent is one SSE payload from GET /v2/agents/sessions/{id}/stream.

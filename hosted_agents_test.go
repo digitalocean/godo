@@ -12,14 +12,14 @@ import (
 )
 
 var hostedAgentSession = HostedAgentSession{
-	SessionID: "sess-abc123",
-	TeamID:    42,
-	AgentKind: HostedAgentKindClaudeCode,
-	Status:    HostedAgentSessionStatusReady,
-	SandboxID: "sandbox-xyz",
-	CreatedAt: Timestamp{Time: time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)},
+	SessionID:   "sess-abc123",
+	TeamID:      42,
+	AgentKind:   HostedAgentKindClaudeCode,
+	Status:      HostedAgentSessionStatusReady,
+	SandboxID:   "sandbox-xyz",
+	CreatedAt:   Timestamp{Time: time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)},
 	LastEventAt: Timestamp{Time: time.Date(2026, 3, 1, 12, 5, 0, 0, time.UTC)},
-	RepoHint:  "digitalocean/godo",
+	RepoHint:    "digitalocean/godo",
 	ProviderAuth: map[string]HostedAgentProviderAuthState{
 		"github": HostedAgentProviderAuthStateAuthorized,
 	},
