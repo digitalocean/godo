@@ -731,6 +731,62 @@ func TestApps_GetLogs_component(t *testing.T) {
 	assert.NotEmpty(t, logs.LiveURL)
 }
 
+// TestAppIngressSpecRuleMatchAuthorityJSON ensures ingress rule match JSON from the API
+// decodes authority and path prefix fields as expected, including empty strings.
+func TestAppIngressSpecRuleMatchAuthorityJSON(t *testing.T) {
+	exactEmpty := ""
+	exactDomain := "example.com"
+	pathSlash := "/"
+	pathEmpty := ""
+
+	tests := []struct {
+		name  string
+		input string
+		want  AppIngressSpecRuleMatch
+	}{
+		{
+			name:  "authority with empty exact string",
+			input: `{"path":{"prefix":"/"},"authority":{"exact":""}}`,
+			want: AppIngressSpecRuleMatch{
+				Path:      &AppIngressSpecRuleStringMatch{Prefix: &pathSlash},
+				Authority: &AppIngressSpecRuleStringMatch{Exact: &exactEmpty},
+			},
+		},
+		{
+			name:  "authority with non-empty exact string",
+			input: `{"path":{"prefix":"/"},"authority":{"exact":"example.com"}}`,
+			want: AppIngressSpecRuleMatch{
+				Path:      &AppIngressSpecRuleStringMatch{Prefix: &pathSlash},
+				Authority: &AppIngressSpecRuleStringMatch{Exact: &exactDomain},
+			},
+		},
+		{
+			name:  "no authority set",
+			input: `{"path":{"prefix":"/"}}`,
+			want: AppIngressSpecRuleMatch{
+				Path:      &AppIngressSpecRuleStringMatch{Prefix: &pathSlash},
+				Authority: nil,
+			},
+		},
+		{
+			name:  "authority with empty exact string and empty path prefix",
+			input: `{"path":{"prefix":""},"authority":{"exact":""}}`,
+			want: AppIngressSpecRuleMatch{
+				Path:      &AppIngressSpecRuleStringMatch{Prefix: &pathEmpty},
+				Authority: &AppIngressSpecRuleStringMatch{Exact: &exactEmpty},
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var got AppIngressSpecRuleMatch
+			err := json.Unmarshal([]byte(tc.input), &got)
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
 func TestApps_ListRegions(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1377,4 +1433,130 @@ func TestApps_GetJobInvocationLogs(t *testing.T) {
 	jobInvocationLogs, _, err := client.Apps.GetJobInvocationLogs(ctx, testApp.ID, testJobInvocation.ID, opts)
 	require.NoError(t, err)
 	assert.NotEmpty(t, jobInvocationLogs.LiveURL)
+}
+
+func TestApps_CancelJobInvocation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+	opts := &CancelJobInvocationOptions{
+		JobName: "job-name",
+	}
+	jobInvocationId := testJobInvocation.ID
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/job-invocations/%s/cancel", testApp.ID, jobInvocationId), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		assert.Equal(t, opts.JobName, r.URL.Query().Get("job_name"))
+
+		if jobInvocationId == testJobInvocation.ID {
+			json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &testJobInvocation})
+		} else {
+			json.NewEncoder(w).Encode(&jobInvocationRoot{JobInvocation: &JobInvocation{}})
+		}
+	})
+	jobInvocation, _, err := client.Apps.CancelJobInvocation(ctx, testApp.ID, jobInvocationId, opts)
+	require.NoError(t, err)
+	assert.Equal(t, &testJobInvocation, jobInvocation)
+}
+
+func TestApps_ListEvents(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	testEvent := Event{
+		ID:           "event-uuid",
+		Type:         EVENTTYPE_Autoscaling,
+		DeploymentID: "08f10d33-94c3-4492-b9a3-1603e9ab7fe4",
+	}
+
+	opts := &ListEventsOptions{
+		Page:    1,
+		PerPage: 10,
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/events", testApp.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "1", r.URL.Query().Get("page"))
+		assert.Equal(t, "10", r.URL.Query().Get("per_page"))
+		json.NewEncoder(w).Encode(&eventsRoot{Events: []*Event{&testEvent}, Meta: &Meta{Total: 1}, Links: &Links{}})
+	})
+
+	events, resp, err := client.Apps.ListEvents(ctx, testApp.ID, opts)
+	require.NoError(t, err)
+	assert.Equal(t, []*Event{&testEvent}, events)
+	assert.Equal(t, 1, resp.Meta.Total)
+}
+
+func TestApps_CancelEvent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	testEvent := Event{
+		ID:           "event-uuid",
+		Type:         EVENTTYPE_Autoscaling,
+		DeploymentID: "08f10d33-94c3-4492-b9a3-1603e9ab7fe4",
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/events/%s/cancel", testApp.ID, testEvent.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		json.NewEncoder(w).Encode(&eventRoot{Event: &testEvent})
+	})
+
+	event, _, err := client.Apps.CancelEvent(ctx, testApp.ID, testEvent.ID)
+	require.NoError(t, err)
+	assert.Equal(t, &testEvent, event)
+}
+
+func TestApps_GetEvent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	testEvent := Event{
+		ID:           "event-uuid",
+		Type:         EVENTTYPE_Autoscaling,
+		DeploymentID: "08f10d33-94c3-4492-b9a3-1603e9ab7fe4",
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/events/%s", testApp.ID, testEvent.ID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		json.NewEncoder(w).Encode(&eventRoot{Event: &testEvent})
+	})
+
+	event, _, err := client.Apps.GetEvent(ctx, testApp.ID, testEvent.ID)
+	require.NoError(t, err)
+	assert.Equal(t, &testEvent, event)
+}
+
+func TestApps_GetEventLogs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ctx := context.Background()
+
+	eventID := "event-uuid"
+
+	opts := &GetEventLogsOptions{
+		Follow:    true,
+		TailLines: 10,
+	}
+
+	mux.HandleFunc(fmt.Sprintf("/v2/apps/%s/events/%s/logs", testApp.ID, eventID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "AUTOSCALE_EVENT", r.URL.Query().Get("type"))
+		assert.Equal(t, "true", r.URL.Query().Get("follow"))
+		assert.Equal(t, "10", r.URL.Query().Get("tail_lines"))
+		json.NewEncoder(w).Encode(&AppLogs{LiveURL: "https://logs.example.com/event"})
+	})
+
+	logs, _, err := client.Apps.GetEventLogs(ctx, testApp.ID, eventID, opts)
+	require.NoError(t, err)
+	assert.NotEmpty(t, logs.LiveURL)
 }

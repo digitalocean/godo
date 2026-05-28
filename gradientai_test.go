@@ -3,10 +3,12 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var listAgentResponse = `
@@ -391,6 +393,7 @@ var listAvailableModelsResponse = `
 		{
 			"uuid": "00000000-0000-0000-0000-000000000000",
 			"name": "Llama 3.3 Instruct (70B)",
+			"description": "An advanced language model with greater capabilities due to its larger size.",
 			"version": {
 				"major": 1
 			},
@@ -404,7 +407,16 @@ var listAvailableModelsResponse = `
 				"name": "Meta Llama 3.3 Community License",
 				"description": "Meta Llama 3.3 is licensed under the Meta Llama 3.3 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved. By purchasing, deploying, accessing, or using this model, you agree to comply with the",
 				"url": "https://www.llama.com/llama3_3/license/"
-			}
+			},
+			"model_availability": "SERVERLESS",
+			"context_window": "131072",
+			"capabilities": ["inference", "chat"],
+			"modalities": {
+				"input": ["text"],
+				"output": ["text"]
+			},
+			"parameter_count": 70.0,
+			"type": "chat"
 		}
 	],
 	"links": {
@@ -421,6 +433,70 @@ var listAvailableModelsResponse = `
 	}
 }
 `
+
+var listInferenceRoutersResponse = `
+{
+	"model_routers": [
+		{
+			"uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+			"name": "router-one",
+			"description": "Test router for routing prompts."
+		}
+	],
+	"meta": {
+		"total": 1,
+		"page": 1,
+		"pages": 1
+	}
+}
+`
+
+var listInferenceRouterTaskPresetsResponse = `
+{
+	"tasks": [
+		{
+			"task_slug": "translation",
+			"name": "Translation",
+			"category": "general",
+			"description": "Translate text between languages.",
+			"models": ["openai-gpt-oss-120b"],
+			"tags": ["general"]
+		},
+		{
+			"task_slug": "code-generation",
+			"name": "Code Generation",
+			"category": "software-engineering",
+			"description": "Generate code from natural language.",
+			"models": ["openai-gpt-oss-120b", "anthropic-claude-3-5-sonnet"],
+			"tags": ["code"]
+		}
+	],
+	"meta": {
+		"total": 2,
+		"page": 1,
+		"pages": 1
+	}
+}
+`
+
+var getInferenceRouterResponse = `
+{
+	"model_router": {
+		"uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		"name": "router-one",
+		"description": "Router used for unit tests.",
+		"created_at": "2025-06-01T12:00:00Z",
+		"updated_at": "2025-06-02T15:30:00Z",
+		"config": {
+			"fallback_models": ["openai-gpt-4"],
+			"policies": [
+				{"task_slug": "code-generation", "models": ["llama3"], "selection_policy": {"prefer": "fastest"}}
+			]
+		}
+	}
+}
+`
+
 var listAPIKeysResponse = `
 {
     "api_key_infos": [
@@ -1057,7 +1133,7 @@ func TestListAgents(t *testing.T) {
 		PerPage: 1,
 	}
 
-	agents, resp, err := client.GenAI.ListAgents(ctx, req)
+	agents, resp, err := client.GradientAI.ListAgents(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListAgents returned error: %v", err)
 	}
@@ -1092,9 +1168,10 @@ func TestCreateAgent(t *testing.T) {
 		ProjectId:         "00000000-0000-0000-0000-000000000000",
 		Region:            "tor1",
 		Tags:              []string{"string"},
+		WorkspaceUuid:     "00000000-0000-0000-0000-000000000000",
 	}
 
-	res, _, err := client.GenAI.CreateAgent(ctx, req)
+	res, _, err := client.GradientAI.CreateAgent(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.Create returned error: %v", err)
 	}
@@ -1112,7 +1189,7 @@ func TestListAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GenAI.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	keys, resp, err := client.GradientAI.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -1136,7 +1213,7 @@ func TestCreateAPIKey(t *testing.T) {
 		Name:      "Key One",
 	}
 
-	key, resp, err := client.GenAI.CreateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
+	key, resp, err := client.GradientAI.CreateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1158,7 +1235,7 @@ func TestUpdateAPIKey(t *testing.T) {
 		Name:       "Key One",
 	}
 
-	key, resp, err := client.GenAI.UpdateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	key, resp, err := client.GradientAI.UpdateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1174,7 +1251,7 @@ func TestDeleteAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.DeleteAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	key, resp, err := client.GradientAI.DeleteAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1190,7 +1267,7 @@ func TestRegenerateAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.RegenerateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	key, resp, err := client.GradientAI.RegenerateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1206,7 +1283,7 @@ func TestGetAgent(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
+	res, resp, err := client.GradientAI.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
 	if err != nil {
 		t.Errorf("GenAI.Get returned error: %v", err)
 	}
@@ -1226,7 +1303,7 @@ func TestDeleteAgent(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.DeleteAgent(ctx, "def5d52c-30c5-11f0-bf8f-4e013e2ddde4")
+	res, resp, err := client.GradientAI.DeleteAgent(ctx, "def5d52c-30c5-11f0-bf8f-4e013e2ddde4")
 	if err != nil {
 		t.Errorf("GenAI.Delete returned error: %v", err)
 	}
@@ -1248,7 +1325,7 @@ func TestUpdateAgent(t *testing.T) {
 		Tags: []string{"updated", "example"},
 	}
 
-	res, resp, err := client.GenAI.UpdateAgent(ctx, "00000000-0000-0000-0000-000000000000", req)
+	res, resp, err := client.GradientAI.UpdateAgent(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.Update returned error: %v", err)
 	}
@@ -1271,7 +1348,7 @@ func TestUpdateAgentVisibility(t *testing.T) {
 		Visibility: "VISIBILITY_PRIVATE",
 	}
 
-	res, resp, err := client.GenAI.UpdateAgentVisibility(ctx, "00000000-0000-0000-0000-000000000000", req)
+	res, resp, err := client.GradientAI.UpdateAgentVisibility(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateVisibility returned error: %v", err)
 	}
@@ -1300,7 +1377,7 @@ func TestListKnowledgeBases(t *testing.T) {
 		PerPage: 1,
 	}
 
-	knowledgeBases, resp, err := client.GenAI.ListKnowledgeBases(ctx, req)
+	knowledgeBases, resp, err := client.GradientAI.ListKnowledgeBases(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListKnowledgeBases returned error: %v", err)
 	}
@@ -1328,7 +1405,7 @@ func TestListIndexingJobs(t *testing.T) {
 		PerPage: 2,
 	}
 
-	result, resp, err := client.GenAI.ListIndexingJobs(ctx, req)
+	result, resp, err := client.GradientAI.ListIndexingJobs(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListIndexingJobs returned error: %v", err)
 	}
@@ -1356,7 +1433,7 @@ func TestListIndexingJobDataSources(t *testing.T) {
 		fmt.Fprint(w, indexingJobDataSourcesResponse)
 	})
 
-	result, resp, err := client.GenAI.ListIndexingJobDataSources(ctx, indexingJobUUID)
+	result, resp, err := client.GradientAI.ListIndexingJobDataSources(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.ListIndexingJobDataSources returned error: %v", err)
 	}
@@ -1400,7 +1477,7 @@ func TestGetIndexingJob(t *testing.T) {
 		fmt.Fprint(w, indexingJobResponse)
 	})
 
-	result, resp, err := client.GenAI.GetIndexingJob(ctx, indexingJobUUID)
+	result, resp, err := client.GradientAI.GetIndexingJob(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.GetIndexingJob returned error: %v", err)
 	}
@@ -1452,7 +1529,7 @@ func TestCancelIndexingJob(t *testing.T) {
 		fmt.Fprint(w, cancelIndexingJobResponse)
 	})
 
-	result, resp, err := client.GenAI.CancelIndexingJob(ctx, indexingJobUUID)
+	result, resp, err := client.GradientAI.CancelIndexingJob(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.CancelIndexingJob returned error: %v", err)
 	}
@@ -1504,7 +1581,7 @@ func TestCreateKnowledgeBase(t *testing.T) {
 		},
 	}
 
-	res, _, err := client.GenAI.CreateKnowledgeBase(ctx, req)
+	res, _, err := client.GradientAI.CreateKnowledgeBase(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.CreateKnowledgeBase returned error: %v", err)
 	}
@@ -1534,7 +1611,7 @@ func TestListDataSources(t *testing.T) {
 		PerPage: 1,
 	}
 
-	dataSources, resp, err := client.GenAI.ListKnowledgeBaseDataSources(ctx, "11111111-1111-1111-1111-111111111111", req)
+	dataSources, resp, err := client.GradientAI.ListKnowledgeBaseDataSources(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.ListDataSources returned error: %v", err)
 	}
@@ -1561,7 +1638,7 @@ func TestAddDataSource(t *testing.T) {
 		},
 	}
 
-	res, _, err := client.GenAI.AddKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", req)
+	res, _, err := client.GradientAI.AddKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.AddDataSource returned error: %v", err)
 	}
@@ -1579,7 +1656,7 @@ func TestDeleteDataSource(t *testing.T) {
 		fmt.Fprint(w, deleteDataSourceResponse)
 	})
 
-	kbUUID, dsUUID, resp, err := client.GenAI.DeleteKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222")
+	kbUUID, dsUUID, resp, err := client.GradientAI.DeleteKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222")
 	if err != nil {
 		t.Errorf("GenAI.DeleteDataSource returned error: %v", err)
 	}
@@ -1598,7 +1675,7 @@ func TestGetKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, knowledgeBaseGetResponse)
 	})
 
-	res, dbStatus, resp, err := client.GenAI.GetKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
+	res, dbStatus, resp, err := client.GradientAI.GetKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.GetKnowledgeBase returned error: %v", err)
 	}
@@ -1623,7 +1700,7 @@ func TestUpdateKnowledgeBase(t *testing.T) {
 		Tags: []string{"updated", "example"},
 	}
 
-	res, resp, err := client.GenAI.UpdateKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111", req)
+	res, resp, err := client.GradientAI.UpdateKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateKnowledgeBase returned error: %v", err)
 	}
@@ -1643,7 +1720,7 @@ func TestDeleteKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, deleteKnowledgeBaseResponse)
 	})
 
-	kbUUID, resp, err := client.GenAI.DeleteKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
+	kbUUID, resp, err := client.GradientAI.DeleteKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.DeleteKnowledgeBase returned error: %v", err)
 	}
@@ -1661,7 +1738,7 @@ func TestAttachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.AttachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.GradientAI.AttachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.AttachKnowledgBase returned error: %v", err)
 	}
@@ -1679,7 +1756,7 @@ func TestDetachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GenAI.DetachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.GradientAI.DetachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	fmt.Print(res)
 	fmt.Print(resp)
 
@@ -1711,7 +1788,7 @@ func TestAddAgentRoute(t *testing.T) {
 		RouteName:       "weather route app",
 	}
 
-	res, resp, err := client.GenAI.AddAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
+	res, resp, err := client.GradientAI.AddAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
 	if err != nil {
 		t.Errorf("GenAI.AddAgentRoute returned error: %v", err)
 	}
@@ -1729,7 +1806,7 @@ func TestDeleteAgentRoute(t *testing.T) {
 		fmt.Fprint(w, agentRouteResponse)
 	})
 
-	res, resp, err := client.GenAI.DeleteAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001")
+	res, resp, err := client.GradientAI.DeleteAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001")
 	if err != nil {
 		t.Errorf("GenAI.DeleteAgentRoute returned error: %v", err)
 	}
@@ -1754,7 +1831,7 @@ func TestUpdateAgentRoute(t *testing.T) {
 		RouteName:       "weather route app",
 	}
 
-	res, resp, err := client.GenAI.UpdateAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
+	res, resp, err := client.GradientAI.UpdateAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateAgentRoute returned error: %v", err)
 	}
@@ -1772,7 +1849,7 @@ func TestListVersions(t *testing.T) {
 		fmt.Fprint(w, listAgentVersionsResponse)
 	})
 
-	versions, resp, err := client.GenAI.ListAgentVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	versions, resp, err := client.GradientAI.ListAgentVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	if err != nil {
 		t.Errorf("GenAI.ListAgentVersions returned error: %v", err)
 	}
@@ -1791,7 +1868,7 @@ func TestRollbackVersion(t *testing.T) {
 		fmt.Fprint(w, rollbackResponse)
 	})
 
-	versions, resp, err := client.GenAI.RollbackAgentVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
+	versions, resp, err := client.GradientAI.RollbackAgentVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
 	if err != nil {
 		t.Errorf("GenAI.RollbackVersion returned error: %v", err)
 	}
@@ -1809,7 +1886,7 @@ func TestListAnthropicAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listAnthropicAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GenAI.ListAnthropicAPIKeys(ctx, nil)
+	keys, resp, err := client.GradientAI.ListAnthropicAPIKeys(ctx, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -1833,7 +1910,7 @@ func TestCreateAnthropicAPIKey(t *testing.T) {
 		ApiKey: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GenAI.CreateAnthropicAPIKey(ctx, req)
+	key, resp, err := client.GradientAI.CreateAnthropicAPIKey(ctx, req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1849,7 +1926,7 @@ func TestGetAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.GetAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.GradientAI.GetAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1871,7 +1948,7 @@ func TestUpdateAnthropicAPIKey(t *testing.T) {
 		ApiKeyUuid: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GenAI.UpdateAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
+	key, resp, err := client.GradientAI.UpdateAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1887,7 +1964,7 @@ func TestDeleteAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.DeleteAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.GradientAI.DeleteAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1903,7 +1980,7 @@ func TestListAgentsByAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, listAgentsByAnthropicAPIKeyResponse)
 	})
 
-	agents, resp, err := client.GenAI.ListAgentsByAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	agents, resp, err := client.GradientAI.ListAgentsByAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(agents))
@@ -1926,7 +2003,7 @@ func TestListOpenAIAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listOpenAIAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GenAI.ListOpenAIAPIKeys(ctx, nil)
+	keys, resp, err := client.GradientAI.ListOpenAIAPIKeys(ctx, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -1950,7 +2027,7 @@ func TestCreateOpenAIAPIKey(t *testing.T) {
 		ApiKey: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GenAI.CreateOpenAIAPIKey(ctx, req)
+	key, resp, err := client.GradientAI.CreateOpenAIAPIKey(ctx, req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -1966,7 +2043,7 @@ func TestGetOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, openaiAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.GetOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.GradientAI.GetOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -1988,7 +2065,7 @@ func TestUpdateOpenAIAPIKey(t *testing.T) {
 		ApiKeyUuid: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GenAI.UpdateOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
+	key, resp, err := client.GradientAI.UpdateOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -2004,7 +2081,7 @@ func TestDeleteOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, openaiAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GenAI.DeleteOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.GradientAI.DeleteOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -2020,7 +2097,7 @@ func TestListAgentsByOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, listAgentsByOpenAIAPIKeyResponse)
 	})
 
-	agents, resp, err := client.GenAI.ListAgentsByOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	agents, resp, err := client.GradientAI.ListAgentsByOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(agents))
@@ -2094,7 +2171,7 @@ func TestCreateFunctionRoute(t *testing.T) {
 }`),
 	}
 
-	agent, res, err := client.GenAI.CreateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", req)
+	agent, res, err := client.GradientAI.CreateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.Create returned error: %v", err)
 	}
@@ -2150,7 +2227,7 @@ func TestUpdateFunctionRoute(t *testing.T) {
         }`),
 	}
 
-	agent, resp, err := client.GenAI.UpdateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	agent, resp, err := client.GradientAI.UpdateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, req.Description, agent.Functions[0].Description)
@@ -2166,9 +2243,165 @@ func TestDeleteFunctionRoute(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	_, resp, err := client.GenAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	_, resp, err := client.GradientAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestListInferenceRouters(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "10",
+		})
+		fmt.Fprint(w, listInferenceRoutersResponse)
+	})
+
+	routers, resp, err := client.GradientAI.ListInferenceRouters(ctx, &ListOptions{Page: 1, PerPage: 10})
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.Len(t, routers, 1)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", routers[0].UUID)
+	assert.Equal(t, "router-one", routers[0].Name)
+	assert.Equal(t, "Test router for routing prompts.", routers[0].Description)
+	assert.NotNil(t, resp.Meta)
+	assert.Equal(t, 1, resp.Meta.Total)
+}
+
+func TestListInferenceRouterTaskPresets(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/tasks/presets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "10",
+		})
+		fmt.Fprint(w, listInferenceRouterTaskPresetsResponse)
+	})
+
+	tasks, resp, err := client.GradientAI.ListInferenceRouterTaskPresets(ctx, &ListOptions{Page: 1, PerPage: 10})
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.Len(t, tasks, 2)
+	assert.Equal(t, "translation", tasks[0].TaskSlug)
+	assert.Equal(t, "Translation", tasks[0].Name)
+	assert.Equal(t, "general", tasks[0].Category)
+	assert.Equal(t, "code-generation", tasks[1].TaskSlug)
+	assert.Equal(t, "software-engineering", tasks[1].Category)
+	require.NotNil(t, resp.Meta)
+	assert.Equal(t, 2, resp.Meta.Total)
+}
+
+func TestGetInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	router, resp, err := client.GradientAI.GetInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "router-one", router.Name)
+	assert.Equal(t, "Router used for unit tests.", router.Description)
+	require.NotNil(t, router.Config)
+	assert.Equal(t, []string{"openai-gpt-4"}, router.Config.FallbackModels)
+	assert.Contains(t, string(router.Config.Policies), "code-generation")
+}
+
+func TestCreateInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	create := &InferenceRouterCreateRequest{
+		Name:           "router-one",
+		Description:    "Router used for unit tests.",
+		FallbackModels: []string{"openai-gpt-4"},
+	}
+	router, resp, err := client.GradientAI.CreateInferenceRouter(ctx, create)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", router.UUID)
+}
+
+func TestUpdateInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	name := "router-renamed"
+	update := &InferenceRouterUpdateRequest{Name: name}
+	router, resp, err := client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", update)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "router-one", router.Name)
+}
+
+func TestDeleteInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, `{"uuid":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}`)
+	})
+
+	out, resp, err := client.GradientAI.DeleteInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, out)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", out.UUID)
+}
+
+func TestCreateInferenceRouterValidation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.GradientAI.CreateInferenceRouter(ctx, nil)
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{Name: "n"})
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{
+		Name:           "router",
+		FallbackModels: []string{"a", ""},
+	})
+	assert.Error(t, err)
+}
+
+func TestUpdateInferenceRouterValidation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.GradientAI.UpdateInferenceRouter(ctx, "", &InferenceRouterUpdateRequest{Name: "x"})
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", nil)
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", &InferenceRouterUpdateRequest{})
+	assert.Error(t, err)
 }
 
 func TestListAvailableModels(t *testing.T) {
@@ -2190,16 +2423,92 @@ func TestListAvailableModels(t *testing.T) {
 		PerPage: 1,
 	}
 
-	models, resp, err := client.GenAI.ListAvailableModels(ctx, req)
+	models, resp, err := client.GradientAI.ListAvailableModels(ctx, req)
 	if err != nil {
 		t.Fatalf("GenAI ListAvailableModels returned error: %v", err)
 	}
 
 	assert.Equal(t, "Llama 3.3 Instruct (70B)", models[0].Name)
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", models[0].Uuid)
+	assert.Equal(t, "SERVERLESS", models[0].ModelAvailability)
+	assert.Equal(t, "An advanced language model with greater capabilities due to its larger size.", models[0].Description)
+	assert.Equal(t, "131072", models[0].ContextWindow)
+	assert.Equal(t, []string{"inference", "chat"}, models[0].Capabilities)
+	assert.Equal(t, 70.0, models[0].ParameterCount)
+	assert.Equal(t, "chat", models[0].Type)
+	assert.NotNil(t, models[0].Modalities)
+	assert.Equal(t, []string{"text"}, models[0].Modalities.Input)
+	assert.Equal(t, []string{"text"}, models[0].Modalities.Output)
 	expectedString := fmt.Sprintf("%v", models[0])
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, expectedString, models[0].String())
+}
+
+func TestSearchModels(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	// Test matching query
+	uuids, resp, err := client.GradientAI.SearchModels(ctx, "llama")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, 1, len(uuids))
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", uuids[0])
+}
+
+func TestSearchModelsNoMatch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	// Test non-matching query
+	uuids, resp, err := client.GradientAI.SearchModels(ctx, "nonexistent")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, 0, len(uuids))
+}
+
+func TestGetModelByUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	// Test existing UUID
+	model, resp, err := client.GradientAI.GetModelByUUID(ctx, "00000000-0000-0000-0000-000000000000")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.NotNil(t, model)
+	assert.Equal(t, "Llama 3.3 Instruct (70B)", model.Name)
+	assert.Equal(t, "00000000-0000-0000-0000-000000000000", model.Uuid)
+}
+
+func TestGetModelByUUIDNotFound(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listAvailableModelsResponse)
+	})
+
+	// Test non-existing UUID
+	model, resp, err := client.GradientAI.GetModelByUUID(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Nil(t, model)
 }
 
 func TestListDatacenterRegions(t *testing.T) {
@@ -2211,7 +2520,7 @@ func TestListDatacenterRegions(t *testing.T) {
 		fmt.Fprint(w, listDatacenterRegionsResponse)
 	})
 
-	regions, resp, err := client.GenAI.ListDatacenterRegions(ctx, nil, nil)
+	regions, resp, err := client.GradientAI.ListDatacenterRegions(ctx, nil, nil)
 	if err != nil {
 		t.Fatalf("GenAI ListDatacenterRegions returned error: %v", err)
 	}
@@ -2230,4 +2539,820 @@ func TestListDatacenterRegions(t *testing.T) {
 	assert.Equal(t, "https://nyc3.gen-ai.digitalocean.com/stream", regions[1].StreamInferenceUrl)
 
 	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+var listCustomModelsResponse = `
+{
+	"models": [
+		{
+			"uuid": "11111111-1111-1111-1111-111111111111",
+			"name": "team/my-model",
+			"description": "An imported HuggingFace model",
+			"status": "STATUS_READY",
+			"architecture": "LlamaForCausalLM",
+			"source_type": "SOURCE_TYPE_HUGGINGFACE",
+			"source_ref": {
+				"repo_id": "team/my-model",
+				"commit_sha": "abc123",
+				"access_type": "ACCESS_TYPE_PUBLIC"
+			},
+			"total_size_bytes": "1073741824",
+			"file_count": 7,
+			"license": "apache-2.0",
+			"tags": {"tags": ["llama", "chat"]},
+			"created_at": "2026-01-02T03:04:05Z",
+			"updated_at": "2026-01-02T04:05:06Z",
+			"active_deployments": [
+				{
+					"id": "dep-1",
+					"name": "primary",
+					"region_slug": "tor1",
+					"state": "ACTIVE",
+					"endpoints": {
+						"public_endpoint_fqdn": "public.example.com",
+						"private_endpoint_fqdn": "private.example.com"
+					},
+					"created_at": "2026-01-02T03:04:05Z",
+					"updated_at": "2026-01-02T04:05:06Z"
+				}
+			],
+			"context_length": 131072,
+			"cost_estimate_per_month": 123,
+			"input_modalities": ["text"],
+			"output_modalities": ["text"],
+			"parameters": "70000000000",
+			"team_id": "42",
+			"config_json": {"architectures": ["LlamaForCausalLM"]},
+			"storage_region": "nyc3"
+		},
+		{
+			"uuid": "22222222-2222-2222-2222-222222222222",
+			"name": "team/other-model",
+			"status": "STATUS_IMPORTING",
+			"source_type": "SOURCE_TYPE_SPACES_BUCKET",
+			"source_ref": {
+				"bucket": "my-bucket",
+				"region": "nyc3",
+				"prefix": "models/other"
+			}
+		}
+	],
+	"links": {
+		"pages": {
+			"first": "https://api.digitalocean.com/v2/gen-ai/custom_models?page=1&per_page=2",
+			"next": "https://api.digitalocean.com/v2/gen-ai/custom_models?page=2&per_page=2",
+			"last": "https://api.digitalocean.com/v2/gen-ai/custom_models?page=5&per_page=2"
+		}
+	},
+	"meta": {
+		"total": 10,
+		"page": 1,
+		"pages": 5
+	},
+	"max_threshold": 25
+}
+`
+
+var getCustomModelResponse = `
+{
+	"model": {
+		"uuid": "11111111-1111-1111-1111-111111111111",
+		"name": "team/my-model",
+		"description": "An imported HuggingFace model",
+		"status": "STATUS_READY",
+		"architecture": "LlamaForCausalLM",
+		"source_type": "SOURCE_TYPE_HUGGINGFACE",
+		"source_ref": {
+			"repo_id": "team/my-model",
+			"commit_sha": "abc123",
+			"access_type": "ACCESS_TYPE_PUBLIC"
+		},
+		"total_size_bytes": "1073741824",
+		"file_count": 7,
+		"license": "apache-2.0",
+		"tags": {"tags": ["llama", "chat"]},
+		"created_at": "2026-01-02T03:04:05Z",
+		"updated_at": "2026-01-02T04:05:06Z",
+		"active_deployments": [
+			{
+				"id": "dep-1",
+				"name": "primary",
+				"region_slug": "tor1",
+				"state": "ACTIVE",
+				"endpoints": {
+					"public_endpoint_fqdn": "public.example.com",
+					"private_endpoint_fqdn": "private.example.com"
+				},
+				"created_at": "2026-01-02T03:04:05Z",
+				"updated_at": "2026-01-02T04:05:06Z"
+			}
+		],
+		"context_length": 131072,
+		"cost_estimate_per_month": 123,
+		"input_modalities": ["text"],
+		"output_modalities": ["text"],
+		"parameters": "70000000000",
+		"team_id": "42",
+		"config_json": {"architectures": ["LlamaForCausalLM"]},
+		"storage_region": "nyc3"
+	}
+}
+`
+
+var importCustomModelResponse = `
+{
+	"model": {
+		"uuid": "33333333-3333-3333-3333-333333333333",
+		"name": "team/new-model",
+		"status": "STATUS_IMPORTING",
+		"source_type": "SOURCE_TYPE_HUGGINGFACE",
+		"source_ref": {
+			"repo_id": "team/new-model",
+			"access_type": "ACCESS_TYPE_PUBLIC"
+		},
+		"tags": {"tags": ["fast", "small"]}
+	},
+	"import_job": {
+		"uuid": "44444444-4444-4444-4444-444444444444",
+		"status": "RUNNING",
+		"files_total": 7,
+		"files_done": 0,
+		"bytes_total": "1073741824",
+		"bytes_done": "0",
+		"started_at": "2026-01-02T03:04:05Z",
+		"created_at": "2026-01-02T03:04:05Z"
+	},
+	"validation_steps": [
+		{"name": "config-check", "passed": true},
+		{"name": "license-check", "passed": false, "error": "no license file"}
+	],
+	"error": ""
+}
+`
+
+var deleteCustomModelResponse = `
+{
+	"status": "DELETE_CUSTOM_MODEL_STATUS_SUCCESS",
+	"error": ""
+}
+`
+
+var updateCustomModelMetadataResponse = `
+{
+	"model": {
+		"uuid": "11111111-1111-1111-1111-111111111111",
+		"name": "team/my-model",
+		"description": "Updated description",
+		"status": "STATUS_READY",
+		"source_type": "SOURCE_TYPE_HUGGINGFACE",
+		"tags": {"tags": ["updated", "v2"]}
+	}
+}
+`
+
+func TestListCustomModels(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "2",
+			"status":   "STATUS_READY",
+		})
+		fmt.Fprint(w, listCustomModelsResponse)
+	})
+
+	opt := &CustomModelListOptions{
+		Status: CustomModelStatusReady,
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 2,
+		},
+	}
+
+	out, resp, err := client.GradientAI.ListCustomModels(ctx, opt)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	assert.Equal(t, 2, len(out.Models))
+	assert.Equal(t, 25, out.MaxThreshold)
+	assert.Equal(t, 10, resp.Meta.Total)
+	assert.Equal(t, 1, resp.Meta.Page)
+	assert.Equal(t, 5, resp.Meta.Pages)
+	assert.NotNil(t, resp.Links)
+
+	first := out.Models[0]
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", first.Uuid)
+	assert.Equal(t, "team/my-model", first.Name)
+	assert.Equal(t, CustomModelStatusReady, first.Status)
+	assert.Equal(t, CustomModelSourceTypeHuggingFace, first.SourceType)
+	assert.NotNil(t, first.SourceRef)
+	assert.Equal(t, "team/my-model", first.SourceRef.RepoId)
+	assert.Equal(t, CustomModelSourceRefAccessTypePublic, first.SourceRef.AccessType)
+	assert.Equal(t, "1073741824", first.TotalSizeBytes)
+	assert.Equal(t, 7, first.FileCount)
+	assert.NotNil(t, first.Tags)
+	assert.Equal(t, []string{"llama", "chat"}, first.Tags.Tags)
+	assert.Equal(t, 131072, first.ContextLength)
+	assert.Equal(t, 123, first.CostEstimatePerMonth)
+	assert.Equal(t, "70000000000", first.Parameters)
+	assert.Equal(t, "42", first.TeamId)
+	assert.Equal(t, "nyc3", first.StorageRegion)
+	assert.NotNil(t, first.ConfigJson)
+	assert.Equal(t, []string{"text"}, first.InputModalities)
+
+	assert.Equal(t, 1, len(first.ActiveDeployments))
+	dep := first.ActiveDeployments[0]
+	assert.Equal(t, "dep-1", dep.Id)
+	assert.Equal(t, "primary", dep.Name)
+	assert.Equal(t, "tor1", dep.RegionSlug)
+	assert.Equal(t, "ACTIVE", dep.State)
+	assert.NotNil(t, dep.Endpoints)
+	assert.Equal(t, "public.example.com", dep.Endpoints.PublicEndpointFqdn)
+	assert.Equal(t, "private.example.com", dep.Endpoints.PrivateEndpointFqdn)
+
+	second := out.Models[1]
+	assert.Equal(t, CustomModelStatusImporting, second.Status)
+	assert.Equal(t, CustomModelSourceTypeSpacesBucket, second.SourceType)
+	assert.NotNil(t, second.SourceRef)
+	assert.Equal(t, "my-bucket", second.SourceRef.Bucket)
+	assert.Equal(t, "nyc3", second.SourceRef.Region)
+	assert.Equal(t, "models/other", second.SourceRef.Prefix)
+}
+
+func TestListCustomModelsNoOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Empty(t, r.URL.Query().Get("status"))
+		assert.Empty(t, r.URL.Query().Get("page"))
+		fmt.Fprint(w, listCustomModelsResponse)
+	})
+
+	out, resp, err := client.GradientAI.ListCustomModels(ctx, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, 2, len(out.Models))
+}
+
+func TestGetCustomModel(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getCustomModelResponse)
+	})
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "11111111-1111-1111-1111-111111111111")
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", model.Uuid)
+	assert.Equal(t, "team/my-model", model.Name)
+	assert.Equal(t, "An imported HuggingFace model", model.Description)
+	assert.Equal(t, CustomModelStatusReady, model.Status)
+	assert.Equal(t, "LlamaForCausalLM", model.Architecture)
+	assert.Equal(t, CustomModelSourceTypeHuggingFace, model.SourceType)
+
+	assert.NotNil(t, model.SourceRef)
+	assert.Equal(t, "team/my-model", model.SourceRef.RepoId)
+	assert.Equal(t, "abc123", model.SourceRef.CommitSha)
+	assert.Equal(t, CustomModelSourceRefAccessTypePublic, model.SourceRef.AccessType)
+
+	assert.Equal(t, "1073741824", model.TotalSizeBytes)
+	assert.Equal(t, 7, model.FileCount)
+	assert.Equal(t, "apache-2.0", model.License)
+	assert.NotNil(t, model.Tags)
+	assert.Equal(t, []string{"llama", "chat"}, model.Tags.Tags)
+	assert.Equal(t, 131072, model.ContextLength)
+	assert.Equal(t, 123, model.CostEstimatePerMonth)
+	assert.Equal(t, "70000000000", model.Parameters)
+	assert.Equal(t, "42", model.TeamId)
+	assert.Equal(t, "nyc3", model.StorageRegion)
+	assert.NotNil(t, model.ConfigJson)
+	assert.Equal(t, []string{"text"}, model.InputModalities)
+	assert.Equal(t, []string{"text"}, model.OutputModalities)
+
+	assert.Equal(t, 1, len(model.ActiveDeployments))
+	dep := model.ActiveDeployments[0]
+	assert.Equal(t, "dep-1", dep.Id)
+	assert.Equal(t, "primary", dep.Name)
+	assert.Equal(t, "tor1", dep.RegionSlug)
+	assert.Equal(t, "ACTIVE", dep.State)
+	assert.NotNil(t, dep.Endpoints)
+	assert.Equal(t, "public.example.com", dep.Endpoints.PublicEndpointFqdn)
+	assert.Equal(t, "private.example.com", dep.Endpoints.PrivateEndpointFqdn)
+}
+
+func TestGetCustomModelMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.Nil(t, resp)
+}
+
+func TestGetCustomModelInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.Nil(t, resp)
+}
+
+func TestGetCustomModelServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"not_found","message":"missing"}`, http.StatusNotFound)
+	})
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestImportCustomModel(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/import", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		var got CustomModelImportRequest
+		assert.NoError(t, json.Unmarshal(body, &got))
+		assert.Equal(t, "team/new-model", got.Name)
+		assert.Equal(t, CustomModelSourceTypeHuggingFace, got.SourceType)
+		assert.NotNil(t, got.SourceRef)
+		assert.Equal(t, "team/new-model", got.SourceRef.RepoId)
+		assert.Equal(t, "tor1", got.PreferredGpuRegion)
+		assert.True(t, got.AcceptTermsAndConditions)
+		assert.NotNil(t, got.Tags)
+		assert.Equal(t, []string{"fast", "small"}, got.Tags.Tags)
+
+		fmt.Fprint(w, importCustomModelResponse)
+	})
+
+	req := &CustomModelImportRequest{
+		Name:       "team/new-model",
+		SourceType: CustomModelSourceTypeHuggingFace,
+		SourceRef: &CustomModelSourceRef{
+			RepoId:     "team/new-model",
+			AccessType: CustomModelSourceRefAccessTypePublic,
+		},
+		Description:              "an imported model",
+		PreferredGpuRegion:       "tor1",
+		AcceptTermsAndConditions: true,
+		Tags:                     &CustomModelTags{Tags: []string{"fast", "small"}},
+	}
+
+	out, resp, err := client.GradientAI.ImportCustomModel(ctx, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	assert.NotNil(t, out.Model)
+	assert.Equal(t, "33333333-3333-3333-3333-333333333333", out.Model.Uuid)
+	assert.Equal(t, CustomModelStatusImporting, out.Model.Status)
+
+	assert.NotNil(t, out.ImportJob)
+	assert.Equal(t, "44444444-4444-4444-4444-444444444444", out.ImportJob.Uuid)
+	assert.Equal(t, "RUNNING", out.ImportJob.Status)
+	assert.Equal(t, 7, out.ImportJob.FilesTotal)
+	assert.Equal(t, 0, out.ImportJob.FilesDone)
+	assert.Equal(t, "1073741824", out.ImportJob.BytesTotal)
+	assert.Equal(t, "0", out.ImportJob.BytesDone)
+
+	assert.Equal(t, 2, len(out.ValidationSteps))
+	assert.Equal(t, "config-check", out.ValidationSteps[0].Name)
+	assert.True(t, out.ValidationSteps[0].Passed)
+	assert.Equal(t, "license-check", out.ValidationSteps[1].Name)
+	assert.False(t, out.ValidationSteps[1].Passed)
+	assert.Equal(t, "no license file", out.ValidationSteps[1].Error)
+}
+
+func TestImportCustomModelNilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.ImportCustomModel(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestImportCustomModelMissingName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	req := &CustomModelImportRequest{
+		SourceType: CustomModelSourceTypeHuggingFace,
+	}
+
+	out, resp, err := client.GradientAI.ImportCustomModel(ctx, req)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestImportCustomModelMissingSourceType(t *testing.T) {
+	setup()
+	defer teardown()
+
+	req := &CustomModelImportRequest{
+		Name: "team/new-model",
+	}
+
+	out, resp, err := client.GradientAI.ImportCustomModel(ctx, req)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestDeleteCustomModel(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/11111111-1111-1111-1111-111111111111", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, deleteCustomModelResponse)
+	})
+
+	out, resp, err := client.GradientAI.DeleteCustomModel(ctx, "11111111-1111-1111-1111-111111111111")
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, DeleteCustomModelStatusSuccess, out.Status)
+	assert.Empty(t, out.Error)
+}
+
+func TestDeleteCustomModelMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteCustomModel(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestDeleteCustomModelServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		http.Error(w, `{"id":"not_found","message":"model not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.DeleteCustomModel(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestUpdateCustomModelMetadata(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/11111111-1111-1111-1111-111111111111/metadata", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		var got CustomModelMetadataUpdateRequest
+		assert.NoError(t, json.Unmarshal(body, &got))
+		assert.Equal(t, "Updated description", got.Description)
+		assert.NotNil(t, got.Tags)
+		assert.Equal(t, []string{"updated", "v2"}, got.Tags.Tags)
+
+		fmt.Fprint(w, updateCustomModelMetadataResponse)
+	})
+
+	req := &CustomModelMetadataUpdateRequest{
+		Description: "Updated description",
+		Tags:        &CustomModelTags{Tags: []string{"updated", "v2"}},
+	}
+
+	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", model.Uuid)
+	assert.Equal(t, "Updated description", model.Description)
+	assert.NotNil(t, model.Tags)
+	assert.Equal(t, []string{"updated", "v2"}, model.Tags.Tags)
+}
+
+func TestUpdateCustomModelMetadataMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	req := &CustomModelMetadataUpdateRequest{Description: "x"}
+
+	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "", req)
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.Nil(t, resp)
+}
+
+func TestUpdateCustomModelMetadataNilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.Nil(t, resp)
+}
+
+func TestListCustomModelsServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
+	})
+
+	out, resp, err := client.GradientAI.ListCustomModels(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusInternalServerError, resp.Response.StatusCode)
+}
+
+func TestImportCustomModelServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/import", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		http.Error(w, `{"id":"invalid","message":"bad source"}`, http.StatusBadRequest)
+	})
+
+	req := &CustomModelImportRequest{
+		Name:       "team/new-model",
+		SourceType: CustomModelSourceTypeHuggingFace,
+	}
+	out, resp, err := client.GradientAI.ImportCustomModel(ctx, req)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusBadRequest, resp.Response.StatusCode)
+}
+
+func TestUpdateCustomModelMetadataServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/11111111-1111-1111-1111-111111111111/metadata", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		http.Error(w, `{"id":"not_found","message":"missing"}`, http.StatusNotFound)
+	})
+
+	req := &CustomModelMetadataUpdateRequest{Description: "x"}
+	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestDeleteCustomModelInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteCustomModel(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestUpdateCustomModelMetadataInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "bad\nuuid", &CustomModelMetadataUpdateRequest{Description: "x"})
+	assert.Error(t, err)
+	assert.Nil(t, model)
+	assert.Nil(t, resp)
+}
+
+var deleteModelEvaluationRunResponse = `
+{
+	"status": "DELETE_MODEL_EVALUATION_RUN_STATUS_SUCCESS",
+	"error": ""
+}
+`
+
+func TestDeleteModelEvaluationRun(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/12345678-1234-1234-1234-123456789012", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, deleteModelEvaluationRunResponse)
+	})
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "12345678-1234-1234-1234-123456789012")
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, DeleteModelEvaluationRunStatusSuccess, out.Status)
+	assert.Empty(t, out.Error)
+}
+
+func TestDeleteModelEvaluationRunMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestDeleteModelEvaluationRunServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestDeleteModelEvaluationRunInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestDeleteModelEvaluationPreset(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_presets/12345678-1234-1234-1234-123456789012", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, `{}`)
+	})
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "12345678-1234-1234-1234-123456789012")
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestDeleteModelEvaluationPresetMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestDeleteModelEvaluationPresetServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_presets/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		http.Error(w, `{"id":"not_found","message":"evaluation preset not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestDeleteModelEvaluationPresetInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+var cancelModelEvaluationRunResponse = `
+{
+	"run": {
+		"eval_run_uuid": "12345678-1234-1234-1234-123456789012",
+		"name": "my-eval-run",
+		"status": "MODEL_EVALUATION_RUN_CANCELLING",
+		"candidate_model_uuid": "00000000-0000-0000-0000-000000000001",
+		"candidate_model_name": "candidate-model",
+		"candidate_model_source": "CANDIDATE_MODEL_SOURCE_SERVERLESS",
+		"judge_model_uuid": "00000000-0000-0000-0000-000000000002",
+		"judge_model_name": "judge-model",
+		"dataset_uuid": "00000000-0000-0000-0000-000000000003",
+		"dataset_name": "eval-dataset",
+		"created_at": "2025-05-08T03:37:28Z"
+	}
+}
+`
+
+func TestCancelModelEvaluationRun(t *testing.T) {
+	setup()
+	defer teardown()
+
+	evalRunUUID := "12345678-1234-1234-1234-123456789012"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/model_evaluation_runs/%s/cancel", evalRunUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		v := new(CancelModelEvaluationRunRequest)
+		if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+			t.Errorf("Error decoding request body: %v", err)
+		}
+		assert.Equal(t, evalRunUUID, v.EvalRunUUID)
+
+		fmt.Fprint(w, cancelModelEvaluationRunResponse)
+	})
+
+	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, evalRunUUID)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.NotNil(t, out.Run)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	run := out.Run
+	assert.Equal(t, evalRunUUID, run.EvalRunUuid)
+	assert.Equal(t, "my-eval-run", run.Name)
+	assert.Equal(t, ModelEvaluationRunCancelling, run.Status)
+	assert.Equal(t, "candidate-model", run.CandidateModelName)
+	assert.Equal(t, CandidateModelSourceServerless, run.CandidateModelSource)
+	assert.Equal(t, "judge-model", run.JudgeModelName)
+	assert.Equal(t, "eval-dataset", run.DatasetName)
+	assert.NotNil(t, run.CreatedAt)
+}
+
+func TestCancelModelEvaluationRunMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestCancelModelEvaluationRunServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/99999999-9999-9999-9999-999999999999/cancel", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestCancelModelEvaluationRunInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
 }

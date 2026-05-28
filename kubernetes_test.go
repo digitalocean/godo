@@ -21,15 +21,16 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 
 	wantClusters := []*KubernetesCluster{
 		{
-			ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-			Name:          "blablabla",
-			RegionSlug:    "nyc1",
-			VersionSlug:   "1.10.0-gen0",
-			ClusterSubnet: "10.244.0.0/16",
-			ServiceSubnet: "10.245.0.0/16",
-			IPv4:          "",
-			Tags:          []string(nil),
-			VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+			ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+			Name:             "blablabla",
+			RegionSlug:       "nyc1",
+			VersionSlug:      "1.10.0-gen0",
+			ClusterSubnet:    "10.244.0.0/16",
+			ServiceSubnet:    "10.245.0.0/16",
+			IPv4:             "",
+			Tags:             []string(nil),
+			VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+			WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 			Status: &KubernetesClusterStatus{
 				State: KubernetesClusterStatusRunning,
 			},
@@ -41,6 +42,17 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			},
 			AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 				Enabled: PtrTo(true),
+			},
+			NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+				Enabled: PtrTo(true),
+			},
+			RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+				Enabled: PtrTo(true),
+			},
+			SSO: &KubernetesClusterSSO{
+				Enabled:   true,
+				IssuerURL: "https://example.com/issuer",
+				ClientID:  "client-id",
 			},
 			NodePools: []*KubernetesNodePool{
 				{
@@ -72,14 +84,15 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			UpdatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
 		},
 		{
-			ID:            "deadbeef-dead-4aa5-beef-deadbeef347d",
-			Name:          "antoine",
-			RegionSlug:    "nyc1",
-			VersionSlug:   "1.10.0-gen0",
-			ClusterSubnet: "10.244.0.0/16",
-			ServiceSubnet: "10.245.0.0/16",
-			IPv4:          "1.2.3.4",
-			VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f7",
+			ID:               "deadbeef-dead-4aa5-beef-deadbeef347d",
+			Name:             "antoine",
+			RegionSlug:       "nyc1",
+			VersionSlug:      "1.10.0-gen0",
+			ClusterSubnet:    "10.244.0.0/16",
+			ServiceSubnet:    "10.245.0.0/16",
+			IPv4:             "1.2.3.4",
+			VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f7",
+			WorkerSubnetUUID: "2b3c4d5e-6f70-8901-bcde-f12345678901",
 			Status: &KubernetesClusterStatus{
 				State: KubernetesClusterStatusRunning,
 			},
@@ -129,6 +142,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			"ipv4": "",
 			"tags": null,
 			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+			"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 			"status": {
 				"state": "running"
 			},
@@ -140,6 +154,18 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			},
 			"amd_gpu_device_metrics_exporter_plugin": {
 				"enabled": true
+			},
+			"nvidia_gpu_device_plugin": {
+				"enabled": true
+			},
+			"rdma_shared_dev_plugin": {
+				"enabled": true
+			},
+			"sso": {
+			    "enabled": true,
+				"required": false,
+				"issuer_url": "https://example.com/issuer",
+				"client_id": "client-id"
 			},
 			"node_pools": [
 				{
@@ -190,6 +216,7 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				"state": "running"
 			},
 			"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f7",
+			"worker_subnet_uuid": "2b3c4d5e-6f70-8901-bcde-f12345678901",
 			"node_pools": [
 				{
 					"id": "deadbeef-dead-beef-dead-deadbeefb4b3",
@@ -271,14 +298,15 @@ func TestKubernetesClusters_Get(t *testing.T) {
 
 	kubeSvc := client.Kubernetes
 	want := &KubernetesCluster{
-		ID:            "deadbeef-dead-4aa5-beef-deadbeef347d",
-		Name:          "antoine",
-		RegionSlug:    "nyc1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
-		IPv4:          "1.2.3.4",
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		ID:               "deadbeef-dead-4aa5-beef-deadbeef347d",
+		Name:             "antoine",
+		RegionSlug:       "nyc1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		IPv4:             "1.2.3.4",
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		Status: &KubernetesClusterStatus{
 			State: KubernetesClusterStatusRunning,
 		},
@@ -290,6 +318,17 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		},
 		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 			Enabled: PtrTo(true),
+		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		SSO: &KubernetesClusterSSO{
+			Enabled:   true,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePool{
 			{
@@ -339,6 +378,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		"ipv4": "1.2.3.4",
 		"tags": null,
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"status": {
 			"state": "running"
 		},
@@ -350,6 +390,18 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		},
 		"amd_gpu_device_metrics_exporter_plugin": {
 			"enabled": true
+		},
+		"nvidia_gpu_device_plugin": {
+			"enabled": true
+		},
+		"rdma_shared_dev_plugin": {
+			"enabled": true
+		},
+		"sso": {
+			"enabled": true,
+			"required": false,
+			"issuer_url": "https://example.com/issuer",
+			"client_id": "client-id"
 		},
 		"node_pools": [
 			{
@@ -453,9 +505,48 @@ func TestKubernetesClusters_GetKubeConfig(t *testing.T) {
 	blob := []byte(want)
 	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+		_, isTypeQueryParamSet := r.URL.Query()["type"]
+		assert.False(t, isTypeQueryParamSet)
 		fmt.Fprint(w, want)
 	})
-	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d")
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterKubeconfigGetRequest{})
+	require.NoError(t, err)
+	require.Equal(t, blob, got.KubeconfigYAML)
+}
+
+func TestKubernetesClusters_GetKubeConfig_WithType(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "some YAML"
+	blob := []byte(want)
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "token", r.URL.Query().Get("type"))
+		fmt.Fprint(w, want)
+	})
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", &KubernetesClusterKubeconfigGetRequest{
+		Type: "token",
+	})
+	require.NoError(t, err)
+	require.Equal(t, blob, got.KubeconfigYAML)
+}
+
+func TestKubernetesClusters_GetKubeConfig_NilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	want := "some YAML"
+	blob := []byte(want)
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/kubeconfig", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		_, isTypeQueryParamSet := r.URL.Query()["type"]
+		assert.False(t, isTypeQueryParamSet)
+		fmt.Fprint(w, want)
+	})
+	got, _, err := kubeSvc.GetKubeConfig(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", nil)
 	require.NoError(t, err)
 	require.Equal(t, blob, got.KubeconfigYAML)
 }
@@ -473,6 +564,7 @@ func TestKubernetesClusters_GetKubeConfigWithExpiry(t *testing.T) {
 		assert.True(t, ok)
 		assert.Len(t, expirySeconds, 1)
 		assert.Contains(t, expirySeconds, "3600")
+		assert.Equal(t, "token", r.URL.Query().Get("type"))
 		fmt.Fprint(w, want)
 	})
 	got, _, err := kubeSvc.GetKubeConfigWithExpiry(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", 3600)
@@ -537,6 +629,32 @@ func TestKubernetesClusters_GetCredentials_WithExpirySeconds(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestKubernetesClusters_GetCredentials_NilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+	timestamp, err := time.Parse(time.RFC3339, "2014-11-12T11:45:26.371Z")
+	require.NoError(t, err)
+	want := &KubernetesClusterCredentials{
+		Token:     "secret",
+		ExpiresAt: timestamp,
+	}
+	jBlob := `
+{
+	"token": "secret",
+	"expires_at": "2014-11-12T11:45:26.371Z"
+}`
+	mux.HandleFunc("/v2/kubernetes/clusters/deadbeef-dead-4aa5-beef-deadbeef347d/credentials", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Empty(t, r.URL.Query())
+		fmt.Fprint(w, jBlob)
+	})
+	got, _, err := kubeSvc.GetCredentials(ctx, "deadbeef-dead-4aa5-beef-deadbeef347d", nil)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
 func TestKubernetesClusters_GetUpgrades(t *testing.T) {
 	setup()
 	defer teardown()
@@ -576,6 +694,43 @@ func TestKubernetesClusters_GetUpgrades(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestKubernetesClusterCreateRequest_HA_JsonMarshal(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      *KubernetesClusterCreateRequest
+		contains string // substring that must be in JSON
+		omits    string // substring that must NOT be in JSON
+	}{
+		{
+			name:  "HA nil - field omitted",
+			req:   &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36"},
+			omits: `"ha"`,
+		},
+		{
+			name:     "HA true - field present",
+			req:      &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36", HA: PtrTo(true)},
+			contains: `"ha":true`,
+		},
+		{
+			name:     "HA false - field present",
+			req:      &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36", HA: PtrTo(false)},
+			contains: `"ha":false`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+			if tt.contains != "" {
+				require.Contains(t, string(data), tt.contains)
+			}
+			if tt.omits != "" {
+				require.NotContains(t, string(data), tt.omits)
+			}
+		})
+	}
+}
+
 func TestKubernetesClusters_Create(t *testing.T) {
 	setup()
 	defer teardown()
@@ -586,16 +741,17 @@ func TestKubernetesClusters_Create(t *testing.T) {
 	scaleDownUnneededTime := "1m30s"
 
 	want := &KubernetesCluster{
-		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:          "antoine-test-cluster",
-		RegionSlug:    "s2r1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "192.168.0.0/16",
-		ServiceSubnet: "192.169.0.0/16",
-		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
-		HA:            true,
-		SurgeUpgrade:  true,
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "antoine-test-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "192.168.0.0/16",
+		ServiceSubnet:    "192.169.0.0/16",
+		Tags:             []string{"cluster-tag-1", "cluster-tag-2"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+		HA:               true,
+		SurgeUpgrade:     true,
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
 		},
@@ -604,6 +760,18 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		},
 		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 			Enabled: PtrTo(true),
+		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		SSO: &KubernetesClusterSSO{
+			Enabled:   true,
+			Required:  false,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePool{
 			{
@@ -632,17 +800,35 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		},
 	}
 	createRequest := &KubernetesClusterCreateRequest{
-		Name:          want.Name,
-		RegionSlug:    want.RegionSlug,
-		VersionSlug:   want.VersionSlug,
-		Tags:          want.Tags,
-		VPCUUID:       want.VPCUUID,
-		ClusterSubnet: want.ClusterSubnet,
-		ServiceSubnet: want.ServiceSubnet,
-		SurgeUpgrade:  true,
-		HA:            true,
+		Name:             want.Name,
+		RegionSlug:       want.RegionSlug,
+		VersionSlug:      want.VersionSlug,
+		Tags:             want.Tags,
+		VPCUUID:          want.VPCUUID,
+		WorkerSubnetUUID: want.WorkerSubnetUUID,
+		ClusterSubnet:    want.ClusterSubnet,
+		ServiceSubnet:    want.ServiceSubnet,
+		SurgeUpgrade:     true,
+		HA:               PtrTo(true),
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
+		},
+		AmdGpuDevicePlugin: &KubernetesAmdGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
+			Enabled: PtrTo(true),
+		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		SSO: &KubernetesClusterSSO{
+			Enabled:   true,
+			IssuerURL: "https://example.com/issuer",
+			ClientID:  "client-id",
 		},
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			{
@@ -674,6 +860,7 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"ha": true,
 		"surge_upgrade": true,
 		"routing_agent": {
@@ -684,6 +871,18 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		},
 		"amd_gpu_device_metrics_exporter_plugin": {
 			"enabled": true
+		},
+		"nvidia_gpu_device_plugin": {
+			"enabled": true
+		},
+		"rdma_shared_dev_plugin": {
+			"enabled": true
+		},
+		"sso": {
+			"enabled": true,
+			"required": false,
+			"issuer_url": "https://example.com/issuer",
+			"client_id": "client-id"
 		},
 		"node_pools": [
 			{
@@ -741,14 +940,15 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 	kubeSvc := client.Kubernetes
 
 	want := &KubernetesCluster{
-		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:          "antoine-test-cluster",
-		RegionSlug:    "s2r1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
-		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "antoine-test-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		Tags:             []string{"cluster-tag-1", "cluster-tag-2"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:        "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -800,6 +1000,7 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"node_pools": [
 			{
 				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -848,16 +1049,17 @@ func TestKubernetesClusters_Update(t *testing.T) {
 	scaleDownUnneededTime := "1m27s"
 
 	want := &KubernetesCluster{
-		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:          "antoine-test-cluster",
-		RegionSlug:    "s2r1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
-		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
-		SurgeUpgrade:  true,
-		HA:            true,
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "antoine-test-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		Tags:             []string{"cluster-tag-1", "cluster-tag-2"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+		SurgeUpgrade:     true,
+		HA:               true,
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -893,6 +1095,15 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		SSO: &KubernetesClusterSSO{
+			Enabled: false,
+		},
 	}
 	updateRequest := &KubernetesClusterUpdateRequest{
 		Name:              want.Name,
@@ -919,6 +1130,15 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		AmdGpuDeviceMetricsExporterPlugin: &KubernetesAmdGpuDeviceMetricsExporterPlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		SSO: &KubernetesClusterSSO{
+			Enabled: false,
+		},
 	}
 
 	jBlob := `
@@ -935,6 +1155,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"ha": true,
 		"surge_upgrade": true,
 		"node_pools": [
@@ -973,11 +1194,21 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		},
 		"amd_gpu_device_metrics_exporter_plugin": {
 			"enabled": true
+		},
+		"nvidia_gpu_device_plugin": {
+			"enabled": true
+		},
+		"rdma_shared_dev_plugin": {
+			"enabled": true
+		},
+		"sso": {
+			"enabled": false,
+			"required": false
 		}
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"sso":{"enabled":false,"required":false}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
@@ -1006,14 +1237,15 @@ func TestKubernetesClusters_Update_FalseAutoUpgrade(t *testing.T) {
 	kubeSvc := client.Kubernetes
 
 	want := &KubernetesCluster{
-		ID:            "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
-		Name:          "antoine-test-cluster",
-		RegionSlug:    "s2r1",
-		VersionSlug:   "1.10.0-gen0",
-		ClusterSubnet: "10.244.0.0/16",
-		ServiceSubnet: "10.245.0.0/16",
-		Tags:          []string{"cluster-tag-1", "cluster-tag-2"},
-		VPCUUID:       "880b7f98-f062-404d-b33c-458d545696f6",
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "antoine-test-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.10.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		Tags:             []string{"cluster-tag-1", "cluster-tag-2"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		NodePools: []*KubernetesNodePool{
 			{
 				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -1046,6 +1278,7 @@ func TestKubernetesClusters_Update_FalseAutoUpgrade(t *testing.T) {
 			"cluster-tag-2"
 		],
 		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
 		"node_pools": [
 			{
 				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
@@ -1400,14 +1633,16 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
 				"some-label": "some-value",
 			},
 			Capacity: &KubernetesNodePoolResources{
-				CPU:    1,
-				Memory: "2048Mi",
-				Pods:   110,
+				CPU:           1,
+				CpuMilliCores: 1000,
+				Memory:        "2048Mi",
+				Pods:          110,
 			},
 			Allocatable: &KubernetesNodePoolResources{
-				CPU:    390,
-				Memory: "1024Mi",
-				Pods:   110,
+				CPU:           1,
+				CpuMilliCores: 390,
+				Memory:        "1024Mi",
+				Pods:          110,
 			},
 		},
 	}
@@ -1423,13 +1658,87 @@ func TestKubernetesClusters_GetNodePoolTemplate(t *testing.T) {
     "taints": ["some-key=some-value:NoSchedule"],
     "capacity": {
       "cpu": 1,
+      "cpu_milli_cores": 1000,
       "memory": "2048Mi",
       "pods": 110
     },
     "allocatable": {
-      "cpu": 390,
+      "cpu": 1,
+	  "cpu_milli_cores": 390,
       "memory": "1024Mi",
       "pods": 110
+    }
+  }
+}
+`
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8a/node_pools_template/pool-a", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, jBlob)
+	})
+	got, _, err := kubeSvc.GetNodePoolTemplate(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8a", "pool-a")
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestKubernetesClusters_GetNodePoolTemplate_WithGPUs(t *testing.T) {
+	setup()
+	defer teardown()
+	kubeSvc := client.Kubernetes
+	want := &KubernetesNodePoolTemplate{
+		Template: &KubernetesNodeTemplate{
+			ClusterUUID: "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+			Name:        "pool-a",
+			Slug:        "gpu-mi300x8-1536gb",
+			Taints:      []string{"some-key=some-value:NoSchedule"},
+			Labels: map[string]string{
+				"some-label": "some-value",
+			},
+			Capacity: &KubernetesNodePoolResources{
+				CPU:           160,
+				CpuMilliCores: 160_000,
+				Memory:        "1966080Mi",
+				Pods:          110,
+			},
+			Allocatable: &KubernetesNodePoolResources{
+				// made up values for testing
+				CPU:           145,
+				CpuMilliCores: 145_000,
+				Memory:        "1750000Mi",
+				Pods:          110,
+			},
+			Gpu: &KubernetesNodePoolGPUResources{
+				Model:  "mi300x",
+				Count:  8,
+				Vendor: "amd",
+			},
+		},
+	}
+	jBlob := `
+{
+  "template": {
+    "cluster_uuid": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+    "name": "pool-a",
+    "slug": "gpu-mi300x8-1536gb",
+    "labels": {
+      "some-label": "some-value"
+    },
+    "taints": ["some-key=some-value:NoSchedule"],
+    "capacity": {
+      "cpu": 160,
+      "cpu_milli_cores": 160000,
+      "memory": "1966080Mi",
+      "pods": 110
+    },
+    "allocatable": {
+      "cpu": 145,
+      "cpu_milli_cores": 145000,
+      "memory": "1750000Mi",
+      "pods": 110
+    },
+    "gpu": {
+      "model": "mi300x",
+      "count": 8,
+	  "vendor": "amd"
     }
   }
 }

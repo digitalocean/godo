@@ -356,11 +356,39 @@ func TestAppAutoscalingSpecMetricCPU_GetPercent(tt *testing.T) {
 	a.GetPercent()
 }
 
+func TestAppAutoscalingSpecMetricRequestDuration_GetP95Milliseconds(tt *testing.T) {
+	a := &AppAutoscalingSpecMetricRequestDuration{}
+	a.GetP95Milliseconds()
+	a = nil
+	a.GetP95Milliseconds()
+}
+
+func TestAppAutoscalingSpecMetricRequestsPerSecond_GetPerInstance(tt *testing.T) {
+	a := &AppAutoscalingSpecMetricRequestsPerSecond{}
+	a.GetPerInstance()
+	a = nil
+	a.GetPerInstance()
+}
+
 func TestAppAutoscalingSpecMetrics_GetCPU(tt *testing.T) {
 	a := &AppAutoscalingSpecMetrics{}
 	a.GetCPU()
 	a = nil
 	a.GetCPU()
+}
+
+func TestAppAutoscalingSpecMetrics_GetRequestDuration(tt *testing.T) {
+	a := &AppAutoscalingSpecMetrics{}
+	a.GetRequestDuration()
+	a = nil
+	a.GetRequestDuration()
+}
+
+func TestAppAutoscalingSpecMetrics_GetRequestsPerSecond(tt *testing.T) {
+	a := &AppAutoscalingSpecMetrics{}
+	a.GetRequestsPerSecond()
+	a = nil
+	a.GetRequestsPerSecond()
 }
 
 func TestAppBuildConfig_GetCNBVersioning(tt *testing.T) {
@@ -917,14 +945,20 @@ func TestAppIngressSpecRuleRoutingRedirect_GetUri(tt *testing.T) {
 }
 
 func TestAppIngressSpecRuleStringMatch_GetExact(tt *testing.T) {
-	a := &AppIngressSpecRuleStringMatch{}
+	var zeroValue string
+	a := &AppIngressSpecRuleStringMatch{Exact: &zeroValue}
+	a.GetExact()
+	a = &AppIngressSpecRuleStringMatch{}
 	a.GetExact()
 	a = nil
 	a.GetExact()
 }
 
 func TestAppIngressSpecRuleStringMatch_GetPrefix(tt *testing.T) {
-	a := &AppIngressSpecRuleStringMatch{}
+	var zeroValue string
+	a := &AppIngressSpecRuleStringMatch{Prefix: &zeroValue}
+	a.GetPrefix()
+	a = &AppIngressSpecRuleStringMatch{}
 	a.GetPrefix()
 	a = nil
 	a.GetPrefix()
@@ -1637,6 +1671,13 @@ func TestAppServiceSpec_GetImage(tt *testing.T) {
 	a.GetImage()
 }
 
+func TestAppServiceSpec_GetInactivitySleep(tt *testing.T) {
+	a := &AppServiceSpec{}
+	a.GetInactivitySleep()
+	a = nil
+	a.GetInactivitySleep()
+}
+
 func TestAppServiceSpec_GetInstanceCount(tt *testing.T) {
 	a := &AppServiceSpec{}
 	a.GetInstanceCount()
@@ -1768,6 +1809,20 @@ func TestAppServiceSpecHealthCheck_GetTimeoutSeconds(tt *testing.T) {
 	a.GetTimeoutSeconds()
 	a = nil
 	a.GetTimeoutSeconds()
+}
+
+func TestAppServiceSpecInactivitySleep_GetAfterSeconds(tt *testing.T) {
+	a := &AppServiceSpecInactivitySleep{}
+	a.GetAfterSeconds()
+	a = nil
+	a.GetAfterSeconds()
+}
+
+func TestAppServiceSpecInactivitySleep_GetLoadingPage(tt *testing.T) {
+	a := &AppServiceSpecInactivitySleep{}
+	a.GetLoadingPage()
+	a = nil
+	a.GetLoadingPage()
 }
 
 func TestAppServiceSpecTermination_GetDrainSeconds(tt *testing.T) {
@@ -2286,6 +2341,34 @@ func TestAutoscalerActionScaleChange_GetTo(tt *testing.T) {
 	a.GetTo()
 	a = nil
 	a.GetTo()
+}
+
+func TestAutoscalerActionScaleChange_GetTriggeringMetric(tt *testing.T) {
+	a := &AutoscalerActionScaleChange{}
+	a.GetTriggeringMetric()
+	a = nil
+	a.GetTriggeringMetric()
+}
+
+func TestAutoscalingEventComponentScaleChange_GetFrom(tt *testing.T) {
+	a := &AutoscalingEventComponentScaleChange{}
+	a.GetFrom()
+	a = nil
+	a.GetFrom()
+}
+
+func TestAutoscalingEventComponentScaleChange_GetTo(tt *testing.T) {
+	a := &AutoscalingEventComponentScaleChange{}
+	a.GetTo()
+	a = nil
+	a.GetTo()
+}
+
+func TestAutoscalingEventComponentScaleChange_GetTriggeringMetric(tt *testing.T) {
+	a := &AutoscalingEventComponentScaleChange{}
+	a.GetTriggeringMetric()
+	a = nil
+	a.GetTriggeringMetric()
 }
 
 func TestBitbucketSourceSpec_GetBranch(tt *testing.T) {
@@ -3215,6 +3298,65 @@ func TestDetectResponseServerlessPackage_GetName(tt *testing.T) {
 	d.GetName()
 }
 
+func TestEvent_GetAutoscaling(tt *testing.T) {
+	e := &Event{}
+	e.GetAutoscaling()
+	e = nil
+	e.GetAutoscaling()
+}
+
+func TestEvent_GetCreatedAt(tt *testing.T) {
+	e := &Event{}
+	e.GetCreatedAt()
+	e = nil
+	e.GetCreatedAt()
+}
+
+func TestEvent_GetDeployment(tt *testing.T) {
+	e := &Event{}
+	e.GetDeployment()
+	e = nil
+	e.GetDeployment()
+}
+
+func TestEvent_GetDeploymentID(tt *testing.T) {
+	e := &Event{}
+	e.GetDeploymentID()
+	e = nil
+	e.GetDeploymentID()
+}
+
+func TestEvent_GetID(tt *testing.T) {
+	e := &Event{}
+	e.GetID()
+	e = nil
+	e.GetID()
+}
+
+func TestEvent_GetType(tt *testing.T) {
+	e := &Event{}
+	e.GetType()
+	e = nil
+	e.GetType()
+}
+
+func TestEventAutoscalingEvent_GetComponents(tt *testing.T) {
+	zeroValue := map[string]AutoscalingEventComponentScaleChange{}
+	e := &EventAutoscalingEvent{Components: zeroValue}
+	e.GetComponents()
+	e = &EventAutoscalingEvent{}
+	e.GetComponents()
+	e = nil
+	e.GetComponents()
+}
+
+func TestEventAutoscalingEvent_GetPhase(tt *testing.T) {
+	e := &EventAutoscalingEvent{}
+	e.GetPhase()
+	e = nil
+	e.GetPhase()
+}
+
 func TestFunctionsComponentHealth_GetFunctionsComponentHealthMetrics(tt *testing.T) {
 	f := &FunctionsComponentHealth{}
 	f.GetFunctionsComponentHealthMetrics()
@@ -3560,6 +3702,20 @@ func TestImageSourceSpec_GetTag(tt *testing.T) {
 
 func TestImageSourceSpecDeployOnPush_GetEnabled(tt *testing.T) {
 	i := &ImageSourceSpecDeployOnPush{}
+	i.GetEnabled()
+	i = nil
+	i.GetEnabled()
+}
+
+func TestInactivitySleepLoadingPage_GetCustomURL(tt *testing.T) {
+	i := &InactivitySleepLoadingPage{}
+	i.GetCustomURL()
+	i = nil
+	i.GetCustomURL()
+}
+
+func TestInactivitySleepLoadingPage_GetEnabled(tt *testing.T) {
+	i := &InactivitySleepLoadingPage{}
 	i.GetEnabled()
 	i = nil
 	i.GetEnabled()
