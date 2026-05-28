@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var listAgentResponse = `
@@ -432,6 +433,70 @@ var listAvailableModelsResponse = `
 	}
 }
 `
+
+var listInferenceRoutersResponse = `
+{
+	"model_routers": [
+		{
+			"uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+			"name": "router-one",
+			"description": "Test router for routing prompts."
+		}
+	],
+	"meta": {
+		"total": 1,
+		"page": 1,
+		"pages": 1
+	}
+}
+`
+
+var listInferenceRouterTaskPresetsResponse = `
+{
+	"tasks": [
+		{
+			"task_slug": "translation",
+			"name": "Translation",
+			"category": "general",
+			"description": "Translate text between languages.",
+			"models": ["openai-gpt-oss-120b"],
+			"tags": ["general"]
+		},
+		{
+			"task_slug": "code-generation",
+			"name": "Code Generation",
+			"category": "software-engineering",
+			"description": "Generate code from natural language.",
+			"models": ["openai-gpt-oss-120b", "anthropic-claude-3-5-sonnet"],
+			"tags": ["code"]
+		}
+	],
+	"meta": {
+		"total": 2,
+		"page": 1,
+		"pages": 1
+	}
+}
+`
+
+var getInferenceRouterResponse = `
+{
+	"model_router": {
+		"uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		"name": "router-one",
+		"description": "Router used for unit tests.",
+		"created_at": "2025-06-01T12:00:00Z",
+		"updated_at": "2025-06-02T15:30:00Z",
+		"config": {
+			"fallback_models": ["openai-gpt-4"],
+			"policies": [
+				{"task_slug": "code-generation", "models": ["llama3"], "selection_policy": {"prefer": "fastest"}}
+			]
+		}
+	}
+}
+`
+
 var listAPIKeysResponse = `
 {
     "api_key_infos": [
@@ -2181,6 +2246,162 @@ func TestDeleteFunctionRoute(t *testing.T) {
 	_, resp, err := client.GradientAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestListInferenceRouters(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "10",
+		})
+		fmt.Fprint(w, listInferenceRoutersResponse)
+	})
+
+	routers, resp, err := client.GradientAI.ListInferenceRouters(ctx, &ListOptions{Page: 1, PerPage: 10})
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.Len(t, routers, 1)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", routers[0].UUID)
+	assert.Equal(t, "router-one", routers[0].Name)
+	assert.Equal(t, "Test router for routing prompts.", routers[0].Description)
+	assert.NotNil(t, resp.Meta)
+	assert.Equal(t, 1, resp.Meta.Total)
+}
+
+func TestListInferenceRouterTaskPresets(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/tasks/presets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "10",
+		})
+		fmt.Fprint(w, listInferenceRouterTaskPresetsResponse)
+	})
+
+	tasks, resp, err := client.GradientAI.ListInferenceRouterTaskPresets(ctx, &ListOptions{Page: 1, PerPage: 10})
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.Len(t, tasks, 2)
+	assert.Equal(t, "translation", tasks[0].TaskSlug)
+	assert.Equal(t, "Translation", tasks[0].Name)
+	assert.Equal(t, "general", tasks[0].Category)
+	assert.Equal(t, "code-generation", tasks[1].TaskSlug)
+	assert.Equal(t, "software-engineering", tasks[1].Category)
+	require.NotNil(t, resp.Meta)
+	assert.Equal(t, 2, resp.Meta.Total)
+}
+
+func TestGetInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	router, resp, err := client.GradientAI.GetInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "router-one", router.Name)
+	assert.Equal(t, "Router used for unit tests.", router.Description)
+	require.NotNil(t, router.Config)
+	assert.Equal(t, []string{"openai-gpt-4"}, router.Config.FallbackModels)
+	assert.Contains(t, string(router.Config.Policies), "code-generation")
+}
+
+func TestCreateInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	create := &InferenceRouterCreateRequest{
+		Name:           "router-one",
+		Description:    "Router used for unit tests.",
+		FallbackModels: []string{"openai-gpt-4"},
+	}
+	router, resp, err := client.GradientAI.CreateInferenceRouter(ctx, create)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", router.UUID)
+}
+
+func TestUpdateInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	name := "router-renamed"
+	update := &InferenceRouterUpdateRequest{Name: name}
+	router, resp, err := client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", update)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "router-one", router.Name)
+}
+
+func TestDeleteInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, `{"uuid":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}`)
+	})
+
+	out, resp, err := client.GradientAI.DeleteInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, out)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", out.UUID)
+}
+
+func TestCreateInferenceRouterValidation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.GradientAI.CreateInferenceRouter(ctx, nil)
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{Name: "n"})
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{
+		Name:           "router",
+		FallbackModels: []string{"a", ""},
+	})
+	assert.Error(t, err)
+}
+
+func TestUpdateInferenceRouterValidation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.GradientAI.UpdateInferenceRouter(ctx, "", &InferenceRouterUpdateRequest{Name: "x"})
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", nil)
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", &InferenceRouterUpdateRequest{})
+	assert.Error(t, err)
 }
 
 func TestListAvailableModels(t *testing.T) {

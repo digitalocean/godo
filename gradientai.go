@@ -11,6 +11,8 @@ import (
 const (
 	gradientBasePath                         = "/v2/gen-ai/agents"
 	agentModelBasePath                       = "/v2/gen-ai/models"
+	inferenceRoutersBasePath                 = agentModelBasePath + "/routers"
+	inferenceRouterTaskPresetsPath           = inferenceRoutersBasePath + "/tasks/presets"
 	datacenterRegionsPath                    = "/v2/gen-ai/regions"
 	agentRouteBasePath                       = gradientBasePath + "/%s/child_agents/%s"
 	KnowledgeBasePath                        = "/v2/gen-ai/knowledge_bases"
@@ -188,6 +190,12 @@ type GradientAIService interface {
 	CreateFunctionRoute(context.Context, string, *FunctionRouteCreateRequest) (*Agent, *Response, error)
 	DeleteFunctionRoute(context.Context, string, string) (*Agent, *Response, error)
 	UpdateFunctionRoute(context.Context, string, string, *FunctionRouteUpdateRequest) (*Agent, *Response, error)
+	ListInferenceRouters(context.Context, *ListOptions) ([]*InferenceRouterSummary, *Response, error)
+	GetInferenceRouter(context.Context, string) (*InferenceRouter, *Response, error)
+	CreateInferenceRouter(context.Context, *InferenceRouterCreateRequest) (*InferenceRouter, *Response, error)
+	UpdateInferenceRouter(context.Context, string, *InferenceRouterUpdateRequest) (*InferenceRouter, *Response, error)
+	DeleteInferenceRouter(context.Context, string) (*InferenceRouterDeleteResponse, *Response, error)
+	ListInferenceRouterTaskPresets(context.Context, *ListOptions) ([]*InferenceRouterTaskPreset, *Response, error)
 	ListAvailableModels(context.Context, *ListOptions) ([]*Model, *Response, error)
 	SearchModels(context.Context, string) ([]string, *Response, error)
 	GetModelByUUID(context.Context, string) (*Model, *Response, error)
@@ -971,6 +979,79 @@ type DatacenterRegions struct {
 
 type datacenterRegionsRoot struct {
 	DatacenterRegions []*DatacenterRegions `json:"regions"`
+}
+
+// InferenceRouterSummary is a compact inference router returned from list operations.
+type InferenceRouterSummary struct {
+	UUID        string `json:"uuid,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// InferenceRouterConfig holds routing configuration for an inference router.
+type InferenceRouterConfig struct {
+	FallbackModels []string        `json:"fallback_models,omitempty"`
+	Policies       json.RawMessage `json:"policies,omitempty"`
+}
+
+// InferenceRouter represents a GenAI inference router resource.
+type InferenceRouter struct {
+	UUID        string                 `json:"uuid,omitempty"`
+	Name        string                 `json:"name,omitempty"`
+	Description string                 `json:"description,omitempty"`
+	CreatedAt   *Timestamp             `json:"created_at,omitempty"`
+	UpdatedAt   *Timestamp             `json:"updated_at,omitempty"`
+	Config      *InferenceRouterConfig `json:"config,omitempty"`
+}
+
+// InferenceRouterCreateRequest defines the body for creating an inference router.
+// Field names match POST /v2/gen-ai/models/routers (see DigitalOcean API / pydo.genai.create_model_router).
+// FallbackModels must contain at least one non-empty model name (enforced by CreateInferenceRouter).
+type InferenceRouterCreateRequest struct {
+	Name           string          `json:"name"`
+	Description    string          `json:"description,omitempty"`
+	Policies       json.RawMessage `json:"policies,omitempty"`
+	FallbackModels []string        `json:"fallback_models"`
+}
+
+// InferenceRouterUpdateRequest defines the body for updating an inference router.
+type InferenceRouterUpdateRequest struct {
+	Name           string           `json:"name,omitempty"`
+	Description    string           `json:"description,omitempty"`
+	Policies       *json.RawMessage `json:"policies,omitempty"`
+	FallbackModels []string         `json:"fallback_models,omitempty"`
+}
+
+// InferenceRouterDeleteResponse is returned when deleting an inference router.
+type InferenceRouterDeleteResponse struct {
+	UUID string `json:"uuid,omitempty"`
+}
+
+// InferenceRouterTaskPreset is a catalog preset task for inference router policies (use TaskSlug in policy JSON).
+// See GET /v2/gen-ai/models/routers/tasks/presets.
+type InferenceRouterTaskPreset struct {
+	TaskSlug    string   `json:"task_slug,omitempty"`
+	Name        string   `json:"name,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Models      []string `json:"models,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+}
+
+type inferenceRouterTaskPresetsRoot struct {
+	Tasks []*InferenceRouterTaskPreset `json:"tasks"`
+	Links *Links                       `json:"links,omitempty"`
+	Meta  *Meta                        `json:"meta,omitempty"`
+}
+
+type inferenceRoutersRoot struct {
+	Routers []*InferenceRouterSummary `json:"model_routers"`
+	Links   *Links                    `json:"links,omitempty"`
+	Meta    *Meta                     `json:"meta,omitempty"`
+}
+
+type inferenceRouterRoot struct {
+	Router *InferenceRouter `json:"model_router"`
 }
 
 type gradientAgentKBRoot struct {
@@ -1946,6 +2027,163 @@ func (g *GradientAIServiceOp) UpdateFunctionRoute(ctx context.Context, agent_id 
 	return root.Agent, resp, nil
 }
 
+// ListInferenceRouters returns a page of inference routers.
+func (s *GradientAIServiceOp) ListInferenceRouters(ctx context.Context, opt *ListOptions) ([]*InferenceRouterSummary, *Response, error) {
+	path, err := addOptions(inferenceRoutersBasePath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(inferenceRoutersRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.Routers, resp, nil
+}
+
+// ListInferenceRouterTaskPresets returns a page of preset tasks for building inference router policies.
+func (s *GradientAIServiceOp) ListInferenceRouterTaskPresets(ctx context.Context, opt *ListOptions) ([]*InferenceRouterTaskPreset, *Response, error) {
+	path, err := addOptions(inferenceRouterTaskPresetsPath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(inferenceRouterTaskPresetsRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	if l := root.Links; l != nil {
+		resp.Links = l
+	}
+	if m := root.Meta; m != nil {
+		resp.Meta = m
+	}
+
+	return root.Tasks, resp, nil
+}
+
+// GetInferenceRouter retrieves an inference router by UUID.
+func (s *GradientAIServiceOp) GetInferenceRouter(ctx context.Context, uuid string) (*InferenceRouter, *Response, error) {
+	if uuid == "" {
+		return nil, nil, fmt.Errorf("uuid is required")
+	}
+
+	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, uuid)
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(inferenceRouterRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Router, resp, nil
+}
+
+// CreateInferenceRouter creates a new inference router.
+func (s *GradientAIServiceOp) CreateInferenceRouter(ctx context.Context, create *InferenceRouterCreateRequest) (*InferenceRouter, *Response, error) {
+	if create == nil {
+		return nil, nil, fmt.Errorf("create request is required")
+	}
+	if create.Name == "" {
+		return nil, nil, fmt.Errorf("name is required")
+	}
+	if len(create.FallbackModels) == 0 {
+		return nil, nil, fmt.Errorf("fallback_models is required")
+	}
+	for i, m := range create.FallbackModels {
+		if strings.TrimSpace(m) == "" {
+			return nil, nil, fmt.Errorf("fallback_models[%d] must not be empty", i)
+		}
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, inferenceRoutersBasePath, create)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(inferenceRouterRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Router, resp, nil
+}
+
+// UpdateInferenceRouter updates an inference router. At least one field in the update request must be set.
+func (s *GradientAIServiceOp) UpdateInferenceRouter(ctx context.Context, uuid string, update *InferenceRouterUpdateRequest) (*InferenceRouter, *Response, error) {
+	if uuid == "" {
+		return nil, nil, fmt.Errorf("uuid is required")
+	}
+	if update == nil {
+		return nil, nil, fmt.Errorf("update request is required")
+	}
+	if update.Name == "" && update.Description == "" && update.Policies == nil && len(update.FallbackModels) == 0 {
+		return nil, nil, fmt.Errorf("at least one of name, description, policies, or fallback_models must be set")
+	}
+
+	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, uuid)
+	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(inferenceRouterRoot)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root.Router, resp, nil
+}
+
+// DeleteInferenceRouter deletes an inference router by UUID.
+func (s *GradientAIServiceOp) DeleteInferenceRouter(ctx context.Context, uuid string) (*InferenceRouterDeleteResponse, *Response, error) {
+	if uuid == "" {
+		return nil, nil, fmt.Errorf("uuid is required")
+	}
+
+	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, uuid)
+	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	out := new(InferenceRouterDeleteResponse)
+	resp, err := s.client.Do(ctx, req, out)
+	if err != nil {
+		return nil, resp, err
+	}
+	if out.UUID == "" {
+		out.UUID = uuid
+	}
+
+	return out, resp, nil
+}
+
 // ListAvailableModels returns a list of available Gradient AI models
 func (g *GradientAIServiceOp) ListAvailableModels(ctx context.Context, opt *ListOptions) ([]*Model, *Response, error) {
 	path, err := addOptions(agentModelBasePath, opt)
@@ -2880,4 +3118,20 @@ func (a IndexingJobResponse) String() string {
 
 func (a IndexingJobDataSourcesResponse) String() string {
 	return Stringify(a)
+}
+
+func (r InferenceRouterSummary) String() string {
+	return Stringify(r)
+}
+
+func (r InferenceRouter) String() string {
+	return Stringify(r)
+}
+
+func (r InferenceRouterConfig) String() string {
+	return Stringify(r)
+}
+
+func (r InferenceRouterDeleteResponse) String() string {
+	return Stringify(r)
 }
