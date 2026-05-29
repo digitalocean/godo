@@ -96,14 +96,10 @@ jobs:
         id: notes
         run: |
           TAG="${{ steps.version.outputs.tag }}"
-          BASE="${{ steps.version.outputs.base_version }}"
-          BETA="${{ steps.version.outputs.beta_number }}"
           {
-            echo "Beta pre-release **$TAG** (base version \`$BASE\`, beta #$BETA)."
+            echo "This is a beta pre-release. \`go get ...@latest\` will **not** install it — it always resolves to the latest stable release."
             echo ""
-            echo "This pre-release is intended for early-access testing of in-progress endpoints."
-            echo "It is published as a GitHub pre-release and will **not** be returned by"
-            echo "\`go get ...@latest\`. To opt in, pin the exact version:"
+            echo "To install this version, pin it explicitly:"
             echo ""
             echo '```'
             echo "go get github.com/digitalocean/godo@$TAG"
