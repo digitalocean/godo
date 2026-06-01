@@ -3065,7 +3065,7 @@ func (s *GradientAIServiceOp) ListModelEvaluationMetrics(ctx context.Context) (*
 	return root, resp, nil
 }
 
-// UpdateCustomModelMetadata updates the metadata (description, tags, name) of an existing custom model.
+// UpdateCustomModelMetadata updates the metadata of an existing custom model.
 func (s *GradientAIServiceOp) UpdateCustomModelMetadata(ctx context.Context, uuid string, updateRequest *CustomModelMetadataUpdateRequest) (*CustomModel, *Response, error) {
 	if uuid == "" {
 		return nil, nil, fmt.Errorf("uuid is required")
