@@ -2369,9 +2369,13 @@ type CustomModelImportRequest struct {
 
 // CustomModelMetadataUpdateRequest is the request body for updating custom model metadata.
 type CustomModelMetadataUpdateRequest struct {
-	Name        string           `json:"name,omitempty"`
-	Description string           `json:"description,omitempty"`
-	Tags        *CustomModelTags `json:"tags,omitempty"`
+	Name             string           `json:"name,omitempty"`
+	Description      string           `json:"description,omitempty"`
+	Tags             *CustomModelTags `json:"tags,omitempty"`
+	InputModalities  []string         `json:"input_modalities,omitempty"`
+	OutputModalities []string         `json:"output_modalities,omitempty"`
+	Parameters       string           `json:"parameters,omitempty"`
+	License          string           `json:"license,omitempty"`
 }
 
 // CustomModelListResponse is the response returned by ListCustomModels.
