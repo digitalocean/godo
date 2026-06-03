@@ -2710,6 +2710,22 @@ var updateCustomModelMetadataResponse = `
 }
 `
 
+var updateCustomModelMetadataSpacesResponse = `
+{
+	"model": {
+		"uuid": "22222222-2222-2222-2222-222222222222",
+		"name": "team/spaces-model",
+		"description": "Spaces import",
+		"status": "STATUS_READY",
+		"source_type": "SOURCE_TYPE_SPACES_BUCKET",
+		"input_modalities": ["text", "image"],
+		"output_modalities": ["text"],
+		"parameters": "7000000000",
+		"license": "apache-2.0"
+	}
+}
+`
+
 func TestListCustomModels(t *testing.T) {
 	setup()
 	defer teardown()
@@ -3060,6 +3076,72 @@ func TestUpdateCustomModelMetadata(t *testing.T) {
 	assert.Equal(t, "Updated description", model.Description)
 	assert.NotNil(t, model.Tags)
 	assert.Equal(t, []string{"updated", "v2"}, model.Tags.Tags)
+}
+
+func TestUpdateCustomModelMetadataSpacesFields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/22222222-2222-2222-2222-222222222222/metadata", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		var got CustomModelMetadataUpdateRequest
+		assert.NoError(t, json.Unmarshal(body, &got))
+		assert.Equal(t, []string{"text", "image"}, got.InputModalities)
+		assert.Equal(t, []string{"text"}, got.OutputModalities)
+		assert.Equal(t, "7000000000", got.Parameters)
+		assert.Equal(t, "apache-2.0", got.License)
+
+		fmt.Fprint(w, updateCustomModelMetadataSpacesResponse)
+	})
+
+	req := &CustomModelMetadataUpdateRequest{
+		InputModalities:  []string{"text", "image"},
+		OutputModalities: []string{"text"},
+		Parameters:       "7000000000",
+		License:          "apache-2.0",
+	}
+
+	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "22222222-2222-2222-2222-222222222222", req)
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", model.Uuid)
+	assert.Equal(t, []string{"text", "image"}, model.InputModalities)
+	assert.Equal(t, []string{"text"}, model.OutputModalities)
+	assert.Equal(t, "7000000000", model.Parameters)
+	assert.Equal(t, "apache-2.0", model.License)
+}
+
+func TestUpdateCustomModelMetadataOmitsUnsetSpacesFields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/11111111-1111-1111-1111-111111111111/metadata", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+
+		var raw map[string]interface{}
+		assert.NoError(t, json.Unmarshal(body, &raw))
+		_, hasInput := raw["input_modalities"]
+		_, hasOutput := raw["output_modalities"]
+		_, hasParams := raw["parameters"]
+		_, hasLicense := raw["license"]
+		assert.False(t, hasInput, "input_modalities should be omitted when unset")
+		assert.False(t, hasOutput, "output_modalities should be omitted when unset")
+		assert.False(t, hasParams, "parameters should be omitted when unset")
+		assert.False(t, hasLicense, "license should be omitted when unset")
+
+		fmt.Fprint(w, updateCustomModelMetadataResponse)
+	})
+
+	req := &CustomModelMetadataUpdateRequest{Description: "Updated description"}
+	_, _, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
+	assert.NoError(t, err)
 }
 
 func TestUpdateCustomModelMetadataMissingUUID(t *testing.T) {
