@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - 'v*'
+      # Beta pre-release tags are handled by release-beta.yml. Excluding
+      # them here keeps this GA pipeline non-breaking when beta tags are
+      # pushed via `make beta_tag`. Behavior for GA tags is unchanged.
+      - '!v*-beta.*'
 
 env:
   GO_VERSION: '1.23'
