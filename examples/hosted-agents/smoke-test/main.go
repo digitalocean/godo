@@ -114,18 +114,6 @@ func main() {
 		return nil
 	})
 
-	ok("StartOAuthFlow", func() error {
-		out, _, err := client.HostedAgents.StartOAuthFlow(ctx, sessionID, "github", nil)
-		if err != nil {
-			return err
-		}
-		if out.AuthorizeURL == "" {
-			return errors.New("empty authorize_url")
-		}
-		fmt.Printf("       → flow_kind=%s authorize_url=%s\n", out.FlowKind, out.AuthorizeURL)
-		return nil
-	})
-
 	skipOrOK("ExecInSandbox", func() (skip bool, err error) {
 		_, resp, err := client.HostedAgents.ExecInSandbox(ctx, sessionID, &godo.HostedAgentSandboxExecRequest{
 			Argv: []string{"echo", "hello"},

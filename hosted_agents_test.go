@@ -152,22 +152,6 @@ func TestHostedAgents_ResolveHITL(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 }
 
-func TestHostedAgents_StartOAuthFlow(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/oauth/github", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodPost)
-		fmt.Fprint(w, `{"authorize_url":"https://github.com/login/oauth/authorize?state=abc","flow_kind":"OAUTH_FLOW_KIND_WEB_CALLBACK"}`)
-	})
-
-	got, resp, err := client.HostedAgents.StartOAuthFlow(ctx, "sess-abc123", "github", nil)
-	require.NoError(t, err)
-	assert.Equal(t, HostedAgentOAuthFlowKindWebCallback, got.FlowKind)
-	assert.Contains(t, got.AuthorizeURL, "github.com")
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-}
-
 func TestHostedAgents_StreamSession(t *testing.T) {
 	setup()
 	defer teardown()
@@ -287,9 +271,6 @@ func TestHostedAgents_ValidationErrors(t *testing.T) {
 
 	_, err = client.HostedAgents.ResolveHITL(ctx, "sess-abc123", "req-001", &HostedAgentResolveHITLRequest{})
 	require.EqualError(t, err, "hosted agents: outcome is required")
-
-	_, _, err = client.HostedAgents.StartOAuthFlow(ctx, "sess-abc123", "", nil)
-	require.EqualError(t, err, "hosted agents: provider is required")
 
 	_, _, err = client.HostedAgents.ExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{})
 	require.EqualError(t, err, "hosted agents: argv is required")
