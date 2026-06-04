@@ -3,6 +3,7 @@ package godo
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -61,6 +62,45 @@ func TestHostedAgents_CreateSession(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, hostedAgentSession, *got)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgents_CreateSessionFromManifest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const manifest = `apiVersion: agents.digitalocean.com/v1alpha1
+kind: Agent
+metadata:
+  name: opencode-coding
+spec:
+  runtime:
+    adapter: opencode
+  sandbox:
+    template: coding
+`
+
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), "agents.digitalocean.com/v1alpha1")
+		assert.Contains(t, string(body), "adapter: opencode")
+		fmt.Fprintf(w, `{"session":%s}`, hostedAgentSessionJSON)
+	})
+
+	got, resp, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte(manifest))
+	require.NoError(t, err)
+	assert.Equal(t, hostedAgentSession, *got)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgents_CreateSessionFromManifest_Empty(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte("  \n"))
+	require.EqualError(t, err, "hosted agents: manifest is required")
 }
 
 func TestHostedAgents_ListSessions(t *testing.T) {
