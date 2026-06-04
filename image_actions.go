@@ -11,7 +11,7 @@ import (
 // endpoints of the DigitalOcean API
 // See: https://docs.digitalocean.com/reference/api/api-reference/#tag/Image-Actions
 type ImageActionsService interface {
-	Get(context.Context, int, int) (*Action, *Response, error)
+	Get(context.Context, int, int64) (*Action, *Response, error)
 	GetByURI(context.Context, string) (*Action, *Response, error)
 	Transfer(context.Context, int, *ActionRequest) (*Action, *Response, error)
 	Convert(context.Context, int) (*Action, *Response, error)
@@ -78,7 +78,7 @@ func (i *ImageActionsServiceOp) Convert(ctx context.Context, imageID int) (*Acti
 }
 
 // Get an action for a particular image by id.
-func (i *ImageActionsServiceOp) Get(ctx context.Context, imageID, actionID int) (*Action, *Response, error) {
+func (i *ImageActionsServiceOp) Get(ctx context.Context, imageID int, actionID int64) (*Action, *Response, error) {
 	if imageID < 1 {
 		return nil, nil, NewArgError("imageID", "cannot be less than 1")
 	}
