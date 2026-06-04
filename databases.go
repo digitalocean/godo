@@ -1018,13 +1018,15 @@ type DatabaseUpdateMetricsCredentialsRequest struct {
 
 // DatabaseOptions represents the available database engines
 type DatabaseOptions struct {
-	MongoDBOptions     DatabaseEngineOptions `json:"mongodb"`
-	MySQLOptions       DatabaseEngineOptions `json:"mysql"`
-	PostgresSQLOptions DatabaseEngineOptions `json:"pg"`
-	RedisOptions       DatabaseEngineOptions `json:"redis"`
-	ValkeyOptions      DatabaseEngineOptions `json:"valkey"`
-	KafkaOptions       DatabaseEngineOptions `json:"kafka"`
-	OpensearchOptions  DatabaseEngineOptions `json:"opensearch"`
+	MongoDBOptions             DatabaseEngineOptions `json:"mongodb"`
+	MySQLOptions               DatabaseEngineOptions `json:"mysql"`
+	PostgresSQLOptions         DatabaseEngineOptions `json:"pg"`
+	RedisOptions               DatabaseEngineOptions `json:"redis"`
+	ValkeyOptions              DatabaseEngineOptions `json:"valkey"`
+	KafkaOptions               DatabaseEngineOptions `json:"kafka"`
+	OpensearchOptions          DatabaseEngineOptions `json:"opensearch"`
+	AdvancedMySQLOptions       DatabaseEngineOptions `json:"advanced_mysql"`
+	AdvancedPostgresSQLOptions DatabaseEngineOptions `json:"advanced_pg"`
 }
 
 // DatabaseEngineOptions represents the configuration options that are available for a given database engine

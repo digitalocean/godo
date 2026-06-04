@@ -2325,6 +2325,41 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 					}
 				]
 			},
+			"advanced_mysql": {
+				"regions": [
+					"nyc1",
+					"lon1"
+				],
+				"versions": [
+					"8.4.8"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"gd-2vcpu-8gb-intel",
+							"so1_5-2vcpu-16gb-intel",
+							"so1_5-2vcpu-16gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"gd-2vcpu-8gb-intel",
+							"so1_5-2vcpu-16gb-intel",
+							"gd-4vcpu-16gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"gd-2vcpu-8gb-intel",
+							"so1_5-2vcpu-16gb-intel",
+							"so1_5-48vcpu-256gb"
+						]
+					}
+				]
+			},
 			"pg": {
 				"regions": [
 					"ams3",
@@ -2354,6 +2389,43 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 						"sizes": [
 							"db-s-1vcpu-2gb",
 							"db-s-2vcpu-4gb"
+						]
+					}
+				]
+			},
+			"advanced_pg": {
+				"regions": [
+					"nyc1",
+					"lon1"
+				],
+				"versions": [
+					"16",
+					"17",
+					"18"
+				],
+				"layouts": [
+					{
+						"num_nodes": 1,
+						"sizes": [
+							"gd-2vcpu-8gb-intel",
+							"so1_5-2vcpu-16gb-intel",
+							"so1_5-2vcpu-16gb"
+						]
+					},
+					{
+						"num_nodes": 2,
+						"sizes": [
+							"gd-2vcpu-8gb-intel",
+							"so1_5-2vcpu-16gb-intel",
+							"gd-4vcpu-16gb"
+						]
+					},
+					{
+						"num_nodes": 3,
+						"sizes": [
+							"gd-2vcpu-8gb-intel",
+							"so1_5-2vcpu-16gb-intel",
+							"so1_5-48vcpu-256gb"
 						]
 					}
 				]
@@ -2493,6 +2565,8 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 	require.NotNil(t, options.MySQLOptions)
 	require.NotNil(t, options.KafkaOptions)
 	require.NotNil(t, options.OpensearchOptions)
+	require.NotNil(t, options.AdvancedMySQLOptions)
+	require.NotNil(t, options.AdvancedPostgresSQLOptions)
 	require.Greater(t, len(options.MongoDBOptions.Regions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Regions), 0)
 	require.Greater(t, len(options.RedisOptions.Regions), 0)
@@ -2500,6 +2574,8 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 	require.Greater(t, len(options.MySQLOptions.Regions), 0)
 	require.Greater(t, len(options.KafkaOptions.Regions), 0)
 	require.Greater(t, len(options.OpensearchOptions.Regions), 0)
+	require.Greater(t, len(options.AdvancedMySQLOptions.Regions), 0)
+	require.Greater(t, len(options.AdvancedPostgresSQLOptions.Regions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Versions), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Versions), 0)
 	require.Greater(t, len(options.RedisOptions.Versions), 0)
@@ -2507,11 +2583,15 @@ func TestDatabases_GetDatabaseOptions(t *testing.T) {
 	require.Greater(t, len(options.MySQLOptions.Versions), 0)
 	require.Greater(t, len(options.KafkaOptions.Versions), 0)
 	require.Greater(t, len(options.OpensearchOptions.Versions), 0)
+	require.Greater(t, len(options.AdvancedMySQLOptions.Versions), 0)
+	require.Greater(t, len(options.AdvancedPostgresSQLOptions.Versions), 0)
 	require.Greater(t, len(options.MongoDBOptions.Layouts), 0)
 	require.Greater(t, len(options.PostgresSQLOptions.Layouts), 0)
 	require.Greater(t, len(options.RedisOptions.Layouts), 0)
 	require.Greater(t, len(options.ValkeyOptions.Layouts), 0)
 	require.Greater(t, len(options.MySQLOptions.Layouts), 0)
+	require.Greater(t, len(options.AdvancedMySQLOptions.Layouts), 0)
+	require.Greater(t, len(options.AdvancedPostgresSQLOptions.Layouts), 0)
 	require.Greater(t, len(options.KafkaOptions.Layouts), 0)
 	require.Greater(t, len(options.OpensearchOptions.Layouts), 0)
 }
