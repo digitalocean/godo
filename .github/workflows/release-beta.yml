@@ -1,0 +1,159 @@
+name: Beta Release
+
+# Dedicated pipeline for pre-release beta tags created via `make beta_tag`.
+# This workflow is intentionally separate from the GA Release workflow so
+# that the GA release flow is not affected in any way. Beta releases are
+# published as GitHub pre-releases (drafted for manual review) and are NOT
+# treated as the latest release by Go module consumers.
+
+on:
+  push:
+    tags:
+      - 'v*-beta.*'
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  release:
+    name: Create Beta Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Parse beta tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          VERSION=${TAG#v}
+          BASE_VERSION=${VERSION%-beta.*}
+          BETA_NUMBER=${VERSION##*-beta.}
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+          echo "beta_number=$BETA_NUMBER" >> $GITHUB_OUTPUT
+          echo "Tag: $TAG | Version: $VERSION | Base: $BASE_VERSION | Beta #: $BETA_NUMBER"
+
+      - name: Verify beta tag format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+-beta\.[0-9]+$'; then
+            echo "Tag $VERSION does not match expected format <major>.<minor>.<patch>-beta.<n>"
+            exit 1
+          fi
+          echo "Beta tag format OK: $VERSION"
+
+      - name: Verify base version matches godo.go
+        run: |
+          GODO_VERSION=$(grep -E '^\s*libraryVersion\s*=' godo.go | sed 's/.*"\(.*\)".*/\1/')
+          BASE_VERSION="${{ steps.version.outputs.base_version }}"
+          if [ "$GODO_VERSION" != "$BASE_VERSION" ]; then
+            echo "Base version mismatch: tag base $BASE_VERSION vs godo.go $GODO_VERSION"
+            echo "Make sure the libraryVersion in godo.go matches the base of the beta tag."
+            exit 1
+          fi
+          echo "Base version verified: $GODO_VERSION"
+
+      - name: Sync vendor directory
+        run: go mod vendor
+
+      - name: Run tests
+        run: |
+          go test -mod=vendor -v ./...
+
+      - name: Run linting
+        run: |
+          go fmt ./...
+          go vet ./...
+
+      - name: Check if release exists
+        id: release_check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "${{ steps.version.outputs.tag }}" > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release does not exist"
+          fi
+
+      - name: Build beta release notes
+        id: notes
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          {
+            echo "This is a beta pre-release. \`go get ...@latest\` will **not** install it — it always resolves to the latest stable release."
+            echo ""
+            echo "To install this version, pin it explicitly:"
+            echo ""
+            echo '```'
+            echo "go get github.com/digitalocean/godo@$TAG"
+            echo '```'
+          } > /tmp/beta-notes.md
+          echo "notes_file=/tmp/beta-notes.md" >> $GITHUB_OUTPUT
+
+      - name: Create Beta Release
+        if: steps.release_check.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          NOTES_FILE="${{ steps.notes.outputs.notes_file }}"
+
+          gh release create "$TAG" \
+            --title "v$VERSION (beta)" \
+            --notes-file "$NOTES_FILE" \
+            --prerelease \
+            --draft
+
+      - name: Update existing beta release
+        if: steps.release_check.outputs.exists == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          NOTES_FILE="${{ steps.notes.outputs.notes_file }}"
+
+          echo "Updating existing beta release $TAG as draft pre-release"
+          gh release edit "$TAG" \
+            --title "v$VERSION (beta)" \
+            --notes-file "$NOTES_FILE" \
+            --prerelease \
+            --draft
+
+      - name: Verify release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          sleep 5
+          if gh release view "$TAG" --json isDraft,isPrerelease \
+              | jq -e '.isDraft == true and .isPrerelease == true' >/dev/null; then
+            echo "Draft pre-release $TAG successfully created"
+          else
+            echo "Release created but may not be in the expected draft+prerelease state"
+            gh release view "$TAG"
+          fi
+
+      - name: Notify completion
+        run: |
+          echo "Draft beta release ${{ steps.version.outputs.tag }} created!"
+          echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
+          echo "Review the draft pre-release and publish it manually when ready."

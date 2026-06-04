@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var listAgentResponse = `
@@ -432,6 +433,70 @@ var listAvailableModelsResponse = `
 	}
 }
 `
+
+var listInferenceRoutersResponse = `
+{
+	"model_routers": [
+		{
+			"uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+			"name": "router-one",
+			"description": "Test router for routing prompts."
+		}
+	],
+	"meta": {
+		"total": 1,
+		"page": 1,
+		"pages": 1
+	}
+}
+`
+
+var listInferenceRouterTaskPresetsResponse = `
+{
+	"tasks": [
+		{
+			"task_slug": "translation",
+			"name": "Translation",
+			"category": "general",
+			"description": "Translate text between languages.",
+			"models": ["openai-gpt-oss-120b"],
+			"tags": ["general"]
+		},
+		{
+			"task_slug": "code-generation",
+			"name": "Code Generation",
+			"category": "software-engineering",
+			"description": "Generate code from natural language.",
+			"models": ["openai-gpt-oss-120b", "anthropic-claude-3-5-sonnet"],
+			"tags": ["code"]
+		}
+	],
+	"meta": {
+		"total": 2,
+		"page": 1,
+		"pages": 1
+	}
+}
+`
+
+var getInferenceRouterResponse = `
+{
+	"model_router": {
+		"uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		"name": "router-one",
+		"description": "Router used for unit tests.",
+		"created_at": "2025-06-01T12:00:00Z",
+		"updated_at": "2025-06-02T15:30:00Z",
+		"config": {
+			"fallback_models": ["openai-gpt-4"],
+			"policies": [
+				{"task_slug": "code-generation", "models": ["llama3"], "selection_policy": {"prefer": "fastest"}}
+			]
+		}
+	}
+}
+`
+
 var listAPIKeysResponse = `
 {
     "api_key_infos": [
@@ -2183,6 +2248,162 @@ func TestDeleteFunctionRoute(t *testing.T) {
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
 
+func TestListInferenceRouters(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "10",
+		})
+		fmt.Fprint(w, listInferenceRoutersResponse)
+	})
+
+	routers, resp, err := client.GradientAI.ListInferenceRouters(ctx, &ListOptions{Page: 1, PerPage: 10})
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.Len(t, routers, 1)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", routers[0].UUID)
+	assert.Equal(t, "router-one", routers[0].Name)
+	assert.Equal(t, "Test router for routing prompts.", routers[0].Description)
+	assert.NotNil(t, resp.Meta)
+	assert.Equal(t, 1, resp.Meta.Total)
+}
+
+func TestListInferenceRouterTaskPresets(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/tasks/presets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"page":     "1",
+			"per_page": "10",
+		})
+		fmt.Fprint(w, listInferenceRouterTaskPresetsResponse)
+	})
+
+	tasks, resp, err := client.GradientAI.ListInferenceRouterTaskPresets(ctx, &ListOptions{Page: 1, PerPage: 10})
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.Len(t, tasks, 2)
+	assert.Equal(t, "translation", tasks[0].TaskSlug)
+	assert.Equal(t, "Translation", tasks[0].Name)
+	assert.Equal(t, "general", tasks[0].Category)
+	assert.Equal(t, "code-generation", tasks[1].TaskSlug)
+	assert.Equal(t, "software-engineering", tasks[1].Category)
+	require.NotNil(t, resp.Meta)
+	assert.Equal(t, 2, resp.Meta.Total)
+}
+
+func TestGetInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	router, resp, err := client.GradientAI.GetInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "router-one", router.Name)
+	assert.Equal(t, "Router used for unit tests.", router.Description)
+	require.NotNil(t, router.Config)
+	assert.Equal(t, []string{"openai-gpt-4"}, router.Config.FallbackModels)
+	assert.Contains(t, string(router.Config.Policies), "code-generation")
+}
+
+func TestCreateInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	create := &InferenceRouterCreateRequest{
+		Name:           "router-one",
+		Description:    "Router used for unit tests.",
+		FallbackModels: []string{"openai-gpt-4"},
+	}
+	router, resp, err := client.GradientAI.CreateInferenceRouter(ctx, create)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", router.UUID)
+}
+
+func TestUpdateInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		fmt.Fprint(w, getInferenceRouterResponse)
+	})
+
+	name := "router-renamed"
+	update := &InferenceRouterUpdateRequest{Name: name}
+	router, resp, err := client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", update)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, router)
+	assert.Equal(t, "router-one", router.Name)
+}
+
+func TestDeleteInferenceRouter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/routers/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, `{"uuid":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}`)
+	})
+
+	out, resp, err := client.GradientAI.DeleteInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.NotNil(t, out)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", out.UUID)
+}
+
+func TestCreateInferenceRouterValidation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.GradientAI.CreateInferenceRouter(ctx, nil)
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{Name: "n"})
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{
+		Name:           "router",
+		FallbackModels: []string{"a", ""},
+	})
+	assert.Error(t, err)
+}
+
+func TestUpdateInferenceRouterValidation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.GradientAI.UpdateInferenceRouter(ctx, "", &InferenceRouterUpdateRequest{Name: "x"})
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", nil)
+	assert.Error(t, err)
+
+	_, _, err = client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", &InferenceRouterUpdateRequest{})
+	assert.Error(t, err)
+}
+
 func TestListAvailableModels(t *testing.T) {
 	setup()
 	defer teardown()
@@ -2485,6 +2706,22 @@ var updateCustomModelMetadataResponse = `
 		"status": "STATUS_READY",
 		"source_type": "SOURCE_TYPE_HUGGINGFACE",
 		"tags": {"tags": ["updated", "v2"]}
+	}
+}
+`
+
+var updateCustomModelMetadataSpacesResponse = `
+{
+	"model": {
+		"uuid": "22222222-2222-2222-2222-222222222222",
+		"name": "team/spaces-model",
+		"description": "Spaces import",
+		"status": "STATUS_READY",
+		"source_type": "SOURCE_TYPE_SPACES_BUCKET",
+		"input_modalities": ["text", "image"],
+		"output_modalities": ["text"],
+		"parameters": "7000000000",
+		"license": "apache-2.0"
 	}
 }
 `
@@ -2841,6 +3078,72 @@ func TestUpdateCustomModelMetadata(t *testing.T) {
 	assert.Equal(t, []string{"updated", "v2"}, model.Tags.Tags)
 }
 
+func TestUpdateCustomModelMetadataSpacesFields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/22222222-2222-2222-2222-222222222222/metadata", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		var got CustomModelMetadataUpdateRequest
+		assert.NoError(t, json.Unmarshal(body, &got))
+		assert.Equal(t, []string{"text", "image"}, got.InputModalities)
+		assert.Equal(t, []string{"text"}, got.OutputModalities)
+		assert.Equal(t, "7000000000", got.Parameters)
+		assert.Equal(t, "apache-2.0", got.License)
+
+		fmt.Fprint(w, updateCustomModelMetadataSpacesResponse)
+	})
+
+	req := &CustomModelMetadataUpdateRequest{
+		InputModalities:  []string{"text", "image"},
+		OutputModalities: []string{"text"},
+		Parameters:       "7000000000",
+		License:          "apache-2.0",
+	}
+
+	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "22222222-2222-2222-2222-222222222222", req)
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "22222222-2222-2222-2222-222222222222", model.Uuid)
+	assert.Equal(t, []string{"text", "image"}, model.InputModalities)
+	assert.Equal(t, []string{"text"}, model.OutputModalities)
+	assert.Equal(t, "7000000000", model.Parameters)
+	assert.Equal(t, "apache-2.0", model.License)
+}
+
+func TestUpdateCustomModelMetadataOmitsUnsetSpacesFields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/11111111-1111-1111-1111-111111111111/metadata", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+
+		var raw map[string]interface{}
+		assert.NoError(t, json.Unmarshal(body, &raw))
+		_, hasInput := raw["input_modalities"]
+		_, hasOutput := raw["output_modalities"]
+		_, hasParams := raw["parameters"]
+		_, hasLicense := raw["license"]
+		assert.False(t, hasInput, "input_modalities should be omitted when unset")
+		assert.False(t, hasOutput, "output_modalities should be omitted when unset")
+		assert.False(t, hasParams, "parameters should be omitted when unset")
+		assert.False(t, hasLicense, "license should be omitted when unset")
+
+		fmt.Fprint(w, updateCustomModelMetadataResponse)
+	})
+
+	req := &CustomModelMetadataUpdateRequest{Description: "Updated description"}
+	_, _, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
+	assert.NoError(t, err)
+}
+
 func TestUpdateCustomModelMetadataMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
@@ -3134,4 +3437,641 @@ func TestCancelModelEvaluationRunInvalidURL(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
+}
+
+var createModelEvaluationRunResponse = `
+{
+	"eval_run_uuid": "12345678-1234-1234-1234-123456789012"
+}
+`
+
+func TestCreateModelEvaluationRun(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createReq := &CreateModelEvaluationRunRequest{
+		Name:               "my-evaluation-run",
+		CandidateModelUUID: "11111111-1111-1111-1111-111111111111",
+		JudgeModelUUID:     "22222222-2222-2222-2222-222222222222",
+		DatasetUUID:        "33333333-3333-3333-3333-333333333333",
+		MetricUUIDs:        []string{"44444444-4444-4444-4444-444444444444"},
+	}
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		v := new(CreateModelEvaluationRunRequest)
+		if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+			t.Errorf("Error decoding request body: %v", err)
+		}
+		assert.Equal(t, createReq.Name, v.Name)
+		assert.Equal(t, createReq.CandidateModelUUID, v.CandidateModelUUID)
+		assert.Equal(t, createReq.JudgeModelUUID, v.JudgeModelUUID)
+		assert.Equal(t, createReq.DatasetUUID, v.DatasetUUID)
+		assert.Equal(t, createReq.MetricUUIDs, v.MetricUUIDs)
+
+		fmt.Fprint(w, createModelEvaluationRunResponse)
+	})
+
+	out, resp, err := client.GradientAI.CreateModelEvaluationRun(ctx, createReq)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "12345678-1234-1234-1234-123456789012", out.EvalRunUuid)
+}
+
+func TestCreateModelEvaluationRunNilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CreateModelEvaluationRun(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestCreateModelEvaluationRunServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
+	})
+
+	out, resp, err := client.GradientAI.CreateModelEvaluationRun(ctx, &CreateModelEvaluationRunRequest{Name: "x"})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusInternalServerError, resp.Response.StatusCode)
+}
+
+var createModelEvalDatasetUploadPresignedURLsResponse = `
+{
+	"request_id": "abcdef01-2345-6789-abcd-ef0123456789",
+	"uploads": [
+		{
+			"object_key": "obj-1",
+			"original_file_name": "dataset.jsonl",
+			"presigned_url": "https://example.com/upload/dataset.jsonl",
+			"expires_at": "2025-05-08T03:37:28Z"
+		}
+	]
+}
+`
+
+func TestCreateModelEvalDatasetUploadPresignedURLs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createReq := &CreateModelEvalDatasetUploadPresignedURLsRequest{
+		Files: []*PresignedUrlFile{
+			{FileName: "dataset.jsonl", FileSize: "2048"},
+		},
+	}
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation/datasets/file_upload_presigned_urls", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		v := new(CreateModelEvalDatasetUploadPresignedURLsRequest)
+		if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+			t.Errorf("Error decoding request body: %v", err)
+		}
+		assert.Len(t, v.Files, 1)
+		assert.Equal(t, "dataset.jsonl", v.Files[0].FileName)
+		assert.Equal(t, "2048", v.Files[0].FileSize)
+
+		fmt.Fprint(w, createModelEvalDatasetUploadPresignedURLsResponse)
+	})
+
+	out, resp, err := client.GradientAI.CreateModelEvalDatasetUploadPresignedURLs(ctx, createReq)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "abcdef01-2345-6789-abcd-ef0123456789", out.RequestID)
+	assert.Len(t, out.Uploads, 1)
+	assert.Equal(t, "dataset.jsonl", out.Uploads[0].OriginalFileName)
+	assert.Equal(t, "https://example.com/upload/dataset.jsonl", out.Uploads[0].PresignedURL)
+	assert.NotNil(t, out.Uploads[0].ExpiresAt)
+}
+
+func TestCreateModelEvalDatasetUploadPresignedURLsNilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CreateModelEvalDatasetUploadPresignedURLs(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+var getModelEvaluationRunResponse = `
+{
+	"run": {
+		"eval_run_uuid": "12345678-1234-1234-1234-123456789012",
+		"name": "my-eval-run",
+		"status": "MODEL_EVALUATION_RUN_SUCCESSFUL",
+		"candidate_model_uuid": "00000000-0000-0000-0000-000000000001",
+		"candidate_model_name": "candidate-model",
+		"candidate_model_source": "CANDIDATE_MODEL_SOURCE_SERVERLESS",
+		"judge_model_uuid": "00000000-0000-0000-0000-000000000002",
+		"judge_model_name": "judge-model",
+		"dataset_uuid": "00000000-0000-0000-0000-000000000003",
+		"dataset_name": "eval-dataset",
+		"created_at": "2025-05-08T03:37:28Z",
+		"started_at": "2025-05-08T03:38:00Z",
+		"completed_at": "2025-05-08T03:45:00Z",
+		"result_summary": {
+			"overall_score_percent": 87.5,
+			"total_duration_seconds": 420,
+			"metric_summaries": [
+				{
+					"metric_uuid": "44444444-4444-4444-4444-444444444444",
+					"metric_name": "accuracy",
+					"pass_percent": 90.0,
+					"fail_percent": 10.0
+				}
+			],
+			"performance_metrics": {
+				"candidate_latency": {
+					"avg_e2e_latency_ms": 250.5,
+					"p95_latency_ms": 450.0
+				},
+				"token_usage": {
+					"total_candidate_tokens": "12345"
+				}
+			},
+			"pricing": {
+				"currency": "USD",
+				"total_cost": 1.5
+			}
+		}
+	},
+	"results": [
+		{
+			"input": "What is 1 + 1?",
+			"output": "2",
+			"ground_truth": "2",
+			"candidate_model_name": "candidate-model",
+			"candidate_model_uuid": "00000000-0000-0000-0000-000000000001",
+			"metric_results": [
+				{
+					"metric_name": "accuracy",
+					"metric_value_type": "METRIC_VALUE_TYPE_PERCENTAGE",
+					"number_value": 100.0,
+					"reasoning": "exact match"
+				}
+			]
+		}
+	],
+	"links": {},
+	"meta": {
+		"total": 1
+	}
+}
+`
+
+func TestGetModelEvaluationRun(t *testing.T) {
+	setup()
+	defer teardown()
+
+	evalRunUUID := "12345678-1234-1234-1234-123456789012"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/model_evaluation_runs/%s", evalRunUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "2", r.URL.Query().Get("page"))
+		assert.Equal(t, "25", r.URL.Query().Get("per_page"))
+		fmt.Fprint(w, getModelEvaluationRunResponse)
+	})
+
+	out, resp, err := client.GradientAI.GetModelEvaluationRun(ctx, evalRunUUID, &ModelEvaluationRunGetOptions{Page: 2, PerPage: 25})
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	assert.NotNil(t, out.Run)
+	assert.Equal(t, evalRunUUID, out.Run.EvalRunUuid)
+	assert.Equal(t, "my-eval-run", out.Run.Name)
+	assert.Equal(t, ModelEvaluationRunSuccessful, out.Run.Status)
+	assert.Equal(t, CandidateModelSourceServerless, out.Run.CandidateModelSource)
+	assert.NotNil(t, out.Run.ResultSummary)
+	assert.Equal(t, 87.5, out.Run.ResultSummary.OverallScorePercent)
+	assert.Equal(t, int64(420), out.Run.ResultSummary.TotalDurationSeconds)
+	assert.Len(t, out.Run.ResultSummary.MetricSummaries, 1)
+	assert.Equal(t, "accuracy", out.Run.ResultSummary.MetricSummaries[0].MetricName)
+	assert.Equal(t, 90.0, out.Run.ResultSummary.MetricSummaries[0].PassPercent)
+	assert.NotNil(t, out.Run.ResultSummary.PerformanceMetrics)
+	assert.NotNil(t, out.Run.ResultSummary.PerformanceMetrics.CandidateLatency)
+	assert.Equal(t, 250.5, out.Run.ResultSummary.PerformanceMetrics.CandidateLatency.AvgE2ELatencyMs)
+	assert.Equal(t, "USD", out.Run.ResultSummary.Pricing.Currency)
+
+	assert.Len(t, out.Results, 1)
+	assert.Equal(t, "What is 1 + 1?", out.Results[0].Input)
+	assert.Equal(t, "2", out.Results[0].Output)
+	assert.Len(t, out.Results[0].MetricResults, 1)
+	assert.Equal(t, MetricValueTypePercentage, out.Results[0].MetricResults[0].MetricValueType)
+	assert.Equal(t, 100.0, out.Results[0].MetricResults[0].NumberValue)
+}
+
+func TestGetModelEvaluationRunNoOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	evalRunUUID := "12345678-1234-1234-1234-123456789012"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/model_evaluation_runs/%s", evalRunUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Empty(t, r.URL.Query().Get("page"))
+		assert.Empty(t, r.URL.Query().Get("per_page"))
+		fmt.Fprint(w, getModelEvaluationRunResponse)
+	})
+
+	out, _, err := client.GradientAI.GetModelEvaluationRun(ctx, evalRunUUID, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+}
+
+func TestGetModelEvaluationRunMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.GetModelEvaluationRun(ctx, "", nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestGetModelEvaluationRunServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.GetModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999", nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+var getModelEvaluationPresetResponse = `
+{
+	"preset": {
+		"eval_preset_uuid": "12345678-1234-1234-1234-123456789012",
+		"name": "my-preset",
+		"dataset_uuid": "00000000-0000-0000-0000-000000000003",
+		"dataset_name": "eval-dataset",
+		"judge_model_uuid": "00000000-0000-0000-0000-000000000002",
+		"judge_model_name": "judge-model",
+		"created_at": "2025-05-08T03:37:28Z",
+		"metrics": [
+			{
+				"metric_uuid": "44444444-4444-4444-4444-444444444444",
+				"metric_name": "accuracy",
+				"category": "METRIC_CATEGORY_CORRECTNESS"
+			}
+		],
+		"star_metric": {
+			"metric_uuid": "44444444-4444-4444-4444-444444444444",
+			"name": "accuracy",
+			"success_threshold": 0.8
+		}
+	}
+}
+`
+
+func TestGetModelEvaluationPreset(t *testing.T) {
+	setup()
+	defer teardown()
+
+	evalPresetUUID := "12345678-1234-1234-1234-123456789012"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/model_evaluation_presets/%s", evalPresetUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getModelEvaluationPresetResponse)
+	})
+
+	out, resp, err := client.GradientAI.GetModelEvaluationPreset(ctx, evalPresetUUID)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.NotNil(t, out.Preset)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	preset := out.Preset
+	assert.Equal(t, evalPresetUUID, preset.EvalPresetUuid)
+	assert.Equal(t, "my-preset", preset.Name)
+	assert.Equal(t, "eval-dataset", preset.DatasetName)
+	assert.Len(t, preset.Metrics, 1)
+	assert.Equal(t, "accuracy", preset.Metrics[0].MetricName)
+	assert.Equal(t, MetricCategoryCorrectness, preset.Metrics[0].Category)
+	assert.NotNil(t, preset.StarMetric)
+	assert.NotNil(t, preset.StarMetric.SuccessThreshold)
+	assert.InDelta(t, 0.8, *preset.StarMetric.SuccessThreshold, 0.0001)
+}
+
+func TestGetModelEvaluationPresetMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.GetModelEvaluationPreset(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestGetModelEvaluationPresetServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_presets/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"not_found","message":"preset not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.GetModelEvaluationPreset(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+var getModelEvaluationRunResultsDownloadURLResponse = `
+{
+	"download_url": "https://example.com/results/run.json.gz?token=abc",
+	"expires_at": "2025-05-08T04:37:28Z"
+}
+`
+
+func TestGetModelEvaluationRunResultsDownloadURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	evalRunUUID := "12345678-1234-1234-1234-123456789012"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/model_evaluation_runs/%s/results/download_url", evalRunUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getModelEvaluationRunResultsDownloadURLResponse)
+	})
+
+	out, resp, err := client.GradientAI.GetModelEvaluationRunResultsDownloadURL(ctx, evalRunUUID)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "https://example.com/results/run.json.gz?token=abc", out.DownloadURL)
+	assert.NotNil(t, out.ExpiresAt)
+}
+
+func TestGetModelEvaluationRunResultsDownloadURLMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.GetModelEvaluationRunResultsDownloadURL(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestGetModelEvaluationRunResultsDownloadURLServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/99999999-9999-9999-9999-999999999999/results/download_url", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"not_found","message":"run not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.GetModelEvaluationRunResultsDownloadURL(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+var listModelEvaluationRunsResponse = `
+{
+	"runs": [
+		{
+			"eval_run_uuid": "11111111-1111-1111-1111-111111111111",
+			"name": "run-1",
+			"status": "MODEL_EVALUATION_RUN_SUCCESSFUL",
+			"candidate_model_name": "candidate-1",
+			"candidate_model_source": "CANDIDATE_MODEL_SOURCE_SERVERLESS",
+			"created_at": "2025-05-08T03:37:28Z"
+		},
+		{
+			"eval_run_uuid": "22222222-2222-2222-2222-222222222222",
+			"name": "run-2",
+			"status": "MODEL_EVALUATION_RUN_QUEUED",
+			"candidate_model_name": "candidate-2",
+			"candidate_model_source": "CANDIDATE_MODEL_SOURCE_DEDICATED",
+			"created_at": "2025-05-08T04:37:28Z"
+		}
+	],
+	"links": {},
+	"meta": {
+		"total": 2
+	}
+}
+`
+
+func TestListModelEvaluationRuns(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		q := r.URL.Query()
+		assert.Equal(t, "preset-uuid", q.Get("eval_preset_uuid"))
+		assert.Equal(t, string(ModelEvaluationRunSuccessful), q.Get("status"))
+		assert.Equal(t, "1", q.Get("page"))
+		assert.Equal(t, "10", q.Get("per_page"))
+		assert.Equal(t, []string{
+			string(ModelEvaluationRunSuccessful),
+			string(ModelEvaluationRunPartiallySuccessful),
+		}, q["statuses"])
+		assert.Equal(t, []string{
+			string(CandidateModelSourceServerless),
+			string(CandidateModelSourceDedicated),
+		}, q["candidate_types"])
+		assert.Equal(t, "needle", q.Get("search"))
+		assert.Equal(t, string(ModelEvaluationRunSortFieldCreatedAt), q.Get("sort_by"))
+		assert.Equal(t, string(ModelEvaluationRunSortDirectionDesc), q.Get("sort_direction"))
+		fmt.Fprint(w, listModelEvaluationRunsResponse)
+	})
+
+	out, resp, err := client.GradientAI.ListModelEvaluationRuns(ctx, &ModelEvaluationRunListOptions{
+		EvalPresetUUID: "preset-uuid",
+		Status:         ModelEvaluationRunSuccessful,
+		Statuses: []ModelEvaluationRunStatus{
+			ModelEvaluationRunSuccessful,
+			ModelEvaluationRunPartiallySuccessful,
+		},
+		CandidateTypes: []CandidateModelSource{
+			CandidateModelSourceServerless,
+			CandidateModelSourceDedicated,
+		},
+		Search:        "needle",
+		SortBy:        ModelEvaluationRunSortFieldCreatedAt,
+		SortDirection: ModelEvaluationRunSortDirectionDesc,
+		ListOptions: ListOptions{
+			Page:    1,
+			PerPage: 10,
+		},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Len(t, out.Runs, 2)
+	assert.Equal(t, "run-1", out.Runs[0].Name)
+	assert.Equal(t, ModelEvaluationRunSuccessful, out.Runs[0].Status)
+	assert.Equal(t, CandidateModelSourceServerless, out.Runs[0].CandidateModelSource)
+	assert.Equal(t, ModelEvaluationRunQueued, out.Runs[1].Status)
+	assert.Equal(t, CandidateModelSourceDedicated, out.Runs[1].CandidateModelSource)
+}
+
+func TestListModelEvaluationRunsNoOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		q := r.URL.Query()
+		assert.Empty(t, q.Get("eval_preset_uuid"))
+		assert.Empty(t, q.Get("status"))
+		assert.Empty(t, q["statuses"])
+		assert.Empty(t, q["candidate_types"])
+		assert.Empty(t, q.Get("search"))
+		assert.Empty(t, q.Get("sort_by"))
+		assert.Empty(t, q.Get("sort_direction"))
+		fmt.Fprint(w, listModelEvaluationRunsResponse)
+	})
+
+	out, _, err := client.GradientAI.ListModelEvaluationRuns(ctx, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Len(t, out.Runs, 2)
+}
+
+var listModelEvaluationPresetsResponse = `
+{
+	"presets": [
+		{
+			"eval_preset_uuid": "11111111-1111-1111-1111-111111111111",
+			"name": "preset-1",
+			"dataset_uuid": "00000000-0000-0000-0000-000000000003",
+			"dataset_name": "eval-dataset",
+			"created_at": "2025-05-08T03:37:28Z"
+		},
+		{
+			"eval_preset_uuid": "22222222-2222-2222-2222-222222222222",
+			"name": "preset-2",
+			"dataset_uuid": "00000000-0000-0000-0000-000000000004",
+			"dataset_name": "another-dataset",
+			"created_at": "2025-05-08T04:37:28Z"
+		}
+	]
+}
+`
+
+func TestListModelEvaluationPresets(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_presets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listModelEvaluationPresetsResponse)
+	})
+
+	out, resp, err := client.GradientAI.ListModelEvaluationPresets(ctx)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Len(t, out.Presets, 2)
+	assert.Equal(t, "preset-1", out.Presets[0].Name)
+	assert.Equal(t, "eval-dataset", out.Presets[0].DatasetName)
+	assert.Equal(t, "preset-2", out.Presets[1].Name)
+}
+
+func TestListModelEvaluationPresetsServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_presets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
+	})
+
+	out, resp, err := client.GradientAI.ListModelEvaluationPresets(ctx)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusInternalServerError, resp.Response.StatusCode)
+}
+
+var listModelEvaluationMetricsResponse = `
+{
+	"metrics": [
+		{
+			"metric_uuid": "11111111-1111-1111-1111-111111111111",
+			"metric_name": "accuracy",
+			"description": "Measures the correctness of the response.",
+			"metric_type": "METRIC_TYPE_GENERAL_QUALITY",
+			"metric_value_type": "METRIC_VALUE_TYPE_PERCENTAGE",
+			"category": "METRIC_CATEGORY_CORRECTNESS",
+			"range_min": 0,
+			"range_max": 1,
+			"inverted": false
+		},
+		{
+			"metric_uuid": "22222222-2222-2222-2222-222222222222",
+			"metric_name": "toxicity",
+			"description": "Measures whether the response contains toxic content.",
+			"metric_type": "METRIC_TYPE_GENERAL_QUALITY",
+			"metric_value_type": "METRIC_VALUE_TYPE_NUMBER",
+			"category": "METRIC_CATEGORY_SAFETY_AND_SECURITY",
+			"inverted": true
+		}
+	]
+}
+`
+
+func TestListModelEvaluationMetrics(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_metrics", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listModelEvaluationMetricsResponse)
+	})
+
+	out, resp, err := client.GradientAI.ListModelEvaluationMetrics(ctx)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Len(t, out.Metrics, 2)
+	assert.Equal(t, "accuracy", out.Metrics[0].MetricName)
+	assert.Equal(t, MetricTypeGeneralQuality, out.Metrics[0].MetricType)
+	assert.Equal(t, MetricValueTypePercentage, out.Metrics[0].MetricValueType)
+	assert.Equal(t, MetricCategoryCorrectness, out.Metrics[0].Category)
+	assert.Equal(t, "toxicity", out.Metrics[1].MetricName)
+	assert.True(t, out.Metrics[1].Inverted)
+}
+
+func TestListModelEvaluationMetricsServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_metrics", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
+	})
+
+	out, resp, err := client.GradientAI.ListModelEvaluationMetrics(ctx)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusInternalServerError, resp.Response.StatusCode)
 }
