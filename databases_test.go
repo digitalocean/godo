@@ -3109,6 +3109,84 @@ func TestDatabases_UpdateConfigPostgres(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetConfigAdvancedPostgres(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		advancedPostgresConfigJSON = `{
+  "config": {
+    "pg_parameters": [
+      {
+        "name": "work_mem",
+        "value": "1024",
+        "description": "Sets the maximum memory to be used for query workspaces.",
+        "requires_restart": false,
+        "default_value": "1024"
+      }
+    ]
+  }
+}`
+
+		advancedPostgresConfig = AdvancedPostgresConfig{
+			PGParameters: []AdvancedPostgresPGParameter{
+				{
+					Name:            "work_mem",
+					Value:           "1024",
+					Description:     "Sets the maximum memory to be used for query workspaces.",
+					RequiresRestart: false,
+					DefaultValue:    "1024",
+				},
+			},
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, advancedPostgresConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetAdvancedPostgresSQLConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &advancedPostgresConfig, got)
+}
+
+func TestDatabases_UpdateConfigAdvancedPostgres(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		advancedPostgresConfig = &AdvancedPostgresConfigUpdate{
+			PGParameters: map[string]string{
+				"work_mem": "4096",
+			},
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseAdvancedPostgresConfigUpdateRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, advancedPostgresConfig)
+
+		w.WriteHeader(http.StatusOK)
+	})
+
+	_, err := client.Databases.UpdateAdvancedPostgresSQLConfig(ctx, dbID, advancedPostgresConfig)
+	require.NoError(t, err)
+}
+
 func TestDatabases_GetConfigRedis(t *testing.T) {
 	setup()
 	defer teardown()
