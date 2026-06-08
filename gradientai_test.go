@@ -4075,3 +4075,86 @@ func TestListModelEvaluationMetricsServerError(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.Equal(t, http.StatusInternalServerError, resp.Response.StatusCode)
 }
+
+var listEvaluationDatasetsResponse = `
+{
+	"evaluation_datasets": [
+		{
+			"created_at": "2023-01-01T00:00:00Z",
+			"dataset_name": "dataset-1",
+			"dataset_type": "EVALUATION_DATASET_TYPE_MODEL",
+			"dataset_uuid": "11111111-1111-1111-1111-111111111111",
+			"file_size": "12345",
+			"has_ground_truth": true,
+			"row_count": 100
+		},
+		{
+			"created_at": "2023-02-01T00:00:00Z",
+			"dataset_name": "dataset-2",
+			"dataset_type": "EVALUATION_DATASET_TYPE_ADK",
+			"dataset_uuid": "22222222-2222-2222-2222-222222222222",
+			"file_size": "67890",
+			"has_ground_truth": false,
+			"row_count": 50
+		}
+	]
+}
+`
+
+func TestListEvaluationDatasets(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/evaluation_datasets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, listEvaluationDatasetsResponse)
+	})
+
+	out, resp, err := client.GradientAI.ListEvaluationDatasets(ctx, nil)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Len(t, out.EvaluationDatasets, 2)
+	assert.Equal(t, "dataset-1", out.EvaluationDatasets[0].DatasetName)
+	assert.Equal(t, EvaluationDatasetTypeModel, out.EvaluationDatasets[0].DatasetType)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", out.EvaluationDatasets[0].DatasetUUID)
+	assert.Equal(t, int64(100), out.EvaluationDatasets[0].RowCount)
+	assert.True(t, out.EvaluationDatasets[0].HasGroundTruth)
+	assert.Equal(t, "dataset-2", out.EvaluationDatasets[1].DatasetName)
+	assert.Equal(t, EvaluationDatasetTypeADK, out.EvaluationDatasets[1].DatasetType)
+}
+
+func TestListEvaluationDatasetsWithOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/evaluation_datasets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, string(EvaluationDatasetTypeADK), r.URL.Query().Get("dataset_type"))
+		fmt.Fprint(w, listEvaluationDatasetsResponse)
+	})
+
+	out, resp, err := client.GradientAI.ListEvaluationDatasets(ctx, &EvaluationDatasetListOptions{
+		DatasetType: EvaluationDatasetTypeADK,
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Len(t, out.EvaluationDatasets, 2)
+}
+
+func TestListEvaluationDatasetsServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/evaluation_datasets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
+	})
+
+	out, resp, err := client.GradientAI.ListEvaluationDatasets(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusInternalServerError, resp.Response.StatusCode)
+}
