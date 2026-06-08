@@ -196,7 +196,10 @@ func TestHostedAgents_StreamSession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	const eventJSON = `{"event_id":"ev-1","session_id":"sess-abc123","team_id":42,"at":"2026-03-01T12:01:00Z","kind":"EVENT_KIND_TOKEN_CHUNK","payload":{"text":"hello"}}`
+	// The server serializes the SPI canonical event envelope: the discriminator
+	// is `type` (dot-separated), the body is `data`, the timestamp is
+	// `timestamp`, and the team id rides as a decimal string in `tenant_id`.
+	const eventJSON = `{"event_id":"ev-1","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":1,"type":"run.token_delta","data":{"text":"hello"}}`
 
 	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
@@ -204,7 +207,7 @@ func TestHostedAgents_StreamSession(t *testing.T) {
 		assert.Equal(t, "ev-0", r.URL.Query().Get("replay_from"))
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprintf(w, ": connected\n\n")
-		fmt.Fprintf(w, "id: ev-1\nevent: EVENT_KIND_TOKEN_CHUNK\ndata: %s\n\n", eventJSON)
+		fmt.Fprintf(w, "id: ev-1\nevent: run.token_delta\ndata: %s\n\n", eventJSON)
 	})
 
 	stream, resp, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
@@ -216,10 +219,32 @@ func TestHostedAgents_StreamSession(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	require.True(t, stream.Next())
-	assert.Equal(t, HostedAgentEventKindTokenChunk, stream.Current().Kind)
-	assert.Equal(t, "ev-1", stream.Current().EventID)
+	ev := stream.Current()
+	assert.Equal(t, HostedAgentEventKindTokenChunk, ev.Kind)
+	assert.Equal(t, "ev-1", ev.EventID)
+	assert.Equal(t, "run-1", ev.RunID)
+	assert.Equal(t, uint64(42), ev.TeamID)
+	assert.JSONEq(t, `{"text":"hello"}`, string(ev.Payload))
 	assert.NoError(t, stream.Err())
 	assert.False(t, stream.Next())
+}
+
+// TestHostedAgentEvent_UnmarshalSPIWire pins the SPI canonical envelope decode:
+// type->Kind (dot-separated), data->Payload, timestamp->At, tenant_id(string)->TeamID.
+func TestHostedAgentEvent_UnmarshalSPIWire(t *testing.T) {
+	const frame = `{"event_id":"ev-9","run_id":"run-7","tenant_id":"120","session_id":"sess-1","timestamp":"2026-06-05T12:56:24.774753219Z","seq":3,"type":"run.token_delta","data":{"text":"Paris"}}`
+
+	var ev HostedAgentEvent
+	require.NoError(t, json.Unmarshal([]byte(frame), &ev))
+
+	assert.Equal(t, "ev-9", ev.EventID)
+	assert.Equal(t, "run-7", ev.RunID)
+	assert.Equal(t, "sess-1", ev.SessionID)
+	assert.Equal(t, uint64(120), ev.TeamID)
+	assert.Equal(t, uint64(3), ev.Seq)
+	assert.Equal(t, HostedAgentEventKindTokenChunk, ev.Kind)
+	assert.False(t, ev.At.IsZero())
+	assert.JSONEq(t, `{"text":"Paris"}`, string(ev.Payload))
 }
 
 func TestHostedAgents_ListSessions_PageToken(t *testing.T) {
