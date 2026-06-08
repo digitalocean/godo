@@ -79,6 +79,7 @@ type Client struct {
 	LoadBalancers       LoadBalancersService
 	Monitoring          MonitoringService
 	Security            SecurityService
+	Secrets             SecretsService
 	Nfs                 NfsService
 	NfsActions          NfsActionsService
 	OneClick            OneClickService
@@ -320,6 +321,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.LoadBalancers = &LoadBalancersServiceOp{client: c}
 	c.Monitoring = &MonitoringServiceOp{client: c}
 	c.Security = &SecurityServiceOp{client: c}
+	c.Secrets = &SecretsServiceOp{client: c}
 	c.Nfs = &NfsServiceOp{client: c}
 	c.NfsActions = &NfsActionsServiceOp{client: c}
 	c.VPCNATGateways = &VPCNATGatewaysServiceOp{client: c}
