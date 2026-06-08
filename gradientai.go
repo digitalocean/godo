@@ -44,6 +44,7 @@ const (
 	modelEvaluationPresetByIDPath            = modelEvaluationPresetsBasePath + "/%s"
 	modelEvaluationMetricsBasePath           = "/v2/gen-ai/model_evaluation_metrics"
 	modelEvaluationDatasetUploadURLsPath     = "/v2/gen-ai/model_evaluation/datasets/file_upload_presigned_urls"
+	evaluationDatasetsBasePath               = "/v2/gen-ai/evaluation_datasets"
 )
 
 // CustomModelStatus represents the status of a custom model.
@@ -141,6 +142,16 @@ const (
 	ModelEvaluationRunSortDirectionDesc        ModelEvaluationRunSortDirection = "SORT_DIRECTION_DESC"
 )
 
+// EvaluationDatasetType represents the type of an evaluation dataset.
+type EvaluationDatasetType string
+
+const (
+	EvaluationDatasetTypeUnknown EvaluationDatasetType = "EVALUATION_DATASET_TYPE_UNKNOWN"
+	EvaluationDatasetTypeADK     EvaluationDatasetType = "EVALUATION_DATASET_TYPE_ADK"
+	EvaluationDatasetTypeNonADK  EvaluationDatasetType = "EVALUATION_DATASET_TYPE_NON_ADK"
+	EvaluationDatasetTypeModel   EvaluationDatasetType = "EVALUATION_DATASET_TYPE_MODEL"
+)
+
 // GradientAIService is an interface for interfacing with the Gradient AI Agent endpoints
 // of the DigitalOcean API.
 // See https://docs.digitalocean.com/reference/api/digitalocean/#tag/GradientAI-Platform for more details.
@@ -216,6 +227,7 @@ type GradientAIService interface {
 	ListModelEvaluationRuns(ctx context.Context, opt *ModelEvaluationRunListOptions) (*ModelEvaluationRunListResponse, *Response, error)
 	ListModelEvaluationPresets(ctx context.Context) (*ModelEvaluationPresetListResponse, *Response, error)
 	ListModelEvaluationMetrics(ctx context.Context) (*ModelEvaluationMetricListResponse, *Response, error)
+	ListEvaluationDatasets(ctx context.Context, opt *EvaluationDatasetListOptions) (*EvaluationDatasetListResponse, *Response, error)
 }
 
 var _ GradientAIService = &GradientAIServiceOp{}
@@ -2893,6 +2905,31 @@ type ModelEvaluationMetricListResponse struct {
 	Metrics []*EvaluationMetric `json:"metrics,omitempty"`
 }
 
+// EvaluationDatasetListOptions holds the optional filters for
+// ListEvaluationDatasets.
+type EvaluationDatasetListOptions struct {
+	// DatasetType filters the results by evaluation dataset type.
+	DatasetType EvaluationDatasetType `url:"dataset_type,omitempty"`
+}
+
+// EvaluationDatasetInfo represents an evaluation dataset returned by
+// ListEvaluationDatasets.
+type EvaluationDatasetInfo struct {
+	CreatedAt      *Timestamp            `json:"created_at,omitempty"`
+	DatasetName    string                `json:"dataset_name,omitempty"`
+	DatasetType    EvaluationDatasetType `json:"dataset_type,omitempty"`
+	DatasetUUID    string                `json:"dataset_uuid,omitempty"`
+	FileSize       string                `json:"file_size,omitempty"`
+	HasGroundTruth bool                  `json:"has_ground_truth,omitempty"`
+	RowCount       int64                 `json:"row_count,omitempty"`
+}
+
+// EvaluationDatasetListResponse is the response returned by
+// ListEvaluationDatasets.
+type EvaluationDatasetListResponse struct {
+	EvaluationDatasets []*EvaluationDatasetInfo `json:"evaluation_datasets,omitempty"`
+}
+
 // CreateModelEvaluationRun creates a new model evaluation run.
 func (s *GradientAIServiceOp) CreateModelEvaluationRun(ctx context.Context, createRequest *CreateModelEvaluationRunRequest) (*ModelEvaluationRunCreateResponse, *Response, error) {
 	if createRequest == nil {
@@ -3058,6 +3095,27 @@ func (s *GradientAIServiceOp) ListModelEvaluationMetrics(ctx context.Context) (*
 	}
 
 	root := new(ModelEvaluationMetricListResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// ListEvaluationDatasets lists evaluation datasets. Results can be filtered by
+// dataset type using the provided options.
+func (s *GradientAIServiceOp) ListEvaluationDatasets(ctx context.Context, opt *EvaluationDatasetListOptions) (*EvaluationDatasetListResponse, *Response, error) {
+	path, err := addOptions(evaluationDatasetsBasePath, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(EvaluationDatasetListResponse)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
