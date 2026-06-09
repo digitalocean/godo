@@ -3439,6 +3439,110 @@ func TestCancelModelEvaluationRunInvalidURL(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
+var updateModelEvaluationRunResponse = `
+{
+	"run": {
+		"eval_run_uuid": "33c32a9b-aa48-4577-b513-0a0257dd00f2",
+		"name": "Updated run",
+		"candidate_model_name": "OpenAI GPT-oss-20b",
+		"dataset_name": "political_reasoning_safety_NGT.jsonl",
+		"status": "MODEL_EVALUATION_RUN_PARTIALLY_SUCCESSFUL",
+		"created_at": "2026-06-05T12:17:08Z",
+		"candidate_model_uuid": "c60da0be-73c4-11f0-b074-4e013e2ddde4",
+		"judge_model_uuid": "3568b895-f2ca-11ef-bf8f-4e013e2ddde4",
+		"judge_model_name": "OpenAI GPT-4o",
+		"dataset_uuid": "11f15429-ff86-d769-9439-ca68c578b04b"
+	}
+}
+`
+
+func TestUpdateModelEvaluationRun(t *testing.T) {
+	setup()
+	defer teardown()
+
+	evalRunUUID := "33c32a9b-aa48-4577-b513-0a0257dd00f2"
+
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/model_evaluation_runs/%s", evalRunUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		v := new(UpdateModelEvaluationRunRequest)
+		if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+			t.Errorf("Error decoding request body: %v", err)
+		}
+		assert.Equal(t, "Updated run", v.Name)
+
+		fmt.Fprint(w, updateModelEvaluationRunResponse)
+	})
+
+	updateReq := &UpdateModelEvaluationRunRequest{
+		Name: "Updated run",
+	}
+
+	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, evalRunUUID, updateReq)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.NotNil(t, out.Run)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	run := out.Run
+	assert.Equal(t, evalRunUUID, run.EvalRunUuid)
+	assert.Equal(t, "Updated run", run.Name)
+	assert.Equal(t, ModelEvaluationRunPartiallySuccessful, run.Status)
+	assert.Equal(t, "OpenAI GPT-oss-20b", run.CandidateModelName)
+	assert.Equal(t, "c60da0be-73c4-11f0-b074-4e013e2ddde4", run.CandidateModelUuid)
+	assert.Equal(t, "OpenAI GPT-4o", run.JudgeModelName)
+	assert.Equal(t, "3568b895-f2ca-11ef-bf8f-4e013e2ddde4", run.JudgeModelUuid)
+	assert.Equal(t, "political_reasoning_safety_NGT.jsonl", run.DatasetName)
+	assert.Equal(t, "11f15429-ff86-d769-9439-ca68c578b04b", run.DatasetUuid)
+	assert.NotNil(t, run.CreatedAt)
+}
+
+func TestUpdateModelEvaluationRunMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, "", &UpdateModelEvaluationRunRequest{Name: "x"})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestUpdateModelEvaluationRunMissingRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, "12345678-1234-1234-1234-123456789012", nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestUpdateModelEvaluationRunServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999", &UpdateModelEvaluationRunRequest{Name: "x"})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestUpdateModelEvaluationRunInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, "bad\nuuid", &UpdateModelEvaluationRunRequest{Name: "x"})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
 var createModelEvaluationRunResponse = `
 {
 	"eval_run_uuid": "12345678-1234-1234-1234-123456789012"
