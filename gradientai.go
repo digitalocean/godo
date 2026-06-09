@@ -45,6 +45,7 @@ const (
 	modelEvaluationMetricsBasePath           = "/v2/gen-ai/model_evaluation_metrics"
 	modelEvaluationDatasetUploadURLsPath     = "/v2/gen-ai/model_evaluation/datasets/file_upload_presigned_urls"
 	evaluationDatasetsBasePath               = "/v2/gen-ai/evaluation_datasets"
+	UpdateModelEvaluationRunPath             = modelEvaluationRunsBasePath + "/%s"
 )
 
 // CustomModelStatus represents the status of a custom model.
@@ -220,6 +221,7 @@ type GradientAIService interface {
 	DeleteModelEvaluationPreset(ctx context.Context, evalPresetUUID string) (*ModelEvaluationPresetDeleteResponse, *Response, error)
 	CancelModelEvaluationRun(ctx context.Context, evalRunUUID string) (*ModelEvaluationRunCancelResponse, *Response, error)
 	CreateModelEvaluationRun(ctx context.Context, createRequest *CreateModelEvaluationRunRequest) (*ModelEvaluationRunCreateResponse, *Response, error)
+	UpdateModelEvaluationRun(ctx context.Context, evalRunUUID string, updateRequest *UpdateModelEvaluationRunRequest) (*ModelEvaluationRunUpdateResponse, *Response, error)
 	CreateModelEvalDatasetUploadPresignedURLs(ctx context.Context, createRequest *CreateModelEvalDatasetUploadPresignedURLsRequest) (*CreateModelEvalDatasetUploadPresignedURLsResponse, *Response, error)
 	GetModelEvaluationRun(ctx context.Context, evalRunUUID string, opt *ModelEvaluationRunGetOptions) (*ModelEvaluationRunGetResponse, *Response, error)
 	GetModelEvaluationPreset(ctx context.Context, evalPresetUUID string) (*ModelEvaluationPresetGetResponse, *Response, error)
@@ -2540,6 +2542,17 @@ type ModelEvaluationRunCancelResponse struct {
 	Run *ModelEvaluationRunSummary `json:"run,omitempty"`
 }
 
+// UpdateModelEvaluationRunRequest represents the request payload for updating a
+// model evaluation run. Currently only the run's display name can be updated.
+type UpdateModelEvaluationRunRequest struct {
+	Name string `json:"name,omitempty"`
+}
+
+// ModelEvaluationRunUpdateResponse is the response returned by UpdateModelEvaluationRun.
+type ModelEvaluationRunUpdateResponse struct {
+	Run *ModelEvaluationRunSummary `json:"run,omitempty"`
+}
+
 // ModelEvaluationPresetDeleteResponse is the response returned by
 // DeleteModelEvaluationPreset. The underlying API returns an empty object on
 // success; this struct exists for forward compatibility and to keep the SDK
@@ -2611,6 +2624,31 @@ func (s *GradientAIServiceOp) CancelModelEvaluationRun(ctx context.Context, eval
 	}
 
 	root := new(ModelEvaluationRunCancelResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// UpdateModelEvaluationRun updates mutable fields on an existing model
+// evaluation run identified by its UUID. Currently only the run's display name
+// can be updated.
+func (s *GradientAIServiceOp) UpdateModelEvaluationRun(ctx context.Context, evalRunUUID string, updateRequest *UpdateModelEvaluationRunRequest) (*ModelEvaluationRunUpdateResponse, *Response, error) {
+	if evalRunUUID == "" {
+		return nil, nil, fmt.Errorf("eval run uuid is required")
+	}
+	if updateRequest == nil {
+		return nil, nil, fmt.Errorf("update request is required")
+	}
+	path := fmt.Sprintf(UpdateModelEvaluationRunPath, evalRunUUID)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, updateRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(ModelEvaluationRunUpdateResponse)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
