@@ -2643,7 +2643,7 @@ func (s *GradientAIServiceOp) UpdateModelEvaluationRun(ctx context.Context, eval
 	}
 	path := fmt.Sprintf(UpdateModelEvaluationRunPath, evalRunUUID)
 
-	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
+	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
 	}

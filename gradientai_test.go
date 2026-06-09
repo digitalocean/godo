@@ -3463,7 +3463,7 @@ func TestUpdateModelEvaluationRun(t *testing.T) {
 	evalRunUUID := "33c32a9b-aa48-4577-b513-0a0257dd00f2"
 
 	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/model_evaluation_runs/%s", evalRunUUID), func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodPut)
+		testMethod(t, r, http.MethodPatch)
 
 		v := new(UpdateModelEvaluationRunRequest)
 		if err := json.NewDecoder(r.Body).Decode(v); err != nil {
@@ -3522,7 +3522,7 @@ func TestUpdateModelEvaluationRunServerError(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/v2/gen-ai/model_evaluation_runs/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodPut)
+		testMethod(t, r, http.MethodPatch)
 		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
 	})
 
