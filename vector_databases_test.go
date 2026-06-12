@@ -118,10 +118,11 @@ func TestVectorDBs_Create(t *testing.T) {
 	})
 
 	createRequest := &VectorDBCreateRequest{
-		Name:   "vectortest",
-		Region: "nyc3",
-		Size:   "small",
-		Tags:   []string{"production", "ml"},
+		Name:      "vectortest",
+		Region:    "nyc3",
+		Size:      "small",
+		Tags:      []string{"production", "ml"},
+		ProjectID: "49c369ee-c6a7-4c13-b8b4-ba0ac8d4180b",
 	}
 
 	got, _, err := client.VectorDBs.Create(ctx, createRequest)
