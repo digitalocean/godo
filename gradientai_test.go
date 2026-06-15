@@ -4262,3 +4262,54 @@ func TestListEvaluationDatasetsServerError(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.Equal(t, http.StatusInternalServerError, resp.Response.StatusCode)
 }
+
+func TestDeleteEvaluationDataset(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/evaluation_datasets/12345678-1234-1234-1234-123456789012", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, `{}`)
+	})
+
+	out, resp, err := client.GradientAI.DeleteEvaluationDataset(ctx, "12345678-1234-1234-1234-123456789012")
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestDeleteEvaluationDatasetMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteEvaluationDataset(ctx, "")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestDeleteEvaluationDatasetServerError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/evaluation_datasets/99999999-9999-9999-9999-999999999999", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		http.Error(w, `{"id":"not_found","message":"evaluation dataset not found"}`, http.StatusNotFound)
+	})
+
+	out, resp, err := client.GradientAI.DeleteEvaluationDataset(ctx, "99999999-9999-9999-9999-999999999999")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusNotFound, resp.Response.StatusCode)
+}
+
+func TestDeleteEvaluationDatasetInvalidURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.DeleteEvaluationDataset(ctx, "bad\nuuid")
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
