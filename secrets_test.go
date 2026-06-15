@@ -45,13 +45,14 @@ func TestSecretsList(t *testing.T) {
 		}`)
 	})
 
-	secrets, resp, err := client.Secrets.List(context.Background(), &ListOptions{Page: 1, PerPage: 20})
+	list, resp, err := client.Secrets.List(context.Background(), &ListOptions{Page: 1, PerPage: 20})
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
-	assert.Len(t, secrets, 1)
-	assert.Equal(t, secretName, secrets[0].Name)
-	assert.Equal(t, secretRegion, secrets[0].Region)
-	assert.Equal(t, 1, secrets[0].Version)
+	assert.Len(t, list.Secrets, 1)
+	assert.Equal(t, secretName, list.Secrets[0].Name)
+	assert.Equal(t, secretRegion, list.Secrets[0].Region)
+	assert.Equal(t, 1, list.Secrets[0].Version)
+	assert.Equal(t, []string{"sfo3"}, list.UnavailableRegions)
 }
 
 func TestSecretsGet(t *testing.T) {

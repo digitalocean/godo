@@ -13,7 +13,7 @@ const secretsBasePath = "v2/security/secrets"
 // SecretsService is an interface for interacting with the Secrets endpoints of
 // the DigitalOcean API.
 type SecretsService interface {
-	List(context.Context, *ListOptions) ([]*Secret, *Response, error)
+	List(context.Context, *ListOptions) (*SecretsList, *Response, error)
 	Get(context.Context, string, string) (*Secret, *Response, error)
 	ListVersions(context.Context, string, string) ([]*SecretVersion, *Response, error)
 	Create(context.Context, *SecretCreateRequest) (*SecretWriteResult, *Response, error)
@@ -69,6 +69,12 @@ type SecretWriteResult struct {
 	Version int    `json:"version"`
 }
 
+// SecretsList holds the result of a list secrets request.
+type SecretsList struct {
+	Secrets            []*Secret
+	UnavailableRegions []string
+}
+
 type secretRegionOptions struct {
 	Region string `url:"region"`
 }
@@ -85,7 +91,7 @@ type secretVersionsRoot struct {
 }
 
 // List returns a paginated list of secrets across all regions.
-func (s *SecretsServiceOp) List(ctx context.Context, opts *ListOptions) ([]*Secret, *Response, error) {
+func (s *SecretsServiceOp) List(ctx context.Context, opts *ListOptions) (*SecretsList, *Response, error) {
 	path, err := addOptions(secretsBasePath, opts)
 	if err != nil {
 		return nil, nil, err
@@ -108,7 +114,10 @@ func (s *SecretsServiceOp) List(ctx context.Context, opts *ListOptions) ([]*Secr
 		resp.Meta = m
 	}
 
-	return root.Secrets, resp, nil
+	return &SecretsList{
+		Secrets:            root.Secrets,
+		UnavailableRegions: root.UnavailableRegions,
+	}, resp, nil
 }
 
 // Get retrieves a secret by name and region.
