@@ -537,4 +537,3 @@ func (s *NfsServiceOp) DeleteAccessPoint(ctx context.Context, accessPointID stri
 
 	return &NfsAccessPointActionResponse{AccessPoint: root.AccessPoint, Action: root.Action}, resp, nil
 }
-

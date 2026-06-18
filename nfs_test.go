@@ -296,4 +296,3 @@ func TestNfsDeleteAccessPoint(t *testing.T) {
 	assert.Equal(t, NfsAccessPointDeleted, apResp.AccessPoint.Status)
 	assert.Equal(t, "DELETE_ACCESS_POINT", apResp.Action.Type)
 }
-
