@@ -2520,17 +2520,18 @@ type ModelEvaluationRunDeleteResponse struct {
 // ModelEvaluationRunSummary is a lightweight view of an evaluation run used in
 // run history listings and the cancel response.
 type ModelEvaluationRunSummary struct {
-	CandidateModelName   string                   `json:"candidate_model_name,omitempty"`
-	CandidateModelSource CandidateModelSource     `json:"candidate_model_source,omitempty"`
-	CandidateModelUuid   string                   `json:"candidate_model_uuid,omitempty"`
-	CreatedAt            *Timestamp               `json:"created_at,omitempty"`
-	DatasetName          string                   `json:"dataset_name,omitempty"`
-	DatasetUuid          string                   `json:"dataset_uuid,omitempty"`
-	EvalRunUuid          string                   `json:"eval_run_uuid,omitempty"`
-	JudgeModelName       string                   `json:"judge_model_name,omitempty"`
-	JudgeModelUuid       string                   `json:"judge_model_uuid,omitempty"`
-	Name                 string                   `json:"name,omitempty"`
-	Status               ModelEvaluationRunStatus `json:"status,omitempty"`
+	CandidateModelName   string                      `json:"candidate_model_name,omitempty"`
+	CandidateModelSource CandidateModelSource        `json:"candidate_model_source,omitempty"`
+	CandidateModelUuid   string                      `json:"candidate_model_uuid,omitempty"`
+	CreatedAt            *Timestamp                  `json:"created_at,omitempty"`
+	DatasetName          string                      `json:"dataset_name,omitempty"`
+	DatasetUuid          string                      `json:"dataset_uuid,omitempty"`
+	EvalRunUuid          string                      `json:"eval_run_uuid,omitempty"`
+	JudgeModelName       string                      `json:"judge_model_name,omitempty"`
+	JudgeModelUuid       string                      `json:"judge_model_uuid,omitempty"`
+	Name                 string                      `json:"name,omitempty"`
+	Progress             *ModelEvaluationRunProgress `json:"progress,omitempty"`
+	Status               ModelEvaluationRunStatus    `json:"status,omitempty"`
 }
 
 // CancelModelEvaluationRunRequest represents the request payload for cancelling
@@ -2834,6 +2835,24 @@ type ModelEvaluationRunResultSummary struct {
 	TotalDurationSeconds int64                    `json:"total_duration_seconds,omitempty"`
 }
 
+// ModelEvaluationRunProgress reports per-phase progress for a model evaluation
+// run. The candidate phase invokes the candidate model once per dataset row;
+// the judge phase scores each candidate-success row with the configured
+// metrics. Counts grow as the run advances; compare against TotalRows to render
+// a progress bar.
+type ModelEvaluationRunProgress struct {
+	// CandidateRowsEvaluated is the number of dataset rows whose candidate model
+	// call has completed (success or failure).
+	CandidateRowsEvaluated *int64 `json:"candidate_rows_evaluated,omitempty"`
+	// JudgeRowsEvaluated is the number of candidate-success rows the judge has
+	// finished (scored or skipped). It caps at the number of candidate
+	// successes, which may be below TotalRows.
+	JudgeRowsEvaluated *int64 `json:"judge_rows_evaluated,omitempty"`
+	// TotalRows is the total number of dataset rows for the run, sourced from the
+	// evaluation dataset.
+	TotalRows *int64 `json:"total_rows,omitempty"`
+}
+
 // ModelEvaluationRunDetail is the full view of a model evaluation run
 // returned when fetching a specific run.
 type ModelEvaluationRunDetail struct {
@@ -2853,6 +2872,7 @@ type ModelEvaluationRunDetail struct {
 	JudgeModelUuid           string                           `json:"judge_model_uuid,omitempty"`
 	Metrics                  []*EvaluationMetric              `json:"metrics,omitempty"`
 	Name                     string                           `json:"name,omitempty"`
+	Progress                 *ModelEvaluationRunProgress      `json:"progress,omitempty"`
 	ResultSummary            *ModelEvaluationRunResultSummary `json:"result_summary,omitempty"`
 	StarMetric               *StarMetric                      `json:"star_metric,omitempty"`
 	StartedAt                *Timestamp                       `json:"started_at,omitempty"`
