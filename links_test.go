@@ -214,6 +214,48 @@ func TestLinks_ParseEmptyString(t *testing.T) {
 	}
 }
 
+func TestLinkAction_UnmarshalLargeID(t *testing.T) {
+	largeIDs := []struct {
+		name string
+		json string
+		id   int64
+	}{
+		{
+			name: "exceeds int32 max",
+			json: `{"links":{"actions":[{"id":3169590176,"rel":"create","href":"http://example.com"}]}}`,
+			id:   3169590176,
+		},
+		{
+			name: "at int32 max",
+			json: `{"links":{"actions":[{"id":2147483647,"rel":"create","href":"http://example.com"}]}}`,
+			id:   2147483647,
+		},
+		{
+			name: "above int32 max",
+			json: `{"links":{"actions":[{"id":2147483648,"rel":"create","href":"http://example.com"}]}}`,
+			id:   2147483648,
+		},
+	}
+
+	for _, tc := range largeIDs {
+		t.Run(tc.name, func(t *testing.T) {
+			var root struct {
+				Links Links `json:"links"`
+			}
+			err := json.Unmarshal([]byte(tc.json), &root)
+			if err != nil {
+				t.Fatalf("failed to unmarshal LinkAction with large ID: %v", err)
+			}
+			if len(root.Links.Actions) != 1 {
+				t.Fatalf("expected 1 action, got %d", len(root.Links.Actions))
+			}
+			if root.Links.Actions[0].ID != tc.id {
+				t.Errorf("expected ID %d, got %d", tc.id, root.Links.Actions[0].ID)
+			}
+		})
+	}
+}
+
 func TestLinks_NextPageToken(t *testing.T) {
 	t.Run("happy token", func(t *testing.T) {
 		checkNextPageToken(t, &Response{Links: &Links{

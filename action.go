@@ -20,7 +20,7 @@ const (
 // DigitalOcean API: https://docs.digitalocean.com/reference/api/api-reference/#tag/Actions
 type ActionsService interface {
 	List(context.Context, *ListOptions) ([]Action, *Response, error)
-	Get(context.Context, int) (*Action, *Response, error)
+	Get(context.Context, int64) (*Action, *Response, error)
 }
 
 // ActionsServiceOp handles communication with the image action related methods of the
@@ -43,7 +43,7 @@ type actionRoot struct {
 
 // Action represents a DigitalOcean Action
 type Action struct {
-	ID           int        `json:"id"`
+	ID           int64      `json:"id"`
 	Status       string     `json:"status"`
 	Type         string     `json:"type"`
 	StartedAt    *Timestamp `json:"started_at"`
@@ -83,7 +83,7 @@ func (s *ActionsServiceOp) List(ctx context.Context, opt *ListOptions) ([]Action
 }
 
 // Get an action by ID.
-func (s *ActionsServiceOp) Get(ctx context.Context, id int) (*Action, *Response, error) {
+func (s *ActionsServiceOp) Get(ctx context.Context, id int64) (*Action, *Response, error) {
 	if id < 1 {
 		return nil, nil, NewArgError("id", "cannot be less than 1")
 	}
