@@ -2309,6 +2309,7 @@ type CustomModel struct {
 	TeamId               string                         `json:"team_id,omitempty"`
 	ConfigJson           map[string]any                 `json:"config_json,omitempty"`
 	StorageRegion        string                         `json:"storage_region,omitempty"`
+	ErrorMessage         string                         `json:"error_message,omitempty"`
 }
 
 // CustomModelSourceRef references the original source of a custom model.

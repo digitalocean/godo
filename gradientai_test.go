@@ -2659,6 +2659,22 @@ var getCustomModelResponse = `
 }
 `
 
+var getFailedCustomModelResponse = `
+{
+	"model": {
+		"uuid": "55555555-5555-5555-5555-555555555555",
+		"name": "team/failed-model",
+		"status": "STATUS_FAILED",
+		"error_message": "Repository not found or access denied",
+		"source_type": "SOURCE_TYPE_HUGGINGFACE",
+		"source_ref": {
+			"repo_id": "team/failed-model",
+			"access_type": "ACCESS_TYPE_PRIVATE"
+		}
+	}
+}
+`
+
 var importCustomModelResponse = `
 {
 	"model": {
@@ -2865,6 +2881,30 @@ func TestGetCustomModel(t *testing.T) {
 	assert.NotNil(t, dep.Endpoints)
 	assert.Equal(t, "public.example.com", dep.Endpoints.PublicEndpointFqdn)
 	assert.Equal(t, "private.example.com", dep.Endpoints.PrivateEndpointFqdn)
+}
+
+func TestGetCustomModelFailed(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/55555555-5555-5555-5555-555555555555", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getFailedCustomModelResponse)
+	})
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "55555555-5555-5555-5555-555555555555")
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	assert.Equal(t, "55555555-5555-5555-5555-555555555555", model.Uuid)
+	assert.Equal(t, "team/failed-model", model.Name)
+	assert.Equal(t, CustomModelStatusFailed, model.Status)
+	assert.Equal(t, "Repository not found or access denied", model.ErrorMessage)
+	assert.Equal(t, CustomModelSourceTypeHuggingFace, model.SourceType)
+	assert.NotNil(t, model.SourceRef)
+	assert.Equal(t, "team/failed-model", model.SourceRef.RepoId)
+	assert.Equal(t, CustomModelSourceRefAccessTypePrivate, model.SourceRef.AccessType)
 }
 
 func TestGetCustomModelMissingUUID(t *testing.T) {
