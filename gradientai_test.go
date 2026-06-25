@@ -2742,6 +2742,27 @@ var updateCustomModelMetadataSpacesResponse = `
 }
 `
 
+var customEvaluationMetricResponse = `
+{
+	"metric": {
+		"metric_uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		"metric_name": "My domain tone metric",
+		"description": "Scores adherence to our support macros",
+		"custom_eval_config": {
+			"add_to_library": true,
+			"requires_ground_truth": true,
+			"scoring_prompt": "Grade for brand tone and factuality."
+		},
+		"associated_presets": [
+			{
+				"eval_preset_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+				"name": "Support preset"
+			}
+		]
+	}
+}
+`
+
 func TestListCustomModels(t *testing.T) {
 	setup()
 	defer teardown()
@@ -3276,6 +3297,125 @@ func TestUpdateCustomModelMetadataInvalidURL(t *testing.T) {
 	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "bad\nuuid", &CustomModelMetadataUpdateRequest{Description: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, model)
+	assert.Nil(t, resp)
+}
+
+func TestCreateCustomEvaluationMetric(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_evaluation_metrics", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		var got CreateCustomEvaluationMetricRequest
+		assert.NoError(t, json.Unmarshal(body, &got))
+		assert.Equal(t, "My domain tone metric", got.MetricName)
+		assert.Equal(t, "Scores adherence to our support macros", got.Description)
+		assert.NotNil(t, got.Config)
+		assert.True(t, got.Config.AddToLibrary)
+		assert.True(t, got.Config.RequiresGroundTruth)
+		assert.Equal(t, "Grade for brand tone and factuality.", got.Config.ScoringPrompt)
+
+		fmt.Fprint(w, customEvaluationMetricResponse)
+	})
+
+	req := &CreateCustomEvaluationMetricRequest{
+		MetricName:  "My domain tone metric",
+		Description: "Scores adherence to our support macros",
+		Config: &CustomEvaluationMetricConfig{
+			AddToLibrary:        true,
+			RequiresGroundTruth: true,
+			ScoringPrompt:       "Grade for brand tone and factuality.",
+		},
+	}
+
+	metric, resp, err := client.GradientAI.CreateCustomEvaluationMetric(ctx, req)
+	assert.NoError(t, err)
+	assert.NotNil(t, metric)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", metric.MetricUUID)
+	assert.Equal(t, "My domain tone metric", metric.MetricName)
+	assert.Equal(t, "Scores adherence to our support macros", metric.Description)
+	assert.NotNil(t, metric.CustomEvalConfig)
+	assert.True(t, metric.CustomEvalConfig.AddToLibrary)
+	assert.Equal(t, "Grade for brand tone and factuality.", metric.CustomEvalConfig.ScoringPrompt)
+	assert.Equal(t, 1, len(metric.AssociatedPresets))
+	assert.Equal(t, "Support preset", metric.AssociatedPresets[0].Name)
+}
+
+func TestCreateCustomEvaluationMetricNilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	metric, resp, err := client.GradientAI.CreateCustomEvaluationMetric(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, metric)
+	assert.Nil(t, resp)
+}
+
+func TestUpdateCustomEvaluationMetric(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_evaluation_metrics/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		body, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		var got UpdateCustomEvaluationMetricRequest
+		assert.NoError(t, json.Unmarshal(body, &got))
+		assert.Equal(t, "My domain tone metric", got.MetricName)
+		assert.Equal(t, "Scores adherence to our support macros", got.Description)
+		assert.NotNil(t, got.Config)
+		assert.True(t, got.Config.AddToLibrary)
+
+		fmt.Fprint(w, customEvaluationMetricResponse)
+	})
+
+	req := &UpdateCustomEvaluationMetricRequest{
+		MetricUUID:  "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+		MetricName:  "My domain tone metric",
+		Description: "Scores adherence to our support macros",
+		Config: &CustomEvaluationMetricConfig{
+			AddToLibrary:        true,
+			RequiresGroundTruth: true,
+			ScoringPrompt:       "Grade for brand tone and factuality.",
+		},
+	}
+
+	metric, resp, err := client.GradientAI.UpdateCustomEvaluationMetric(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", req)
+	assert.NoError(t, err)
+	assert.NotNil(t, metric)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", metric.MetricUUID)
+	assert.NotNil(t, metric.CustomEvalConfig)
+	assert.True(t, metric.CustomEvalConfig.RequiresGroundTruth)
+}
+
+func TestDeleteCustomEvaluationMetric(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_evaluation_metrics/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{}`)
+	})
+
+	resp, err := client.GradientAI.DeleteCustomEvaluationMetric(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+}
+
+func TestDeleteCustomEvaluationMetricMissingUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	resp, err := client.GradientAI.DeleteCustomEvaluationMetric(ctx, "")
+	assert.Error(t, err)
 	assert.Nil(t, resp)
 }
 
