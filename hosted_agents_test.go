@@ -1,10 +1,14 @@
 package godo
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -339,6 +343,146 @@ func TestHostedAgents_ValidationErrors(t *testing.T) {
 
 	_, _, err = client.HostedAgents.ExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{})
 	require.EqualError(t, err, "hosted agents: argv is required")
+}
+
+func TestHostedAgents_UploadWorkspace(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const payload = "hello world"
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/upload", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "application/octet-stream", r.Header.Get("Content-Type"))
+		assert.Equal(t, "src/main.go", r.URL.Query().Get("path"))
+		assert.Equal(t, "true", r.URL.Query().Get("is_archive"))
+		assert.Equal(t, "deadbeef", r.Header.Get("X-Content-Sha256"))
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.Equal(t, payload, string(body))
+		fmt.Fprintf(w, `{"path":"/workspace/src/main.go","bytes_written":%d}`, len(payload))
+	})
+
+	got, resp, err := client.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{
+		Path:          "src/main.go",
+		IsArchive:     true,
+		ContentSHA256: "deadbeef",
+		Body:          strings.NewReader(payload),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "/workspace/src/main.go", got.Path)
+	assert.Equal(t, int64(len(payload)), got.BytesWritten)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgents_DownloadWorkspace(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const payload = "the quick brown fox"
+	sum := sha256.Sum256([]byte(payload))
+	digest := hex.EncodeToString(sum[:])
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "notes.txt", r.URL.Query().Get("path"))
+		assert.Equal(t, "true", r.URL.Query().Get("as_archive"))
+
+		w.Header().Set("Trailer", "X-Content-Sha256")
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("X-Workspace-Is-Archive", "true")
+		w.Header().Set("X-Workspace-Size-Bytes", strconv.Itoa(len(payload)))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(payload))
+		w.Header().Set("X-Content-Sha256", digest)
+	})
+
+	dl, resp, err := client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{
+		Path:      "notes.txt",
+		AsArchive: true,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, dl)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.True(t, dl.IsArchive)
+	assert.Equal(t, int64(len(payload)), dl.SizeBytes)
+
+	body, err := io.ReadAll(dl.Body)
+	require.NoError(t, err)
+	assert.Equal(t, payload, string(body))
+	require.NoError(t, dl.Body.Close())
+}
+
+func TestHostedAgents_DownloadWorkspace_ChecksumMismatch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const payload = "the quick brown fox"
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Trailer", "X-Content-Sha256")
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(payload))
+		w.Header().Set("X-Content-Sha256", "0000000000000000000000000000000000000000000000000000000000000000")
+	})
+
+	dl, _, err := client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{
+		Path: "notes.txt",
+	})
+	require.NoError(t, err)
+	defer dl.Body.Close()
+
+	_, err = io.ReadAll(dl.Body)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "checksum mismatch")
+}
+
+func TestHostedAgents_DownloadWorkspace_MissingTrailer(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("partial data"))
+	})
+
+	dl, _, err := client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{
+		Path: "notes.txt",
+	})
+	require.NoError(t, err)
+	defer dl.Body.Close()
+
+	_, err = io.ReadAll(dl.Body)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "missing X-Content-Sha256")
+}
+
+func TestHostedAgents_WorkspaceValidationErrors(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.UploadWorkspace(ctx, "", &HostedAgentWorkspaceUploadRequest{})
+	require.EqualError(t, err, "hosted agents: session id is required")
+
+	_, _, err = client.HostedAgents.UploadWorkspace(ctx, "sess-abc123", nil)
+	require.EqualError(t, err, "hosted agents: upload request is required")
+
+	_, _, err = client.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{})
+	require.EqualError(t, err, "hosted agents: path is required")
+
+	_, _, err = client.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{Path: "x"})
+	require.EqualError(t, err, "hosted agents: body is required")
+
+	_, _, err = client.HostedAgents.DownloadWorkspace(ctx, "", &HostedAgentWorkspaceDownloadRequest{})
+	require.EqualError(t, err, "hosted agents: session id is required")
+
+	_, _, err = client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", nil)
+	require.EqualError(t, err, "hosted agents: download request is required")
+
+	_, _, err = client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{})
+	require.EqualError(t, err, "hosted agents: path is required")
 }
 
 func TestHostedAgents_GetSession_EmptyBody(t *testing.T) {
