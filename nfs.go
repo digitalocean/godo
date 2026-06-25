@@ -180,7 +180,7 @@ type NfsCreateAccessPointRequest struct {
 	Name         string          `json:"name"`
 	Path         string          `json:"path"`
 	AccessPolicy NfsAccessPolicy `json:"access_policy"`
-	VpcID        *string         `json:"vpc_id,omitempty"`
+	VpcID        string          `json:"vpc_id"`
 }
 
 // NfsListAccessPointsOptions represents filters for listing access points.
@@ -450,6 +450,9 @@ func (s *NfsServiceOp) CreateAccessPoint(ctx context.Context, shareID string, cr
 	}
 	if createRequest == nil {
 		return nil, nil, NewArgError("createRequest", "cannot be nil")
+	}
+	if createRequest.VpcID == "" {
+		return nil, nil, NewArgError("vpc_id", "cannot be empty")
 	}
 
 	path := fmt.Sprintf("%s/%s/access_points", nfsSharesBasePath, shareID)

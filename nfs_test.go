@@ -207,15 +207,14 @@ func TestNfsCreateAccessPoint(t *testing.T) {
 	vpcID := "my-vpc-id"
 	createRequest := &NfsCreateAccessPointRequest{
 		Name: "my-access-point",
-		Path: "/exports/data",
+		Path: "/data",
 		AccessPolicy: NfsAccessPolicy{
-			Anonuid:                    65534,
-			Anongid:                    65534,
-			Protocols:                  []NfsAccessPolicyProtocol{NfsAccessPolicyProtocolNFS4},
-			SquashConfig:               NfsSquashConfigRootSquash,
-			IdentityEnforcementEnabled: true,
+			Anonuid:      65534,
+			Anongid:      65534,
+			Protocols:    []NfsAccessPolicyProtocol{NfsAccessPolicyProtocolNFS4},
+			SquashConfig: NfsSquashConfigRootSquash,
 		},
-		VpcID: &vpcID,
+		VpcID: vpcID,
 	}
 
 	mux.HandleFunc("/v2/nfs/shares/test-share-id/access_points", func(w http.ResponseWriter, r *http.Request) {
@@ -228,11 +227,10 @@ func TestNfsCreateAccessPoint(t *testing.T) {
 		assert.Equal(t, createRequest.Path, got.Path)
 		assert.Equal(t, createRequest.AccessPolicy.SquashConfig, got.AccessPolicy.SquashConfig)
 		assert.Equal(t, createRequest.AccessPolicy.Protocols, got.AccessPolicy.Protocols)
-		assert.NotNil(t, got.VpcID)
-		assert.Equal(t, *createRequest.VpcID, *got.VpcID)
+		assert.Equal(t, createRequest.VpcID, got.VpcID)
 
 		w.WriteHeader(http.StatusCreated)
-		fmt.Fprint(w, `{"access_point":{"id":"test-access-point-id","name":"my-access-point","share_id":"test-share-id","path":"/exports/data","status":"ACCESS_POINT_CREATING","access_policy":{"anonuid":65534,"anongid":65534,"protocols":["NFS4"],"squash_config":"ROOT_SQUASH","identity_enforcement_enabled":true},"created_at":"2026-06-15T00:00:00Z","updated_at":"2026-06-15T00:00:00Z","is_default":false,"vpc_id":"my-vpc-id"},"action":{"id":"1","status":"in-progress","type":"CREATE_ACCESS_POINT","resource_type":"network_file_share","resource_id":"test-share-id","region_slug":"nyc3","started_at":"2026-06-15T00:00:00Z"}}`)
+		fmt.Fprint(w, `{"access_point":{"id":"test-access-point-id","name":"my-access-point","share_id":"test-share-id","path":"/data","status":"ACCESS_POINT_CREATING","access_policy":{"anonuid":65534,"anongid":65534,"protocols":["NFS4"],"squash_config":"ROOT_SQUASH","identity_enforcement_enabled":false},"created_at":"2026-06-15T00:00:00Z","updated_at":"2026-06-15T00:00:00Z","is_default":false,"vpc_id":"my-vpc-id"},"action":{"id":"1","status":"IN_PROGRESS","type":"CREATE_ACCESS_POINT","resource_type":"network_file_share","resource_id":"test-access-point-id","region_slug":"s2r1","started_at":"2026-06-15T00:00:00Z"}}`)
 	})
 
 	apResp, resp, err := client.Nfs.CreateAccessPoint(context.Background(), "test-share-id", createRequest)
@@ -241,6 +239,23 @@ func TestNfsCreateAccessPoint(t *testing.T) {
 	assert.Equal(t, "test-access-point-id", apResp.AccessPoint.ID)
 	assert.Equal(t, NfsAccessPointCreating, apResp.AccessPoint.Status)
 	assert.Equal(t, "CREATE_ACCESS_POINT", apResp.Action.Type)
+	assert.Equal(t, "IN_PROGRESS", apResp.Action.Status)
+	assert.Equal(t, "test-access-point-id", apResp.Action.ResourceID)
+
+	invalidCreateRequest := &NfsCreateAccessPointRequest{
+		Name: "my-access-point",
+		Path: "/data",
+		AccessPolicy: NfsAccessPolicy{
+			Protocols:    []NfsAccessPolicyProtocol{NfsAccessPolicyProtocolNFS4},
+			SquashConfig: NfsSquashConfigRootSquash,
+		},
+	}
+
+	apResp, resp, err = client.Nfs.CreateAccessPoint(context.Background(), "test-share-id", invalidCreateRequest)
+	assert.Error(t, err)
+	assert.Equal(t, "vpc_id is invalid because cannot be empty", err.Error())
+	assert.Nil(t, apResp)
+	assert.Nil(t, resp)
 }
 
 func TestNfsGetAccessPoint(t *testing.T) {
@@ -250,7 +265,7 @@ func TestNfsGetAccessPoint(t *testing.T) {
 	mux.HandleFunc("/v2/nfs/access_points/test-access-point-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"access_point":{"id":"test-access-point-id","name":"my-access-point","share_id":"test-share-id","path":"/exports/data","status":"ACCESS_POINT_ACTIVE","access_policy":{"anonuid":65534,"anongid":65534,"protocols":["NFS4"],"squash_config":"ROOT_SQUASH","identity_enforcement_enabled":false},"created_at":"2026-06-15T00:00:00Z","updated_at":"2026-06-15T01:00:00Z","is_default":true}}`)
+		fmt.Fprint(w, `{"access_point":{"id":"test-access-point-id","name":"my-access-point","share_id":"test-share-id","path":"/data","status":"ACCESS_POINT_ACTIVE","access_policy":{"anonuid":65534,"anongid":65534,"protocols":["NFS4"],"squash_config":"ROOT_SQUASH","identity_enforcement_enabled":false},"created_at":"2026-06-15T00:00:00Z","updated_at":"2026-06-15T01:00:00Z","is_default":true}}`)
 	})
 
 	ap, resp, err := client.Nfs.GetAccessPoint(context.Background(), "test-access-point-id")
@@ -269,7 +284,7 @@ func TestNfsListAccessPoints(t *testing.T) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		assert.Equal(t, string(NfsAccessPointActive), r.URL.Query().Get("status"))
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"access_points":[{"id":"test-access-point-id","name":"my-access-point","share_id":"test-share-id","path":"/exports/data","status":"ACCESS_POINT_ACTIVE","access_policy":{"anonuid":65534,"anongid":65534,"protocols":["NFS","NFS4"],"squash_config":"NO_SQUASH","identity_enforcement_enabled":false},"created_at":"2026-06-15T00:00:00Z","updated_at":"2026-06-15T01:00:00Z","is_default":false}]}`)
+		fmt.Fprint(w, `{"access_points":[{"id":"test-access-point-id","name":"my-access-point","share_id":"test-share-id","path":"/data","status":"ACCESS_POINT_ACTIVE","access_policy":{"anonuid":65534,"anongid":65534,"protocols":["NFS","NFS4"],"squash_config":"NO_SQUASH","identity_enforcement_enabled":false},"created_at":"2026-06-15T00:00:00Z","updated_at":"2026-06-15T01:00:00Z","is_default":false}]}`)
 	})
 
 	accessPoints, resp, err := client.Nfs.ListAccessPoints(context.Background(), "test-share-id", &NfsListAccessPointsOptions{Status: NfsAccessPointActive})
@@ -287,7 +302,7 @@ func TestNfsDeleteAccessPoint(t *testing.T) {
 	mux.HandleFunc("/v2/nfs/access_points/test-access-point-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"access_point":{"id":"test-access-point-id","name":"my-access-point","share_id":"test-share-id","path":"/exports/data","status":"ACCESS_POINT_DELETED","access_policy":{"anonuid":65534,"anongid":65534,"protocols":["NFS4"],"squash_config":"ROOT_SQUASH","identity_enforcement_enabled":false},"created_at":"2026-06-15T00:00:00Z","updated_at":"2026-06-15T01:00:00Z","is_default":false},"action":{"id":"2","status":"completed","type":"DELETE_ACCESS_POINT","resource_type":"network_file_share","resource_id":"test-share-id","region_slug":"nyc3","started_at":"2026-06-15T02:00:00Z"}}`)
+		fmt.Fprint(w, `{"access_point":{"id":"test-access-point-id","name":"my-access-point","share_id":"test-share-id","path":"/data","status":"ACCESS_POINT_DELETED","access_policy":{"anonuid":65534,"anongid":65534,"protocols":["NFS4"],"squash_config":"ROOT_SQUASH","identity_enforcement_enabled":false},"created_at":"2026-06-15T00:00:00Z","updated_at":"2026-06-15T01:00:00Z","is_default":false},"action":{"id":"2","status":"IN_PROGRESS","type":"DELETE_ACCESS_POINT","resource_type":"network_file_share","resource_id":"test-access-point-id","region_slug":"s2r1","started_at":"2026-06-15T02:00:00Z"}}`)
 	})
 
 	apResp, resp, err := client.Nfs.DeleteAccessPoint(context.Background(), "test-access-point-id")
@@ -295,4 +310,6 @@ func TestNfsDeleteAccessPoint(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.Equal(t, NfsAccessPointDeleted, apResp.AccessPoint.Status)
 	assert.Equal(t, "DELETE_ACCESS_POINT", apResp.Action.Type)
+	assert.Equal(t, "IN_PROGRESS", apResp.Action.Status)
+	assert.Equal(t, "test-access-point-id", apResp.Action.ResourceID)
 }
