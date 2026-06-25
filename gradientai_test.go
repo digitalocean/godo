@@ -2659,6 +2659,22 @@ var getCustomModelResponse = `
 }
 `
 
+var getFailedCustomModelResponse = `
+{
+	"model": {
+		"uuid": "55555555-5555-5555-5555-555555555555",
+		"name": "team/failed-model",
+		"status": "STATUS_FAILED",
+		"error_message": "Repository not found or access denied",
+		"source_type": "SOURCE_TYPE_HUGGINGFACE",
+		"source_ref": {
+			"repo_id": "team/failed-model",
+			"access_type": "ACCESS_TYPE_PRIVATE"
+		}
+	}
+}
+`
+
 var importCustomModelResponse = `
 {
 	"model": {
@@ -2865,6 +2881,30 @@ func TestGetCustomModel(t *testing.T) {
 	assert.NotNil(t, dep.Endpoints)
 	assert.Equal(t, "public.example.com", dep.Endpoints.PublicEndpointFqdn)
 	assert.Equal(t, "private.example.com", dep.Endpoints.PrivateEndpointFqdn)
+}
+
+func TestGetCustomModelFailed(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/custom_models/55555555-5555-5555-5555-555555555555", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getFailedCustomModelResponse)
+	})
+
+	model, resp, err := client.GradientAI.GetCustomModel(ctx, "55555555-5555-5555-5555-555555555555")
+	assert.NoError(t, err)
+	assert.NotNil(t, model)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+
+	assert.Equal(t, "55555555-5555-5555-5555-555555555555", model.Uuid)
+	assert.Equal(t, "team/failed-model", model.Name)
+	assert.Equal(t, CustomModelStatusFailed, model.Status)
+	assert.Equal(t, "Repository not found or access denied", model.ErrorMessage)
+	assert.Equal(t, CustomModelSourceTypeHuggingFace, model.SourceType)
+	assert.NotNil(t, model.SourceRef)
+	assert.Equal(t, "team/failed-model", model.SourceRef.RepoId)
+	assert.Equal(t, CustomModelSourceRefAccessTypePrivate, model.SourceRef.AccessType)
 }
 
 func TestGetCustomModelMissingUUID(t *testing.T) {
@@ -3685,6 +3725,11 @@ var getModelEvaluationRunResponse = `
 		"created_at": "2025-05-08T03:37:28Z",
 		"started_at": "2025-05-08T03:38:00Z",
 		"completed_at": "2025-05-08T03:45:00Z",
+		"progress": {
+			"candidate_rows_evaluated": 80,
+			"judge_rows_evaluated": 75,
+			"total_rows": 100
+		},
 		"result_summary": {
 			"overall_score_percent": 87.5,
 			"total_duration_seconds": 420,
@@ -3758,6 +3803,10 @@ func TestGetModelEvaluationRun(t *testing.T) {
 	assert.Equal(t, "my-eval-run", out.Run.Name)
 	assert.Equal(t, ModelEvaluationRunSuccessful, out.Run.Status)
 	assert.Equal(t, CandidateModelSourceServerless, out.Run.CandidateModelSource)
+	assert.NotNil(t, out.Run.Progress)
+	assert.Equal(t, int64(80), *out.Run.Progress.CandidateRowsEvaluated)
+	assert.Equal(t, int64(75), *out.Run.Progress.JudgeRowsEvaluated)
+	assert.Equal(t, int64(100), *out.Run.Progress.TotalRows)
 	assert.NotNil(t, out.Run.ResultSummary)
 	assert.Equal(t, 87.5, out.Run.ResultSummary.OverallScorePercent)
 	assert.Equal(t, int64(420), out.Run.ResultSummary.TotalDurationSeconds)
@@ -3963,7 +4012,12 @@ var listModelEvaluationRunsResponse = `
 			"status": "MODEL_EVALUATION_RUN_SUCCESSFUL",
 			"candidate_model_name": "candidate-1",
 			"candidate_model_source": "CANDIDATE_MODEL_SOURCE_SERVERLESS",
-			"created_at": "2025-05-08T03:37:28Z"
+			"created_at": "2025-05-08T03:37:28Z",
+			"progress": {
+				"candidate_rows_evaluated": 40,
+				"judge_rows_evaluated": 35,
+				"total_rows": 100
+			}
 		},
 		{
 			"eval_run_uuid": "22222222-2222-2222-2222-222222222222",
@@ -4032,6 +4086,11 @@ func TestListModelEvaluationRuns(t *testing.T) {
 	assert.Equal(t, "run-1", out.Runs[0].Name)
 	assert.Equal(t, ModelEvaluationRunSuccessful, out.Runs[0].Status)
 	assert.Equal(t, CandidateModelSourceServerless, out.Runs[0].CandidateModelSource)
+	assert.NotNil(t, out.Runs[0].Progress)
+	assert.Equal(t, int64(40), *out.Runs[0].Progress.CandidateRowsEvaluated)
+	assert.Equal(t, int64(35), *out.Runs[0].Progress.JudgeRowsEvaluated)
+	assert.Equal(t, int64(100), *out.Runs[0].Progress.TotalRows)
+	assert.Nil(t, out.Runs[1].Progress)
 	assert.Equal(t, ModelEvaluationRunQueued, out.Runs[1].Status)
 	assert.Equal(t, CandidateModelSourceDedicated, out.Runs[1].CandidateModelSource)
 }
