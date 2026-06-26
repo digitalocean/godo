@@ -63,7 +63,4 @@ func main() {
 	if session.RepoHint != "" {
 		fmt.Printf("repo_hint:   %s\n", session.RepoHint)
 	}
-	if session.SandboxID != "" {
-		fmt.Printf("sandbox_id:  %s\n", session.SandboxID)
-	}
 }

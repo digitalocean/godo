@@ -26,8 +26,8 @@ func main() {
 
 	fmt.Printf("HTTP %d — %d session(s)\n", resp.StatusCode, len(out.Sessions))
 	for _, s := range out.Sessions {
-		fmt.Printf("  %s  status=%s  agent=%s  sandbox=%s\n",
-			s.SessionID, s.Status, s.AgentKind, s.SandboxID)
+		fmt.Printf("  %s  status=%s  agent=%s\n",
+			s.SessionID, s.Status, s.AgentKind)
 	}
 	if out.NextPageToken != "" {
 		fmt.Printf("next_page_token: %s\n", out.NextPageToken)

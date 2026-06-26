@@ -49,7 +49,7 @@ func main() {
 		if s.SessionID != sessionID {
 			return fmt.Errorf("got session_id %q, want %q", s.SessionID, sessionID)
 		}
-		fmt.Printf("       → status=%s sandbox=%s\n", s.Status, s.SandboxID)
+		fmt.Printf("       → status=%s\n", s.Status)
 		return nil
 	})
 
