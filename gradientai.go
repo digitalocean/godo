@@ -37,7 +37,7 @@ const (
 	customModelByIDPath                      = customModelsBasePath + "/%s"
 	customModelMetadataPath                  = customModelsBasePath + "/%s/metadata"
 	customEvaluationMetricsPath              = "/v2/gen-ai/custom_evaluation_metrics"
-	customEvaluationMetricByPath             = customEvaluationMetricsPath + "/%s"
+	customEvaluationMetricByIDPath           = customEvaluationMetricsPath + "/%s"
 	modelEvaluationRunsBasePath              = "/v2/gen-ai/model_evaluation_runs"
 	modelEvaluationRunByIDPath               = modelEvaluationRunsBasePath + "/%s"
 	modelEvaluationRunCancelPath             = modelEvaluationRunsBasePath + "/%s/cancel"
@@ -3301,7 +3301,7 @@ func (s *GradientAIServiceOp) UpdateCustomEvaluationMetric(ctx context.Context, 
 		return nil, nil, fmt.Errorf("update request is required")
 	}
 
-	path := fmt.Sprintf(customEvaluationMetricByPath, metricUUID)
+	path := fmt.Sprintf(customEvaluationMetricByIDPath, metricUUID)
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
@@ -3321,7 +3321,7 @@ func (s *GradientAIServiceOp) DeleteCustomEvaluationMetric(ctx context.Context, 
 		return nil, fmt.Errorf("metricUUID is required")
 	}
 
-	path := fmt.Sprintf(customEvaluationMetricByPath, metricUUID)
+	path := fmt.Sprintf(customEvaluationMetricByIDPath, metricUUID)
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
