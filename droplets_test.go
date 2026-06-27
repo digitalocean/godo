@@ -398,6 +398,89 @@ func TestDroplets_Create(t *testing.T) {
 	}
 }
 
+func TestDroplets_CreateWithUsageBasedBackupPolicy(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &DropletCreateRequest{
+		Name:   "name",
+		Region: "region",
+		Size:   "size",
+		Image: DropletCreateImage{
+			ID: 1,
+		},
+		Backups: true,
+		BackupPolicy: &DropletBackupPolicyRequest{
+			Plan:                "intra_daily_4h",
+			Hour:                PtrTo(0),
+			WindowLengthHours:   4,
+			RetentionPeriodDays: 7,
+		},
+	}
+
+	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
+		expected := map[string]interface{}{
+			"name":               "name",
+			"region":             "region",
+			"size":               "size",
+			"image":              float64(1),
+			"ssh_keys":           nil,
+			"backups":            true,
+			"ipv6":               false,
+			"private_networking": false,
+			"monitoring":         false,
+			"tags":               nil,
+			"backup_policy": map[string]interface{}{
+				"plan":                  "intra_daily_4h",
+				"hour":                  float64(0),
+				"window_length_hours":   float64(4),
+				"retention_period_days": float64(7),
+			},
+		}
+		jsonBlob := `
+{
+  "droplet": {
+    "id": 1
+  },
+  "links": {
+    "actions": [
+      {
+        "id": 1,
+        "href": "http://example.com",
+        "rel": "create"
+      }
+    ]
+  }
+}
+`
+
+		var v map[string]interface{}
+		err := json.NewDecoder(r.Body).Decode(&v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("Request body\n got=%#v\nwant=%#v", v, expected)
+		}
+
+		fmt.Fprintf(w, jsonBlob)
+	})
+
+	droplet, resp, err := client.Droplets.Create(ctx, createRequest)
+	if err != nil {
+		t.Errorf("Droplets.Create returned error: %v", err)
+	}
+
+	if id := droplet.ID; id != 1 {
+		t.Errorf("expected id '%d', received '%d'", 1, id)
+	}
+
+	if a := resp.Links.Actions[0]; a.ID != 1 {
+		t.Errorf("expected action id '%d', received '%d'", 1, a.ID)
+	}
+}
+
 func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 	setup()
 	defer teardown()
@@ -686,6 +769,97 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 	}
 	if id := droplets[1].VPCUUID; id != vpcid {
 		t.Errorf("expected VPC uuid '%s', received '%s'", vpcid, id)
+	}
+
+	if a := resp.Links.Actions[0]; a.ID != 1 {
+		t.Errorf("expected action id '%d', received '%d'", 1, a.ID)
+	}
+}
+
+func TestDroplets_CreateMultipleWithUsageBasedBackupPolicy(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &DropletMultiCreateRequest{
+		Names:  []string{"name1", "name2"},
+		Region: "region",
+		Size:   "size",
+		Image: DropletCreateImage{
+			ID: 1,
+		},
+		Backups: true,
+		BackupPolicy: &DropletBackupPolicyRequest{
+			Plan:                "intra_daily_4h",
+			Hour:                PtrTo(0),
+			WindowLengthHours:   4,
+			RetentionPeriodDays: 7,
+		},
+	}
+
+	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
+		expected := map[string]interface{}{
+			"names":              []interface{}{"name1", "name2"},
+			"region":             "region",
+			"size":               "size",
+			"image":              float64(1),
+			"ssh_keys":           nil,
+			"backups":            true,
+			"ipv6":               false,
+			"private_networking": false,
+			"monitoring":         false,
+			"tags":               nil,
+			"backup_policy": map[string]interface{}{
+				"plan":                  "intra_daily_4h",
+				"hour":                  float64(0),
+				"window_length_hours":   float64(4),
+				"retention_period_days": float64(7),
+			},
+		}
+		jsonBlob := `
+{
+  "droplets": [
+    {
+      "id": 1
+    },
+    {
+      "id": 2
+    }
+  ],
+  "links": {
+    "actions": [
+      {
+        "id": 1,
+        "href": "http://example.com",
+        "rel": "multiple_create"
+      }
+    ]
+  }
+}
+`
+
+		var v map[string]interface{}
+		err := json.NewDecoder(r.Body).Decode(&v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("Request body = %#v, expected %#v", v, expected)
+		}
+
+		fmt.Fprintf(w, jsonBlob)
+	})
+
+	droplets, resp, err := client.Droplets.CreateMultiple(ctx, createRequest)
+	if err != nil {
+		t.Errorf("Droplets.CreateMultiple returned error: %v", err)
+	}
+
+	if id := droplets[0].ID; id != 1 {
+		t.Errorf("expected id '%d', received '%d'", 1, id)
+	}
+	if id := droplets[1].ID; id != 2 {
+		t.Errorf("expected id '%d', received '%d'", 2, id)
 	}
 
 	if a := resp.Links.Actions[0]; a.ID != 1 {
