@@ -2258,6 +2258,90 @@ func TestDatabases_UpdateFirewallRules(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetDOSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/do_settings", dbID)
+
+	body := `{"do_settings":{"service_cnames":["db.example.com","api.myapp.io"]}}`
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetDOSettings(ctx, dbID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	require.Equal(t, []string{"db.example.com", "api.myapp.io"}, got.ServiceCnames)
+}
+
+func TestDatabases_GetDOSettings_Empty(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/do_settings", dbID)
+
+	body := `{"do_settings":{"service_cnames":[]}}`
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, body)
+	})
+
+	got, _, err := client.Databases.GetDOSettings(ctx, dbID)
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	require.Empty(t, got.ServiceCnames)
+}
+
+func TestDatabases_UpdateDOSettings(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/do_settings", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateDOSettings(ctx, dbID, &DatabaseUpdateDOSettingsRequest{
+		DOSettings: &DOSettings{
+			ServiceCnames: []string{"db.example.com"},
+		},
+	})
+	require.NoError(t, err)
+}
+
+func TestDatabases_UpdateDOSettings_ClearCnames(t *testing.T) {
+	setup()
+	defer teardown()
+
+	dbID := "deadbeef-dead-4aa5-beef-deadbeef347d"
+	path := fmt.Sprintf("/v2/databases/%s/do_settings", dbID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		var req DatabaseUpdateDOSettingsRequest
+		err := json.NewDecoder(r.Body).Decode(&req)
+		require.NoError(t, err)
+		require.NotNil(t, req.DOSettings)
+
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	_, err := client.Databases.UpdateDOSettings(ctx, dbID, &DatabaseUpdateDOSettingsRequest{
+		DOSettings: &DOSettings{},
+	})
+	require.NoError(t, err)
+}
+
 func TestDatabases_GetDatabaseOptions(t *testing.T) {
 	setup()
 	defer teardown()
