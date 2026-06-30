@@ -519,6 +519,15 @@ const (
 	MetricCategoryModelFit          EvaluationMetricCategory = "METRIC_CATEGORY_MODEL_FIT"
 )
 
+// EvaluationMetricSource distinguishes platform catalog metrics from user-defined LLM-as-judge metrics.
+type EvaluationMetricSource string
+
+const (
+	EvaluationMetricSourceUnspecified EvaluationMetricSource = "EVALUATION_METRIC_SOURCE_UNSPECIFIED"
+	EvaluationMetricSourceBuiltin     EvaluationMetricSource = "EVALUATION_METRIC_SOURCE_BUILTIN"
+	EvaluationMetricSourceCustom      EvaluationMetricSource = "EVALUATION_METRIC_SOURCE_CUSTOM"
+)
+
 // Workspace represents a workspace containing agents and evaluation test cases.
 type Workspace struct {
 	UUID                string                `json:"uuid,omitempty"`
@@ -568,6 +577,7 @@ type EvaluationMetric struct {
 	Category          EvaluationMetricCategory          `json:"category,omitempty"`
 	IsMetricGoal      bool                              `json:"is_metric_goal,omitempty"`
 	MetricRank        uint32                            `json:"metric_rank,omitempty"`
+	Source            EvaluationMetricSource            `json:"source,omitempty"`
 	CustomEvalConfig  *CustomEvaluationMetricConfig     `json:"custom_eval_config,omitempty"`
 	AssociatedPresets []AssociatedModelEvaluationPreset `json:"associated_presets,omitempty"`
 }

@@ -2748,6 +2748,7 @@ var customEvaluationMetricResponse = `
 		"metric_uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 		"metric_name": "My domain tone metric",
 		"description": "Scores adherence to our support macros",
+		"source": "EVALUATION_METRIC_SOURCE_CUSTOM",
 		"custom_eval_config": {
 			"add_to_library": true,
 			"requires_ground_truth": true,
@@ -3338,6 +3339,7 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", metric.MetricUUID)
 	assert.Equal(t, "My domain tone metric", metric.MetricName)
 	assert.Equal(t, "Scores adherence to our support macros", metric.Description)
+	assert.Equal(t, EvaluationMetricSourceCustom, metric.Source)
 	assert.NotNil(t, metric.CustomEvalConfig)
 	assert.True(t, metric.CustomEvalConfig.AddToLibrary)
 	assert.Equal(t, "Grade for brand tone and factuality.", metric.CustomEvalConfig.ScoringPrompt)
