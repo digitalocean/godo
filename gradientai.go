@@ -584,7 +584,6 @@ type EvaluationMetric struct {
 
 // CustomEvaluationMetricConfig represents the LLM-as-judge scoring configuration for custom evaluation metrics.
 type CustomEvaluationMetricConfig struct {
-	AddToLibrary        bool       `json:"add_to_library,omitempty"`
 	RequiresGroundTruth bool       `json:"requires_ground_truth,omitempty"`
 	ScoringPrompt       string     `json:"scoring_prompt,omitempty"`
 	CreatedAt           *Timestamp `json:"created_at,omitempty"`

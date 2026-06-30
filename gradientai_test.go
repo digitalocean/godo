@@ -2750,7 +2750,6 @@ var customEvaluationMetricResponse = `
 		"description": "Scores adherence to our support macros",
 		"source": "EVALUATION_METRIC_SOURCE_CUSTOM",
 		"custom_eval_config": {
-			"add_to_library": true,
 			"requires_ground_truth": true,
 			"scoring_prompt": "Grade for brand tone and factuality."
 		},
@@ -3315,7 +3314,6 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 		assert.Equal(t, "My domain tone metric", got.MetricName)
 		assert.Equal(t, "Scores adherence to our support macros", got.Description)
 		assert.NotNil(t, got.Config)
-		assert.True(t, got.Config.AddToLibrary)
 		assert.True(t, got.Config.RequiresGroundTruth)
 		assert.Equal(t, "Grade for brand tone and factuality.", got.Config.ScoringPrompt)
 
@@ -3326,7 +3324,6 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 		MetricName:  "My domain tone metric",
 		Description: "Scores adherence to our support macros",
 		Config: &CustomEvaluationMetricConfig{
-			AddToLibrary:        true,
 			RequiresGroundTruth: true,
 			ScoringPrompt:       "Grade for brand tone and factuality.",
 		},
@@ -3341,7 +3338,6 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 	assert.Equal(t, "Scores adherence to our support macros", metric.Description)
 	assert.Equal(t, EvaluationMetricSourceCustom, metric.Source)
 	assert.NotNil(t, metric.CustomEvalConfig)
-	assert.True(t, metric.CustomEvalConfig.AddToLibrary)
 	assert.Equal(t, "Grade for brand tone and factuality.", metric.CustomEvalConfig.ScoringPrompt)
 	assert.Equal(t, 1, len(metric.AssociatedPresets))
 	assert.Equal(t, "Support preset", metric.AssociatedPresets[0].Name)
@@ -3371,7 +3367,7 @@ func TestUpdateCustomEvaluationMetric(t *testing.T) {
 		assert.Equal(t, "My domain tone metric", got.MetricName)
 		assert.Equal(t, "Scores adherence to our support macros", got.Description)
 		assert.NotNil(t, got.Config)
-		assert.True(t, got.Config.AddToLibrary)
+		assert.True(t, got.Config.RequiresGroundTruth)
 
 		fmt.Fprint(w, customEvaluationMetricResponse)
 	})
@@ -3381,7 +3377,6 @@ func TestUpdateCustomEvaluationMetric(t *testing.T) {
 		MetricName:  "My domain tone metric",
 		Description: "Scores adherence to our support macros",
 		Config: &CustomEvaluationMetricConfig{
-			AddToLibrary:        true,
 			RequiresGroundTruth: true,
 			ScoringPrompt:       "Grade for brand tone and factuality.",
 		},
