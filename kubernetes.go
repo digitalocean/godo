@@ -103,7 +103,7 @@ type KubernetesClusterUpdateRequest struct {
 	Tags                              []string                                     `json:"tags,omitempty"`
 	MaintenancePolicy                 *KubernetesMaintenancePolicy                 `json:"maintenance_policy,omitempty"`
 	AutoUpgrade                       *bool                                        `json:"auto_upgrade,omitempty"`
-	SurgeUpgrade                      bool                                         `json:"surge_upgrade,omitempty"`
+	SurgeUpgrade                      *bool                                        `json:"surge_upgrade,omitempty"`
 	ControlPlaneFirewall              *KubernetesControlPlaneFirewall              `json:"control_plane_firewall,omitempty"`
 	ClusterAutoscalerConfiguration    *KubernetesClusterAutoscalerConfiguration    `json:"cluster_autoscaler_configuration,omitempty"`
 	RoutingAgent                      *KubernetesRoutingAgent                      `json:"routing_agent,omitempty"`

@@ -1133,7 +1133,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		Name:              want.Name,
 		Tags:              want.Tags,
 		MaintenancePolicy: want.MaintenancePolicy,
-		SurgeUpgrade:      true,
+		SurgeUpgrade:      PtrTo(true),
 		ControlPlaneFirewall: &KubernetesControlPlaneFirewall{
 			Enabled: &enabled,
 			AllowedAddresses: []string{
