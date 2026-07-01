@@ -17,18 +17,56 @@ You can view DigitalOcean API docs here: [https://docs.digitalocean.com/referenc
 > model listing, and more — all from the same `Client`. Jump to
 > [**AI & Inference**](#ai--inference) to get started.
 
+## Quick Start
+
+Minimal example: authenticate using an environment variable and list droplets.
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+
+    "github.com/digitalocean/godo"
+)
+
+func main() {
+    token := os.Getenv("DIGITALOCEAN_TOKEN")
+    client := godo.NewFromToken(token)
+
+    ctx := context.TODO()
+    droplets, _, err := client.Droplets.List(ctx, nil)
+    if err != nil {
+        panic(err)
+    }
+
+    for _, d := range droplets {
+        fmt.Println(d.Name)
+    }
+}
+```
+
+Set your token securely:
+
+```sh
+export DIGITALOCEAN_TOKEN="your-token-here"
+```
+
 ## Install
+
+### Go modules (recommended)
 ```sh
 go get github.com/digitalocean/godo@vX.Y.Z
 ```
 
-where X.Y.Z is the [version](https://github.com/digitalocean/godo/releases) you need.
+Where X.Y.Z is the desired [release](https://github.com/digitalocean/godo/releases).
 
-or
+### GOPATH / legacy
 ```sh
 go get github.com/digitalocean/godo
 ```
-for non Go modules usage or latest version.
 
 ## Usage
 
@@ -52,7 +90,8 @@ import (
 )
 
 func main() {
-    client := godo.NewFromToken("my-digitalocean-api-token")
+    // Prefer environment variables over hard-coded tokens
+    client := godo.NewFromToken(os.Getenv("DIGITALOCEAN_TOKEN"))
 }
 ```
 
@@ -141,6 +180,26 @@ if err != nil {
     fmt.Printf("Something bad happened: %s\n\n", err)
     return err
 }
+```
+
+## Common Use Cases
+
+List droplets:
+
+```go
+droplets, _, _ := client.Droplets.List(ctx, nil)
+```
+
+Delete a droplet:
+
+```go
+_, err := client.Droplets.Delete(ctx, dropletID)
+```
+
+Manage SSH keys:
+
+```go
+keys, _, _ := client.Keys.List(ctx, nil)
 ```
 
 ### Pagination
