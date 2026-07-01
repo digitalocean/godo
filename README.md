@@ -17,18 +17,50 @@ You can view DigitalOcean API docs here: [https://docs.digitalocean.com/referenc
 > model listing, and more — all from the same `Client`. Jump to
 > [**AI & Inference**](#ai--inference) to get started.
 
+## Quick Start
+
+Minimal example: authenticate via env var and list droplets.
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+
+    "github.com/digitalocean/godo"
+)
+
+func main() {
+    token := os.Getenv("DIGITALOCEAN_TOKEN")
+    client := godo.NewFromToken(token)
+
+    droplets, _, err := client.Droplets.List(context.Background(), nil)
+    if err != nil {
+        panic(err)
+    }
+    for _, d := range droplets {
+        fmt.Println(d.Name)
+    }
+}
+```
+
 ## Install
+
+Using Go modules (recommended):
+
 ```sh
 go get github.com/digitalocean/godo@vX.Y.Z
 ```
 
-where X.Y.Z is the [version](https://github.com/digitalocean/godo/releases) you need.
+Where X.Y.Z is the desired [release](https://github.com/digitalocean/godo/releases).
 
-or
+Legacy (non-modules) / latest:
+
 ```sh
 go get github.com/digitalocean/godo
 ```
-for non Go modules usage or latest version.
 
 ## Usage
 
@@ -48,11 +80,13 @@ You can manage API tokens at the DigitalOcean Control Panel
 package main
 
 import (
+    "os"
     "github.com/digitalocean/godo"
 )
 
 func main() {
-    client := godo.NewFromToken("my-digitalocean-api-token")
+    // Prefer env vars over hard-coded tokens
+    client := godo.NewFromToken(os.Getenv("DIGITALOCEAN_TOKEN"))
 }
 ```
 
