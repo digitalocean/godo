@@ -24,11 +24,18 @@ go get github.com/digitalocean/godo@vX.Y.Z
 
 where X.Y.Z is the [version](https://github.com/digitalocean/godo/releases) you need.
 
-or
+### Without Go modules (legacy GOPATH)
 ```sh
 go get github.com/digitalocean/godo
 ```
-for non Go modules usage or latest version.
+This installs the latest version for GOPATH-based workflows.
+
+### With Go modules (recommended)
+Add the dependency to your module:
+
+```sh
+go get github.com/digitalocean/godo@latest
+```
 
 ## Usage
 
@@ -39,22 +46,46 @@ import "github.com/digitalocean/godo"
 Create a new DigitalOcean client, then use the exposed services to
 access different parts of the DigitalOcean API.
 
+## Quick Start
+
+Minimal example: authenticate using an environment variable and list droplets.
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+
+    "github.com/digitalocean/godo"
+)
+
+func main() {
+    token := os.Getenv("DIGITALOCEAN_TOKEN")
+    client := godo.NewFromToken(token)
+
+    droplets, _, err := client.Droplets.List(context.Background(), nil)
+    if err != nil {
+        panic(err)
+    }
+
+    for _, d := range droplets {
+        fmt.Println(d.Name)
+    }
+}
+```
+
 ### Authentication
 
 You can manage API tokens at the DigitalOcean Control Panel
 [Applications Page](https://cloud.digitalocean.com/settings/applications).
 
 ```go
-package main
-
-import (
-    "github.com/digitalocean/godo"
-)
-
-func main() {
-    client := godo.NewFromToken("my-digitalocean-api-token")
-}
+client := godo.NewFromToken(os.Getenv("DIGITALOCEAN_TOKEN"))
 ```
+
+Using environment variables avoids hard-coding sensitive credentials in source code.
 
 > **Credentials for inference APIs**
 >
@@ -121,6 +152,8 @@ For streaming, embeddings, messages, responses, async invocations, batch inferen
 
 To create a new Droplet:
 
+This example provisions a basic Ubuntu droplet in the NYC3 region using a small instance size.
+
 ```go
 dropletName := "super-cool-droplet"
 
@@ -144,6 +177,8 @@ if err != nil {
 ```
 
 ### Pagination
+
+Advanced: pagination is required for endpoints that return large datasets.
 
 If a list of items is paginated by the API, you must request pages individually. For example, to fetch all Droplets:
 
@@ -219,6 +254,8 @@ func ListRepositoriesV2(ctx context.Context, client *godo.Client, registryName s
 ```
 
 ### Automatic Retries and Exponential Backoff
+
+Advanced: configure retries for rate limits (429) and transient server errors.
 
 The Godo client can be configured to use automatic retries and exponentional backoff for requests that fail with 429 or 500-level response codes via [go-retryablehttp](https://github.com/hashicorp/go-retryablehttp). To configure Godo to enable usage of go-retryablehttp, the `RetryConfig.RetryMax` must be set.
 
