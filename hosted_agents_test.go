@@ -18,6 +18,7 @@ import (
 
 var hostedAgentSession = HostedAgentSession{
 	SessionID:   "sess-abc123",
+	Name:        "godo-fixture",
 	TeamID:      42,
 	AgentKind:   HostedAgentKindClaudeCode,
 	Status:      HostedAgentSessionStatusReady,
@@ -32,6 +33,7 @@ var hostedAgentSession = HostedAgentSession{
 var hostedAgentSessionJSON = `
 {
 	"session_id": "sess-abc123",
+	"name": "godo-fixture",
 	"team_id": 42,
 	"agent_kind": "AGENT_KIND_CLAUDE_CODE",
 	"status": "SESSION_STATUS_READY",
@@ -265,6 +267,26 @@ func TestHostedAgents_ListSessions_PageToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, got.Sessions)
 	assert.Equal(t, "cursor-def", got.NextPageToken)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgents_ListSessions_ByName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "godo-fixture", r.URL.Query().Get("name"))
+		fmt.Fprintf(w, `{"sessions":[%s]}`, hostedAgentSessionJSON)
+	})
+
+	got, resp, err := client.HostedAgents.ListSessions(ctx, &HostedAgentSessionListOptions{
+		Name: "godo-fixture",
+	})
+	require.NoError(t, err)
+	require.Len(t, got.Sessions, 1)
+	assert.Equal(t, "godo-fixture", got.Sessions[0].Name)
+	assert.Equal(t, hostedAgentSession, got.Sessions[0])
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
