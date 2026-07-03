@@ -157,6 +157,40 @@ func TestHostedAgents_DestroySession(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 }
 
+func TestHostedAgents_PauseSession(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/pause", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, "{}", string(body))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	resp, err := client.HostedAgents.PauseSession(ctx, "sess-abc123")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+}
+
+func TestHostedAgents_ResumeSession(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/resume", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, "{}", string(body))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	resp, err := client.HostedAgents.ResumeSession(ctx, "sess-abc123")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+}
+
 func TestHostedAgents_SendInput(t *testing.T) {
 	setup()
 	defer teardown()
@@ -345,6 +379,12 @@ func TestHostedAgents_ValidationErrors(t *testing.T) {
 	require.EqualError(t, err, "hosted agents: session id is required")
 
 	_, err = client.HostedAgents.DestroySession(ctx, "")
+	require.EqualError(t, err, "hosted agents: session id is required")
+
+	_, err = client.HostedAgents.PauseSession(ctx, "")
+	require.EqualError(t, err, "hosted agents: session id is required")
+
+	_, err = client.HostedAgents.ResumeSession(ctx, "")
 	require.EqualError(t, err, "hosted agents: session id is required")
 
 	_, _, err = client.HostedAgents.SendInput(ctx, "sess-abc123", nil)

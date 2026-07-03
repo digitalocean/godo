@@ -1,0 +1,50 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/url"
+	"os"
+
+	"github.com/digitalocean/godo"
+)
+
+func main() {
+	sessionID := os.Getenv("HOSTED_AGENT_SESSION_ID")
+	if sessionID == "" {
+		fmt.Fprintln(os.Stderr, "HOSTED_AGENT_SESSION_ID is required")
+		os.Exit(2)
+	}
+
+	client := mustClient()
+	ctx := context.Background()
+
+	resp, err := client.HostedAgents.ResumeSession(ctx, sessionID)
+	if err != nil {
+		die(err)
+	}
+
+	fmt.Printf("HTTP %d — session %s resumed\n", resp.StatusCode, sessionID)
+}
+
+func mustClient() *godo.Client {
+	token := os.Getenv("DIGITALOCEAN_TOKEN")
+	if token == "" {
+		fmt.Fprintln(os.Stderr, "DIGITALOCEAN_TOKEN is required")
+		os.Exit(2)
+	}
+	client := godo.NewFromToken(token)
+	if baseURL := os.Getenv("DIGITALOCEAN_API_URL"); baseURL != "" {
+		u, err := url.Parse(baseURL)
+		if err != nil {
+			panic(err)
+		}
+		client.BaseURL = u
+	}
+	return client
+}
+
+func die(err error) {
+	fmt.Fprintln(os.Stderr, err)
+	os.Exit(1)
+}
