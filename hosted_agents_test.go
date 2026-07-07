@@ -498,14 +498,19 @@ func TestHostedAgents_DownloadWorkspace_ChecksumMismatch(t *testing.T) {
 	assert.Contains(t, err.Error(), "checksum mismatch")
 }
 
+// TestHostedAgents_DownloadWorkspace_MissingTrailer verifies that a missing
+// X-Content-Sha256 response trailer is tolerated (some intermediaries strip
+// response trailers).
 func TestHostedAgents_DownloadWorkspace_MissingTrailer(t *testing.T) {
 	setup()
 	defer teardown()
 
+	const payload = "partial data"
+
 	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("partial data"))
+		_, _ = w.Write([]byte(payload))
 	})
 
 	dl, _, err := client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{
@@ -514,9 +519,9 @@ func TestHostedAgents_DownloadWorkspace_MissingTrailer(t *testing.T) {
 	require.NoError(t, err)
 	defer dl.Body.Close()
 
-	_, err = io.ReadAll(dl.Body)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "missing X-Content-Sha256")
+	body, err := io.ReadAll(dl.Body)
+	require.NoError(t, err)
+	assert.Equal(t, payload, string(body))
 }
 
 func TestHostedAgents_WorkspaceValidationErrors(t *testing.T) {
