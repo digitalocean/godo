@@ -5,7 +5,6 @@
 - #1043 - @johannaratliff - Support subnet_uuid in vpcnatgateway
 - #1049 - @ritheek-pitti-do - gradientai: remove deprecated SaveAsPreset field
 - #1041 - @sshirolkar - add support for custom metrics rpcs
-- #1042 - @vrindavinod-do - hosted_agents: remove SandboxID from HostedAgentSession
 - #1044 - @lprasanth-nadiminti - DBAAS-8142: Add GetDOSettings and UpdateDOSettings
 
 ## [1.197.0] - 2026-06-25
