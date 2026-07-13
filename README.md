@@ -17,18 +17,75 @@ You can view DigitalOcean API docs here: [https://docs.digitalocean.com/referenc
 > model listing, and more — all from the same `Client`. Jump to
 > [**AI & Inference**](#ai--inference) to get started.
 
+## Quick Start
+
+Install `godo`, export a DigitalOcean API token, and make your first API call.
+
+```sh
+go mod init example.com/godo-quickstart
+go get github.com/digitalocean/godo@latest
+export DIGITALOCEAN_TOKEN="dop_v1_xxxxxx"
+```
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/digitalocean/godo"
+)
+
+func main() {
+    token := os.Getenv("DIGITALOCEAN_TOKEN")
+    if token == "" {
+        log.Fatal("DIGITALOCEAN_TOKEN is required")
+    }
+
+    client := godo.NewFromToken(token)
+
+    account, _, err := client.Account.Get(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Account email: %s\n", account.Email)
+}
+```
+
+API tokens can be created in the DigitalOcean Control Panel
+[Applications Page](https://cloud.digitalocean.com/settings/applications). Keep
+tokens in environment variables or a secrets manager instead of hard-coding them
+in source code.
+
 ## Install
+
+### Go Modules
+
+For Go modules, install a specific released version:
+
 ```sh
 go get github.com/digitalocean/godo@vX.Y.Z
 ```
 
 where X.Y.Z is the [version](https://github.com/digitalocean/godo/releases) you need.
 
-or
+You can also install the latest version:
+
 ```sh
 go get github.com/digitalocean/godo
 ```
-for non Go modules usage or latest version.
+
+### GOPATH
+
+For legacy GOPATH projects, use:
+
+```sh
+GO111MODULE=off go get github.com/digitalocean/godo
+```
 
 ## Usage
 
@@ -36,8 +93,8 @@ for non Go modules usage or latest version.
 import "github.com/digitalocean/godo"
 ```
 
-Create a new DigitalOcean client, then use the exposed services to
-access different parts of the DigitalOcean API.
+Create a new DigitalOcean client, then use the exposed services to access
+different parts of the DigitalOcean API.
 
 ### Authentication
 
@@ -48,11 +105,13 @@ You can manage API tokens at the DigitalOcean Control Panel
 package main
 
 import (
+    "os"
+
     "github.com/digitalocean/godo"
 )
 
 func main() {
-    client := godo.NewFromToken("my-digitalocean-api-token")
+    client := godo.NewFromToken(os.Getenv("DIGITALOCEAN_TOKEN"))
 }
 ```
 
@@ -118,8 +177,47 @@ For streaming, embeddings, messages, responses, async invocations, batch inferen
 
 ## Examples
 
+### Common Use Cases
+
+#### List Droplets
+
+```go
+droplets, _, err := client.Droplets.List(ctx, &godo.ListOptions{})
+if err != nil {
+    return err
+}
+
+for _, droplet := range droplets {
+    fmt.Printf("%d: %s\n", droplet.ID, droplet.Name)
+}
+```
+
+#### Delete a Droplet
+
+```go
+_, err := client.Droplets.Delete(ctx, dropletID)
+if err != nil {
+    return err
+}
+```
+
+#### List SSH Keys
+
+```go
+keys, _, err := client.Keys.List(ctx, &godo.ListOptions{})
+if err != nil {
+    return err
+}
+
+for _, key := range keys {
+    fmt.Printf("%d: %s\n", key.ID, key.Name)
+}
+```
 
 To create a new Droplet:
+
+A Droplet create request needs a region slug, size slug, and image. The example
+below creates a small Ubuntu Droplet in the NYC3 region.
 
 ```go
 dropletName := "super-cool-droplet"
@@ -142,6 +240,8 @@ if err != nil {
     return err
 }
 ```
+
+## Advanced Usage
 
 ### Pagination
 
