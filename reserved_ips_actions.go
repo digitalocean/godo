@@ -12,7 +12,7 @@ import (
 type ReservedIPActionsService interface {
 	Assign(ctx context.Context, ip string, dropletID int) (*Action, *Response, error)
 	Unassign(ctx context.Context, ip string) (*Action, *Response, error)
-	Get(ctx context.Context, ip string, actionID int) (*Action, *Response, error)
+	Get(ctx context.Context, ip string, actionID int64) (*Action, *Response, error)
 	List(ctx context.Context, ip string, opt *ListOptions) ([]Action, *Response, error)
 }
 
@@ -38,7 +38,7 @@ func (s *ReservedIPActionsServiceOp) Unassign(ctx context.Context, ip string) (*
 }
 
 // Get an action for a particular reserved IP by id.
-func (s *ReservedIPActionsServiceOp) Get(ctx context.Context, ip string, actionID int) (*Action, *Response, error) {
+func (s *ReservedIPActionsServiceOp) Get(ctx context.Context, ip string, actionID int64) (*Action, *Response, error) {
 	path := fmt.Sprintf("%s/%d", reservedIPActionPath(ip), actionID)
 	return s.get(ctx, path)
 }

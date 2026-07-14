@@ -42,7 +42,7 @@ type DropletActionsService interface {
 	EnableIPv6ByTag(context.Context, string) ([]Action, *Response, error)
 	EnablePrivateNetworking(context.Context, int) (*Action, *Response, error)
 	EnablePrivateNetworkingByTag(context.Context, string) ([]Action, *Response, error)
-	Get(context.Context, int, int) (*Action, *Response, error)
+	Get(context.Context, int, int64) (*Action, *Response, error)
 	GetByURI(context.Context, string) (*Action, *Response, error)
 }
 
@@ -318,7 +318,7 @@ func (s *DropletActionsServiceOp) doActionByTag(ctx context.Context, tag string,
 }
 
 // Get an action for a particular Droplet by id.
-func (s *DropletActionsServiceOp) Get(ctx context.Context, dropletID, actionID int) (*Action, *Response, error) {
+func (s *DropletActionsServiceOp) Get(ctx context.Context, dropletID int, actionID int64) (*Action, *Response, error) {
 	if dropletID < 1 {
 		return nil, nil, NewArgError("dropletID", "cannot be less than 1")
 	}
