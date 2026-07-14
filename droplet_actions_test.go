@@ -640,6 +640,49 @@ func TestDropletAction_EnableBackupsWithPolicy(t *testing.T) {
 	}
 }
 
+func TestDropletAction_EnableBackupsWithPolicyUsageBasedRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	policyRequest := newUsageBasedDropletBackupPolicyRequest(t)
+
+	request := &ActionRequest{
+		"type": "enable_backups",
+		"backup_policy": map[string]interface{}{
+			"hour":                  float64(0),
+			"plan":                  "intra_daily_4h",
+			"retention_period_days": float64(7),
+			"window_length_hours":   float64(4),
+		},
+	}
+
+	mux.HandleFunc("/v2/droplets/1/actions", func(w http.ResponseWriter, r *http.Request) {
+		v := new(ActionRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+
+		if !reflect.DeepEqual(v, request) {
+			t.Errorf("Request body = %+v, expected %+v", v, request)
+		}
+
+		fmt.Fprintf(w, `{"action":{"status":"in-progress"}}`)
+	})
+
+	action, _, err := client.DropletActions.EnableBackupsWithPolicy(ctx, 1, policyRequest)
+	if err != nil {
+		t.Errorf("DropletActions.EnableBackupsWithPolicy returned error: %v", err)
+	}
+
+	expected := &Action{Status: "in-progress"}
+	if !reflect.DeepEqual(action, expected) {
+		t.Errorf("DropletActions.EnableBackupsWithPolicy returned %+v, expected %+v", action, expected)
+	}
+}
+
 func TestDropletAction_ChangeBackupPolicy(t *testing.T) {
 	setup()
 	defer teardown()
@@ -685,6 +728,60 @@ func TestDropletAction_ChangeBackupPolicy(t *testing.T) {
 	expected := &Action{Status: "in-progress"}
 	if !reflect.DeepEqual(action, expected) {
 		t.Errorf("DropletActions.EnableBackups returned %+v, expected %+v", action, expected)
+	}
+}
+
+func TestDropletAction_ChangeBackupPolicyUsageBasedRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	policyRequest := newUsageBasedDropletBackupPolicyRequest(t)
+
+	request := &ActionRequest{
+		"type": "change_backup_policy",
+		"backup_policy": map[string]interface{}{
+			"hour":                  float64(0),
+			"plan":                  "intra_daily_4h",
+			"retention_period_days": float64(7),
+			"window_length_hours":   float64(4),
+		},
+	}
+
+	mux.HandleFunc("/v2/droplets/1/actions", func(w http.ResponseWriter, r *http.Request) {
+		v := new(ActionRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+
+		if !reflect.DeepEqual(v, request) {
+			t.Errorf("Request body = %+v, expected %+v", v, request)
+		}
+
+		fmt.Fprintf(w, `{"action":{"status":"in-progress"}}`)
+	})
+
+	action, _, err := client.DropletActions.ChangeBackupPolicy(ctx, 1, policyRequest)
+	if err != nil {
+		t.Errorf("DropletActions.ChangeBackupPolicy returned error: %v", err)
+	}
+
+	expected := &Action{Status: "in-progress"}
+	if !reflect.DeepEqual(action, expected) {
+		t.Errorf("DropletActions.ChangeBackupPolicy returned %+v, expected %+v", action, expected)
+	}
+}
+
+func newUsageBasedDropletBackupPolicyRequest(t *testing.T) *DropletBackupPolicyRequest {
+	t.Helper()
+
+	return &DropletBackupPolicyRequest{
+		Plan:                "intra_daily_4h",
+		Hour:                PtrTo(0),
+		RetentionPeriodDays: 7,
+		WindowLengthHours:   4,
 	}
 }
 
