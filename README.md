@@ -17,18 +17,74 @@ You can view DigitalOcean API docs here: [https://docs.digitalocean.com/referenc
 > model listing, and more — all from the same `Client`. Jump to
 > [**AI & Inference**](#ai--inference) to get started.
 
+## Quick Start
+
+Install `godo`, set a DigitalOcean API token in your environment, and make a
+request with a client:
+
+```sh
+go get github.com/digitalocean/godo@latest
+export DIGITALOCEAN_TOKEN="dop_v1_xxxxxx"
+```
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/digitalocean/godo"
+)
+
+func main() {
+    token := os.Getenv("DIGITALOCEAN_TOKEN")
+    if token == "" {
+        log.Fatal("DIGITALOCEAN_TOKEN is not set")
+    }
+
+    client := godo.NewFromToken(token)
+
+    account, _, err := client.Account.Get(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Authenticated as %s <%s>\n", account.Name, account.Email)
+}
+```
+
+Avoid hard-coding API tokens in source code. Environment variables, secret
+managers, or your platform's secret storage keep credentials out of your Git
+history.
+
 ## Install
+
+### Go Modules
+
+For projects using Go modules, install the latest release:
+
+```sh
+go get github.com/digitalocean/godo@latest
+```
+
+To pin a specific release:
+
 ```sh
 go get github.com/digitalocean/godo@vX.Y.Z
 ```
 
 where X.Y.Z is the [version](https://github.com/digitalocean/godo/releases) you need.
 
-or
+### Legacy GOPATH
+
+For projects that are not using Go modules:
+
 ```sh
 go get github.com/digitalocean/godo
 ```
-for non Go modules usage or latest version.
 
 ## Usage
 
@@ -48,11 +104,13 @@ You can manage API tokens at the DigitalOcean Control Panel
 package main
 
 import (
+    "os"
+
     "github.com/digitalocean/godo"
 )
 
 func main() {
-    client := godo.NewFromToken("my-digitalocean-api-token")
+    client := godo.NewFromToken(os.Getenv("DIGITALOCEAN_TOKEN"))
 }
 ```
 
@@ -118,6 +176,14 @@ For streaming, embeddings, messages, responses, async invocations, batch inferen
 
 ## Examples
 
+### Droplet Creation
+
+Droplets require a region, size, and image. The example below creates a basic
+Ubuntu Droplet in the `nyc3` region using a small shared CPU plan. See the
+DigitalOcean API documentation for available
+[regions](https://docs.digitalocean.com/reference/api/api-reference/#tag/Regions),
+[sizes](https://docs.digitalocean.com/reference/api/api-reference/#tag/Sizes),
+and [images](https://docs.digitalocean.com/reference/api/api-reference/#tag/Images).
 
 To create a new Droplet:
 
@@ -142,6 +208,51 @@ if err != nil {
     return err
 }
 ```
+
+## Common Use Cases
+
+### List Droplets
+
+```go
+ctx := context.Background()
+
+droplets, _, err := client.Droplets.List(ctx, nil)
+if err != nil {
+    return err
+}
+
+for _, droplet := range droplets {
+    fmt.Printf("%d: %s\n", droplet.ID, droplet.Name)
+}
+```
+
+### Delete a Droplet
+
+```go
+ctx := context.Background()
+
+_, err := client.Droplets.Delete(ctx, 123456789)
+if err != nil {
+    return err
+}
+```
+
+### List SSH Keys
+
+```go
+ctx := context.Background()
+
+keys, _, err := client.Keys.List(ctx, nil)
+if err != nil {
+    return err
+}
+
+for _, key := range keys {
+    fmt.Printf("%d: %s\n", key.ID, key.Name)
+}
+```
+
+## Advanced Usage
 
 ### Pagination
 
