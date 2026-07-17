@@ -183,6 +183,7 @@ var lbCreateJSONResponse = `
         ],
         "redirect_http_to_https": true,
         "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+        "subnet_uuid": "d4ba5b5a-9738-4a6a-b78d-4a86efb9f9e0",
         "disable_lets_encrypt_dns_records": true,
         "project_id": "6929eef6-4e45-11ed-bdc3-0242ac120002",
         "http_idle_timeout_seconds": 60,
@@ -544,6 +545,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		DropletIDs:          []int{2, 21},
 		RedirectHttpToHttps: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
+		VPCSubnetUUID:       "d4ba5b5a-9738-4a6a-b78d-4a86efb9f9e0",
 		ProjectID:           "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		Firewall: &LBFirewall{
 			Allow: []string{"ip:1.2.3.4"},
@@ -633,6 +635,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		DropletIDs:             []int{2, 21},
 		RedirectHttpToHttps:    true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
+		VPCSubnetUUID:          "d4ba5b5a-9738-4a6a-b78d-4a86efb9f9e0",
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		HTTPIdleTimeoutSeconds: &expectedTimeout,
 		Firewall: &LBFirewall{
@@ -698,6 +701,7 @@ func TestLoadBalancers_CreateValidateSucceeds(t *testing.T) {
 		DropletIDs:          []int{2, 21},
 		RedirectHttpToHttps: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
+		VPCSubnetUUID:       "d4ba5b5a-9738-4a6a-b78d-4a86efb9f9e0",
 		ValidateOnly:        true,
 	}
 
@@ -758,6 +762,7 @@ func TestLoadBalancers_CreateValidateFails(t *testing.T) {
 		DropletIDs:          []int{2, 21},
 		RedirectHttpToHttps: true,
 		VPCUUID:             "880b7f98-f062-404d-b33c-458d545696f6",
+		VPCSubnetUUID:       "d4ba5b5a-9738-4a6a-b78d-4a86efb9f9e0",
 		ValidateOnly:        true,
 	}
 
@@ -1380,6 +1385,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
+		VPCSubnetUUID:          "d4ba5b5a-9738-4a6a-b78d-4a86efb9f9e0",
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		ValidateOnly:           true,
 		HTTPIdleTimeoutSeconds: &lbIdleTimeout,
@@ -1440,6 +1446,7 @@ func TestLoadBalancers_AsRequest(t *testing.T) {
 		EnableProxyProtocol:    true,
 		EnableBackendKeepalive: true,
 		VPCUUID:                "880b7f98-f062-404d-b33c-458d545696f6",
+		VPCSubnetUUID:          "d4ba5b5a-9738-4a6a-b78d-4a86efb9f9e0",
 		ProjectID:              "6929eef6-4e45-11ed-bdc3-0242ac120002",
 		HTTPIdleTimeoutSeconds: &lbIdleTimeout,
 		ValidateOnly:           true,
