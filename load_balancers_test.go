@@ -564,6 +564,7 @@ func TestLoadBalancers_Create(t *testing.T) {
 		Network:               LoadBalancerNetworkTypeInternal,
 		NetworkStack:          LoadBalancerNetworkStackIPv4,
 		TLSCipherPolicy:       LoadBalancerTLSCipherPolicyDefault,
+		IP:                    "203.0.113.5",
 	}
 
 	path := "/v2/load_balancers"
