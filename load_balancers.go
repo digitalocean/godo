@@ -266,6 +266,9 @@ type LoadBalancerRequest struct {
 	Network                      string           `json:"network,omitempty"`
 	NetworkStack                 string           `json:"network_stack,omitempty"`
 	TLSCipherPolicy              string           `json:"tls_cipher_policy,omitempty"`
+	// IP is an optional BYOIP address to assign on create. When omitted, a
+	// system-allocated floating IP is provisioned. Create-only; not used on update.
+	IP string `json:"ip,omitempty"`
 }
 
 // String creates a human-readable description of a LoadBalancerRequest.

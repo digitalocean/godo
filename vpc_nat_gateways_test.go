@@ -156,6 +156,11 @@ func TestVPCNATGateways_Create(t *testing.T) {
 		VPCs: []*IngressVPC{
 			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", SubnetUUID: "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4"},
 		},
+		Egresses: &Egresses{
+			PublicGateways: []*PublicGateway{
+				{IP: "203.0.113.10"},
+			},
+		},
 		UDPTimeoutSeconds:  30,
 		ICMPTimeoutSeconds: 30,
 		TCPTimeoutSeconds:  300,
