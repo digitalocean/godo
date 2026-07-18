@@ -75,6 +75,7 @@ type LoadBalancer struct {
 	EnableProxyProtocol          bool             `json:"enable_proxy_protocol,omitempty"`
 	EnableBackendKeepalive       bool             `json:"enable_backend_keepalive,omitempty"`
 	VPCUUID                      string           `json:"vpc_uuid,omitempty"`
+	VPCSubnetUUID                string           `json:"subnet_uuid,omitempty"`
 	DisableLetsEncryptDNSRecords *bool            `json:"disable_lets_encrypt_dns_records,omitempty"`
 	ValidateOnly                 bool             `json:"validate_only,omitempty"`
 	ProjectID                    string           `json:"project_id,omitempty"`
@@ -114,6 +115,7 @@ func (l LoadBalancer) AsRequest() *LoadBalancerRequest {
 		EnableProxyProtocol:          l.EnableProxyProtocol,
 		EnableBackendKeepalive:       l.EnableBackendKeepalive,
 		VPCUUID:                      l.VPCUUID,
+		VPCSubnetUUID:                l.VPCSubnetUUID,
 		DisableLetsEncryptDNSRecords: l.DisableLetsEncryptDNSRecords,
 		ValidateOnly:                 l.ValidateOnly,
 		ProjectID:                    l.ProjectID,
@@ -252,6 +254,7 @@ type LoadBalancerRequest struct {
 	EnableProxyProtocol          bool             `json:"enable_proxy_protocol,omitempty"`
 	EnableBackendKeepalive       bool             `json:"enable_backend_keepalive,omitempty"`
 	VPCUUID                      string           `json:"vpc_uuid,omitempty"`
+	VPCSubnetUUID                string           `json:"subnet_uuid,omitempty"`
 	DisableLetsEncryptDNSRecords *bool            `json:"disable_lets_encrypt_dns_records,omitempty"`
 	ValidateOnly                 bool             `json:"validate_only,omitempty"`
 	ProjectID                    string           `json:"project_id,omitempty"`
