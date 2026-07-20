@@ -90,6 +90,30 @@ func TestSizes_List(t *testing.T) {
 				},
 			},
 		},
+		{
+			Slug:         "gpu-mi350x1-288gb",
+			Memory:       1966080,
+			Vcpus:        160,
+			Disk:         200,
+			PriceMonthly: 35414.4,
+			PriceHourly:  52.7,
+			Regions:      []string{"tor1"},
+			Available:    true,
+			Transfer:     60,
+			Description:  "AMD MI350X GPU - 1X",
+			GPUInfo: &GPUInfo{
+				Count: 1,
+				VRAM: &VRAM{
+					Amount: 288,
+					Unit:   "gib",
+				},
+				Model: "amd_mi350x",
+				SupportedPartitionModes: []string{
+					GPUPartitionModeSPXNPS1,
+					GPUPartitionModeDPXNPS2,
+				},
+			},
+		},
 	}
 
 	mux.HandleFunc("/v2/sizes", func(w http.ResponseWriter, r *http.Request) {
@@ -182,10 +206,36 @@ func TestSizes_List(t *testing.T) {
 							}
 						}
 					]
+				},
+				{
+					"slug": "gpu-mi350x1-288gb",
+					"memory": 1966080,
+					"vcpus": 160,
+					"disk": 200,
+					"transfer": 60,
+					"price_monthly": 35414.4,
+					"price_hourly": 52.7,
+					"regions": [
+						"tor1"
+					],
+					"available": true,
+					"description": "AMD MI350X GPU - 1X",
+					"gpu_info": {
+						"count": 1,
+						"vram": {
+							"amount": 288,
+							"unit": "gib"
+						},
+						"model": "amd_mi350x",
+						"supported_partition_modes": [
+							"PARTITION_MODE_SPX_NPS1",
+							"PARTITION_MODE_DPX_NPS2"
+						]
+					}
 				}
 			],
 			"meta": {
-				"total": 3
+				"total": 4
 			}
 		}`)
 	})
@@ -199,7 +249,7 @@ func TestSizes_List(t *testing.T) {
 		t.Errorf("Sizes.List returned sizes %+v, expected %+v", sizes, expectedSizes)
 	}
 
-	expectedMeta := &Meta{Total: 3}
+	expectedMeta := &Meta{Total: 4}
 	if !reflect.DeepEqual(resp.Meta, expectedMeta) {
 		t.Errorf("Sizes.List returned meta %+v, expected %+v", resp.Meta, expectedMeta)
 	}
@@ -271,5 +321,65 @@ func TestSize_String(t *testing.T) {
 	expected := `godo.Size{Slug:"slize", Memory:123, Vcpus:456, Disk:789, PriceMonthly:123, PriceHourly:456, Regions:["1" "2"], Available:true, Transfer:789, Description:"Basic"}`
 	if expected != stringified {
 		t.Errorf("Size.String returned %+v, expected %+v", stringified, expected)
+	}
+}
+
+// TestSizes_SupportedPartitionModes verifies that the gpu_partition_mode_selection
+// flipper is handled in both states: when the field is present (flipper on) it is
+// decoded, and when it is absent (flipper off / not enrolled) the slice is nil so
+// callers see len == 0 ("hide the picker").
+func TestSizes_SupportedPartitionModes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/sizes", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+			"sizes": [
+				{
+					"slug": "gpu-mi350x8-2304gb",
+					"gpu_info": {
+						"count": 8,
+						"model": "amd_mi350x",
+						"supported_partition_modes": [
+							"PARTITION_MODE_SPX_NPS1",
+							"PARTITION_MODE_DPX_NPS2"
+						]
+					}
+				},
+				{
+					"slug": "gpu-mi350x1-288gb",
+					"gpu_info": {
+						"count": 1,
+						"model": "amd_mi350x"
+					}
+				}
+			],
+			"meta": { "total": 2 }
+		}`)
+	})
+
+	sizes, _, err := client.Sizes.List(ctx, nil)
+	if err != nil {
+		t.Fatalf("Sizes.List returned error: %v", err)
+	}
+	if len(sizes) != 2 {
+		t.Fatalf("expected 2 sizes, got %d", len(sizes))
+	}
+
+	// Flipper on: field present and decoded.
+	on := sizes[0]
+	wantModes := []string{GPUPartitionModeSPXNPS1, GPUPartitionModeDPXNPS2}
+	if !reflect.DeepEqual(on.GPUInfo.SupportedPartitionModes, wantModes) {
+		t.Errorf("flipper-on size: SupportedPartitionModes = %v, want %v", on.GPUInfo.SupportedPartitionModes, wantModes)
+	}
+
+	// Flipper off / not enrolled: field absent -> nil slice, len 0.
+	off := sizes[1]
+	if off.GPUInfo.SupportedPartitionModes != nil {
+		t.Errorf("flipper-off size: SupportedPartitionModes = %v, want nil", off.GPUInfo.SupportedPartitionModes)
+	}
+	if len(off.GPUInfo.SupportedPartitionModes) != 0 {
+		t.Errorf("flipper-off size: len(SupportedPartitionModes) = %d, want 0", len(off.GPUInfo.SupportedPartitionModes))
 	}
 }

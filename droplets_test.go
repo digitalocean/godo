@@ -398,6 +398,85 @@ func TestDroplets_Create(t *testing.T) {
 	}
 }
 
+func TestDroplets_CreateWithGPUPartitionMode(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &DropletCreateRequest{
+		Name:             "name",
+		Region:           "region",
+		Size:             "gpu-mi350x1-288gb",
+		Image:            DropletCreateImage{ID: 1},
+		GPUPartitionMode: GPUPartitionModeDPXNPS2,
+	}
+
+	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
+		expected := map[string]interface{}{
+			"name":               "name",
+			"region":             "region",
+			"size":               "gpu-mi350x1-288gb",
+			"image":              float64(1),
+			"ssh_keys":           nil,
+			"backups":            false,
+			"ipv6":               false,
+			"private_networking": false,
+			"monitoring":         false,
+			"tags":               nil,
+			"gpu_partition_mode": "PARTITION_MODE_DPX_NPS2",
+		}
+		jsonBlob := `
+{
+  "droplet": {
+    "id": 1,
+    "gpu_partition_mode": "PARTITION_MODE_DPX_NPS2"
+  }
+}
+`
+
+		var v map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+			t.Fatalf("decode json: %v", err)
+		}
+
+		if !reflect.DeepEqual(v, expected) {
+			t.Errorf("Request body\n got=%#v\nwant=%#v", v, expected)
+		}
+
+		fmt.Fprint(w, jsonBlob)
+	})
+
+	droplet, _, err := client.Droplets.Create(ctx, createRequest)
+	if err != nil {
+		t.Errorf("Droplets.Create returned error: %v", err)
+	}
+
+	if mode := droplet.GPUPartitionMode; mode != GPUPartitionModeDPXNPS2 {
+		t.Errorf("expected gpu_partition_mode '%s', received '%s'", GPUPartitionModeDPXNPS2, mode)
+	}
+}
+
+// TestDroplets_GetGPUPartitionModeAbsent covers the flipper-off / v1 read-back
+// case: when the API response omits gpu_partition_mode, godo decodes it to the
+// empty string (DROP-13726 GET read-back is out of scope for v1).
+func TestDroplets_GetGPUPartitionModeAbsent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/droplets/12345", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"droplet":{"id":12345,"size_slug":"gpu-mi350x8-2304gb"}}`)
+	})
+
+	droplet, _, err := client.Droplets.Get(ctx, 12345)
+	if err != nil {
+		t.Errorf("Droplet.Get returned error: %v", err)
+	}
+
+	if droplet.GPUPartitionMode != "" {
+		t.Errorf("expected empty gpu_partition_mode when absent, received %q", droplet.GPUPartitionMode)
+	}
+}
+
 func TestDroplets_CreateWithoutDropletAgent(t *testing.T) {
 	setup()
 	defer teardown()
