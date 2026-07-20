@@ -44,16 +44,16 @@ const (
 	MicroDropletHTTPProtocolHTTP2 = MicroDropletHTTPProtocol("http2")
 )
 
-// MicroDropletSnapshotStatus represents the status of a MicroDroplet snapshot.
-type MicroDropletSnapshotStatus string
+// MicroDropletCheckpointStatus represents the status of a MicroDroplet checkpoint.
+type MicroDropletCheckpointStatus string
 
-// Possible states for a MicroDroplet snapshot.
+// Possible states for a MicroDroplet checkpoint.
 const (
-	MicroDropletSnapshotStatusUnknown   = MicroDropletSnapshotStatus("SNAPSHOT_UNKNOWN")
-	MicroDropletSnapshotStatusCreating  = MicroDropletSnapshotStatus("SNAPSHOT_CREATING")
-	MicroDropletSnapshotStatusAvailable = MicroDropletSnapshotStatus("SNAPSHOT_AVAILABLE")
-	MicroDropletSnapshotStatusFailed    = MicroDropletSnapshotStatus("SNAPSHOT_FAILED")
-	MicroDropletSnapshotStatusDeleted   = MicroDropletSnapshotStatus("SNAPSHOT_DELETED")
+	MicroDropletCheckpointStatusUnknown   = MicroDropletCheckpointStatus("CHECKPOINT_UNKNOWN")
+	MicroDropletCheckpointStatusCreating  = MicroDropletCheckpointStatus("CHECKPOINT_CREATING")
+	MicroDropletCheckpointStatusAvailable = MicroDropletCheckpointStatus("CHECKPOINT_AVAILABLE")
+	MicroDropletCheckpointStatusFailed    = MicroDropletCheckpointStatus("CHECKPOINT_FAILED")
+	MicroDropletCheckpointStatusDeleted   = MicroDropletCheckpointStatus("CHECKPOINT_DELETED")
 )
 
 // MicroDropletsService is an interface for interfacing with the MicroDroplet
@@ -65,9 +65,10 @@ type MicroDropletsService interface {
 	ListByName(ctx context.Context, name string, opt *ListOptions) ([]MicroDroplet, *Response, error)
 	Get(ctx context.Context, id string) (*MicroDroplet, *Response, error)
 	Create(ctx context.Context, createRequest *MicroDropletCreateRequest) (*MicroDroplet, *Response, error)
-	Update(ctx context.Context, id string, updateRequest *MicroDropletUpdateRequest) (*MicroDroplet, *Response, error)
+	Pause(ctx context.Context, id string) (*MicroDroplet, *Response, error)
+	Resume(ctx context.Context, id string) (*MicroDroplet, *Response, error)
 	Delete(ctx context.Context, id string) (*Response, error)
-	ListSnapshots(ctx context.Context, id string, opt *ListOptions) ([]MicroDropletSnapshot, *Response, error)
+	ListCheckpoints(ctx context.Context, id string, opt *ListOptions) ([]MicroDropletCheckpoint, *Response, error)
 }
 
 // MicroDropletsServiceOp handles communication with the MicroDroplet related
@@ -101,16 +102,17 @@ type AutoPauseConfig struct {
 	IdleTimeout string `json:"idle_timeout,omitempty"`
 }
 
-// MicroDropletSnapshot represents a snapshot of a MicroDroplet, taken
-// automatically when the MicroDroplet is paused.
-type MicroDropletSnapshot struct {
-	ID             string                     `json:"id,omitempty"`
-	MicroDropletID string                     `json:"micro_droplet_id,omitempty"`
-	Status         MicroDropletSnapshotStatus `json:"status,omitempty"`
-	Name           string                     `json:"name,omitempty"`
-	MemoryBytes    uint64                     `json:"memory_bytes,omitempty"`
-	DiskBytes      uint64                     `json:"disk_bytes,omitempty"`
-	Created        string                     `json:"created_at,omitempty"`
+// MicroDropletCheckpoint represents a checkpoint of a MicroDroplet
+// (persisted memory + disk state), captured automatically when the
+// MicroDroplet is paused.
+type MicroDropletCheckpoint struct {
+	ID             string                       `json:"id,omitempty"`
+	MicroDropletID string                       `json:"micro_droplet_id,omitempty"`
+	Status         MicroDropletCheckpointStatus `json:"status,omitempty"`
+	Name           string                       `json:"name,omitempty"`
+	MemoryBytes    uint64                       `json:"memory_bytes,omitempty"`
+	DiskBytes      uint64                       `json:"disk_bytes,omitempty"`
+	Created        string                       `json:"created_at,omitempty"`
 }
 
 // MicroDropletCreateRequest represents a request to create a MicroDroplet.
@@ -129,15 +131,6 @@ type MicroDropletCreateRequest struct {
 	Tags         []string                 `json:"tags,omitempty"`
 }
 
-// MicroDropletUpdateRequest represents a partial update to a MicroDroplet.
-//
-// The only currently supported mutation is a state transition. Set State to
-// MicroDropletStatePaused to pause a running MicroDroplet, or to
-// MicroDropletStateRunning to resume a paused MicroDroplet.
-type MicroDropletUpdateRequest struct {
-	State MicroDropletState `json:"state,omitempty"`
-}
-
 // String returns a human-readable description of a MicroDroplet.
 func (m MicroDroplet) String() string {
 	return Stringify(m)
@@ -148,18 +141,13 @@ func (m MicroDroplet) URN() string {
 	return ToURN("MicroDroplet", m.ID)
 }
 
-// String returns a human-readable description of a MicroDropletSnapshot.
-func (s MicroDropletSnapshot) String() string {
-	return Stringify(s)
+// String returns a human-readable description of a MicroDropletCheckpoint.
+func (c MicroDropletCheckpoint) String() string {
+	return Stringify(c)
 }
 
 // String returns a human-readable description of a MicroDropletCreateRequest.
 func (r MicroDropletCreateRequest) String() string {
-	return Stringify(r)
-}
-
-// String returns a human-readable description of a MicroDropletUpdateRequest.
-func (r MicroDropletUpdateRequest) String() string {
 	return Stringify(r)
 }
 
@@ -173,10 +161,10 @@ type microDropletsRoot struct {
 	Meta          *Meta          `json:"meta"`
 }
 
-type microDropletSnapshotsRoot struct {
-	Snapshots []MicroDropletSnapshot `json:"snapshots"`
-	Links     *Links                 `json:"links"`
-	Meta      *Meta                  `json:"meta"`
+type microDropletCheckpointsRoot struct {
+	Checkpoints []MicroDropletCheckpoint `json:"checkpoints"`
+	Links       *Links                   `json:"links"`
+	Meta        *Meta                    `json:"meta"`
 }
 
 // listMicroDropletOptions holds MicroDroplet-specific list filters that are
@@ -280,21 +268,32 @@ func (s *MicroDropletsServiceOp) Create(ctx context.Context, createRequest *Micr
 	return root.MicroDroplet, resp, nil
 }
 
-// Update applies a partial update to a MicroDroplet. Today only the State
-// field is honored: setting it to MicroDropletStatePaused pauses a running
-// MicroDroplet, and setting it to MicroDropletStateRunning resumes a paused
-// MicroDroplet. The returned MicroDroplet reflects the post-transition state.
-func (s *MicroDropletsServiceOp) Update(ctx context.Context, id string, updateRequest *MicroDropletUpdateRequest) (*MicroDroplet, *Response, error) {
+// Pause synchronously transitions a RUNNING MicroDroplet to PAUSED. It blocks
+// until the platform has durably paused the MicroDroplet and returns the
+// updated resource. The call is idempotent: pausing a MicroDroplet that is
+// already PAUSED returns the current MicroDroplet with no side effects.
+func (s *MicroDropletsServiceOp) Pause(ctx context.Context, id string) (*MicroDroplet, *Response, error) {
+	return s.doTransition(ctx, id, "pause")
+}
+
+// Resume synchronously transitions a PAUSED MicroDroplet to RUNNING. It blocks
+// until the platform has durably resumed the MicroDroplet and returns the
+// updated resource. The call is idempotent: resuming a MicroDroplet that is
+// already RUNNING returns the current MicroDroplet with no side effects.
+func (s *MicroDropletsServiceOp) Resume(ctx context.Context, id string) (*MicroDroplet, *Response, error) {
+	return s.doTransition(ctx, id, "resume")
+}
+
+// doTransition posts an empty body to a MicroDroplet transition sub-resource
+// (e.g. /pause, /resume) and decodes the returned MicroDroplet.
+func (s *MicroDropletsServiceOp) doTransition(ctx context.Context, id, action string) (*MicroDroplet, *Response, error) {
 	if id == "" {
 		return nil, nil, NewArgError("id", "cannot be empty")
 	}
-	if updateRequest == nil {
-		return nil, nil, NewArgError("updateRequest", "cannot be nil")
-	}
 
-	path := fmt.Sprintf("%s/%s", microDropletBasePath, id)
+	path := fmt.Sprintf("%s/%s/%s", microDropletBasePath, id, action)
 
-	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, updateRequest)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -325,14 +324,15 @@ func (s *MicroDropletsServiceOp) Delete(ctx context.Context, id string) (*Respon
 	return s.client.Do(ctx, req, nil)
 }
 
-// ListSnapshots lists snapshots that belong to a MicroDroplet. Snapshots are
-// created automatically by DigitalOcean when a MicroDroplet is paused.
-func (s *MicroDropletsServiceOp) ListSnapshots(ctx context.Context, id string, opt *ListOptions) ([]MicroDropletSnapshot, *Response, error) {
+// ListCheckpoints lists checkpoints that belong to a MicroDroplet.
+// Checkpoints are captured automatically by DigitalOcean when a MicroDroplet
+// is paused; each one preserves the memory and disk state required to resume.
+func (s *MicroDropletsServiceOp) ListCheckpoints(ctx context.Context, id string, opt *ListOptions) ([]MicroDropletCheckpoint, *Response, error) {
 	if id == "" {
 		return nil, nil, NewArgError("id", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/snapshots", microDropletBasePath, id)
+	path := fmt.Sprintf("%s/%s/checkpoints", microDropletBasePath, id)
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -343,7 +343,7 @@ func (s *MicroDropletsServiceOp) ListSnapshots(ctx context.Context, id string, o
 		return nil, nil, err
 	}
 
-	root := new(microDropletSnapshotsRoot)
+	root := new(microDropletCheckpointsRoot)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -355,5 +355,5 @@ func (s *MicroDropletsServiceOp) ListSnapshots(ctx context.Context, id string, o
 		resp.Meta = m
 	}
 
-	return root.Snapshots, resp, nil
+	return root.Checkpoints, resp, nil
 }

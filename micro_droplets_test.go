@@ -301,70 +301,27 @@ func TestMicroDroplets_Create_NilRequest(t *testing.T) {
 	}
 }
 
-func TestMicroDroplets_Update_Pause(t *testing.T) {
+func TestMicroDroplets_Pause(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances/aaa-111", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodPatch)
-
-		expected := map[string]interface{}{"state": "paused"}
-		var got map[string]interface{}
-		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
-			t.Fatalf("decode request body: %v", err)
-		}
-		if !reflect.DeepEqual(got, expected) {
-			t.Errorf("Update body\n got=%#v\nwant=%#v", got, expected)
-		}
-
+	mux.HandleFunc("/v2/microdroplets/instances/aaa-111/pause", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
 		fmt.Fprint(w, `{"micro_droplet": {"id": "aaa-111", "state": "paused"}}`)
 	})
 
-	microDroplet, _, err := client.MicroDroplets.Update(ctx, "aaa-111", &MicroDropletUpdateRequest{
-		State: MicroDropletStatePaused,
-	})
+	microDroplet, _, err := client.MicroDroplets.Pause(ctx, "aaa-111")
 	if err != nil {
-		t.Fatalf("MicroDroplets.Update returned error: %v", err)
+		t.Fatalf("MicroDroplets.Pause returned error: %v", err)
 	}
 
 	if microDroplet.State != MicroDropletStatePaused {
-		t.Errorf("MicroDroplets.Update returned State %q, expected %q", microDroplet.State, MicroDropletStatePaused)
+		t.Errorf("MicroDroplets.Pause returned State %q, expected %q", microDroplet.State, MicroDropletStatePaused)
 	}
 }
 
-func TestMicroDroplets_Update_Resume(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v2/microdroplets/instances/aaa-111", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodPatch)
-
-		expected := map[string]interface{}{"state": "running"}
-		var got map[string]interface{}
-		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
-			t.Fatalf("decode request body: %v", err)
-		}
-		if !reflect.DeepEqual(got, expected) {
-			t.Errorf("Update body\n got=%#v\nwant=%#v", got, expected)
-		}
-
-		fmt.Fprint(w, `{"micro_droplet": {"id": "aaa-111", "state": "running"}}`)
-	})
-
-	microDroplet, _, err := client.MicroDroplets.Update(ctx, "aaa-111", &MicroDropletUpdateRequest{
-		State: MicroDropletStateRunning,
-	})
-	if err != nil {
-		t.Fatalf("MicroDroplets.Update returned error: %v", err)
-	}
-
-	if microDroplet.State != MicroDropletStateRunning {
-		t.Errorf("MicroDroplets.Update returned State %q, expected %q", microDroplet.State, MicroDropletStateRunning)
-	}
-}
-
-func TestMicroDroplets_Update_EmptyID(t *testing.T) {
-	_, _, err := (&MicroDropletsServiceOp{}).Update(ctx, "", &MicroDropletUpdateRequest{State: MicroDropletStatePaused})
+func TestMicroDroplets_Pause_EmptyID(t *testing.T) {
+	_, _, err := (&MicroDropletsServiceOp{}).Pause(ctx, "")
 	if err == nil {
 		t.Fatal("expected error for empty id")
 	}
@@ -373,10 +330,29 @@ func TestMicroDroplets_Update_EmptyID(t *testing.T) {
 	}
 }
 
-func TestMicroDroplets_Update_NilRequest(t *testing.T) {
-	_, _, err := (&MicroDropletsServiceOp{}).Update(ctx, "aaa-111", nil)
+func TestMicroDroplets_Resume(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microdroplets/instances/aaa-111/resume", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"micro_droplet": {"id": "aaa-111", "state": "running"}}`)
+	})
+
+	microDroplet, _, err := client.MicroDroplets.Resume(ctx, "aaa-111")
+	if err != nil {
+		t.Fatalf("MicroDroplets.Resume returned error: %v", err)
+	}
+
+	if microDroplet.State != MicroDropletStateRunning {
+		t.Errorf("MicroDroplets.Resume returned State %q, expected %q", microDroplet.State, MicroDropletStateRunning)
+	}
+}
+
+func TestMicroDroplets_Resume_EmptyID(t *testing.T) {
+	_, _, err := (&MicroDropletsServiceOp{}).Resume(ctx, "")
 	if err == nil {
-		t.Fatal("expected error for nil updateRequest")
+		t.Fatal("expected error for empty id")
 	}
 	if _, ok := err.(*ArgError); !ok {
 		t.Errorf("expected *ArgError, got %T: %v", err, err)
@@ -407,41 +383,41 @@ func TestMicroDroplets_Delete_EmptyID(t *testing.T) {
 	}
 }
 
-func TestMicroDroplets_ListSnapshots(t *testing.T) {
+func TestMicroDroplets_ListCheckpoints(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances/aaa-111/snapshots", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets/instances/aaa-111/checkpoints", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
-			"snapshots": [
-				{"id": "snap-1", "micro_droplet_id": "aaa-111", "status": "SNAPSHOT_AVAILABLE", "memory_bytes": 1024, "disk_bytes": 2048},
-				{"id": "snap-2", "micro_droplet_id": "aaa-111", "status": "SNAPSHOT_CREATING"}
+			"checkpoints": [
+				{"id": "chk-1", "micro_droplet_id": "aaa-111", "status": "CHECKPOINT_AVAILABLE", "memory_bytes": 1024, "disk_bytes": 2048},
+				{"id": "chk-2", "micro_droplet_id": "aaa-111", "status": "CHECKPOINT_CREATING"}
 			],
 			"meta": {"total": 2}
 		}`)
 	})
 
-	snapshots, resp, err := client.MicroDroplets.ListSnapshots(ctx, "aaa-111", nil)
+	checkpoints, resp, err := client.MicroDroplets.ListCheckpoints(ctx, "aaa-111", nil)
 	if err != nil {
-		t.Fatalf("MicroDroplets.ListSnapshots returned error: %v", err)
+		t.Fatalf("MicroDroplets.ListCheckpoints returned error: %v", err)
 	}
 
-	expected := []MicroDropletSnapshot{
-		{ID: "snap-1", MicroDropletID: "aaa-111", Status: MicroDropletSnapshotStatusAvailable, MemoryBytes: 1024, DiskBytes: 2048},
-		{ID: "snap-2", MicroDropletID: "aaa-111", Status: MicroDropletSnapshotStatusCreating},
+	expected := []MicroDropletCheckpoint{
+		{ID: "chk-1", MicroDropletID: "aaa-111", Status: MicroDropletCheckpointStatusAvailable, MemoryBytes: 1024, DiskBytes: 2048},
+		{ID: "chk-2", MicroDropletID: "aaa-111", Status: MicroDropletCheckpointStatusCreating},
 	}
-	if !reflect.DeepEqual(snapshots, expected) {
-		t.Errorf("MicroDroplets.ListSnapshots returned %+v, expected %+v", snapshots, expected)
+	if !reflect.DeepEqual(checkpoints, expected) {
+		t.Errorf("MicroDroplets.ListCheckpoints returned %+v, expected %+v", checkpoints, expected)
 	}
 
 	if resp.Meta == nil || resp.Meta.Total != 2 {
-		t.Errorf("MicroDroplets.ListSnapshots Meta not propagated: %+v", resp.Meta)
+		t.Errorf("MicroDroplets.ListCheckpoints Meta not propagated: %+v", resp.Meta)
 	}
 }
 
-func TestMicroDroplets_ListSnapshots_EmptyID(t *testing.T) {
-	_, _, err := (&MicroDropletsServiceOp{}).ListSnapshots(ctx, "", nil)
+func TestMicroDroplets_ListCheckpoints_EmptyID(t *testing.T) {
+	_, _, err := (&MicroDropletsServiceOp{}).ListCheckpoints(ctx, "", nil)
 	if err == nil {
 		t.Fatal("expected error for empty id")
 	}
