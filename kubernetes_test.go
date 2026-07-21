@@ -37,6 +37,9 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			RoutingAgent: &KubernetesRoutingAgent{
 				Enabled: PtrTo(true),
 			},
+			P2pOciRegistryPlugin: &KubernetesP2pOciRegistry{
+				Enabled: PtrTo(true),
+			},
 			AmdGpuDevicePlugin: &KubernetesAmdGpuDevicePlugin{
 				Enabled: PtrTo(true),
 			},
@@ -150,6 +153,9 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				"state": "running"
 			},
 			"routing_agent": {
+				"enabled": true
+			},
+            "p2p_oci_registry_plugin": {
 				"enabled": true
 			},
 			"amd_gpu_device_plugin": {
@@ -319,6 +325,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
 		},
+		P2pOciRegistryPlugin: &KubernetesP2pOciRegistry{
+			Enabled: PtrTo(true),
+		},
 		AmdGpuDevicePlugin: &KubernetesAmdGpuDevicePlugin{
 			Enabled: PtrTo(true),
 		},
@@ -392,6 +401,9 @@ func TestKubernetesClusters_Get(t *testing.T) {
 			"state": "running"
 		},
 		"routing_agent": {
+			"enabled": true
+		},
+        "p2p_oci_registry_plugin": {
 			"enabled": true
 		},
 		"amd_gpu_device_plugin": {
@@ -767,6 +779,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
 		},
+		P2pOciRegistryPlugin: &KubernetesP2pOciRegistry{
+			Enabled: PtrTo(true),
+		},
 		AmdGpuDevicePlugin: &KubernetesAmdGpuDevicePlugin{
 			Enabled: PtrTo(true),
 		},
@@ -828,6 +843,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
 		},
+		P2pOciRegistryPlugin: &KubernetesP2pOciRegistry{
+			Enabled: PtrTo(true),
+		},
 		AmdGpuDevicePlugin: &KubernetesAmdGpuDevicePlugin{
 			Enabled: PtrTo(true),
 		},
@@ -882,6 +900,9 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		"ha": true,
 		"surge_upgrade": true,
 		"routing_agent": {
+			"enabled": true
+		},
+        "p2p_oci_registry_plugin": {
 			"enabled": true
 		},
 		"amd_gpu_device_plugin": {
@@ -1110,6 +1131,9 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		RoutingAgent: &KubernetesRoutingAgent{
 			Enabled: PtrTo(true),
 		},
+		P2pOciRegistryPlugin: &KubernetesP2pOciRegistry{
+			Enabled: PtrTo(true),
+		},
 		AmdGpuDevicePlugin: &KubernetesAmdGpuDevicePlugin{
 			Enabled: PtrTo(true),
 		},
@@ -1146,6 +1170,9 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			Expanders:                     []string{}, // need to be able to remove all expander customizations by passing an empty slice
 		},
 		RoutingAgent: &KubernetesRoutingAgent{
+			Enabled: PtrTo(true),
+		},
+		P2pOciRegistryPlugin: &KubernetesP2pOciRegistry{
 			Enabled: PtrTo(true),
 		},
 		AmdGpuDevicePlugin: &KubernetesAmdGpuDevicePlugin{
@@ -1216,6 +1243,9 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		"routing_agent": {
 			"enabled": true
 		},
+        "p2p_oci_registry_plugin": {
+			"enabled": true
+		},
 		"amd_gpu_device_plugin": {
 			"enabled": true
 		},
@@ -1238,7 +1268,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"coredns_autoscaler":{"enabled":true},"sso":{"enabled":false,"required":false}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"coredns_autoscaler":{"enabled":true},"sso":{"enabled":false,"required":false},"p2p_oci_registry_plugin":{"enabled":true}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
