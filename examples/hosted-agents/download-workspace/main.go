@@ -14,11 +14,11 @@ import (
 // download-workspace streams a file (or tar archive) out of a session's sandbox
 // workspace and writes it to disk.
 //
-// The download is chunked and its SHA-256 arrives as an HTTP trailer after the
-// body. The godo client wraps the body so the trailer is verified for you: you
-// MUST read the body to EOF (io.Copy below) and then Close it. A missing
-// trailer or checksum mismatch surfaces as an error — when that happens the
-// partial output must be discarded.
+// The download is chunked and ends with a fixed 73-byte integrity footer
+// (DOWSSHA1 + SHA-256 hex + newline). The godo client strips that footer and
+// verifies the payload checksum for you: you MUST read the body to EOF
+// (io.Copy below) and then Close it. A missing, invalid, or mismatched footer
+// surfaces as an error — when that happens the partial output must be discarded.
 //
 // Required env:
 //   - DIGITALOCEAN_TOKEN
@@ -56,7 +56,7 @@ func main() {
 		die(err)
 	}
 
-	// Read to EOF. The final Read verifies the integrity trailer, so an error
+	// Read to EOF. The final Read verifies the integrity footer, so an error
 	// here means the transfer was truncated or corrupted.
 	n, copyErr := io.Copy(out, dl.Body)
 	closeErr := out.Close()

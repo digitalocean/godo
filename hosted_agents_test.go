@@ -435,26 +435,28 @@ func TestHostedAgents_UploadWorkspace(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func workspaceDownloadFooter(payload string) string {
+	sum := sha256.Sum256([]byte(payload))
+	return workspaceDownloadFooterPrefix + hex.EncodeToString(sum[:]) + "\n"
+}
+
 func TestHostedAgents_DownloadWorkspace(t *testing.T) {
 	setup()
 	defer teardown()
 
 	const payload = "the quick brown fox"
-	sum := sha256.Sum256([]byte(payload))
-	digest := hex.EncodeToString(sum[:])
+	footer := workspaceDownloadFooter(payload)
 
 	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "notes.txt", r.URL.Query().Get("path"))
 		assert.Equal(t, "true", r.URL.Query().Get("as_archive"))
 
-		w.Header().Set("Trailer", "X-Content-Sha256")
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("X-Workspace-Is-Archive", "true")
 		w.Header().Set("X-Workspace-Size-Bytes", strconv.Itoa(len(payload)))
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(payload))
-		w.Header().Set("X-Content-Sha256", digest)
+		_, _ = w.Write([]byte(payload + footer))
 	})
 
 	dl, resp, err := client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{
@@ -478,13 +480,12 @@ func TestHostedAgents_DownloadWorkspace_ChecksumMismatch(t *testing.T) {
 	defer teardown()
 
 	const payload = "the quick brown fox"
+	badFooter := workspaceDownloadFooterPrefix + strings.Repeat("0", 64) + "\n"
 
 	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Trailer", "X-Content-Sha256")
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(payload))
-		w.Header().Set("X-Content-Sha256", "0000000000000000000000000000000000000000000000000000000000000000")
+		_, _ = w.Write([]byte(payload + badFooter))
 	})
 
 	dl, _, err := client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{
@@ -498,10 +499,7 @@ func TestHostedAgents_DownloadWorkspace_ChecksumMismatch(t *testing.T) {
 	assert.Contains(t, err.Error(), "checksum mismatch")
 }
 
-// TestHostedAgents_DownloadWorkspace_MissingTrailer verifies that a missing
-// X-Content-Sha256 response trailer is tolerated (some intermediaries strip
-// response trailers).
-func TestHostedAgents_DownloadWorkspace_MissingTrailer(t *testing.T) {
+func TestHostedAgents_DownloadWorkspace_MissingFooter(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -519,9 +517,59 @@ func TestHostedAgents_DownloadWorkspace_MissingTrailer(t *testing.T) {
 	require.NoError(t, err)
 	defer dl.Body.Close()
 
+	_, err = io.ReadAll(dl.Body)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "integrity footer")
+}
+
+func TestHostedAgents_DownloadWorkspace_InvalidFooter(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const payload = "the quick brown fox"
+	invalidFooter := "NOTASHA1" + strings.Repeat("a", 64) + "\n"
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(payload + invalidFooter))
+	})
+
+	dl, _, err := client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{
+		Path: "notes.txt",
+	})
+	require.NoError(t, err)
+	defer dl.Body.Close()
+
+	_, err = io.ReadAll(dl.Body)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid workspace download integrity footer")
+}
+
+func TestHostedAgents_DownloadWorkspace_EmptyPayload(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const payload = ""
+	footer := workspaceDownloadFooter(payload)
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("X-Workspace-Size-Bytes", "0")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(footer))
+	})
+
+	dl, _, err := client.HostedAgents.DownloadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceDownloadRequest{
+		Path: "empty.txt",
+	})
+	require.NoError(t, err)
+	defer dl.Body.Close()
+
 	body, err := io.ReadAll(dl.Body)
 	require.NoError(t, err)
-	assert.Equal(t, payload, string(body))
+	assert.Equal(t, "", string(body))
+	assert.Equal(t, int64(0), dl.SizeBytes)
 }
 
 func TestHostedAgents_WorkspaceValidationErrors(t *testing.T) {
