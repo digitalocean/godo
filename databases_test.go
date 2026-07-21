@@ -3271,6 +3271,84 @@ func TestDatabases_UpdateConfigAdvancedPostgres(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestDatabases_GetConfigAdvancedMySQL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbSvc = client.Databases
+		dbID  = "da4e0206-d019-41d7-b51f-deadbeefbb8f"
+		path  = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		advancedMySQLConfigJSON = `{
+  "config": {
+    "mysql_parameters": [
+      {
+        "name": "max_connections",
+        "value": "200",
+        "description": "The maximum permitted number of simultaneous client connections.",
+        "requires_restart": true,
+        "default_value": "151"
+      }
+    ]
+  }
+}`
+
+		advancedMySQLConfig = AdvancedMySQLConfig{
+			MySQLParameters: []AdvancedMySQLParameter{
+				{
+					Name:            "max_connections",
+					Value:           "200",
+					Description:     "The maximum permitted number of simultaneous client connections.",
+					RequiresRestart: true,
+					DefaultValue:    "151",
+				},
+			},
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, advancedMySQLConfigJSON)
+	})
+
+	got, _, err := dbSvc.GetAdvancedMySQLConfig(ctx, dbID)
+	require.NoError(t, err)
+	require.Equal(t, &advancedMySQLConfig, got)
+}
+
+func TestDatabases_UpdateConfigAdvancedMySQL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		path = fmt.Sprintf("/v2/databases/%s/config", dbID)
+
+		advancedMySQLConfig = &AdvancedMySQLConfigUpdate{
+			MySQLParameters: map[string]string{
+				"max_connections": "200",
+			},
+		}
+	)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+
+		var b databaseAdvancedMySQLConfigUpdateRoot
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&b)
+		require.NoError(t, err)
+
+		assert.Equal(t, b.Config, advancedMySQLConfig)
+
+		w.WriteHeader(http.StatusOK)
+	})
+
+	_, err := client.Databases.UpdateAdvancedMySQLConfig(ctx, dbID, advancedMySQLConfig)
+	require.NoError(t, err)
+}
+
 func TestDatabases_GetConfigRedis(t *testing.T) {
 	setup()
 	defer teardown()
