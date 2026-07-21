@@ -23,6 +23,7 @@ var vpcNatGatewayGetJSONResponse = `
     "vpcs": [
       {
         "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
+        "subnet_uuid": "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4",
         "gateway_ip": "10.100.0.110"
       }
     ],
@@ -56,6 +57,7 @@ var vpcNatGatewayListJSONResponse = `
       "vpcs": [
         {
           "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
+          "subnet_uuid": "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4",
           "gateway_ip": "10.100.0.110"
         }
       ],
@@ -83,6 +85,7 @@ var vpcNatGatewayListJSONResponse = `
       "vpcs": [
         {
           "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
+          "subnet_uuid": "f2fb3d4e-8551-4d89-81e3-2a4d331b2ef4",
           "gateway_ip": "10.100.0.106"
         }
       ],
@@ -120,6 +123,7 @@ var vpcNatGatewayUpdateJSONResponse = `
     "vpcs": [
       {
         "vpc_uuid": "4637280e-3842-4661-a628-a6f0392959d3",
+        "subnet_uuid": "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4",
         "gateway_ip": "10.100.0.110"
       }
     ],
@@ -150,7 +154,12 @@ func TestVPCNATGateways_Create(t *testing.T) {
 		Region: "nyc3",
 		Size:   1,
 		VPCs: []*IngressVPC{
-			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3"},
+			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", SubnetUUID: "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4"},
+		},
+		Egresses: &Egresses{
+			PublicGateways: []*PublicGateway{
+				{IP: "203.0.113.10"},
+			},
 		},
 		UDPTimeoutSeconds:  30,
 		ICMPTimeoutSeconds: 30,
@@ -178,7 +187,7 @@ func TestVPCNATGateways_Create(t *testing.T) {
 		Region:    "nyc3",
 		Size:      1,
 		VPCs: []*IngressVPC{
-			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
+			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", SubnetUUID: "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4", GatewayIP: "10.100.0.110"},
 		},
 		Egresses: &Egresses{
 			PublicGateways: []*PublicGateway{
@@ -216,7 +225,7 @@ func TestVPCNATGateways_Get(t *testing.T) {
 		Region: "nyc3",
 		Size:   1,
 		VPCs: []*IngressVPC{
-			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
+			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", SubnetUUID: "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4", GatewayIP: "10.100.0.110"},
 		},
 		Egresses: &Egresses{
 			PublicGateways: []*PublicGateway{
@@ -270,7 +279,7 @@ func TestVPCNATGateways_List(t *testing.T) {
 			Region: "nyc3",
 			Size:   1,
 			VPCs: []*IngressVPC{
-				{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
+				{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", SubnetUUID: "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4", GatewayIP: "10.100.0.110"},
 			},
 			Egresses: &Egresses{
 				PublicGateways: []*PublicGateway{
@@ -290,7 +299,7 @@ func TestVPCNATGateways_List(t *testing.T) {
 			Region: "nyc3",
 			Size:   1,
 			VPCs: []*IngressVPC{
-				{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.106"},
+				{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", SubnetUUID: "f2fb3d4e-8551-4d89-81e3-2a4d331b2ef4", GatewayIP: "10.100.0.106"},
 			},
 			Egresses: &Egresses{
 				PublicGateways: []*PublicGateway{
@@ -332,7 +341,7 @@ func TestVPCNATGateways_Update(t *testing.T) {
 		Type:   "PUBLIC",
 		Region: "nyc3",
 		VPCs: []*IngressVPC{
-			{VpcUUID: "72b0812c-7535-4388-8507-5ad29b4487b3"},
+			{VpcUUID: "72b0812c-7535-4388-8507-5ad29b4487b3", SubnetUUID: "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4"},
 		},
 		UDPTimeoutSeconds:  30,
 		ICMPTimeoutSeconds: 30,
@@ -359,7 +368,7 @@ func TestVPCNATGateways_Update(t *testing.T) {
 		Region: "nyc3",
 		Size:   1,
 		VPCs: []*IngressVPC{
-			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", GatewayIP: "10.100.0.110"},
+			{VpcUUID: "4637280e-3842-4661-a628-a6f0392959d3", SubnetUUID: "3d6f6fdc-8b7e-49fd-a3c2-0d73ec4e40b4", GatewayIP: "10.100.0.110"},
 		},
 		Egresses: &Egresses{
 			PublicGateways: []*PublicGateway{
