@@ -25,10 +25,10 @@ var _ BillingInsightsService = &BillingInsightsServiceOp{}
 
 // BillingInsights represents a DigitalOcean Billing Insight
 type BillingInsights struct {
-	CurrentPage int                    `json:"current_page"`
 	DataPoints  []BillingInsightsEntry `json:"data_points"`
-	TotalItems  int                    `json:"total_items"`
-	TotalPages  int                    `json:"total_pages"`
+	CurrentPage int                    `json:"current_page,string"`
+	TotalItems  int                    `json:"total_items,string"`
+	TotalPages  int                    `json:"total_pages,string"`
 }
 
 // BillingInsightsEntry represents an entry in a customer's Billing Insights
