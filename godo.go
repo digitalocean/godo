@@ -59,6 +59,7 @@ type Client struct {
 	Apps                AppsService
 	Balance             BalanceService
 	BillingHistory      BillingHistoryService
+	BillingInsights     BillingInsightsService
 	CDNs                CDNService
 	Certificates        CertificatesService
 	Databases           DatabasesService
@@ -304,6 +305,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Apps = &AppsServiceOp{client: c}
 	c.Balance = &BalanceServiceOp{client: c}
 	c.BillingHistory = &BillingHistoryServiceOp{client: c}
+	c.BillingInsights = &BillingInsightsServiceOp{client: c}
 	c.CDNs = &CDNServiceOp{client: c}
 	c.Certificates = &CertificatesServiceOp{client: c}
 	c.Databases = &DatabasesServiceOp{client: c}
