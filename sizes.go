@@ -55,9 +55,8 @@ type GPUInfo struct {
 	VRAM  *VRAM  `json:"vram,omitempty"`
 	Model string `json:"model,omitempty"`
 	// SupportedPartitionModes lists the GPU partition modes available for this
-	// size. It is populated by the regions catalog and stripped per-owner by the
-	// gpu_partition_mode_selection flipper, so an empty/absent value means the
-	// caller is not enrolled and the partition-mode picker should be hidden.
+	// size. It is only returned to callers with access to the feature, so an
+	// empty/absent value means the partition-mode picker should be hidden.
 	SupportedPartitionModes []string `json:"supported_partition_modes,omitempty"`
 }
 

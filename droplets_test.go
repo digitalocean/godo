@@ -455,9 +455,9 @@ func TestDroplets_CreateWithGPUPartitionMode(t *testing.T) {
 	}
 }
 
-// TestDroplets_GetGPUPartitionModeAbsent covers the flipper-off / v1 read-back
-// case: when the API response omits gpu_partition_mode, godo decodes it to the
-// empty string (DROP-13726 GET read-back is out of scope for v1).
+// TestDroplets_GetGPUPartitionModeAbsent covers the v1 read-back case: when the
+// API response omits gpu_partition_mode, godo decodes it to the empty string
+// (GET read-back is out of scope for v1).
 func TestDroplets_GetGPUPartitionModeAbsent(t *testing.T) {
 	setup()
 	defer teardown()

@@ -324,10 +324,9 @@ func TestSize_String(t *testing.T) {
 	}
 }
 
-// TestSizes_SupportedPartitionModes verifies that the gpu_partition_mode_selection
-// flipper is handled in both states: when the field is present (flipper on) it is
-// decoded, and when it is absent (flipper off / not enrolled) the slice is nil so
-// callers see len == 0 ("hide the picker").
+// TestSizes_SupportedPartitionModes verifies that supported_partition_modes is
+// handled in both states: when the field is present it is decoded, and when it is
+// absent the slice is nil so callers see len == 0 ("hide the picker").
 func TestSizes_SupportedPartitionModes(t *testing.T) {
 	setup()
 	defer teardown()
@@ -367,19 +366,19 @@ func TestSizes_SupportedPartitionModes(t *testing.T) {
 		t.Fatalf("expected 2 sizes, got %d", len(sizes))
 	}
 
-	// Flipper on: field present and decoded.
+	// Field present and decoded.
 	on := sizes[0]
 	wantModes := []string{GPUPartitionModeSPXNPS1, GPUPartitionModeDPXNPS2}
 	if !reflect.DeepEqual(on.GPUInfo.SupportedPartitionModes, wantModes) {
-		t.Errorf("flipper-on size: SupportedPartitionModes = %v, want %v", on.GPUInfo.SupportedPartitionModes, wantModes)
+		t.Errorf("size with modes: SupportedPartitionModes = %v, want %v", on.GPUInfo.SupportedPartitionModes, wantModes)
 	}
 
-	// Flipper off / not enrolled: field absent -> nil slice, len 0.
+	// Field absent -> nil slice, len 0.
 	off := sizes[1]
 	if off.GPUInfo.SupportedPartitionModes != nil {
-		t.Errorf("flipper-off size: SupportedPartitionModes = %v, want nil", off.GPUInfo.SupportedPartitionModes)
+		t.Errorf("size without modes: SupportedPartitionModes = %v, want nil", off.GPUInfo.SupportedPartitionModes)
 	}
 	if len(off.GPUInfo.SupportedPartitionModes) != 0 {
-		t.Errorf("flipper-off size: len(SupportedPartitionModes) = %d, want 0", len(off.GPUInfo.SupportedPartitionModes))
+		t.Errorf("size without modes: len(SupportedPartitionModes) = %d, want 0", len(off.GPUInfo.SupportedPartitionModes))
 	}
 }
