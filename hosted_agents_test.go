@@ -598,6 +598,222 @@ func TestHostedAgents_WorkspaceValidationErrors(t *testing.T) {
 	require.EqualError(t, err, "hosted agents: path is required")
 }
 
+func TestHostedAgents_CreateWorkspaceTransfer_Upload(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var got HostedAgentWorkspaceTransferCreateRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		assert.Equal(t, HostedAgentWorkspaceTransferDirectionUpload, got.Direction)
+		assert.Equal(t, "/workspace/data/big.bin", got.Path)
+		assert.Equal(t, int64(524288000), got.SizeBytes)
+		assert.Equal(t, "abc123", got.SHA256)
+		assert.False(t, got.IsArchive)
+
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{
+			"transfer_id": "xfer-upload-1",
+			"direction": "upload",
+			"status": "pending",
+			"upload_id": "up-1",
+			"part_size": 16777216,
+			"expires_at": "2026-07-21T12:00:00Z"
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.CreateWorkspaceTransfer(ctx, "sess-abc123", &HostedAgentWorkspaceTransferCreateRequest{
+		Direction: HostedAgentWorkspaceTransferDirectionUpload,
+		Path:      "/workspace/data/big.bin",
+		SizeBytes: 524288000,
+		SHA256:    "abc123",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.Equal(t, "xfer-upload-1", got.TransferID)
+	assert.Equal(t, HostedAgentWorkspaceTransferDirectionUpload, got.Direction)
+	assert.Equal(t, HostedAgentWorkspaceTransferStatusPending, got.Status)
+	assert.Equal(t, "up-1", got.UploadID)
+	assert.Equal(t, int64(16777216), got.PartSize)
+	require.NotNil(t, got.ExpiresAt)
+	assert.Equal(t, time.Date(2026, 7, 21, 12, 0, 0, 0, time.UTC), got.ExpiresAt.Time)
+}
+
+func TestHostedAgents_CreateWorkspaceTransfer_Download(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var got HostedAgentWorkspaceTransferCreateRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		assert.Equal(t, HostedAgentWorkspaceTransferDirectionDownload, got.Direction)
+		assert.Equal(t, "/workspace/data/big.bin", got.Path)
+		assert.True(t, got.AsArchive)
+
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{
+			"transfer_id": "xfer-download-1",
+			"direction": "download",
+			"status": "pending"
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.CreateWorkspaceTransfer(ctx, "sess-abc123", &HostedAgentWorkspaceTransferCreateRequest{
+		Direction: HostedAgentWorkspaceTransferDirectionDownload,
+		Path:      "/workspace/data/big.bin",
+		AsArchive: true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	assert.Equal(t, "xfer-download-1", got.TransferID)
+	assert.Equal(t, HostedAgentWorkspaceTransferStatusPending, got.Status)
+}
+
+func TestHostedAgents_CreateWorkspaceTransferPartUploadURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1/part-upload-urls", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var got HostedAgentWorkspaceTransferPartUploadURLRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		assert.Equal(t, 1, got.PartNumber)
+
+		fmt.Fprint(w, `{
+			"transfer_id": "xfer-1",
+			"part_number": 1,
+			"upload_url": "https://spaces.example/part-1",
+			"expires_at": "2026-07-21T12:30:00Z"
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.CreateWorkspaceTransferPartUploadURL(ctx, "sess-abc123", "xfer-1", &HostedAgentWorkspaceTransferPartUploadURLRequest{
+		PartNumber: 1,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "xfer-1", got.TransferID)
+	assert.Equal(t, 1, got.PartNumber)
+	assert.Equal(t, "https://spaces.example/part-1", got.UploadURL)
+	require.NotNil(t, got.ExpiresAt)
+	assert.Equal(t, time.Date(2026, 7, 21, 12, 30, 0, 0, time.UTC), got.ExpiresAt.Time)
+}
+
+func TestHostedAgents_CommitWorkspaceTransfer(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1/commit", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var got HostedAgentWorkspaceTransferCommitRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		assert.Equal(t, "deadbeef", got.SHA256)
+
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{
+			"transfer_id": "xfer-1",
+			"status": "in_progress",
+			"size_bytes": 524288000
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.CommitWorkspaceTransfer(ctx, "sess-abc123", "xfer-1", &HostedAgentWorkspaceTransferCommitRequest{
+		SHA256: "deadbeef",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	assert.Equal(t, HostedAgentWorkspaceTransferStatusInProgress, got.Status)
+	assert.Equal(t, int64(524288000), got.SizeBytes)
+}
+
+func TestHostedAgents_GetWorkspaceTransfer(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+			"transfer_id": "xfer-1",
+			"direction": "download",
+			"status": "completed",
+			"bytes_written": 524288000,
+			"sha256": "e6b84c4839cbbfc3cde3b1bc84e8a82b9661c00eae1726fcff0dca8d643423ae",
+			"download_url": "https://spaces.example/download",
+			"expires_at": "2026-07-21T13:00:00Z",
+			"error_message": null
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.GetWorkspaceTransfer(ctx, "sess-abc123", "xfer-1")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, HostedAgentWorkspaceTransferDirectionDownload, got.Direction)
+	assert.Equal(t, HostedAgentWorkspaceTransferStatusCompleted, got.Status)
+	assert.Equal(t, int64(524288000), got.BytesWritten)
+	assert.Equal(t, "e6b84c4839cbbfc3cde3b1bc84e8a82b9661c00eae1726fcff0dca8d643423ae", got.SHA256)
+	assert.Equal(t, "https://spaces.example/download", got.DownloadURL)
+	require.NotNil(t, got.ExpiresAt)
+	assert.Equal(t, time.Date(2026, 7, 21, 13, 0, 0, 0, time.UTC), got.ExpiresAt.Time)
+	assert.Empty(t, got.ErrorMessage)
+}
+
+func TestHostedAgents_CancelWorkspaceTransfer(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1/cancel", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var got HostedAgentWorkspaceTransferCancelRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		assert.Equal(t, "user cancelled", got.Reason)
+
+		fmt.Fprint(w, `{
+			"transfer_id": "xfer-1",
+			"aborted": true,
+			"status": "failed"
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.CancelWorkspaceTransfer(ctx, "sess-abc123", "xfer-1", &HostedAgentWorkspaceTransferCancelRequest{
+		Reason: "user cancelled",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "xfer-1", got.TransferID)
+	assert.True(t, got.Aborted)
+	assert.Equal(t, HostedAgentWorkspaceTransferStatusFailed, got.Status)
+}
+
+func TestHostedAgents_WorkspaceTransferValidationErrors(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.CreateWorkspaceTransfer(ctx, "", &HostedAgentWorkspaceTransferCreateRequest{})
+	require.EqualError(t, err, "hosted agents: session id is required")
+
+	_, _, err = client.HostedAgents.CreateWorkspaceTransfer(ctx, "sess-abc123", nil)
+	require.EqualError(t, err, "hosted agents: transfer create request is required")
+
+	_, _, err = client.HostedAgents.CreateWorkspaceTransfer(ctx, "sess-abc123", &HostedAgentWorkspaceTransferCreateRequest{})
+	require.EqualError(t, err, "hosted agents: direction is required")
+
+	_, _, err = client.HostedAgents.CreateWorkspaceTransfer(ctx, "sess-abc123", &HostedAgentWorkspaceTransferCreateRequest{
+		Direction: HostedAgentWorkspaceTransferDirectionUpload,
+	})
+	require.EqualError(t, err, "hosted agents: path is required")
+
+	_, _, err = client.HostedAgents.CreateWorkspaceTransferPartUploadURL(ctx, "sess-abc123", "xfer-1", &HostedAgentWorkspaceTransferPartUploadURLRequest{})
+	require.EqualError(t, err, "hosted agents: part_number must be >= 1")
+
+	_, _, err = client.HostedAgents.GetWorkspaceTransfer(ctx, "sess-abc123", "")
+	require.EqualError(t, err, "hosted agents: transfer id is required")
+
+	_, _, err = client.HostedAgents.CancelWorkspaceTransfer(ctx, "", "xfer-1", nil)
+	require.EqualError(t, err, "hosted agents: session id is required")
+}
+
 func TestHostedAgents_GetSession_EmptyBody(t *testing.T) {
 	setup()
 	defer teardown()
