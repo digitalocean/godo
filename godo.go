@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	libraryVersion = "1.201.0"
+	libraryVersion = "1.202.0"
 	defaultBaseURL = "https://api.digitalocean.com/"
 	userAgent      = "godo/" + libraryVersion
 	mediaType      = "application/json"
@@ -107,6 +107,7 @@ type Client struct {
 	DedicatedInference  DedicatedInferenceService
 	BatchInference      BatchInferenceService
 	BYOIPPrefixes       BYOIPPrefixesService
+	HostedAgents        HostedAgentsService
 
 	// Serverless Inference resources at https://inference.do-ai.run.
 	Chat             *ChatService
@@ -353,6 +354,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.DedicatedInference = &DedicatedInferenceServiceOp{client: c}
 	batchInferenceURL, _ := url.Parse(defaultBatchInferenceBaseURL)
 	c.BatchInference = &BatchInferenceServiceOp{client: c, baseURL: batchInferenceURL}
+	c.HostedAgents = &HostedAgentsServiceOp{client: c}
 	serverlessInferenceURL, _ := url.Parse(defaultServerlessInferenceBaseURL)
 	t := newInferenceTransport(c, serverlessInferenceURL)
 	c.Chat = &ChatService{Completions: &ChatCompletionService{inferenceTransport: t}}

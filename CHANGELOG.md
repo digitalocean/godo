@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.202.0] - 2026-07-27
+
+- #XXXX - Add Hosted Agents session client (HostedAgents) with Session.origin product provenance (direct|simulation|evaluation)
+
 ## [1.201.0] - 2026-07-24
 
 - #1060 - @DO-rrao - Add GPU partition mode support to Droplets and Sizes
