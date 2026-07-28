@@ -671,34 +671,31 @@ func TestHostedAgents_CreateWorkspaceTransfer_Download(t *testing.T) {
 	assert.Equal(t, HostedAgentWorkspaceTransferStatusPending, got.Status)
 }
 
-func TestHostedAgents_CreateWorkspaceTransferPartUploadURL(t *testing.T) {
+func TestHostedAgents_CreateWorkspaceTransferPartUploadURLs(t *testing.T) {
 	setup()
 	defer teardown()
 
 	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1/part-upload-urls", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		var got HostedAgentWorkspaceTransferPartUploadURLRequest
+		var got HostedAgentWorkspaceTransferPartUploadURLsRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
-		assert.Equal(t, 1, got.PartNumber)
+		assert.Equal(t, []int{1}, got.PartNumbers)
 
 		fmt.Fprint(w, `{
-			"transfer_id": "xfer-1",
-			"part_number": 1,
-			"upload_url": "https://spaces.example/part-1",
-			"expires_at": "2026-07-21T12:30:00Z"
+			"part_urls": [
+				{"part_number": 1, "upload_url": "https://spaces.example/part-1"}
+			]
 		}`)
 	})
 
-	got, resp, err := client.HostedAgents.CreateWorkspaceTransferPartUploadURL(ctx, "sess-abc123", "xfer-1", &HostedAgentWorkspaceTransferPartUploadURLRequest{
-		PartNumber: 1,
+	got, resp, err := client.HostedAgents.CreateWorkspaceTransferPartUploadURLs(ctx, "sess-abc123", "xfer-1", &HostedAgentWorkspaceTransferPartUploadURLsRequest{
+		PartNumbers: []int{1},
 	})
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, "xfer-1", got.TransferID)
-	assert.Equal(t, 1, got.PartNumber)
-	assert.Equal(t, "https://spaces.example/part-1", got.UploadURL)
-	require.NotNil(t, got.ExpiresAt)
-	assert.Equal(t, time.Date(2026, 7, 21, 12, 30, 0, 0, time.UTC), got.ExpiresAt.Time)
+	require.Len(t, got.PartURLs, 1)
+	assert.Equal(t, 1, got.PartURLs[0].PartNumber)
+	assert.Equal(t, "https://spaces.example/part-1", got.PartURLs[0].UploadURL)
 }
 
 func TestHostedAgents_CommitWorkspaceTransfer(t *testing.T) {
@@ -804,8 +801,8 @@ func TestHostedAgents_WorkspaceTransferValidationErrors(t *testing.T) {
 	})
 	require.EqualError(t, err, "hosted agents: path is required")
 
-	_, _, err = client.HostedAgents.CreateWorkspaceTransferPartUploadURL(ctx, "sess-abc123", "xfer-1", &HostedAgentWorkspaceTransferPartUploadURLRequest{})
-	require.EqualError(t, err, "hosted agents: part_number must be >= 1")
+	_, _, err = client.HostedAgents.CreateWorkspaceTransferPartUploadURLs(ctx, "sess-abc123", "xfer-1", &HostedAgentWorkspaceTransferPartUploadURLsRequest{})
+	require.EqualError(t, err, "hosted agents: part_numbers must not be empty")
 
 	_, _, err = client.HostedAgents.GetWorkspaceTransfer(ctx, "sess-abc123", "")
 	require.EqualError(t, err, "hosted agents: transfer id is required")
