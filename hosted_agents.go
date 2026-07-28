@@ -208,6 +208,34 @@ const (
 	HostedAgentEventKindRunLog               HostedAgentEventKind = "run.log"
 )
 
+// HostedAgentSessionOriginProduct identifies the product workflow that created
+// a session. Wire values match harness SessionOrigin.product.
+type HostedAgentSessionOriginProduct string
+
+const (
+	HostedAgentSessionOriginProductDirect     HostedAgentSessionOriginProduct = "direct"
+	HostedAgentSessionOriginProductSimulation HostedAgentSessionOriginProduct = "simulation"
+	HostedAgentSessionOriginProductEvaluation HostedAgentSessionOriginProduct = "evaluation"
+)
+
+// HostedAgentSessionOriginRequest is the product-provenance claim on create.
+// Omission creates a verified direct session. Simulation and evaluation require
+// resource_id; direct forbids it. verified is server-assigned and must not be
+// sent on create (see HostedAgentSessionOrigin).
+type HostedAgentSessionOriginRequest struct {
+	Product    HostedAgentSessionOriginProduct `json:"product"`
+	ResourceID string                          `json:"resource_id,omitempty"`
+}
+
+// HostedAgentSessionOrigin is server-returned product-workflow provenance.
+// Verified is true for direct sessions and for product claims established
+// through a trusted adapter.
+type HostedAgentSessionOrigin struct {
+	Product    HostedAgentSessionOriginProduct `json:"product"`
+	ResourceID string                          `json:"resource_id,omitempty"`
+	Verified   bool                            `json:"verified"`
+}
+
 // HostedAgentSession is a provisioned hosted-agent sandbox session.
 type HostedAgentSession struct {
 	SessionID    string                                  `json:"session_id"`
@@ -219,6 +247,9 @@ type HostedAgentSession struct {
 	LastEventAt  Timestamp                               `json:"last_event_at"`
 	RepoHint     string                                  `json:"repo_hint,omitempty"`
 	ProviderAuth map[string]HostedAgentProviderAuthState `json:"provider_auth,omitempty"`
+	// Origin is present for newly created sessions (including direct). Older
+	// sessions may omit it.
+	Origin *HostedAgentSessionOrigin `json:"origin,omitempty"`
 }
 
 // HostedAgentRun represents a single execution within a session.
@@ -310,6 +341,9 @@ type HostedAgentSessionCreateRequest struct {
 	AgentKind          HostedAgentKind `json:"agent_kind"`
 	RepoHint           string          `json:"repo_hint,omitempty"`
 	IdleTimeoutSeconds int64           `json:"idle_timeout_seconds,omitempty"`
+	// Origin claims product-workflow provenance. Omit for a verified direct
+	// session. Simulation/evaluation require resource_id.
+	Origin *HostedAgentSessionOriginRequest `json:"origin,omitempty"`
 }
 
 // HostedAgentSessionListOptions specifies optional list filters.
@@ -548,6 +582,10 @@ func (s *HostedAgentsServiceOp) newCreateSessionPostRequest(ctx context.Context,
 }
 
 // ListSessions returns sessions visible to the caller's team.
+//
+// The server omits simulation and evaluation sessions from the list so customer
+// surfaces stay free of product-owned internal runs. GetSession by session_id
+// still returns those sessions for the owning product workflow.
 func (s *HostedAgentsServiceOp) ListSessions(ctx context.Context, opt *HostedAgentSessionListOptions) (*HostedAgentSessionsListResponse, *Response, error) {
 	path, err := addOptions(hostedAgentsSessionsBasePath, opt)
 	if err != nil {

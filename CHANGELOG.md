@@ -1,5 +1,9 @@
 # Change Log
 
+## [Unreleased]
+
+- Add HostedAgents `Session.origin` product provenance (`direct`|`simulation`|`evaluation`); document ListSessions server-side sim/eval omission (MARSOHS-551, stacks on #1021)
+
 ## [1.201.0] - 2026-07-24
 
 - #1060 - @DO-rrao - Add GPU partition mode support to Droplets and Sizes
