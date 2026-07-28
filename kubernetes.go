@@ -96,6 +96,7 @@ type KubernetesClusterCreateRequest struct {
 	CorednsAutoscaler                 *KubernetesCorednsAutoscaler                 `json:"coredns_autoscaler,omitempty"`
 	SSO                               *KubernetesClusterSSO                        `json:"sso,omitempty"`
 	P2pOciRegistryPlugin              *KubernetesP2pOciRegistry                    `json:"p2p_oci_registry_plugin,omitempty"`
+	IsolatedWorkers                   bool                                         `json:"isolated_workers,omitempty"`
 }
 
 // KubernetesClusterUpdateRequest represents a request to update a Kubernetes cluster.
@@ -261,6 +262,7 @@ type KubernetesCluster struct {
 	CorednsAutoscaler                 *KubernetesCorednsAutoscaler                 `json:"coredns_autoscaler,omitempty"`
 	SSO                               *KubernetesClusterSSO                        `json:"sso,omitempty"`
 	P2pOciRegistryPlugin              *KubernetesP2pOciRegistry                    `json:"p2p_oci_registry_plugin,omitempty"`
+	IsolatedWorkers                   bool                                         `json:"isolated_workers,omitempty"`
 
 	Status    *KubernetesClusterStatus `json:"status,omitempty"`
 	CreatedAt time.Time                `json:"created_at,omitempty"`

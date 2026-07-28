@@ -755,6 +755,38 @@ func TestKubernetesClusterCreateRequest_HA_JsonMarshal(t *testing.T) {
 	}
 }
 
+func TestKubernetesClusterCreateRequest_IsolatedWorkers_JsonMarshal(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      *KubernetesClusterCreateRequest
+		contains string // substring that must be in JSON
+		omits    string // substring that must NOT be in JSON
+	}{
+		{
+			name:  "IsolatedWorkers false - field omitted",
+			req:   &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36"},
+			omits: `"isolated_workers"`,
+		},
+		{
+			name:     "IsolatedWorkers true - field present",
+			req:      &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36", IsolatedWorkers: true},
+			contains: `"isolated_workers":true`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+			if tt.contains != "" {
+				require.Contains(t, string(data), tt.contains)
+			}
+			if tt.omits != "" {
+				require.NotContains(t, string(data), tt.omits)
+			}
+		})
+	}
+}
+
 func TestKubernetesClusters_Create(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1061,6 +1093,118 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 			"start_time": "00:00",
 			"day": "Monday"
 		}
+	}
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters", func(w http.ResponseWriter, r *http.Request) {
+		v := new(KubernetesClusterCreateRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, v, createRequest)
+		fmt.Fprint(w, jBlob)
+	})
+
+	got, _, err := kubeSvc.Create(ctx, createRequest)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestKubernetesClusters_Create_IsolatedWorkers(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+
+	want := &KubernetesCluster{
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:             "isolated-workers-cluster",
+		RegionSlug:       "s2r1",
+		VersionSlug:      "1.36.0-gen0",
+		ClusterSubnet:    "10.244.0.0/16",
+		ServiceSubnet:    "10.245.0.0/16",
+		Tags:             []string{"cluster-tag-1"},
+		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
+		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+		IsolatedWorkers:  true,
+		NodePools: []*KubernetesNodePool{
+			{
+				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+				Size:  "s-1vcpu-1gb",
+				Count: 2,
+				Name:  "pool-a",
+				Tags:  []string{"tag-1"},
+			},
+		},
+		MaintenancePolicy: &KubernetesMaintenancePolicy{
+			StartTime: "00:00",
+			Day:       KubernetesMaintenanceDayMonday,
+		},
+		Status: &KubernetesClusterStatus{
+			State: KubernetesClusterStatusRunning,
+		},
+		CreatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
+		UpdatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
+	}
+	createRequest := &KubernetesClusterCreateRequest{
+		Name:             want.Name,
+		RegionSlug:       want.RegionSlug,
+		VersionSlug:      want.VersionSlug,
+		Tags:             want.Tags,
+		VPCUUID:          want.VPCUUID,
+		WorkerSubnetUUID: want.WorkerSubnetUUID,
+		ClusterSubnet:    want.ClusterSubnet,
+		ServiceSubnet:    want.ServiceSubnet,
+		IsolatedWorkers:  true,
+		NodePools: []*KubernetesNodePoolCreateRequest{
+			{
+				Size:  want.NodePools[0].Size,
+				Count: want.NodePools[0].Count,
+				Name:  want.NodePools[0].Name,
+				Tags:  want.NodePools[0].Tags,
+			},
+		},
+		MaintenancePolicy: want.MaintenancePolicy,
+	}
+
+	jBlob := `
+{
+	"kubernetes_cluster": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		"name": "isolated-workers-cluster",
+		"region": "s2r1",
+		"version": "1.36.0-gen0",
+		"cluster_subnet": "10.244.0.0/16",
+		"service_subnet": "10.245.0.0/16",
+		"tags": [
+			"cluster-tag-1"
+		],
+		"vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+		"worker_subnet_uuid": "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+		"isolated_workers": true,
+		"status": {
+			"state": "running"
+		},
+		"node_pools": [
+			{
+				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+				"size": "s-1vcpu-1gb",
+				"count": 2,
+				"name": "pool-a",
+				"tags": [
+					"tag-1"
+				]
+			}
+		],
+		"maintenance_policy": {
+			"start_time": "00:00",
+			"day": "Monday"
+		},
+		"created_at": "2018-06-21T08:44:38Z",
+		"updated_at": "2018-06-21T08:44:38Z"
 	}
 }`
 
