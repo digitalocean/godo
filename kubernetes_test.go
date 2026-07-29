@@ -49,6 +49,12 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 			NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
 				Enabled: PtrTo(true),
 			},
+			NvidiaGpuDraDriver: &KubernetesNvidiaGpuDraDriver{
+				Enabled: PtrTo(true),
+			},
+			AmdGpuDraDriver: &KubernetesAmdGpuDraDriver{
+				Enabled: PtrTo(true),
+			},
 			RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
 				Enabled: PtrTo(true),
 			},
@@ -165,6 +171,12 @@ func TestKubernetesClusters_ListClusters(t *testing.T) {
 				"enabled": true
 			},
 			"nvidia_gpu_device_plugin": {
+				"enabled": true
+			},
+			"nvidia_gpu_dra_driver": {
+				"enabled": true
+			},
+			"amd_gpu_dra_driver": {
 				"enabled": true
 			},
 			"rdma_shared_dev_plugin": {
@@ -337,6 +349,12 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDraDriver: &KubernetesNvidiaGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
+		AmdGpuDraDriver: &KubernetesAmdGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
 		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
 			Enabled: PtrTo(true),
 		},
@@ -413,6 +431,12 @@ func TestKubernetesClusters_Get(t *testing.T) {
 			"enabled": true
 		},
 		"nvidia_gpu_device_plugin": {
+			"enabled": true
+		},
+		"nvidia_gpu_dra_driver": {
+			"enabled": true
+		},
+		"amd_gpu_dra_driver": {
 			"enabled": true
 		},
 		"rdma_shared_dev_plugin": {
@@ -823,6 +847,12 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDraDriver: &KubernetesNvidiaGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
+		AmdGpuDraDriver: &KubernetesAmdGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
 		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
 			Enabled: PtrTo(true),
 		},
@@ -887,6 +917,12 @@ func TestKubernetesClusters_Create(t *testing.T) {
 		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDraDriver: &KubernetesNvidiaGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
+		AmdGpuDraDriver: &KubernetesAmdGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
 		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
 			Enabled: PtrTo(true),
 		},
@@ -944,6 +980,12 @@ func TestKubernetesClusters_Create(t *testing.T) {
 			"enabled": true
 		},
 		"nvidia_gpu_device_plugin": {
+			"enabled": true
+		},
+		"nvidia_gpu_dra_driver": {
+			"enabled": true
+		},
+		"amd_gpu_dra_driver": {
 			"enabled": true
 		},
 		"rdma_shared_dev_plugin": {
@@ -1287,6 +1329,12 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
 			Enabled: PtrTo(true),
 		},
+		NvidiaGpuDraDriver: &KubernetesNvidiaGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
+		AmdGpuDraDriver: &KubernetesAmdGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
 		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
 			Enabled: PtrTo(true),
 		},
@@ -1326,6 +1374,12 @@ func TestKubernetesClusters_Update(t *testing.T) {
 			Enabled: PtrTo(true),
 		},
 		NvidiaGpuDevicePlugin: &KubernetesNvidiaGpuDevicePlugin{
+			Enabled: PtrTo(true),
+		},
+		NvidiaGpuDraDriver: &KubernetesNvidiaGpuDraDriver{
+			Enabled: PtrTo(true),
+		},
+		AmdGpuDraDriver: &KubernetesAmdGpuDraDriver{
 			Enabled: PtrTo(true),
 		},
 		RdmaSharedDevicePlugin: &KubernetesRdmaSharedDevicePlugin{
@@ -1399,6 +1453,12 @@ func TestKubernetesClusters_Update(t *testing.T) {
 		"nvidia_gpu_device_plugin": {
 			"enabled": true
 		},
+		"nvidia_gpu_dra_driver": {
+			"enabled": true
+		},
+		"amd_gpu_dra_driver": {
+			"enabled": true
+		},
 		"rdma_shared_dev_plugin": {
 			"enabled": true
 		},
@@ -1412,7 +1472,7 @@ func TestKubernetesClusters_Update(t *testing.T) {
 	}
 }`
 
-	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"coredns_autoscaler":{"enabled":true},"sso":{"enabled":false,"required":false},"p2p_oci_registry_plugin":{"enabled":true}}
+	expectedReqJSON := `{"name":"antoine-test-cluster","tags":["cluster-tag-1","cluster-tag-2"],"maintenance_policy":{"start_time":"00:00","duration":"","day":"monday"},"surge_upgrade":true,"control_plane_firewall":{"enabled":true,"allowed_addresses":["1.2.3.4/32"]},"cluster_autoscaler_configuration":{"scale_down_utilization_threshold":0.2,"scale_down_unneeded_time":"1m27s","expanders":[]},"routing_agent":{"enabled":true},"amd_gpu_device_plugin":{"enabled":true},"amd_gpu_device_metrics_exporter_plugin":{"enabled":true},"nvidia_gpu_device_plugin":{"enabled":true},"nvidia_gpu_dra_driver":{"enabled":true},"amd_gpu_dra_driver":{"enabled":true},"rdma_shared_dev_plugin":{"enabled":true},"coredns_autoscaler":{"enabled":true},"sso":{"enabled":false,"required":false},"p2p_oci_registry_plugin":{"enabled":true}}
 `
 
 	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f", func(w http.ResponseWriter, r *http.Request) {
@@ -1719,6 +1779,54 @@ func TestKubernetesClusters_CreateNodePool(t *testing.T) {
 
 		testMethod(t, r, http.MethodPost)
 		require.Equal(t, v, createRequest)
+		fmt.Fprint(w, jBlob)
+	})
+
+	got, _, err := kubeSvc.CreateNodePool(ctx, "8d91899c-0739-4a1a-acc5-deadbeefbb8f", createRequest)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestKubernetesClusters_CreateNodePool_GPUPartitionMode(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+
+	want := &KubernetesNodePool{
+		ID:               "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+		Size:             "gpu-mi300x1-192gb",
+		Count:            1,
+		Name:             "amd-partitioned-pool",
+		GPUPartitionMode: KubernetesAMDPartitionModeSPXNPS1,
+	}
+	createRequest := &KubernetesNodePoolCreateRequest{
+		Size:             want.Size,
+		Count:            want.Count,
+		Name:             want.Name,
+		GPUPartitionMode: KubernetesAMDPartitionModeSPXNPS1,
+	}
+
+	jBlob := `
+{
+	"node_pool": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+		"size": "gpu-mi300x1-192gb",
+		"count": 1,
+		"name": "amd-partitioned-pool",
+		"gpu_partition_mode": "AMD_PARTITION_MODE_SPX_NPS1"
+	}
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters/8d91899c-0739-4a1a-acc5-deadbeefbb8f/node_pools", func(w http.ResponseWriter, r *http.Request) {
+		v := new(KubernetesNodePoolCreateRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, createRequest, v)
 		fmt.Fprint(w, jBlob)
 	})
 
