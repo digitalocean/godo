@@ -347,13 +347,13 @@ type KubernetesNvidiaGpuDevicePlugin struct {
 }
 
 // KubernetesNvidiaGpuDraDriver represents information about the NVIDIA GPU DRA Driver cluster plugin.
-// Mutually exclusive with the NVIDIA GPU Device Plugin. Create-only to enable.
+// Mutually exclusive with the NVIDIA GPU Device Plugin.
 type KubernetesNvidiaGpuDraDriver struct {
 	Enabled *bool `json:"enabled"`
 }
 
 // KubernetesAmdGpuDraDriver represents information about the AMD GPU DRA Driver cluster plugin.
-// Mutually exclusive with the AMD GPU Device Plugin. Create-only to enable.
+// Mutually exclusive with the AMD GPU Device Plugin.
 type KubernetesAmdGpuDraDriver struct {
 	Enabled *bool `json:"enabled"`
 }
