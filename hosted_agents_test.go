@@ -383,12 +383,16 @@ func TestHostedAgents_StreamSession(t *testing.T) {
 	// `timestamp`, and the team id rides as a decimal string in `tenant_id`.
 	const eventJSON = `{"event_id":"ev-1","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":1,"type":"run.token_delta","data":{"text":"hello"}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+	// The live stream is served by the data plane at .../events, and the resume
+	// cursor rides in the standard Last-Event-ID header rather than a query
+	// parameter.
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "text/event-stream", r.Header.Get("Accept"))
-		assert.Equal(t, "ev-0", r.URL.Query().Get("replay_from"))
+		assert.Equal(t, "ev-0", r.Header.Get("Last-Event-ID"))
+		assert.Empty(t, r.URL.RawQuery)
 		w.Header().Set("Content-Type", "text/event-stream")
-		fmt.Fprintf(w, ": connected\n\n")
+		fmt.Fprintf(w, ": keepalive\n\n")
 		fmt.Fprintf(w, "id: ev-1\nevent: run.token_delta\ndata: %s\n\n", eventJSON)
 	})
 
@@ -489,6 +493,9 @@ func TestHostedAgents_ExecInSandbox(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+// TestHostedAgents_StreamSession_ReplayOnly pins the history lane on the control
+// plane's .../stream endpoint: only it holds the stored event history, so a
+// replay-only read must not be sent to the forward-only data-plane endpoint.
 func TestHostedAgents_StreamSession_ReplayOnly(t *testing.T) {
 	setup()
 	defer teardown()
@@ -496,17 +503,56 @@ func TestHostedAgents_StreamSession_ReplayOnly(t *testing.T) {
 	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "true", r.URL.Query().Get("replay_only"))
+		assert.Equal(t, "ev-0", r.URL.Query().Get("replay_from"))
+		assert.Empty(t, r.Header.Get("Last-Event-ID"))
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprint(w, ": replay only\n\n")
 	})
 
 	stream, resp, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		ReplayFrom: "ev-0",
 		ReplayOnly: true,
 	})
 	require.NoError(t, err)
 	defer stream.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.False(t, stream.Next())
+}
+
+// TestHostedAgents_StreamSession_StreamState pins the data plane's transport
+// control frame. It arrives in the same canonical envelope as an agent event, so
+// it decodes through the same parser: callers identify it by Kind and skip it
+// rather than rendering it as session activity.
+func TestHostedAgents_StreamSession_StreamState(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const frame = `{"event_id":"","run_id":"","tenant_id":"0","session_id":"sess-abc123","timestamp":"2026-03-01T12:00:00Z","seq":0,"type":"stream.state","data":{"state":"live","cursor":""}}`
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprintf(w, "event: stream.state\ndata: %s\n\n", frame)
+	})
+
+	stream, _, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", nil)
+	require.NoError(t, err)
+	defer stream.Close()
+
+	require.True(t, stream.Next())
+	ev := stream.Current()
+	assert.Equal(t, HostedAgentEventKindStreamState, ev.Kind)
+	assert.Equal(t, "sess-abc123", ev.SessionID)
+	// A control frame is not a durable event, so it carries no event_id of its
+	// own and the server sends no `id:` line for it. (Per the SSE spec the
+	// reader's last-event-id buffer persists, so a control frame arriving after
+	// an event reports that event's id — never a new cursor position.)
+	assert.Empty(t, ev.EventID)
+
+	var state HostedAgentStreamState
+	require.NoError(t, json.Unmarshal(ev.Payload, &state))
+	assert.Equal(t, HostedAgentStreamStateLive, state.State)
+	assert.Empty(t, state.Cursor)
 }
 
 func TestHostedAgents_ValidationErrors(t *testing.T) {
