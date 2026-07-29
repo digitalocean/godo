@@ -96,7 +96,10 @@ type KubernetesClusterCreateRequest struct {
 	CorednsAutoscaler                 *KubernetesCorednsAutoscaler                 `json:"coredns_autoscaler,omitempty"`
 	SSO                               *KubernetesClusterSSO                        `json:"sso,omitempty"`
 	P2pOciRegistryPlugin              *KubernetesP2pOciRegistry                    `json:"p2p_oci_registry_plugin,omitempty"`
-	IsolatedWorkers                   bool                                         `json:"isolated_workers,omitempty"`
+	// IsolatedWorkers enables isolated worker nodes. When true, the cluster's VPC
+	// must already have a NAT gateway attached, or the create request fails with a
+	// 422. This can only be set at creation time.
+	IsolatedWorkers bool `json:"isolated_workers,omitempty"`
 }
 
 // KubernetesClusterUpdateRequest represents a request to update a Kubernetes cluster.
