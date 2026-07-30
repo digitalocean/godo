@@ -493,14 +493,15 @@ func TestHostedAgents_ExecInSandbox(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-// TestHostedAgents_StreamSession_ReplayOnly pins the history lane on the control
-// plane's .../stream endpoint: only it holds the stored event history, so a
-// replay-only read must not be sent to the forward-only data-plane endpoint.
+// TestHostedAgents_StreamSession_ReplayOnly pins the history lane on the same
+// data-plane .../events endpoint as the live lane, selected by ?replay_only=true.
+// The cursor moves to the replay_from query parameter here: on a history read it
+// is an explicit pagination cursor, not the Last-Event-ID resume hint.
 func TestHostedAgents_StreamSession_ReplayOnly(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "true", r.URL.Query().Get("replay_only"))
 		assert.Equal(t, "ev-0", r.URL.Query().Get("replay_from"))
@@ -517,6 +518,51 @@ func TestHostedAgents_StreamSession_ReplayOnly(t *testing.T) {
 	defer stream.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.False(t, stream.Next())
+}
+
+// TestHostedAgents_StreamSession_ReplayOnly_HistoryThenEOF covers what a
+// replay-only read is for: the stored history arrives as ordinary events and the
+// stream then ends on its own, which is what lets a history reader exit instead
+// of blocking on a connection that stays open forever.
+func TestHostedAgents_StreamSession_ReplayOnly_HistoryThenEOF(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const (
+		catchingUp = `{"event_id":"","run_id":"","tenant_id":"0","session_id":"sess-abc123","timestamp":"2026-03-01T12:00:00Z","seq":0,"type":"stream.state","data":{"state":"catching_up","cursor":""}}`
+		first      = `{"event_id":"ev-1","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":1,"type":"run.token_delta","data":{"text":"hello"}}`
+		second     = `{"event_id":"ev-2","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:02:00Z","seq":2,"type":"run.completed","data":{}}`
+	)
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "true", r.URL.Query().Get("replay_only"))
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprintf(w, "event: stream.state\ndata: %s\n\n", catchingUp)
+		fmt.Fprintf(w, "id: ev-1\nevent: run.token_delta\ndata: %s\n\n", first)
+		fmt.Fprintf(w, "id: ev-2\nevent: run.completed\ndata: %s\n\n", second)
+	})
+
+	stream, _, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		ReplayOnly: true,
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+
+	// A history read opens with catching_up and never reaches live.
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentEventKindStreamState, stream.Current().Kind)
+
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentEventKindTokenChunk, stream.Current().Kind)
+	assert.Equal(t, "ev-1", stream.Current().EventID)
+
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentEventKindRunCompleted, stream.Current().Kind)
+	assert.Equal(t, "ev-2", stream.Current().EventID)
+
+	assert.False(t, stream.Next(), "replay-only stream must end after the last stored event")
+	assert.NoError(t, stream.Err())
 }
 
 // TestHostedAgents_StreamSession_StreamState pins the data plane's transport
