@@ -156,10 +156,10 @@ const (
 	EvaluationDatasetTypeModel   EvaluationDatasetType = "EVALUATION_DATASET_TYPE_MODEL"
 )
 
-// GradientAIService is an interface for interfacing with the Gradient AI Agent endpoints
+// DigitalOceanAIService is an interface for interfacing with the DigitalOcean AI endpoints
 // of the DigitalOcean API.
 // See https://docs.digitalocean.com/reference/api/digitalocean/#tag/GradientAI-Platform for more details.
-type GradientAIService interface {
+type DigitalOceanAIService interface {
 	ListAgents(context.Context, *ListOptions) ([]*Agent, *Response, error)
 	CreateAgent(context.Context, *AgentCreateRequest) (*Agent, *Response, error)
 	ListAgentAPIKeys(context.Context, string, *ListOptions) ([]*ApiKeyInfo, *Response, error)
@@ -239,7 +239,12 @@ type GradientAIService interface {
 	DeleteEvaluationDataset(ctx context.Context, datasetUUID string) (*EvaluationDatasetDeleteResponse, *Response, error)
 }
 
-var _ GradientAIService = &GradientAIServiceOp{}
+// GradientAIService is an alias for DigitalOceanAIService.
+//
+// Deprecated: Use DigitalOceanAIService instead.
+type GradientAIService = DigitalOceanAIService
+
+var _ DigitalOceanAIService = &GradientAIServiceOp{}
 
 // GradientAIServiceOp interfaces with the Gradient AI Service endpoints in the DigitalOcean API.
 type GradientAIServiceOp struct {

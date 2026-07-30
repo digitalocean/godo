@@ -101,10 +101,12 @@ type Client struct {
 	VectorDBs           VectorDBsService
 	VPCs                VPCsService
 	PartnerAttachment   PartnerAttachmentService
-	GradientAI          GradientAIService
-	DedicatedInference  DedicatedInferenceService
-	BatchInference      BatchInferenceService
-	BYOIPPrefixes       BYOIPPrefixesService
+	DigitalOceanAI      DigitalOceanAIService
+	// Deprecated: Use DigitalOceanAI instead.
+	GradientAI         GradientAIService
+	DedicatedInference DedicatedInferenceService
+	BatchInference     BatchInferenceService
+	BYOIPPrefixes      BYOIPPrefixesService
 
 	// Serverless Inference resources at https://inference.do-ai.run.
 	Chat             *ChatService
@@ -345,7 +347,9 @@ func NewClient(httpClient *http.Client) *Client {
 	c.VectorDBs = &VectorDBsServiceOp{client: c}
 	c.VPCs = &VPCsServiceOp{client: c}
 	c.PartnerAttachment = &PartnerAttachmentServiceOp{client: c}
-	c.GradientAI = &GradientAIServiceOp{client: c}
+	digitalOceanAI := &GradientAIServiceOp{client: c}
+	c.DigitalOceanAI = digitalOceanAI
+	c.GradientAI = digitalOceanAI
 	c.DedicatedInference = &DedicatedInferenceServiceOp{client: c}
 	batchInferenceURL, _ := url.Parse(defaultBatchInferenceBaseURL)
 	c.BatchInference = &BatchInferenceServiceOp{client: c, baseURL: batchInferenceURL}

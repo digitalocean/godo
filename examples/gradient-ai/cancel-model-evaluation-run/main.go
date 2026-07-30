@@ -26,7 +26,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.CancelModelEvaluationRun(ctx, runUUID)
+	out, _, err := client.DigitalOceanAI.CancelModelEvaluationRun(ctx, runUUID)
 	if err != nil {
 		panic(err)
 	}
