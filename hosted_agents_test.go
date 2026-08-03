@@ -1,14 +1,20 @@
 package godo
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -577,6 +583,259 @@ func TestHostedAgents_UploadWorkspace(t *testing.T) {
 	assert.Equal(t, "/workspace/src/main.go", got.Path)
 	assert.Equal(t, int64(len(payload)), got.BytesWritten)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+// workspaceUploadFile writes n bytes to a temp file and returns it positioned
+// at the start, mirroring how doctl hands a file to UploadWorkspace.
+func workspaceUploadFile(t *testing.T, n int) *os.File {
+	t.Helper()
+
+	f, err := os.CreateTemp(t.TempDir(), "upload")
+	require.NoError(t, err)
+	t.Cleanup(func() { f.Close() })
+
+	_, err = f.Write(bytes.Repeat([]byte("x"), n))
+	require.NoError(t, err)
+	_, err = f.Seek(0, io.SeekStart)
+	require.NoError(t, err)
+
+	return f
+}
+
+func TestHostedAgents_UploadWorkspace_DeclaresContentLength(t *testing.T) {
+	const payload = "hello world"
+
+	tests := []struct {
+		name string
+		body func(t *testing.T) io.Reader
+		// contentLength is the explicit request field, left zero to exercise
+		// inference from the body.
+		contentLength int64
+		want          int64
+	}{
+		{
+			name: "os.File is measured by stat",
+			body: func(t *testing.T) io.Reader { return workspaceUploadFile(t, len(payload)) },
+			want: int64(len(payload)),
+		},
+		{
+			name: "os.File is measured from its current offset",
+			body: func(t *testing.T) io.Reader {
+				f := workspaceUploadFile(t, len(payload))
+				_, err := f.Seek(4, io.SeekStart)
+				require.NoError(t, err)
+				return f
+			},
+			want: int64(len(payload) - 4),
+		},
+		{
+			name: "in-memory reader reports its remainder",
+			body: func(t *testing.T) io.Reader { return strings.NewReader(payload) },
+			want: int64(len(payload)),
+		},
+		{
+			name: "opaque reader falls back to the explicit length",
+			body: func(t *testing.T) io.Reader {
+				// Hides Len() so neither http.NewRequest nor uploadBodyLength
+				// can measure it.
+				return struct{ io.Reader }{strings.NewReader(payload)}
+			},
+			contentLength: int64(len(payload)),
+			want:          int64(len(payload)),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			var (
+				gotLength   int64
+				gotEncoding []string
+			)
+			mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/upload", func(w http.ResponseWriter, r *http.Request) {
+				gotLength = r.ContentLength
+				gotEncoding = r.TransferEncoding
+				io.Copy(io.Discard, r.Body)
+				fmt.Fprint(w, `{"path":"/workspace/f","bytes_written":0}`)
+			})
+
+			_, _, err := client.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{
+				Path:          "f",
+				Body:          tt.body(t),
+				ContentLength: tt.contentLength,
+			})
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.want, gotLength, "declared Content-Length")
+			assert.Empty(t, gotEncoding, "payload must not be chunked")
+		})
+	}
+}
+
+func TestHostedAgents_UploadWorkspace_ExpectContinueThreshold(t *testing.T) {
+	tests := []struct {
+		name string
+		size int
+		want string
+	}{
+		{name: "below threshold negotiates nothing", size: 16, want: ""},
+		{name: "at threshold negotiates", size: workspaceUploadExpectContinueMinBytes, want: "100-continue"},
+		{name: "above threshold negotiates", size: workspaceUploadExpectContinueMinBytes + 1, want: "100-continue"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			var got string
+			mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/upload", func(w http.ResponseWriter, r *http.Request) {
+				got = r.Header.Get("Expect")
+				io.Copy(io.Discard, r.Body)
+				fmt.Fprint(w, `{"path":"/workspace/f","bytes_written":0}`)
+			})
+
+			_, _, err := client.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{
+				Path: "f",
+				Body: workspaceUploadFile(t, tt.size),
+			})
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+// countingListener totals the bytes read off every accepted connection, which
+// is how the tests below distinguish "payload withheld" from "payload sent".
+type countingListener struct {
+	net.Listener
+	read *int64
+}
+
+func (l countingListener) Accept() (net.Conn, error) {
+	c, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return countingConn{Conn: c, read: l.read}, nil
+}
+
+type countingConn struct {
+	net.Conn
+	read *int64
+}
+
+func (c countingConn) Read(p []byte) (int, error) {
+	n, err := c.Conn.Read(p)
+	atomic.AddInt64(c.read, int64(n))
+	return n, err
+}
+
+// newCountingUploadServer serves handler and reports bytes received on the wire.
+func newCountingUploadServer(t *testing.T, handler http.HandlerFunc) (*Client, *int64) {
+	t.Helper()
+
+	var read int64
+	srv := httptest.NewUnstartedServer(handler)
+	srv.Listener = countingListener{Listener: srv.Listener, read: &read}
+	srv.Start()
+	t.Cleanup(srv.Close)
+
+	// NewClient does not retry, so a 503 surfaces on the first attempt rather
+	// than being replayed.
+	c := NewClient(nil)
+	u, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+	c.BaseURL = u
+
+	return c, &read
+}
+
+// The point of the Expect handshake: when OHS refuses from the headers alone --
+// its size cap or an exhausted transfer slot -- the payload never leaves the
+// client.
+func TestHostedAgents_UploadWorkspace_WithholdsPayloadWhenRefusedAtHeaders(t *testing.T) {
+	const size = 4 << 20
+
+	var gotExpect string
+	c, read := newCountingUploadServer(t, func(w http.ResponseWriter, r *http.Request) {
+		gotExpect = r.Header.Get("Expect")
+		// Refuse without touching r.Body, so net/http never emits 100 Continue.
+		w.Header().Set("Retry-After", "1")
+		http.Error(w, "workspace transfer capacity exhausted, retry later", http.StatusServiceUnavailable)
+	})
+
+	_, resp, err := c.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{
+		Path: "big.bin",
+		Body: workspaceUploadFile(t, size),
+	})
+
+	require.Error(t, err, "a 503 must surface to the caller")
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
+	assert.Equal(t, "100-continue", gotExpect)
+	assert.Equal(t, "1", resp.Header.Get("Retry-After"))
+
+	// Only the request headers should have crossed the wire.
+	assert.Less(t, atomic.LoadInt64(read), int64(32<<10),
+		"payload was transmitted despite the request being refused at headers")
+}
+
+// Control for the test above: an accepted upload must still deliver every byte.
+func TestHostedAgents_UploadWorkspace_SendsPayloadWhenAccepted(t *testing.T) {
+	const size = 4 << 20
+
+	var got int64
+	c, read := newCountingUploadServer(t, func(w http.ResponseWriter, r *http.Request) {
+		n, err := io.Copy(io.Discard, r.Body)
+		require.NoError(t, err)
+		got = n
+		fmt.Fprintf(w, `{"path":"/workspace/big.bin","bytes_written":%d}`, n)
+	})
+
+	out, resp, err := c.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{
+		Path: "big.bin",
+		Body: workspaceUploadFile(t, size),
+	})
+
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, int64(size), got, "handler must receive the whole payload")
+	assert.Equal(t, int64(size), out.BytesWritten)
+	assert.GreaterOrEqual(t, atomic.LoadInt64(read), int64(size))
+}
+
+func TestUploadBodyLength(t *testing.T) {
+	t.Run("explicit length wins over an inferrable body", func(t *testing.T) {
+		got := uploadBodyLength(&HostedAgentWorkspaceUploadRequest{
+			Body:          workspaceUploadFile(t, 4096),
+			ContentLength: 7,
+		})
+		assert.Equal(t, int64(7), got)
+	})
+
+	t.Run("non-regular file is not measurable", func(t *testing.T) {
+		r, w, err := os.Pipe()
+		require.NoError(t, err)
+		t.Cleanup(func() { r.Close(); w.Close() })
+
+		assert.Zero(t, uploadBodyLength(&HostedAgentWorkspaceUploadRequest{Body: r}))
+	})
+
+	t.Run("opaque reader is not measurable", func(t *testing.T) {
+		body := struct{ io.Reader }{strings.NewReader("hello")}
+		assert.Zero(t, uploadBodyLength(&HostedAgentWorkspaceUploadRequest{Body: body}))
+	})
+
+	t.Run("fully consumed file measures zero", func(t *testing.T) {
+		f := workspaceUploadFile(t, 8)
+		_, err := io.Copy(io.Discard, f)
+		require.NoError(t, err)
+
+		assert.Zero(t, uploadBodyLength(&HostedAgentWorkspaceUploadRequest{Body: f}))
+	})
 }
 
 func workspaceDownloadFooter(payload string) string {
