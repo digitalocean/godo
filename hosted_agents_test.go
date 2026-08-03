@@ -2,6 +2,7 @@ package godo
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -20,6 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
 )
 
 var hostedAgentSession = HostedAgentSession{
@@ -781,6 +783,65 @@ func TestHostedAgents_UploadWorkspace_WithholdsPayloadWhenRefusedAtHeaders(t *te
 	// Only the request headers should have crossed the wire.
 	assert.Less(t, atomic.LoadInt64(read), int64(32<<10),
 		"payload was transmitted despite the request being refused at headers")
+}
+
+// The withholding above must survive the client stack doctl actually builds:
+// an oauth2 client wrapped by the retryablehttp transport. That transport is
+// where Expect could quietly stop working, since honouring it depends on a
+// non-zero ExpectContinueTimeout, and where a retry could replay the payload.
+func TestHostedAgents_UploadWorkspace_WithholdsPayloadThroughRetryTransport(t *testing.T) {
+	const size = 4 << 20
+
+	var (
+		attempts int64
+		read     int64
+	)
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt64(&attempts, 1)
+		assert.Equal(t, "100-continue", r.Header.Get("Expect"))
+		w.Header().Set("Retry-After", "1")
+		http.Error(w, "workspace transfer capacity exhausted, retry later", http.StatusServiceUnavailable)
+	}))
+	srv.Listener = countingListener{Listener: srv.Listener, read: &read}
+	srv.Start()
+	defer srv.Close()
+
+	// Mirrors doctl: oauth2 client + WithRetryAndBackoffs. The waits are
+	// squeezed only to keep the test quick.
+	oauthClient := oauth2.NewClient(context.Background(),
+		oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "test-token"}))
+	c, err := New(oauthClient,
+		WithRetryAndBackoffs(RetryConfig{
+			RetryMax:     1,
+			RetryWaitMin: PtrTo(0.01),
+			RetryWaitMax: PtrTo(0.02),
+		}),
+		SetBaseURL(srv.URL),
+	)
+	require.NoError(t, err)
+
+	start := time.Now()
+	_, resp, err := c.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{
+		Path: "big.bin",
+		Body: workspaceUploadFile(t, size),
+	})
+	elapsed := time.Since(start)
+
+	require.Error(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
+
+	// A 503 is retryable, so the shed must actually be replayed rather than
+	// surfacing on the first attempt.
+	assert.Equal(t, int64(2), atomic.LoadInt64(&attempts), "initial attempt plus one retry")
+
+	// The retry must wait out the Retry-After OHS sent rather than the far
+	// shorter backoff configured above, so a shedding server is not hammered.
+	assert.GreaterOrEqual(t, elapsed, time.Second, "Retry-After was ignored")
+
+	// Neither attempt may put the payload on the wire.
+	assert.Less(t, atomic.LoadInt64(&read), int64(32<<10),
+		"payload was transmitted through the retry transport despite being refused at headers")
 }
 
 // Control for the test above: an accepted upload must still deliver every byte.
