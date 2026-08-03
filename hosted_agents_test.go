@@ -785,6 +785,59 @@ func TestHostedAgents_UploadWorkspace_WithholdsPayloadWhenRefusedAtHeaders(t *te
 		"payload was transmitted despite the request being refused at headers")
 }
 
+// HTTP/2 implements the handshake in a completely separate transport, and the
+// API is reached over TLS with h2 negotiation enabled, so the guarantee has to
+// hold there too.
+func TestHostedAgents_UploadWorkspace_WithholdsPayloadOverHTTP2(t *testing.T) {
+	const size = 4 << 20
+
+	var (
+		read     int64
+		gotProto string
+	)
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotProto = r.Proto
+		http.Error(w, "workspace transfer capacity exhausted, retry later", http.StatusServiceUnavailable)
+	}))
+	srv.Listener = countingListener{Listener: srv.Listener, read: &read}
+	srv.EnableHTTP2 = true
+	srv.StartTLS()
+	defer srv.Close()
+
+	hc := srv.Client()
+	// httptest leaves ExpectContinueTimeout at zero, and the h2 transport reads
+	// it to decide whether to negotiate at all -- zero means send the body
+	// immediately. Every transport godo runs on in production sets it (both
+	// http.DefaultTransport and cleanhttp use 1s), so match them or this would
+	// test a configuration that does not exist.
+	hc.Transport.(*http.Transport).ExpectContinueTimeout = time.Second
+
+	c := NewClient(hc)
+	u, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+	c.BaseURL = u
+
+	_, resp, err := c.HostedAgents.UploadWorkspace(ctx, "sess-abc123", &HostedAgentWorkspaceUploadRequest{
+		Path: "big.bin",
+		Body: workspaceUploadFile(t, size),
+	})
+
+	require.Error(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
+	require.Equal(t, "HTTP/2.0", gotProto, "test did not exercise h2")
+
+	// The handler is deliberately not asserted on Expect: net/http lifts it out
+	// of the headers into an internal flag before an h2 handler runs, so the
+	// negotiation is invisible server-side and only the byte count can show it
+	// happened.
+	//
+	// Counted before TLS decryption, so the bound allows for handshake and
+	// framing overhead while staying far below the payload.
+	assert.Less(t, atomic.LoadInt64(&read), int64(64<<10),
+		"payload was transmitted over h2 despite being refused at headers")
+}
+
 // The withholding above must survive the client stack doctl actually builds:
 // an oauth2 client wrapped by the retryablehttp transport. That transport is
 // where Expect could quietly stop working, since honouring it depends on a
