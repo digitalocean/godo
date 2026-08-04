@@ -14,7 +14,6 @@ func TestBillingInsights_List(t *testing.T) {
 	mux.HandleFunc("/v2/billing/do:team:12345678-1234-1234-1234-123456789012/insights/2025-01-01/2025-01-31", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
-			"current_page": 1,
 			"data_points": [
 				{
 					"description": "droplet name (c-2-4GiB)",
@@ -35,8 +34,9 @@ func TestBillingInsights_List(t *testing.T) {
 					"usage_team_urn": "do:team:12345678-1234-1234-1234-123456789012"
 				}
 			],
-			"total_items": 2,
-			"total_pages": 1
+			"current_page": "1",
+			"total_items": "2",
+			"total_pages": "1"
 		}`)
 	})
 

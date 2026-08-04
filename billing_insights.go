@@ -23,7 +23,10 @@ type BillingInsightsServiceOp struct {
 
 var _ BillingInsightsService = &BillingInsightsServiceOp{}
 
-// BillingInsights represents a DigitalOcean Billing Insight
+// BillingInsights represents a DigitalOcean Billing Insight.
+//
+// Page metadata is returned as individual values. Values of `CurrentPage`, `TotalItems`, and
+// `TotalPages` are returned as string-quoted integers.
 type BillingInsights struct {
 	DataPoints  []BillingInsightsEntry `json:"data_points"`
 	CurrentPage int                    `json:"current_page,string"`
