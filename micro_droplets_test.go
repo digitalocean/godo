@@ -204,7 +204,7 @@ func TestMicroDroplets_Create(t *testing.T) {
 		AutoPause:    &AutoPauseConfig{Enabled: &autoPauseEnabled, IdleTimeout: "5m"},
 		AutoResume:   &autoResume,
 		HTTPPort:     8080,
-		HTTPProtocol: MicroDropletHTTPProtocolHTTPS,
+		HTTPProtocol: MicroDropletHTTPProtocolHTTP2,
 		Environment:  map[string]string{"FOO": "bar"},
 		Tags:         []string{"env:dev", "team:agents"},
 	}
@@ -225,7 +225,7 @@ func TestMicroDroplets_Create(t *testing.T) {
 			},
 			"auto_resume":   true,
 			"http_port":     float64(8080),
-			"http_protocol": "https",
+			"http_protocol": "http2",
 			"environment":   map[string]interface{}{"FOO": "bar"},
 			"tags":          []interface{}{"env:dev", "team:agents"},
 		}
