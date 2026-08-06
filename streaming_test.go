@@ -52,6 +52,36 @@ func TestSSEReader_CommentsSkipped(t *testing.T) {
 	}
 }
 
+// OnComment observes comment lines with the leading ':' and one optional space
+// stripped, while they stay out of the dispatched events.
+func TestSSEReader_OnCommentObservesComments(t *testing.T) {
+	in := ": keep-alive\n:no-space\ndata: payload\n\n: has_more=true\n\n"
+	r := NewSSEReader(strings.NewReader(in))
+	var got []string
+	r.OnComment = func(comment []byte) { got = append(got, string(comment)) }
+
+	ev, err := r.Next()
+	if err != nil {
+		t.Fatalf("Next: unexpected error %v", err)
+	}
+	if string(ev.Data) != "payload" {
+		t.Errorf("Data = %q, want %q", ev.Data, "payload")
+	}
+	if _, err := r.Next(); err != io.EOF {
+		t.Errorf("second Next: err = %v, want io.EOF", err)
+	}
+
+	want := []string{"keep-alive", "no-space", "has_more=true"}
+	if len(got) != len(want) {
+		t.Fatalf("comments = %q, want %q", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("comment %d = %q, want %q", i, got[i], want[i])
+		}
+	}
+}
+
 func TestSSEReader_EventIDAndRetry(t *testing.T) {
 	in := "event: chunk\nid: 42\nretry: 1500\ndata: hi\n\ndata: again\n\n"
 	r := NewSSEReader(strings.NewReader(in))
