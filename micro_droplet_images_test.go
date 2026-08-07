@@ -14,8 +14,8 @@ func TestMicroDropletImages_List(t *testing.T) {
 
 	jBlob := `{
 		"images": [
-			{"id": "img-1", "name": "python-3.12", "source": "docker.io/library/python:3.12", "status": "IMAGE_AVAILABLE"},
-			{"id": "img-2", "name": "node-20",     "source": "docker.io/library/node:20",     "status": "IMAGE_IMPORTING"}
+			{"id": "img-1", "name": "python-3.12", "region": "nyc1", "source": "docker.io/library/python:3.12", "status": "IMAGE_AVAILABLE"},
+			{"id": "img-2", "name": "node-20",     "region": "sfo3", "source": "docker.io/library/node:20",     "status": "IMAGE_IMPORTING"}
 		],
 		"meta": {"total": 2}
 	}`
@@ -31,8 +31,8 @@ func TestMicroDropletImages_List(t *testing.T) {
 	}
 
 	expected := []MicroDropletImage{
-		{ID: "img-1", Name: "python-3.12", Source: "docker.io/library/python:3.12", Status: MicroDropletImageStatusAvailable},
-		{ID: "img-2", Name: "node-20", Source: "docker.io/library/node:20", Status: MicroDropletImageStatusImporting},
+		{ID: "img-1", Name: "python-3.12", Region: "nyc1", Source: "docker.io/library/python:3.12", Status: MicroDropletImageStatusAvailable},
+		{ID: "img-2", Name: "node-20", Region: "sfo3", Source: "docker.io/library/node:20", Status: MicroDropletImageStatusImporting},
 	}
 	if !reflect.DeepEqual(images, expected) {
 		t.Errorf("MicroDropletImages.List returned %+v, expected %+v", images, expected)
@@ -73,6 +73,7 @@ func TestMicroDropletImages_Get(t *testing.T) {
 			"image": {
 				"id": "img-1",
 				"name": "python-3.12",
+				"region": "nyc1",
 				"source": "docker.io/library/python:3.12",
 				"status": "IMAGE_AVAILABLE",
 				"created_at": "2026-07-16T10:00:00Z"
@@ -88,6 +89,7 @@ func TestMicroDropletImages_Get(t *testing.T) {
 	expected := &MicroDropletImage{
 		ID:      "img-1",
 		Name:    "python-3.12",
+		Region:  "nyc1",
 		Source:  "docker.io/library/python:3.12",
 		Status:  MicroDropletImageStatusAvailable,
 		Created: "2026-07-16T10:00:00Z",
@@ -113,6 +115,7 @@ func TestMicroDropletImages_Create(t *testing.T) {
 
 	createRequest := &MicroDropletImageCreateRequest{
 		Name:   "python-3.12",
+		Region: "nyc1",
 		Source: "docker.io/library/python:3.12",
 	}
 
@@ -121,6 +124,7 @@ func TestMicroDropletImages_Create(t *testing.T) {
 
 		expected := map[string]interface{}{
 			"name":   "python-3.12",
+			"region": "nyc1",
 			"source": "docker.io/library/python:3.12",
 		}
 		var got map[string]interface{}
@@ -183,7 +187,7 @@ func TestMicroDropletImages_Delete_EmptyID(t *testing.T) {
 
 func TestMicroDropletImage_URN(t *testing.T) {
 	img := MicroDropletImage{ID: "img-1"}
-	want := "do:microdropletimage:img-1"
+	want := "do:microdroplet_image:img-1"
 	if got := img.URN(); got != want {
 		t.Errorf("MicroDropletImage.URN = %q, expected %q", got, want)
 	}
