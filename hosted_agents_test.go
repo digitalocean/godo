@@ -46,6 +46,32 @@ var hostedAgentSessionJSON = `
 }
 `
 
+var hostedAgentOpenAISession = HostedAgentSession{
+	SessionID:           "sess-openai-1",
+	Name:                "openai-codex-session",
+	TeamID:              42,
+	AgentKind:           HostedAgentKindOpenAICodex,
+	Status:              HostedAgentSessionStatusReady,
+	CreatedAt:           Timestamp{Time: time.Date(2026, 7, 22, 12, 0, 0, 0, time.UTC)},
+	LastEventAt:         Timestamp{Time: time.Date(2026, 7, 22, 12, 2, 0, 0, time.UTC)},
+	OpenAISessionID:     "sess_a91f3",
+	OpenAIEnvironmentID: "env_abc123",
+}
+
+var hostedAgentOpenAISessionJSON = `
+{
+	"session_id": "sess-openai-1",
+	"name": "openai-codex-session",
+	"team_id": 42,
+	"agent_kind": "AGENT_KIND_OPENAI_CODEX",
+	"status": "SESSION_STATUS_READY",
+	"created_at": "2026-07-22T12:00:00Z",
+	"last_event_at": "2026-07-22T12:02:00Z",
+	"openai_session_id": "sess_a91f3",
+	"openai_environment_id": "env_abc123"
+}
+`
+
 func TestHostedAgents_CreateSession(t *testing.T) {
 	setup()
 	defer teardown()
@@ -230,6 +256,7 @@ spec:
 	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
+		assert.Empty(t, r.URL.Query().Get("openai_session_id"))
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		assert.Contains(t, string(body), "agents.digitalocean.com/v1alpha1")
@@ -237,7 +264,7 @@ spec:
 		fmt.Fprintf(w, `{"session":%s}`, hostedAgentSessionJSON)
 	})
 
-	got, resp, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte(manifest))
+	got, resp, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte(manifest), nil)
 	require.NoError(t, err)
 	assert.Equal(t, hostedAgentSession, *got)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -247,8 +274,76 @@ func TestHostedAgents_CreateSessionFromManifest_Empty(t *testing.T) {
 	setup()
 	defer teardown()
 
-	_, _, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte("  \n"))
+	_, _, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte("  \n"), nil)
 	require.EqualError(t, err, "hosted agents: manifest is required")
+}
+
+func TestHostedAgents_CreateSessionFromManifest_OpenAISessionID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const manifest = `apiVersion: agents.digitalocean.com/v1alpha1
+kind: Agent
+metadata:
+  name: openai-codex-session
+spec:
+  runtime:
+    adapter: codex-agentapi
+  sandbox:
+    template: codex-agentapi
+  env:
+    CODEX_ENVIRONMENT_ID: env_abc123
+    CODEX_API_KEY: sk-test
+  secrets:
+    - name: CODEX_API_KEY
+      source: tenantSecret
+  openai:
+    agent:
+      model: gpt-5.6-sol
+      instructions: "Answer the user clearly and concisely."
+    environment:
+      type: self_hosted
+      workspace_directory: /workspace
+`
+
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
+		assert.Equal(t, "sess_a91f3", r.URL.Query().Get("openai_session_id"))
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.Contains(t, string(body), "adapter: codex-agentapi")
+		assert.Contains(t, string(body), "CODEX_ENVIRONMENT_ID: env_abc123")
+		assert.NotContains(t, string(body), "${")
+		fmt.Fprintf(w, `{"session":%s}`, hostedAgentOpenAISessionJSON)
+	})
+
+	got, resp, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte(manifest), &HostedAgentManifestCreateOptions{
+		OpenAISessionID: "sess_a91f3",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, hostedAgentOpenAISession, *got)
+	assert.Equal(t, HostedAgentKindOpenAICodex, got.AgentKind)
+	assert.Equal(t, "sess_a91f3", got.OpenAISessionID)
+	assert.Equal(t, "env_abc123", got.OpenAIEnvironmentID)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgents_GetSession_OpenAIFields(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-openai-1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprintf(w, `{"session":%s}`, hostedAgentOpenAISessionJSON)
+	})
+
+	got, resp, err := client.HostedAgents.GetSession(ctx, "sess-openai-1")
+	require.NoError(t, err)
+	assert.Equal(t, hostedAgentOpenAISession, *got)
+	assert.Equal(t, "sess_a91f3", got.OpenAISessionID)
+	assert.Equal(t, "env_abc123", got.OpenAIEnvironmentID)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestHostedAgents_ListSessions(t *testing.T) {
