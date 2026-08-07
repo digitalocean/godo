@@ -34,11 +34,25 @@ func main() {
 	streamCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	limit := 0
+	if v := os.Getenv("LIMIT"); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil || n <= 0 {
+			fmt.Fprintln(os.Stderr, "LIMIT must be a positive integer")
+			os.Exit(2)
+		}
+		limit = n
+	}
+
 	var opt *godo.HostedAgentSessionStreamOptions
-	if from := os.Getenv("REPLAY_FROM"); from != "" || os.Getenv("REPLAY_ONLY") == "true" {
+	replayFrom, before := os.Getenv("REPLAY_FROM"), os.Getenv("BEFORE")
+	replayOnly := os.Getenv("REPLAY_ONLY") == "true"
+	if replayFrom != "" || before != "" || limit > 0 || replayOnly {
 		opt = &godo.HostedAgentSessionStreamOptions{
-			ReplayFrom: os.Getenv("REPLAY_FROM"),
-			ReplayOnly: os.Getenv("REPLAY_ONLY") == "true",
+			ReplayFrom: replayFrom,
+			ReplayOnly: replayOnly,
+			Before:     before,
+			Limit:      limit,
 		}
 	}
 
@@ -50,8 +64,16 @@ func main() {
 
 	fmt.Printf("HTTP %d — streaming session %s (%s timeout)\n\n", resp.StatusCode, sessionID, timeout)
 
+	var count int
+	var oldest string
 	for stream.Next() {
 		ev := stream.Current()
+		// Events arrive oldest-first, so the first one seen is the cursor to
+		// page further back from.
+		if count == 0 {
+			oldest = ev.EventID
+		}
+		count++
 		payload := string(ev.Payload)
 		if len(payload) > 160 {
 			payload = payload[:160] + "..."
@@ -60,6 +82,11 @@ func main() {
 	}
 	if err := stream.Err(); err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
 		die(err)
+	}
+
+	fmt.Printf("%d events, oldest=%q, has_more=%t\n", count, oldest, stream.HasMore())
+	if stream.HasMore() {
+		fmt.Printf("older history remains: rerun with BEFORE=%s\n", oldest)
 	}
 }
 

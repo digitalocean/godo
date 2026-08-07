@@ -604,6 +604,89 @@ func TestHostedAgents_StreamSession_ReplayOnly(t *testing.T) {
 	assert.False(t, stream.Next())
 }
 
+// A history page request carries before/limit alongside replay_only, and the
+// trailing has_more comment is readable through HasMore once the page has been
+// drained.
+func TestHostedAgents_StreamSession_HistoryPage(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const eventJSON = `{"event_id":"ev-7","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":7,"type":"run.token_delta","data":{"text":"older"}}`
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		q := r.URL.Query()
+		assert.Equal(t, "true", q.Get("replay_only"))
+		assert.Equal(t, "ev-8", q.Get("before"))
+		assert.Equal(t, "50", q.Get("limit"))
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprint(w, ": connected to sess-abc123\n\n")
+		fmt.Fprintf(w, "id: ev-7\nevent: run.token_delta\ndata: %s\n\n", eventJSON)
+		fmt.Fprint(w, ": has_more=true\n\n")
+	})
+
+	stream, resp, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		ReplayOnly: true,
+		Before:     "ev-8",
+		Limit:      50,
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	require.True(t, stream.Next())
+	assert.Equal(t, "ev-7", stream.Current().EventID)
+	// The trailer arrives after the last event, so HasMore only settles once
+	// the page has been drained to its end.
+	assert.False(t, stream.Next())
+	assert.NoError(t, stream.Err())
+	assert.True(t, stream.HasMore())
+}
+
+// The oldest page reports has_more=false, ending a backward walk.
+func TestHostedAgents_StreamSession_HistoryPageHasMoreFalse(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprint(w, ": has_more=false\n\n")
+	})
+
+	stream, _, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		ReplayOnly: true,
+		Before:     "ev-1",
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+
+	assert.False(t, stream.Next())
+	assert.False(t, stream.HasMore())
+}
+
+// A cursorless replay omits before/limit entirely, and reports no has_more.
+func TestHostedAgents_StreamSession_NoPagingParamsWhenUnset(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		assert.False(t, q.Has("before"))
+		assert.False(t, q.Has("limit"))
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprint(w, ": connected\n\n")
+	})
+
+	stream, _, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		ReplayOnly: true,
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+
+	assert.False(t, stream.Next())
+	assert.False(t, stream.HasMore())
+}
+
 func TestHostedAgents_ValidationErrors(t *testing.T) {
 	setup()
 	defer teardown()
@@ -642,6 +725,13 @@ func TestHostedAgents_ValidationErrors(t *testing.T) {
 
 	_, _, err = client.HostedAgents.ExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{})
 	require.EqualError(t, err, "hosted agents: argv is required")
+
+	// A live attach cannot start in the past; the server answers this with a
+	// 400, so it is rejected before the request goes out.
+	_, _, err = client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		Before: "ev-1",
+	})
+	require.EqualError(t, err, "hosted agents: before requires replay only")
 }
 
 func TestHostedAgents_UploadWorkspace(t *testing.T) {
