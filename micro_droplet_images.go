@@ -17,6 +17,7 @@ const (
 	MicroDropletImageStatusImporting = MicroDropletImageStatus("IMAGE_IMPORTING")
 	MicroDropletImageStatusAvailable = MicroDropletImageStatus("IMAGE_AVAILABLE")
 	MicroDropletImageStatusFailed    = MicroDropletImageStatus("IMAGE_FAILED")
+	MicroDropletImageStatusDeleting  = MicroDropletImageStatus("IMAGE_DELETING")
 	MicroDropletImageStatusDeleted   = MicroDropletImageStatus("IMAGE_DELETED")
 )
 
@@ -151,7 +152,9 @@ func (s *MicroDropletImagesServiceOp) Create(ctx context.Context, createRequest 
 }
 
 // Delete removes a MicroDroplet image by its ID. The DigitalOcean API returns
-// a 204 on success and does not include a response body.
+// a 204 on success and does not include a response body. Removal of the
+// underlying image is asynchronous: until it completes the image is still
+// readable and reports MicroDropletImageStatusDeleting.
 func (s *MicroDropletImagesServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
 	if id == "" {
 		return nil, NewArgError("id", "cannot be empty")
