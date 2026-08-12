@@ -101,6 +101,7 @@ func testClientServices(t *testing.T, c *Client) {
 		"ReservedIPActions",
 		"Tags",
 		"BatchInference",
+		"HostedAgents",
 	}
 
 	cp := reflect.ValueOf(c)
@@ -578,6 +579,28 @@ func TestErrorResponse_Error(t *testing.T) {
 	err := ErrorResponse{Message: "m", Response: res}
 	if err.Error() == "" {
 		t.Errorf("Expected non-empty ErrorResponse.Error()")
+	}
+}
+
+// TestErrorResponse_NestedError covers services (e.g. the hosted-agents
+// harness-api) that wrap the reason in a nested {"error":{"code","message"}}
+// envelope instead of the top-level {"message"} shape. Without the fallback,
+// Error() would render only the status code.
+func TestErrorResponse_NestedError(t *testing.T) {
+	res := &http.Response{
+		Request:    &http.Request{Method: http.MethodPost},
+		StatusCode: http.StatusBadRequest,
+		Body:       io.NopCloser(strings.NewReader(`{"error":{"code":400,"message":"forward input to OHR: connection error"}}`)),
+	}
+	errResp, ok := CheckResponse(res).(*ErrorResponse)
+	if !ok || errResp == nil {
+		t.Fatalf("expected *ErrorResponse")
+	}
+	if errResp.NestedError == nil || errResp.NestedError.Message != "forward input to OHR: connection error" {
+		t.Fatalf("nested error not parsed: %#v", errResp.NestedError)
+	}
+	if !strings.Contains(errResp.Error(), "forward input to OHR: connection error") {
+		t.Errorf("Error() = %q, want it to contain the nested message", errResp.Error())
 	}
 }
 
