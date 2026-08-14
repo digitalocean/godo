@@ -36,6 +36,14 @@ const (
 	hostedAgentSessionWorkspaceTransferCommitPath   = hostedAgentSessionWorkspaceTransferByIDPath + "/commit"
 	hostedAgentSessionWorkspaceTransferCancelPath   = hostedAgentSessionWorkspaceTransferByIDPath + "/cancel"
 
+	hostedAgentSessionCheckpointsPath        = hostedAgentSessionByIDPath + "/checkpoints"
+	hostedAgentSessionCheckpointByIDPath     = hostedAgentSessionCheckpointsPath + "/%s"
+	hostedAgentSessionCheckpointRollbackPath = hostedAgentSessionCheckpointByIDPath + "/rollback"
+	hostedAgentSessionForkPath               = hostedAgentSessionByIDPath + "/fork"
+
+	// HostedAgentForkMaxCount is the v1 cap on children created by one fork call.
+	HostedAgentForkMaxCount = 4
+
 	workspaceContentSHA256Header = "X-Content-Sha256"
 	workspaceIsArchiveHeader     = "X-Workspace-Is-Archive"
 	workspaceSizeBytesHeader     = "X-Workspace-Size-Bytes"
@@ -80,6 +88,14 @@ type HostedAgentsService interface {
 	CommitWorkspaceTransfer(context.Context, string, string, *HostedAgentWorkspaceTransferCommitRequest) (*HostedAgentWorkspaceTransfer, *Response, error)
 	GetWorkspaceTransfer(context.Context, string, string) (*HostedAgentWorkspaceTransfer, *Response, error)
 	CancelWorkspaceTransfer(context.Context, string, string, *HostedAgentWorkspaceTransferCancelRequest) (*HostedAgentWorkspaceTransferCancelResponse, *Response, error)
+
+	// Checkpoint / fork / rollback (session save points).
+	CreateCheckpoint(context.Context, string, *HostedAgentCheckpointCreateRequest) (*HostedAgentCheckpoint, *Response, error)
+	ListCheckpoints(context.Context, string, *HostedAgentCheckpointListOptions) (*HostedAgentCheckpointsListResponse, *Response, error)
+	GetCheckpoint(context.Context, string, string) (*HostedAgentCheckpoint, *Response, error)
+	DeleteCheckpoint(context.Context, string, string) (*HostedAgentCheckpointDeleteResponse, *Response, error)
+	ForkSession(context.Context, string, *HostedAgentForkSessionRequest) (*HostedAgentForkSessionResponse, *Response, error)
+	RollbackToCheckpoint(context.Context, string, string) (*HostedAgentSession, *Response, error)
 }
 
 // HostedAgentsServiceOp handles communication with Hosted Agents session methods.
@@ -266,6 +282,10 @@ type HostedAgentSession struct {
 	// OpenAIEnvironmentID is captured from the resolved CODEX_ENVIRONMENT_ID
 	// guest env value at create. Non-secret correlation metadata.
 	OpenAIEnvironmentID string `json:"openai_environment_id,omitempty"`
+	// ParentSessionID is set on forked child sessions; empty/omitted for roots.
+	ParentSessionID string `json:"parent_session_id,omitempty"`
+	// ForkID is a branch label on forked sessions; empty/omitted for roots.
+	ForkID string `json:"fork_id,omitempty"`
 }
 
 // HostedAgentRun represents a single execution within a session.
@@ -376,6 +396,8 @@ type HostedAgentSessionListOptions struct {
 	PageSize  int                      `url:"page_size,omitempty"`
 	Status    HostedAgentSessionStatus `url:"status,omitempty"`
 	Name      string                   `url:"name,omitempty"`
+	// ParentSessionID lists child (forked) sessions of the given parent.
+	ParentSessionID string `url:"parent_session_id,omitempty"`
 }
 
 // HostedAgentSessionsListResponse is returned by GET /v2/agents/sessions.
