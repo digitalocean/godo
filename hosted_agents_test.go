@@ -1152,3 +1152,82 @@ func TestHostedAgents_GetSession_EmptyBody(t *testing.T) {
 	require.EqualError(t, err, "hosted agents: get session returned no session")
 	require.NotNil(t, resp)
 }
+
+func TestHostedAgents_StartProviderAuth(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{
+			"provider": "github",
+			"status": "pending",
+			"connect_url": "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc",
+			"poll_url": "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def",
+			"verification_code": "k5r2cprq",
+			"expires_at": "2036-08-10T10:44:32Z"
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.StartProviderAuth(ctx, "github")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, &HostedAgentProviderAuthStart{
+		Provider:         "github",
+		Status:           "pending",
+		ConnectURL:       "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc",
+		PollURL:          "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def",
+		VerificationCode: "k5r2cprq",
+		ExpiresAt:        "2036-08-10T10:44:32Z",
+	}, got)
+}
+
+func TestHostedAgents_StartProviderAuth_AlreadyConnected(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"provider":"github","status":"success"}`)
+	})
+
+	got, _, err := client.HostedAgents.StartProviderAuth(ctx, "github")
+	require.NoError(t, err)
+	assert.Equal(t, "success", got.Status)
+	assert.Empty(t, got.ConnectURL)
+	assert.Empty(t, got.PollURL)
+}
+
+func TestHostedAgents_PollProviderAuth(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github/poll", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def", r.URL.Query().Get("poll_url"))
+		fmt.Fprint(w, `{"provider":"github","status":"success","expires_at":"2036-08-10T10:44:32Z"}`)
+	})
+
+	got, resp, err := client.HostedAgents.PollProviderAuth(ctx, "github", "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, &HostedAgentProviderAuthPoll{
+		Provider:  "github",
+		Status:    "success",
+		ExpiresAt: "2036-08-10T10:44:32Z",
+	}, got)
+}
+
+func TestHostedAgents_ProviderAuth_RequiredArgs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.StartProviderAuth(ctx, "")
+	require.EqualError(t, err, "hosted agents: provider is required")
+
+	_, _, err = client.HostedAgents.PollProviderAuth(ctx, "", "https://example.com/poll")
+	require.EqualError(t, err, "hosted agents: provider is required")
+
+	_, _, err = client.HostedAgents.PollProviderAuth(ctx, "github", "")
+	require.EqualError(t, err, "hosted agents: poll url is required")
+}
