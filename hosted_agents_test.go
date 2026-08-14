@@ -1178,7 +1178,7 @@ func TestHostedAgents_StartProviderAuth(t *testing.T) {
 		ConnectURL:       "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc",
 		PollURL:          "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def",
 		VerificationCode: "k5r2cprq",
-		ExpiresAt:        "2036-08-10T10:44:32Z",
+		ExpiresAt:        &Timestamp{Time: time.Date(2036, 8, 10, 10, 44, 32, 0, time.UTC)},
 	}, got)
 }
 
@@ -1214,7 +1214,7 @@ func TestHostedAgents_PollProviderAuth(t *testing.T) {
 	assert.Equal(t, &HostedAgentProviderAuthPoll{
 		Provider:  "github",
 		Status:    "success",
-		ExpiresAt: "2036-08-10T10:44:32Z",
+		ExpiresAt: &Timestamp{Time: time.Date(2036, 8, 10, 10, 44, 32, 0, time.UTC)},
 	}, got)
 }
 

@@ -444,21 +444,21 @@ type HostedAgentResolveHITLRequest struct {
 // authorization handle is never exposed: tokens are exchanged server-side at
 // session time.
 type HostedAgentProviderAuthStart struct {
-	Provider         string `json:"provider"`
-	Status           string `json:"status"`
-	ConnectURL       string `json:"connect_url,omitempty"`
-	PollURL          string `json:"poll_url,omitempty"`
-	VerificationCode string `json:"verification_code,omitempty"`
-	ExpiresAt        string `json:"expires_at,omitempty"`
+	Provider         string     `json:"provider"`
+	Status           string     `json:"status"`
+	ConnectURL       string     `json:"connect_url,omitempty"`
+	PollURL          string     `json:"poll_url,omitempty"`
+	VerificationCode string     `json:"verification_code,omitempty"`
+	ExpiresAt        *Timestamp `json:"expires_at,omitempty"`
 }
 
 // HostedAgentProviderAuthPoll is returned by GET
 // /v2/agents/auth/{provider}/poll. It reports only whether authorization has
 // completed ("pending" or "success"); no secret is returned.
 type HostedAgentProviderAuthPoll struct {
-	Provider  string `json:"provider"`
-	Status    string `json:"status"`
-	ExpiresAt string `json:"expires_at,omitempty"`
+	Provider  string     `json:"provider"`
+	Status    string     `json:"status"`
+	ExpiresAt *Timestamp `json:"expires_at,omitempty"`
 }
 
 // HostedAgentSandboxExecRequest is the body for POST .../sandbox/exec.
