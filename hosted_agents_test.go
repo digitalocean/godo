@@ -20,7 +20,6 @@ import (
 var hostedAgentSession = HostedAgentSession{
 	SessionID:   "sess-abc123",
 	Name:        "godo-fixture",
-	TeamID:      42,
 	AgentKind:   HostedAgentKindClaudeCode,
 	Status:      HostedAgentSessionStatusReady,
 	CreatedAt:   Timestamp{Time: time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)},
@@ -35,7 +34,6 @@ var hostedAgentSessionJSON = `
 {
 	"session_id": "sess-abc123",
 	"name": "godo-fixture",
-	"team_id": 42,
 	"agent_kind": "AGENT_KIND_CLAUDE_CODE",
 	"status": "SESSION_STATUS_READY",
 	"created_at": "2026-03-01T12:00:00Z",
@@ -50,7 +48,6 @@ var hostedAgentSessionJSON = `
 var hostedAgentOpenAISession = HostedAgentSession{
 	SessionID:           "sess-openai-1",
 	Name:                "openai-codex-session",
-	TeamID:              42,
 	AgentKind:           HostedAgentKindOpenAICodex,
 	Status:              HostedAgentSessionStatusReady,
 	CreatedAt:           Timestamp{Time: time.Date(2026, 7, 22, 12, 0, 0, 0, time.UTC)},
@@ -63,7 +60,6 @@ var hostedAgentOpenAISessionJSON = `
 {
 	"session_id": "sess-openai-1",
 	"name": "openai-codex-session",
-	"team_id": 42,
 	"agent_kind": "AGENT_KIND_OPENAI_CODEX",
 	"status": "SESSION_STATUS_READY",
 	"created_at": "2026-07-22T12:00:00Z",
@@ -129,7 +125,6 @@ func TestHostedAgents_CreateSession_WithOrigin(t *testing.T) {
 			"session": {
 				"session_id": "sess-1",
 				"name": "session-claude-code-2026-07-27",
-				"team_id": 42,
 				"agent_kind": "AGENT_KIND_CLAUDE_CODE",
 				"status": "SESSION_STATUS_PROVISIONING",
 				"created_at": "2026-07-27T12:00:00Z",
@@ -166,7 +161,6 @@ func TestHostedAgents_CreateSession_DirectOmitsOrigin(t *testing.T) {
 		fmt.Fprint(w, `{
 			"session": {
 				"session_id": "sess-direct",
-				"team_id": 7,
 				"agent_kind": "AGENT_KIND_OPENCODE",
 				"status": "SESSION_STATUS_READY",
 				"created_at": "2026-07-27T12:00:00Z",
@@ -199,7 +193,6 @@ func TestHostedAgents_GetSession_WithOrigin(t *testing.T) {
 		fmt.Fprint(w, `{
 			"session": {
 				"session_id": "sess-eval",
-				"team_id": 9,
 				"agent_kind": "AGENT_KIND_CODEX_CLI",
 				"status": "SESSION_STATUS_READY",
 				"created_at": "2026-07-27T12:00:00Z",
@@ -237,6 +230,34 @@ func TestHostedAgentSessionOrigin_JSONIncludesVerified(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"product":"direct","verified":true}`, string(body))
+}
+
+// The sessions API carries no team/tenant field, so a round-tripped session must
+// not invent one.
+func TestHostedAgentSession_JSONOmitsTeamID(t *testing.T) {
+	body, err := json.Marshal(&hostedAgentSession)
+	require.NoError(t, err)
+
+	var fields map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(body, &fields))
+	assert.NotContains(t, fields, "team_id")
+}
+
+// A server still sending team_id must not break the decode.
+func TestHostedAgentSession_IgnoresServerTeamID(t *testing.T) {
+	const sessionJSON = `{
+		"session_id": "sess-legacy",
+		"team_id": 42,
+		"agent_kind": "AGENT_KIND_CODEX_CLI",
+		"status": "SESSION_STATUS_READY",
+		"created_at": "2026-08-13T21:01:32Z",
+		"last_event_at": "2026-08-13T21:04:50Z"
+	}`
+
+	var session HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(sessionJSON), &session))
+	assert.Equal(t, "sess-legacy", session.SessionID)
+	assert.Equal(t, HostedAgentSessionStatusReady, session.Status)
 }
 
 func TestHostedAgents_CreateSessionFromManifest(t *testing.T) {
@@ -298,7 +319,6 @@ func TestHostedAgents_CreateSessionFromConfig(t *testing.T) {
 			"session": {
 				"session_id": "sess-cfg",
 				"name": "session-from-config",
-				"team_id": 42,
 				"agent_kind": "AGENT_KIND_OPENCODE",
 				"status": "SESSION_STATUS_PROVISIONING",
 				"created_at": "2026-08-01T12:00:00Z",
@@ -673,8 +693,8 @@ func TestHostedAgents_StreamSession(t *testing.T) {
 	defer teardown()
 
 	// The server serializes the SPI canonical event envelope: the discriminator
-	// is `type` (dot-separated), the body is `data`, the timestamp is
-	// `timestamp`, and the team id rides as a decimal string in `tenant_id`.
+	// is `type` (dot-separated), the body is `data`, and the timestamp is
+	// `timestamp`. The envelope's `tenant_id` is not surfaced to callers.
 	const eventJSON = `{"event_id":"ev-1","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":1,"type":"run.token_delta","data":{"text":"hello"}}`
 
 	// The live stream is served by the data plane at .../events, and the resume
@@ -703,14 +723,13 @@ func TestHostedAgents_StreamSession(t *testing.T) {
 	assert.Equal(t, HostedAgentEventKindTokenChunk, ev.Kind)
 	assert.Equal(t, "ev-1", ev.EventID)
 	assert.Equal(t, "run-1", ev.RunID)
-	assert.Equal(t, uint64(42), ev.TeamID)
 	assert.JSONEq(t, `{"text":"hello"}`, string(ev.Payload))
 	assert.NoError(t, stream.Err())
 	assert.False(t, stream.Next())
 }
 
 // TestHostedAgentEvent_UnmarshalSPIWire pins the SPI canonical envelope decode:
-// type->Kind (dot-separated), data->Payload, timestamp->At, tenant_id(string)->TeamID.
+// type->Kind (dot-separated), data->Payload, timestamp->At.
 func TestHostedAgentEvent_UnmarshalSPIWire(t *testing.T) {
 	const frame = `{"event_id":"ev-9","run_id":"run-7","tenant_id":"120","session_id":"sess-1","timestamp":"2026-06-05T12:56:24.774753219Z","seq":3,"type":"run.token_delta","data":{"text":"Paris"}}`
 
@@ -720,7 +739,6 @@ func TestHostedAgentEvent_UnmarshalSPIWire(t *testing.T) {
 	assert.Equal(t, "ev-9", ev.EventID)
 	assert.Equal(t, "run-7", ev.RunID)
 	assert.Equal(t, "sess-1", ev.SessionID)
-	assert.Equal(t, uint64(120), ev.TeamID)
 	assert.Equal(t, uint64(3), ev.Seq)
 	assert.Equal(t, HostedAgentEventKindTokenChunk, ev.Kind)
 	assert.False(t, ev.At.IsZero())
@@ -781,6 +799,17 @@ func TestHostedAgents_StreamSession_IncludeRaw(t *testing.T) {
 	assert.Equal(t, native, string(ev.SourceRaw))
 	assert.Equal(t, "item/agentMessage/delta", ev.SourceEventType)
 	assert.NoError(t, stream.Err())
+}
+
+// tenant_id is ignored, so an envelope carrying a non-numeric one still decodes.
+func TestHostedAgentEvent_IgnoresTenantID(t *testing.T) {
+	const frame = `{"event_id":"ev-3","run_id":"run-2","tenant_id":"not-a-number","session_id":"sess-1","timestamp":"2026-06-05T12:56:24Z","seq":4,"type":"run.token_delta","data":{"text":"hi"}}`
+
+	var ev HostedAgentEvent
+	require.NoError(t, json.Unmarshal([]byte(frame), &ev))
+
+	assert.Equal(t, HostedAgentEventKindTokenChunk, ev.Kind)
+	assert.JSONEq(t, `{"text":"hi"}`, string(ev.Payload))
 }
 
 func TestHostedAgents_ListSessions_PageToken(t *testing.T) {
