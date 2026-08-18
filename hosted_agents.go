@@ -24,6 +24,7 @@ const (
 	hostedAgentSessionByIDPath                      = hostedAgentsSessionsBasePath + "/%s"
 	hostedAgentSessionEventsPath                    = hostedAgentSessionByIDPath + "/events"
 	hostedAgentSessionInputPath                     = hostedAgentSessionByIDPath + "/input"
+	hostedAgentSessionRequestPath                   = hostedAgentSessionByIDPath + "/request"
 	hostedAgentSessionHITLPath                      = hostedAgentSessionByIDPath + "/hitl/%s"
 	hostedAgentSessionSandboxExecPath               = hostedAgentSessionByIDPath + "/sandbox/exec"
 	hostedAgentSessionPausePath                     = hostedAgentSessionByIDPath + "/pause"
@@ -35,6 +36,18 @@ const (
 	hostedAgentSessionWorkspaceTransferPartURLsPath = hostedAgentSessionWorkspaceTransferByIDPath + "/part-upload-urls"
 	hostedAgentSessionWorkspaceTransferCommitPath   = hostedAgentSessionWorkspaceTransferByIDPath + "/commit"
 	hostedAgentSessionWorkspaceTransferCancelPath   = hostedAgentSessionWorkspaceTransferByIDPath + "/cancel"
+
+	// Team-scoped external-provider (e.g. GitHub) OAuth connect flow.
+	hostedAgentProviderAuthPath     = "/v2/agents/auth/%s"
+	hostedAgentProviderAuthPollPath = hostedAgentProviderAuthPath + "/poll"
+
+	hostedAgentSessionCheckpointsPath        = hostedAgentSessionByIDPath + "/checkpoints"
+	hostedAgentSessionCheckpointByIDPath     = hostedAgentSessionCheckpointsPath + "/%s"
+	hostedAgentSessionCheckpointRollbackPath = hostedAgentSessionCheckpointByIDPath + "/rollback"
+	hostedAgentSessionForkPath               = hostedAgentSessionByIDPath + "/fork"
+
+	// HostedAgentForkMaxCount is the v1 cap on children created by one fork call.
+	HostedAgentForkMaxCount = 4
 
 	workspaceContentSHA256Header = "X-Content-Sha256"
 	workspaceIsArchiveHeader     = "X-Workspace-Is-Archive"
@@ -72,7 +85,16 @@ type HostedAgentsService interface {
 	ResumeSession(context.Context, string) (*Response, error)
 	StreamSession(context.Context, string, *HostedAgentSessionStreamOptions) (*HostedAgentSessionStream, *Response, error)
 	SendInput(context.Context, string, *HostedAgentSendInputRequest) (*HostedAgentSendInputResponse, *Response, error)
+	RelayRequest(context.Context, string, *HostedAgentRelayRequest) (*HostedAgentRelayResponse, *Response, error)
 	ResolveHITL(context.Context, string, string, *HostedAgentResolveHITLRequest) (*Response, error)
+
+	// StartProviderAuth begins (or resumes) the team-scoped connect flow for an
+	// external provider (e.g. "github"). The team is derived from the
+	// authenticated principal; there is no request body.
+	StartProviderAuth(context.Context, string) (*HostedAgentProviderAuthStart, *Response, error)
+	// PollProviderAuth reports whether a pending connect link has been
+	// authorized. pollURL is the PollURL returned by StartProviderAuth.
+	PollProviderAuth(context.Context, string, string) (*HostedAgentProviderAuthPoll, *Response, error)
 	ExecInSandbox(context.Context, string, *HostedAgentSandboxExecRequest) (*HostedAgentSandboxExecResponse, *Response, error)
 	UploadWorkspace(context.Context, string, *HostedAgentWorkspaceUploadRequest) (*HostedAgentWorkspaceUploadResponse, *Response, error)
 	DownloadWorkspace(context.Context, string, *HostedAgentWorkspaceDownloadRequest) (*HostedAgentWorkspaceDownload, *Response, error)
@@ -84,6 +106,14 @@ type HostedAgentsService interface {
 	CommitWorkspaceTransfer(context.Context, string, string, *HostedAgentWorkspaceTransferCommitRequest) (*HostedAgentWorkspaceTransfer, *Response, error)
 	GetWorkspaceTransfer(context.Context, string, string) (*HostedAgentWorkspaceTransfer, *Response, error)
 	CancelWorkspaceTransfer(context.Context, string, string, *HostedAgentWorkspaceTransferCancelRequest) (*HostedAgentWorkspaceTransferCancelResponse, *Response, error)
+
+	// Checkpoint / fork / rollback (session save points).
+	CreateCheckpoint(context.Context, string, *HostedAgentCheckpointCreateRequest) (*HostedAgentCheckpoint, *Response, error)
+	ListCheckpoints(context.Context, string, *HostedAgentCheckpointListOptions) (*HostedAgentCheckpointsListResponse, *Response, error)
+	GetCheckpoint(context.Context, string, string) (*HostedAgentCheckpoint, *Response, error)
+	DeleteCheckpoint(context.Context, string, string) (*HostedAgentCheckpointDeleteResponse, *Response, error)
+	ForkSession(context.Context, string, *HostedAgentForkSessionRequest) (*HostedAgentForkSessionResponse, *Response, error)
+	RollbackToCheckpoint(context.Context, string, string) (*HostedAgentSession, *Response, error)
 }
 
 // HostedAgentsServiceOp handles communication with Hosted Agents session methods.
@@ -303,6 +333,10 @@ type HostedAgentSession struct {
 	// OpenAIEnvironmentID is captured from the resolved CODEX_ENVIRONMENT_ID
 	// guest env value at create. Non-secret correlation metadata.
 	OpenAIEnvironmentID string `json:"openai_environment_id,omitempty"`
+	// ParentSessionID is set on forked child sessions; empty/omitted for roots.
+	ParentSessionID string `json:"parent_session_id,omitempty"`
+	// ForkID is a branch label on forked sessions; empty/omitted for roots.
+	ForkID string `json:"fork_id,omitempty"`
 }
 
 // HostedAgentRun represents a single execution within a session.
@@ -352,18 +386,35 @@ type HostedAgentEvent struct {
 	At        Timestamp
 	Kind      HostedAgentEventKind
 	Payload   json.RawMessage
+
+	// SourceEventID is the native event id from the agent runtime before
+	// canonical mapping (Event.source_event_id). Empty when the runtime does
+	// not supply stable ids or the server does not forward it.
+	SourceEventID string
+	// SourceEventType is the native event type label from the agent runtime
+	// (e.g. codex's "item/agentMessage/delta"). Empty when not forwarded.
+	SourceEventType string
+	// SourceRaw is the exact native event bytes the in-sandbox adapter
+	// captured before canonical mapping (Event.source_raw) — for codex, one
+	// JSON-RPC frame as read off the app-server transport. Only present when
+	// the stream was opened with HostedAgentSessionStreamOptions.IncludeRaw
+	// and the server retained the bytes; base64 on the wire (JSON []byte).
+	SourceRaw []byte
 }
 
 // hostedAgentEventWire is the on-the-wire SPI canonical event envelope.
 type hostedAgentEventWire struct {
-	EventID   string               `json:"event_id"`
-	RunID     string               `json:"run_id"`
-	TenantID  string               `json:"tenant_id"`
-	SessionID string               `json:"session_id"`
-	Timestamp Timestamp            `json:"timestamp"`
-	Seq       uint64               `json:"seq"`
-	Type      HostedAgentEventKind `json:"type"`
-	Data      json.RawMessage      `json:"data"`
+	EventID         string               `json:"event_id"`
+	RunID           string               `json:"run_id"`
+	TenantID        string               `json:"tenant_id"`
+	SessionID       string               `json:"session_id"`
+	Timestamp       Timestamp            `json:"timestamp"`
+	Seq             uint64               `json:"seq"`
+	SourceEventID   string               `json:"source_event_id,omitempty"`
+	SourceEventType string               `json:"source_event_type,omitempty"`
+	SourceRaw       []byte               `json:"source_raw,omitempty"`
+	Type            HostedAgentEventKind `json:"type"`
+	Data            json.RawMessage      `json:"data"`
 }
 
 // UnmarshalJSON decodes the SPI canonical event wire shape.
@@ -379,6 +430,9 @@ func (e *HostedAgentEvent) UnmarshalJSON(b []byte) error {
 	e.At = w.Timestamp
 	e.Kind = w.Type
 	e.Payload = w.Data
+	e.SourceEventID = w.SourceEventID
+	e.SourceEventType = w.SourceEventType
+	e.SourceRaw = w.SourceRaw
 	if w.TenantID != "" {
 		id, err := strconv.ParseUint(w.TenantID, 10, 64)
 		if err != nil {
@@ -413,6 +467,8 @@ type HostedAgentSessionListOptions struct {
 	PageSize  int                      `url:"page_size,omitempty"`
 	Status    HostedAgentSessionStatus `url:"status,omitempty"`
 	Name      string                   `url:"name,omitempty"`
+	// ParentSessionID lists child (forked) sessions of the given parent.
+	ParentSessionID string `url:"parent_session_id,omitempty"`
 }
 
 // HostedAgentSessionsListResponse is returned by GET /v2/agents/sessions.
@@ -451,11 +507,28 @@ type HostedAgentSessionStreamOptions struct {
 	// Before. Zero leaves the server's default (200); the server also caps
 	// any request at its replay budget.
 	Limit int
+
+	// IncludeRaw asks the server to include each event's native source bytes
+	// (HostedAgentEvent.SourceRaw) alongside the canonical payload. Raw
+	// payloads meaningfully fatten every event, so this is opt-in; consumers
+	// that don't translate native protocols should leave it off.
+	IncludeRaw bool
 }
 
 // HostedAgentSendInputRequest is the body for POST .../input.
 type HostedAgentSendInputRequest struct {
 	Text string `json:"text"`
+
+	// SourceRaw optionally carries the client's exact native protocol frame
+	// this input was extracted from — for codex, the TUI's turn/start
+	// JSON-RPC message with its full params. The in-sandbox adapter uses it
+	// as the template for the turn it drives, so client intent beyond plain
+	// text (input items, model, effort, approval policy, ...) survives the
+	// text reduction. Only meaningful when the caller speaks the session's
+	// own agent protocol; Text stays required either way. Inbound
+	// counterpart of HostedAgentEvent.SourceRaw. Base64 on the wire per the
+	// proto bytes JSON mapping — encoding/json does that for []byte.
+	SourceRaw []byte `json:"source_raw,omitempty"`
 }
 
 // HostedAgentSendInputResponse is returned by POST .../input.
@@ -463,11 +536,73 @@ type HostedAgentSendInputResponse struct {
 	RunID string `json:"run_id"`
 }
 
+// HostedAgentRelayRequest is the body for POST .../request: one native
+// agent-protocol request frame, forwarded to the session's agent verbatim.
+//
+// Where SendInput carries the one message with a canonical meaning ("the user
+// said something"), this carries everything else a client that speaks the
+// session's own protocol needs to ask — for codex, the requests behind
+// interrupts, slash commands, and model pickers. The control plane never
+// parses the frame; only the in-sandbox adapter decides what is safe to
+// forward.
+type HostedAgentRelayRequest struct {
+	// SourceRaw is the caller's native protocol request frame — for codex, a
+	// single JSON-RPC request object carrying the caller's own id. Named to
+	// match SendInput's field: both mean "my own frame, verbatim". Base64 on
+	// the wire per the proto bytes JSON mapping.
+	SourceRaw []byte `json:"source_raw"`
+}
+
+// HostedAgentRelayResponse is the reply to POST .../request.
+type HostedAgentRelayResponse struct {
+	// SourceRaw is the agent's reply frame, addressed to the caller's own
+	// request id but otherwise verbatim. A protocol-level failure (a JSON-RPC
+	// error object) is a normal reply and arrives here rather than as an HTTP
+	// error.
+	//
+	// Empty means the in-sandbox adapter declined to forward the method.
+	// Callers must answer their own caller on that case rather than waiting
+	// for something that will not come.
+	SourceRaw []byte `json:"source_raw,omitempty"`
+}
+
 // HostedAgentResolveHITLRequest is the body for POST .../hitl/{requestID}.
 type HostedAgentResolveHITLRequest struct {
 	Outcome HostedAgentHITLOutcome      `json:"outcome"`
 	Reason  string                      `json:"reason,omitempty"`
 	Source  HostedAgentResolutionSource `json:"source,omitempty"`
+
+	// SourceRaw is the client's reply in the agent's own protocol, forwarded
+	// to the in-sandbox agent untouched. It carries what Outcome cannot: an
+	// elicitation's content, a tool's requested input, a scope beyond this one
+	// call. Outcome stays required alongside it — it is what the audit trail
+	// records, and what the agent falls back to when this is absent.
+	SourceRaw []byte `json:"source_raw,omitempty"`
+}
+
+// HostedAgentProviderAuthStart is returned by POST /v2/agents/auth/{provider}.
+// Status is "pending" when the user must still authorize in a browser
+// (ConnectURL/PollURL/VerificationCode are set), or "success" when the team is
+// already connected (those fields are empty). It is a free-form connect-flow
+// status, distinct from the HostedAgentProviderAuthState session field. The
+// authorization handle is never exposed: tokens are exchanged server-side at
+// session time.
+type HostedAgentProviderAuthStart struct {
+	Provider         string     `json:"provider"`
+	Status           string     `json:"status"`
+	ConnectURL       string     `json:"connect_url,omitempty"`
+	PollURL          string     `json:"poll_url,omitempty"`
+	VerificationCode string     `json:"verification_code,omitempty"`
+	ExpiresAt        *Timestamp `json:"expires_at,omitempty"`
+}
+
+// HostedAgentProviderAuthPoll is returned by GET
+// /v2/agents/auth/{provider}/poll. It reports only whether authorization has
+// completed ("pending" or "success"); no secret is returned.
+type HostedAgentProviderAuthPoll struct {
+	Provider  string     `json:"provider"`
+	Status    string     `json:"status"`
+	ExpiresAt *Timestamp `json:"expires_at,omitempty"`
 }
 
 // HostedAgentSandboxExecRequest is the body for POST .../sandbox/exec.
@@ -779,6 +914,7 @@ func (s *HostedAgentsServiceOp) StreamSession(ctx context.Context, sessionID str
 	cursor := ""
 	before := ""
 	limit := 0
+	includeRaw := false
 	if opt != nil {
 		// The server answers this combination with a 400; rejecting it here
 		// spends no round trip to learn the same thing.
@@ -788,11 +924,12 @@ func (s *HostedAgentsServiceOp) StreamSession(ctx context.Context, sessionID str
 		cursor = opt.ReplayFrom
 		before = opt.Before
 		limit = opt.Limit
+		includeRaw = opt.IncludeRaw
 	}
 
 	path := fmt.Sprintf(hostedAgentSessionEventsPath, sessionID)
+	q := url.Values{}
 	if replayOnly {
-		q := url.Values{}
 		q.Set("replay_only", "true")
 		if cursor != "" {
 			q.Set("replay_from", cursor)
@@ -803,7 +940,12 @@ func (s *HostedAgentsServiceOp) StreamSession(ctx context.Context, sessionID str
 		if limit > 0 {
 			q.Set("limit", strconv.Itoa(limit))
 		}
-		path += "?" + q.Encode()
+	}
+	if includeRaw {
+		q.Set("include_raw", "true")
+	}
+	if encoded := q.Encode(); encoded != "" {
+		path += "?" + encoded
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -853,6 +995,30 @@ func (s *HostedAgentsServiceOp) SendInput(ctx context.Context, sessionID string,
 	return root, resp, nil
 }
 
+// RelayRequest forwards one native agent-protocol request frame to the
+// session's agent and returns its reply verbatim. Blocks on the agent, so it
+// is slower than the other session calls; an empty reply means the in-sandbox
+// adapter declined the method.
+func (s *HostedAgentsServiceOp) RelayRequest(ctx context.Context, sessionID string, body *HostedAgentRelayRequest) (*HostedAgentRelayResponse, *Response, error) {
+	if sessionID == "" {
+		return nil, nil, errors.New("hosted agents: session id is required")
+	}
+	if body == nil || len(body.SourceRaw) == 0 {
+		return nil, nil, errors.New("hosted agents: source_raw is required")
+	}
+	path := fmt.Sprintf(hostedAgentSessionRequestPath, sessionID)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, body)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(HostedAgentRelayResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
 // ResolveHITL submits a human-in-the-loop decision. The API returns HTTP 204 on success.
 func (s *HostedAgentsServiceOp) ResolveHITL(ctx context.Context, sessionID, requestID string, body *HostedAgentResolveHITLRequest) (*Response, error) {
 	if sessionID == "" {
@@ -873,6 +1039,52 @@ func (s *HostedAgentsServiceOp) ResolveHITL(ctx context.Context, sessionID, requ
 		return nil, err
 	}
 	return s.client.Do(ctx, req, nil)
+}
+
+// StartProviderAuth begins (or resumes) the team-scoped connect flow for an
+// external provider. The server derives the team from the authenticated
+// principal, so the POST carries an empty JSON object body.
+func (s *HostedAgentsServiceOp) StartProviderAuth(ctx context.Context, provider string) (*HostedAgentProviderAuthStart, *Response, error) {
+	if provider == "" {
+		return nil, nil, errors.New("hosted agents: provider is required")
+	}
+	path := fmt.Sprintf(hostedAgentProviderAuthPath, provider)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, struct{}{})
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(HostedAgentProviderAuthStart)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// PollProviderAuth checks whether a pending connect link has been authorized.
+// pollURL is the PollURL returned by StartProviderAuth; it is forwarded to the
+// server as the poll_url query parameter.
+func (s *HostedAgentsServiceOp) PollProviderAuth(ctx context.Context, provider, pollURL string) (*HostedAgentProviderAuthPoll, *Response, error) {
+	if provider == "" {
+		return nil, nil, errors.New("hosted agents: provider is required")
+	}
+	if pollURL == "" {
+		return nil, nil, errors.New("hosted agents: poll url is required")
+	}
+	path := fmt.Sprintf(hostedAgentProviderAuthPollPath, provider)
+	q := url.Values{}
+	q.Set("poll_url", pollURL)
+	path += "?" + q.Encode()
+	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(HostedAgentProviderAuthPoll)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
 }
 
 // ExecInSandbox runs a command inside the session sandbox.

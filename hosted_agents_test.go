@@ -2,6 +2,7 @@ package godo
 
 import (
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -469,6 +470,149 @@ func TestHostedAgents_ResolveHITL(t *testing.T) {
 	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
 }
 
+// TestHostedAgents_SendInput_CarriesNativeFrame pins that a caller speaking the
+// session's own protocol can send the frame its text came from, and that Text
+// still rides alongside it for every consumer that reads only the canonical
+// field.
+func TestHostedAgents_SendInput_CarriesNativeFrame(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const frame = `{"jsonrpc":"2.0","method":"turn/start","params":{"model":"gpt-5","input":[{"type":"text","text":"fix the failing test"}]}}`
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/input", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		// Bytes are base64 on the wire, per the proto JSON mapping.
+		assert.Contains(t, string(raw), base64.StdEncoding.EncodeToString([]byte(frame)))
+
+		var body HostedAgentSendInputRequest
+		require.NoError(t, json.Unmarshal(raw, &body))
+		assert.Equal(t, "fix the failing test", body.Text)
+		assert.Equal(t, frame, string(body.SourceRaw))
+		fmt.Fprint(w, `{"run_id":"run-001"}`)
+	})
+
+	got, _, err := client.HostedAgents.SendInput(ctx, "sess-abc123", &HostedAgentSendInputRequest{
+		Text:      "fix the failing test",
+		SourceRaw: []byte(frame),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "run-001", got.RunID)
+}
+
+// TestHostedAgents_SendInput_OmitsNativeFrameWhenUnset keeps the field off the
+// wire for every caller that does not speak the agent's protocol.
+func TestHostedAgents_SendInput_OmitsNativeFrameWhenUnset(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/input", func(w http.ResponseWriter, r *http.Request) {
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.NotContains(t, string(raw), "source_raw")
+		fmt.Fprint(w, `{"run_id":"run-001"}`)
+	})
+
+	_, _, err := client.HostedAgents.SendInput(ctx, "sess-abc123", &HostedAgentSendInputRequest{
+		Text: "hello",
+	})
+	require.NoError(t, err)
+}
+
+// TestHostedAgents_ResolveHITL_CarriesNativeReply pins the resolve-side raw
+// field: the client answers in the agent's own protocol, and Outcome still
+// rides along as the coarse verdict the audit trail records.
+func TestHostedAgents_ResolveHITL_CarriesNativeReply(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const reply = `{"id":7,"result":{"action":"accept","content":{"answer":"yes"}}}`
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/hitl/req-001", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body HostedAgentResolveHITLRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, HostedAgentHITLOutcomeApprove, body.Outcome,
+			"outcome stays required alongside the native reply")
+		assert.Equal(t, reply, string(body.SourceRaw))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	resp, err := client.HostedAgents.ResolveHITL(ctx, "sess-abc123", "req-001", &HostedAgentResolveHITLRequest{
+		Outcome:   HostedAgentHITLOutcomeApprove,
+		SourceRaw: []byte(reply),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+}
+
+func TestHostedAgents_RelayRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const (
+		request = `{"jsonrpc":"2.0","id":3,"method":"turn/interrupt","params":{"threadId":"th-1"}}`
+		reply   = `{"jsonrpc":"2.0","id":3,"result":{}}`
+	)
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body HostedAgentRelayRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, request, string(body.SourceRaw))
+		fmt.Fprintf(w, `{"source_raw":%q}`, base64.StdEncoding.EncodeToString([]byte(reply)))
+	})
+
+	got, resp, err := client.HostedAgents.RelayRequest(ctx, "sess-abc123", &HostedAgentRelayRequest{
+		SourceRaw: []byte(request),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, reply, string(got.SourceRaw),
+		"the agent's reply comes back verbatim")
+}
+
+// TestHostedAgents_RelayRequest_ProtocolErrorIsANormalReply: a JSON-RPC error
+// object is the agent answering, not an HTTP failure, so it arrives in the
+// reply rather than as an error.
+func TestHostedAgents_RelayRequest_ProtocolErrorIsANormalReply(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const rpcErr = `{"jsonrpc":"2.0","id":4,"error":{"code":-32601,"message":"method not found"}}`
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `{"source_raw":%q}`, base64.StdEncoding.EncodeToString([]byte(rpcErr)))
+	})
+
+	got, _, err := client.HostedAgents.RelayRequest(ctx, "sess-abc123", &HostedAgentRelayRequest{
+		SourceRaw: []byte(`{"jsonrpc":"2.0","id":4,"method":"nope"}`),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, rpcErr, string(got.SourceRaw))
+}
+
+// TestHostedAgents_RelayRequest_DeclinedMethodYieldsEmptyReply: the adapter
+// refusing to forward a method is reported as an empty reply, which callers
+// must distinguish from an answer.
+func TestHostedAgents_RelayRequest_DeclinedMethodYieldsEmptyReply(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{}`)
+	})
+
+	got, _, err := client.HostedAgents.RelayRequest(ctx, "sess-abc123", &HostedAgentRelayRequest{
+		SourceRaw: []byte(`{"jsonrpc":"2.0","id":5,"method":"thread/close"}`),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Empty(t, got.SourceRaw)
+}
+
 func TestHostedAgents_StreamSession(t *testing.T) {
 	setup()
 	defer teardown()
@@ -526,6 +670,62 @@ func TestHostedAgentEvent_UnmarshalSPIWire(t *testing.T) {
 	assert.Equal(t, HostedAgentEventKindTokenChunk, ev.Kind)
 	assert.False(t, ev.At.IsZero())
 	assert.JSONEq(t, `{"text":"Paris"}`, string(ev.Payload))
+
+	assert.Empty(t, ev.SourceRaw, "absent source fields decode to zero, not an error")
+	assert.Empty(t, ev.SourceEventID)
+	assert.Empty(t, ev.SourceEventType)
+}
+
+// TestHostedAgentEvent_UnmarshalSPIWire_SourceFields pins the native-provenance
+// fields: the runtime's own event id and type label, and the exact pre-mapping
+// bytes (base64 on the wire).
+func TestHostedAgentEvent_UnmarshalSPIWire_SourceFields(t *testing.T) {
+	const native = `{"jsonrpc":"2.0","method":"item/agentMessage/delta","params":{"delta":"Paris"}}`
+
+	frame := fmt.Sprintf(
+		`{"event_id":"ev-9","run_id":"run-7","tenant_id":"120","session_id":"sess-1","timestamp":"2026-06-05T12:56:24Z","seq":3,"type":"run.token_delta","data":{"text":"Paris"},"source_event_id":"native-1","source_event_type":"item/agentMessage/delta","source_raw":%q}`,
+		base64.StdEncoding.EncodeToString([]byte(native)),
+	)
+
+	var ev HostedAgentEvent
+	require.NoError(t, json.Unmarshal([]byte(frame), &ev))
+
+	assert.Equal(t, "native-1", ev.SourceEventID)
+	assert.Equal(t, "item/agentMessage/delta", ev.SourceEventType)
+	assert.Equal(t, native, string(ev.SourceRaw))
+	// The canonical fields are unaffected by the presence of raw.
+	assert.Equal(t, HostedAgentEventKindTokenChunk, ev.Kind)
+	assert.JSONEq(t, `{"text":"Paris"}`, string(ev.Payload))
+}
+
+func TestHostedAgents_StreamSession_IncludeRaw(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const native = `{"jsonrpc":"2.0","method":"item/agentMessage/delta","params":{"delta":"hello"}}`
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "true", r.URL.Query().Get("include_raw"))
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprint(w, ": connected\n\n")
+		fmt.Fprintf(w,
+			"id: ev-1\nevent: run.token_delta\ndata: {\"event_id\":\"ev-1\",\"run_id\":\"run-1\",\"tenant_id\":\"42\",\"session_id\":\"sess-abc123\",\"timestamp\":\"2026-03-01T12:01:00Z\",\"seq\":1,\"type\":\"run.token_delta\",\"data\":{\"text\":\"hello\"},\"source_event_type\":\"item/agentMessage/delta\",\"source_raw\":%q}\n\n",
+			base64.StdEncoding.EncodeToString([]byte(native)),
+		)
+	})
+
+	stream, _, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		IncludeRaw: true,
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+
+	require.True(t, stream.Next())
+	ev := stream.Current()
+	assert.Equal(t, native, string(ev.SourceRaw))
+	assert.Equal(t, "item/agentMessage/delta", ev.SourceEventType)
+	assert.NoError(t, stream.Err())
 }
 
 func TestHostedAgents_ListSessions_PageToken(t *testing.T) {
@@ -729,6 +929,7 @@ func TestHostedAgents_StreamSession_NoPagingParamsWhenUnset(t *testing.T) {
 		q := r.URL.Query()
 		assert.False(t, q.Has("before"))
 		assert.False(t, q.Has("limit"))
+		assert.False(t, q.Has("include_raw"))
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprint(w, ": connected\n\n")
 	})
@@ -814,6 +1015,18 @@ func TestHostedAgents_ValidationErrors(t *testing.T) {
 
 	_, err = client.HostedAgents.ResolveHITL(ctx, "sess-abc123", "req-001", &HostedAgentResolveHITLRequest{})
 	require.EqualError(t, err, "hosted agents: outcome is required")
+
+	_, _, err = client.HostedAgents.RelayRequest(ctx, "", &HostedAgentRelayRequest{
+		SourceRaw: []byte(`{}`),
+	})
+	require.EqualError(t, err, "hosted agents: session id is required")
+
+	_, _, err = client.HostedAgents.RelayRequest(ctx, "sess-abc123", nil)
+	require.EqualError(t, err, "hosted agents: source_raw is required")
+
+	// A relay with nothing to relay would block on the agent for no reason.
+	_, _, err = client.HostedAgents.RelayRequest(ctx, "sess-abc123", &HostedAgentRelayRequest{})
+	require.EqualError(t, err, "hosted agents: source_raw is required")
 
 	_, _, err = client.HostedAgents.ExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{})
 	require.EqualError(t, err, "hosted agents: argv is required")
@@ -1243,4 +1456,83 @@ func TestHostedAgents_GetSession_EmptyBody(t *testing.T) {
 	_, resp, err := client.HostedAgents.GetSession(ctx, "sess-abc123")
 	require.EqualError(t, err, "hosted agents: get session returned no session")
 	require.NotNil(t, resp)
+}
+
+func TestHostedAgents_StartProviderAuth(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{
+			"provider": "github",
+			"status": "pending",
+			"connect_url": "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc",
+			"poll_url": "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def",
+			"verification_code": "k5r2cprq",
+			"expires_at": "2036-08-10T10:44:32Z"
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.StartProviderAuth(ctx, "github")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, &HostedAgentProviderAuthStart{
+		Provider:         "github",
+		Status:           "pending",
+		ConnectURL:       "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc",
+		PollURL:          "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def",
+		VerificationCode: "k5r2cprq",
+		ExpiresAt:        &Timestamp{Time: time.Date(2036, 8, 10, 10, 44, 32, 0, time.UTC)},
+	}, got)
+}
+
+func TestHostedAgents_StartProviderAuth_AlreadyConnected(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"provider":"github","status":"success"}`)
+	})
+
+	got, _, err := client.HostedAgents.StartProviderAuth(ctx, "github")
+	require.NoError(t, err)
+	assert.Equal(t, "success", got.Status)
+	assert.Empty(t, got.ConnectURL)
+	assert.Empty(t, got.PollURL)
+}
+
+func TestHostedAgents_PollProviderAuth(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github/poll", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def", r.URL.Query().Get("poll_url"))
+		fmt.Fprint(w, `{"provider":"github","status":"success","expires_at":"2036-08-10T10:44:32Z"}`)
+	})
+
+	got, resp, err := client.HostedAgents.PollProviderAuth(ctx, "github", "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, &HostedAgentProviderAuthPoll{
+		Provider:  "github",
+		Status:    "success",
+		ExpiresAt: &Timestamp{Time: time.Date(2036, 8, 10, 10, 44, 32, 0, time.UTC)},
+	}, got)
+}
+
+func TestHostedAgents_ProviderAuth_RequiredArgs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.StartProviderAuth(ctx, "")
+	require.EqualError(t, err, "hosted agents: provider is required")
+
+	_, _, err = client.HostedAgents.PollProviderAuth(ctx, "", "https://example.com/poll")
+	require.EqualError(t, err, "hosted agents: provider is required")
+
+	_, _, err = client.HostedAgents.PollProviderAuth(ctx, "github", "")
+	require.EqualError(t, err, "hosted agents: poll url is required")
 }
