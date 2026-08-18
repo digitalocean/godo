@@ -350,6 +350,11 @@ type HostedAgentSession struct {
 	ParentSessionID string `json:"parent_session_id,omitempty"`
 	// ForkID is a branch label on forked sessions; empty/omitted for roots.
 	ForkID string `json:"fork_id,omitempty"`
+	// ConfigID is the durable Agent Config UUID the session was created from
+	// (inline manifests persist a config too, named after the session).
+	// Returned on create/get/list; omitted for sessions created before config
+	// references were stored.
+	ConfigID string `json:"config_id,omitempty"`
 }
 
 // HostedAgentRun represents a single execution within a session.

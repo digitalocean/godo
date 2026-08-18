@@ -118,8 +118,9 @@ func (s *HostedAgentsServiceOp) GetAgentConfig(ctx context.Context, configID str
 	return root.Config, resp, nil
 }
 
-// CreateAgentConfig creates an immutable Agent Config. When the manifest
-// declares secret slots, Secrets / OAuthAssignments must cover them.
+// CreateAgentConfig creates an immutable Agent Config from a name and
+// agents.yaml. Secret values belong in spec.secrets[].value inside the
+// manifest, not as separate request fields.
 func (s *HostedAgentsServiceOp) CreateAgentConfig(ctx context.Context, create *HostedAgentConfigCreateRequest) (*HostedAgentConfig, *Response, error) {
 	if create == nil {
 		return nil, nil, errors.New("hosted agents: create request is required")

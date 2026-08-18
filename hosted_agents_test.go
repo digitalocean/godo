@@ -302,7 +302,8 @@ func TestHostedAgents_CreateSessionFromConfig(t *testing.T) {
 				"agent_kind": "AGENT_KIND_OPENCODE",
 				"status": "SESSION_STATUS_PROVISIONING",
 				"created_at": "2026-08-01T12:00:00Z",
-				"last_event_at": "2026-08-01T12:00:00Z"
+				"last_event_at": "2026-08-01T12:00:00Z",
+				"config_id": "019fb39c-14d9-7080-933e-b9b90e25acda"
 			}
 		}`)
 	})
@@ -316,6 +317,7 @@ func TestHostedAgents_CreateSessionFromConfig(t *testing.T) {
 	require.NotNil(t, session)
 	assert.Equal(t, "sess-cfg", session.SessionID)
 	assert.Equal(t, "session-from-config", session.Name)
+	assert.Equal(t, "019fb39c-14d9-7080-933e-b9b90e25acda", session.ConfigID)
 }
 
 func TestHostedAgents_CreateSessionFromConfig_Validation(t *testing.T) {
