@@ -279,6 +279,59 @@ func TestHostedAgents_CreateSessionFromManifest_Empty(t *testing.T) {
 	require.EqualError(t, err, "hosted agents: manifest is required")
 }
 
+func TestHostedAgents_CreateSessionFromConfig(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		// The config-backed path is selected by a JSON body carrying only
+		// name + config_id.
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+		var body HostedAgentSessionFromConfigRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "session-from-config", body.Name)
+		assert.Equal(t, "019fb39c-14d9-7080-933e-b9b90e25acda", body.ConfigID)
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-cfg",
+				"name": "session-from-config",
+				"team_id": 42,
+				"agent_kind": "AGENT_KIND_OPENCODE",
+				"status": "SESSION_STATUS_PROVISIONING",
+				"created_at": "2026-08-01T12:00:00Z",
+				"last_event_at": "2026-08-01T12:00:00Z"
+			}
+		}`)
+	})
+
+	session, resp, err := client.HostedAgents.CreateSessionFromConfig(ctx, &HostedAgentSessionFromConfigRequest{
+		Name:     "session-from-config",
+		ConfigID: "019fb39c-14d9-7080-933e-b9b90e25acda",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.NotNil(t, session)
+	assert.Equal(t, "sess-cfg", session.SessionID)
+	assert.Equal(t, "session-from-config", session.Name)
+}
+
+func TestHostedAgents_CreateSessionFromConfig_Validation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.CreateSessionFromConfig(ctx, nil)
+	require.Error(t, err)
+
+	_, _, err = client.HostedAgents.CreateSessionFromConfig(ctx, &HostedAgentSessionFromConfigRequest{ConfigID: "019fb39c-14d9-7080-933e-b9b90e25acda"})
+	require.Error(t, err)
+
+	_, _, err = client.HostedAgents.CreateSessionFromConfig(ctx, &HostedAgentSessionFromConfigRequest{Name: "session-from-config"})
+	require.Error(t, err)
+}
+
 func TestHostedAgents_CreateSessionFromManifest_OpenAISessionID(t *testing.T) {
 	setup()
 	defer teardown()
