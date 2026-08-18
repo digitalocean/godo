@@ -622,12 +622,16 @@ func TestHostedAgents_StreamSession(t *testing.T) {
 	// `timestamp`, and the team id rides as a decimal string in `tenant_id`.
 	const eventJSON = `{"event_id":"ev-1","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":1,"type":"run.token_delta","data":{"text":"hello"}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+	// The live stream is served by the data plane at .../events, and the resume
+	// cursor rides in the standard Last-Event-ID header rather than a query
+	// parameter.
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "text/event-stream", r.Header.Get("Accept"))
-		assert.Equal(t, "ev-0", r.URL.Query().Get("replay_from"))
+		assert.Equal(t, "ev-0", r.Header.Get("Last-Event-ID"))
+		assert.Empty(t, r.URL.RawQuery)
 		w.Header().Set("Content-Type", "text/event-stream")
-		fmt.Fprintf(w, ": connected\n\n")
+		fmt.Fprintf(w, ": keepalive\n\n")
 		fmt.Fprintf(w, "id: ev-1\nevent: run.token_delta\ndata: %s\n\n", eventJSON)
 	})
 
@@ -700,7 +704,7 @@ func TestHostedAgents_StreamSession_IncludeRaw(t *testing.T) {
 
 	const native = `{"jsonrpc":"2.0","method":"item/agentMessage/delta","params":{"delta":"hello"}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "true", r.URL.Query().Get("include_raw"))
 		w.Header().Set("Content-Type", "text/event-stream")
@@ -784,24 +788,76 @@ func TestHostedAgents_ExecInSandbox(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+// TestHostedAgents_StreamSession_ReplayOnly pins the history lane on the same
+// data-plane .../events endpoint as the live lane, selected by ?replay_only=true.
+// The cursor moves to the replay_from query parameter here: on a history read it
+// is an explicit pagination cursor, not the Last-Event-ID resume hint.
 func TestHostedAgents_StreamSession_ReplayOnly(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "true", r.URL.Query().Get("replay_only"))
+		assert.Equal(t, "ev-0", r.URL.Query().Get("replay_from"))
+		assert.Empty(t, r.Header.Get("Last-Event-ID"))
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprint(w, ": replay only\n\n")
 	})
 
 	stream, resp, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		ReplayFrom: "ev-0",
 		ReplayOnly: true,
 	})
 	require.NoError(t, err)
 	defer stream.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.False(t, stream.Next())
+}
+
+// TestHostedAgents_StreamSession_ReplayOnly_HistoryThenEOF covers what a
+// replay-only read is for: the stored history arrives as ordinary events and the
+// stream then ends on its own, which is what lets a history reader exit instead
+// of blocking on a connection that stays open forever.
+func TestHostedAgents_StreamSession_ReplayOnly_HistoryThenEOF(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const (
+		catchingUp = `{"event_id":"","run_id":"","tenant_id":"0","session_id":"sess-abc123","timestamp":"2026-03-01T12:00:00Z","seq":0,"type":"stream.state","data":{"state":"catching_up","cursor":""}}`
+		first      = `{"event_id":"ev-1","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":1,"type":"run.token_delta","data":{"text":"hello"}}`
+		second     = `{"event_id":"ev-2","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:02:00Z","seq":2,"type":"run.completed","data":{}}`
+	)
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "true", r.URL.Query().Get("replay_only"))
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprintf(w, "event: stream.state\ndata: %s\n\n", catchingUp)
+		fmt.Fprintf(w, "id: ev-1\nevent: run.token_delta\ndata: %s\n\n", first)
+		fmt.Fprintf(w, "id: ev-2\nevent: run.completed\ndata: %s\n\n", second)
+	})
+
+	stream, _, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", &HostedAgentSessionStreamOptions{
+		ReplayOnly: true,
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+
+	// A history read opens with catching_up and never reaches live.
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentEventKindStreamState, stream.Current().Kind)
+
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentEventKindTokenChunk, stream.Current().Kind)
+	assert.Equal(t, "ev-1", stream.Current().EventID)
+
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentEventKindRunCompleted, stream.Current().Kind)
+	assert.Equal(t, "ev-2", stream.Current().EventID)
+
+	assert.False(t, stream.Next(), "replay-only stream must end after the last stored event")
+	assert.NoError(t, stream.Err())
 }
 
 // A history page request carries before/limit alongside replay_only, and the
@@ -813,7 +869,7 @@ func TestHostedAgents_StreamSession_HistoryPage(t *testing.T) {
 
 	const eventJSON = `{"event_id":"ev-7","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":7,"type":"run.token_delta","data":{"text":"older"}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		q := r.URL.Query()
 		assert.Equal(t, "true", q.Get("replay_only"))
@@ -848,7 +904,7 @@ func TestHostedAgents_StreamSession_HistoryPageHasMoreFalse(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprint(w, ": has_more=false\n\n")
 	})
@@ -869,7 +925,7 @@ func TestHostedAgents_StreamSession_NoPagingParamsWhenUnset(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/stream", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		assert.False(t, q.Has("before"))
 		assert.False(t, q.Has("limit"))
@@ -886,6 +942,42 @@ func TestHostedAgents_StreamSession_NoPagingParamsWhenUnset(t *testing.T) {
 
 	assert.False(t, stream.Next())
 	assert.False(t, stream.HasMore())
+}
+
+// TestHostedAgents_StreamSession_StreamState pins the data plane's transport
+// control frame. It arrives in the same canonical envelope as an agent event, so
+// it decodes through the same parser: callers identify it by Kind and skip it
+// rather than rendering it as session activity.
+func TestHostedAgents_StreamSession_StreamState(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const frame = `{"event_id":"","run_id":"","tenant_id":"0","session_id":"sess-abc123","timestamp":"2026-03-01T12:00:00Z","seq":0,"type":"stream.state","data":{"state":"live","cursor":""}}`
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprintf(w, "event: stream.state\ndata: %s\n\n", frame)
+	})
+
+	stream, _, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", nil)
+	require.NoError(t, err)
+	defer stream.Close()
+
+	require.True(t, stream.Next())
+	ev := stream.Current()
+	assert.Equal(t, HostedAgentEventKindStreamState, ev.Kind)
+	assert.Equal(t, "sess-abc123", ev.SessionID)
+	// A control frame is not a durable event, so it carries no event_id of its
+	// own and the server sends no `id:` line for it. (Per the SSE spec the
+	// reader's last-event-id buffer persists, so a control frame arriving after
+	// an event reports that event's id — never a new cursor position.)
+	assert.Empty(t, ev.EventID)
+
+	var state HostedAgentStreamState
+	require.NoError(t, json.Unmarshal(ev.Payload, &state))
+	assert.Equal(t, HostedAgentStreamStateLive, state.State)
+	assert.Empty(t, state.Cursor)
 }
 
 func TestHostedAgents_ValidationErrors(t *testing.T) {
