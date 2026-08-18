@@ -29,7 +29,6 @@ func main() {
 	fmt.Printf("session_id:   %s\n", session.SessionID)
 	fmt.Printf("status:       %s\n", session.Status)
 	fmt.Printf("agent_kind:   %s\n", session.AgentKind)
-	fmt.Printf("team_id:      %d\n", session.TeamID)
 	fmt.Printf("repo_hint:    %s\n", session.RepoHint)
 	fmt.Printf("created_at:   %s\n", session.CreatedAt)
 	fmt.Printf("last_event_at: %s\n", session.LastEventAt)
