@@ -2214,6 +2214,7 @@ func TestDatabases_GetFirewallRules(t *testing.T) {
 			Value:       "192.168.1.1",
 			UUID:        "deadbeef-dead-4aa5-beef-deadbeef347d",
 			ClusterUUID: "deadbeef-dead-4aa5-beef-deadbeef347d",
+			Description: "an IP address for local development",
 		},
 	}
 
@@ -2221,7 +2222,8 @@ func TestDatabases_GetFirewallRules(t *testing.T) {
 		"type": "ip_addr",
 		"value": "192.168.1.1",
 		"uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
-		"cluster_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d"
+		"cluster_uuid": "deadbeef-dead-4aa5-beef-deadbeef347d",
+		"description": "an IP address for local development"
 	}]} `
 
 	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
