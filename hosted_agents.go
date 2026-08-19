@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -62,6 +63,16 @@ const (
 	// (e.g. Cloudflare). Format: DOWSSHA1 + 64 lowercase hex + '\n' = 73 bytes.
 	workspaceDownloadFooterPrefix = "DOWSSHA1"
 	workspaceDownloadFooterLen    = len(workspaceDownloadFooterPrefix) + 64 + 1
+
+	// workspaceUploadExpectContinueMinBytes is the payload size at which
+	// UploadWorkspace switches to an Expect: 100-continue handshake. OHS caps
+	// upload size and limits concurrent transfers, so it can refuse a request
+	// from its headers alone; waiting for that verdict keeps a doomed payload
+	// off the wire entirely. Below this size the extra round trip costs more
+	// than the bytes it saves. If an intermediary ignores the handshake the
+	// transport falls back to sending the body after ExpectContinueTimeout, so
+	// this only ever delays an upload, never fails one.
+	workspaceUploadExpectContinueMinBytes = 1 << 20
 )
 
 // HostedAgentsService exposes the DigitalOcean Hosted Agents session API
@@ -645,6 +656,16 @@ type HostedAgentWorkspaceUploadRequest struct {
 	ContentSHA256 string
 	// Body is the raw file or tar bytes to upload. Required.
 	Body io.Reader
+	// ContentLength is the payload size in bytes. Optional: when zero it is
+	// derived from Body if Body is an *os.File or an in-memory reader. Set it
+	// explicitly for any other reader whose size is known in advance. Declaring
+	// the size lets OHS reject an oversize or unservable upload before the
+	// payload is transmitted; without it the request is sent chunked and the
+	// caller pays for the whole transfer before learning it was refused.
+	//
+	// A value set here must match exactly what Body yields. The transport
+	// enforces the promise and fails the request on a mismatch.
+	ContentLength int64
 }
 
 // HostedAgentWorkspaceUploadResponse is returned by UploadWorkspace.
@@ -1148,6 +1169,36 @@ func (s *HostedAgentsServiceOp) ExecInSandbox(ctx context.Context, sessionID str
 	return root, resp, nil
 }
 
+// uploadBodyLength reports how many bytes input.Body will yield, or 0 when that
+// cannot be known without consuming it. An explicit ContentLength always wins.
+func uploadBodyLength(input *HostedAgentWorkspaceUploadRequest) int64 {
+	if input.ContentLength > 0 {
+		return input.ContentLength
+	}
+
+	switch body := input.Body.(type) {
+	case *os.File:
+		// A size is only meaningful for a regular file, and only the bytes from
+		// the current offset onward are going to be sent.
+		st, err := body.Stat()
+		if err != nil || !st.Mode().IsRegular() {
+			return 0
+		}
+		off, err := body.Seek(0, io.SeekCurrent)
+		if err != nil || off > st.Size() {
+			return 0
+		}
+		return st.Size() - off
+	case interface{ Len() int }:
+		// Covers *bytes.Reader, *bytes.Buffer and *strings.Reader, which report
+		// their unread remainder. http.NewRequest already measures those three;
+		// this is a backstop for equivalent readers it does not recognise.
+		return int64(body.Len())
+	default:
+		return 0
+	}
+}
+
 // UploadWorkspace streams a file (or tar archive) into the session workspace.
 func (s *HostedAgentsServiceOp) UploadWorkspace(ctx context.Context, sessionID string, input *HostedAgentWorkspaceUploadRequest) (*HostedAgentWorkspaceUploadResponse, *Response, error) {
 	if sessionID == "" {
@@ -1184,6 +1235,17 @@ func (s *HostedAgentsServiceOp) UploadWorkspace(ctx context.Context, sessionID s
 	req.Header.Set("User-Agent", s.client.UserAgent)
 	if input.ContentSHA256 != "" {
 		req.Header.Set(workspaceContentSHA256Header, input.ContentSHA256)
+	}
+
+	// http.NewRequest derives Content-Length only for a few in-memory body
+	// types, so the *os.File callers typically pass would go out chunked. OHS
+	// cannot enforce its size cap or shed load on a body of undeclared length,
+	// so publish the size whenever it is knowable.
+	if n := uploadBodyLength(input); n > 0 {
+		req.ContentLength = n
+	}
+	if req.ContentLength >= workspaceUploadExpectContinueMinBytes {
+		req.Header.Set("Expect", "100-continue")
 	}
 
 	root := new(HostedAgentWorkspaceUploadResponse)
