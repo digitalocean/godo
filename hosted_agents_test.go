@@ -872,6 +872,34 @@ func TestHostedAgents_ExecInSandbox(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func TestHostedAgents_ListSandboxSizes(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sandbox/sizes", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Empty(t, r.URL.RawQuery)
+		fmt.Fprint(w, `{
+			"sizes": [
+				{"slug": "mv-1vcpu-2gb", "vcpus": 1, "memory_mb": 2048},
+				{"slug": "mv-2vcpu-4gb", "vcpus": 2, "memory_mb": 4096},
+				{"slug": "mv-8vcpu-16gb", "vcpus": 8, "memory_mb": 16384},
+				{"slug": "mv-16vcpu-32gb", "vcpus": 16, "memory_mb": 32768}
+			]
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.ListSandboxSizes(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, []HostedAgentSandboxSize{
+		{Slug: "mv-1vcpu-2gb", VCPUs: 1, MemoryMB: 2048},
+		{Slug: "mv-2vcpu-4gb", VCPUs: 2, MemoryMB: 4096},
+		{Slug: "mv-8vcpu-16gb", VCPUs: 8, MemoryMB: 16384},
+		{Slug: "mv-16vcpu-32gb", VCPUs: 16, MemoryMB: 32768},
+	}, got.Sizes)
+}
+
 // TestHostedAgents_StreamSession_ReplayOnly pins the history lane on the same
 // data-plane .../events endpoint as the live lane, selected by ?replay_only=true.
 // The cursor moves to the replay_from query parameter here: on a history read it
