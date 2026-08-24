@@ -102,6 +102,7 @@ type Client struct {
 	UptimeChecks        UptimeChecksService
 	VectorDBs           VectorDBsService
 	VPCs                VPCsService
+	Routes              RoutesService
 	PartnerAttachment   PartnerAttachmentService
 	GradientAI          GradientAIService
 	DedicatedInference  DedicatedInferenceService
@@ -348,6 +349,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.UptimeChecks = &UptimeChecksServiceOp{client: c}
 	c.VectorDBs = &VectorDBsServiceOp{client: c}
 	c.VPCs = &VPCsServiceOp{client: c}
+	c.Routes = &RoutesServiceOp{client: c}
 	c.PartnerAttachment = &PartnerAttachmentServiceOp{client: c}
 	c.GradientAI = &GradientAIServiceOp{client: c}
 	c.DedicatedInference = &DedicatedInferenceServiceOp{client: c}
