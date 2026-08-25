@@ -357,6 +357,34 @@ func TestHostedAgentTriggers_RotateSecret(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+// A non-nil options struct with RevokePrevious unset must be indistinguishable
+// on the wire from passing nil. This is what the `omitempty` tag buys, and
+// without it a caller building options programmatically would send
+// revoke_previous=false and depend on the server parsing it.
+func TestHostedAgentTriggers_RotateSecret_ExplicitFalseOmitsParam(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Empty(t, r.URL.RawQuery, "an unset RevokePrevious must put nothing on the wire")
+		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_expires_at":"2026-07-01T12:05:00Z"}`)
+	})
+
+	got, _, err := client.HostedAgentTriggers.RotateSecret(ctx, "trig-abc123", &HostedAgentTriggerRotateSecretOptions{})
+	require.NoError(t, err)
+	assert.Equal(t, "whsec_rotated", got.WebhookSecret)
+	assert.False(t, got.PreviousSecretRevoked)
+}
+
+func TestHostedAgentTriggers_RotateSecret_RequiresTriggerID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgentTriggers.RotateSecret(ctx, "", nil)
+	require.Error(t, err, "an empty id would POST to the collection path instead of a trigger")
+}
+
 func TestHostedAgentTriggers_RotateSecret_RevokePrevious(t *testing.T) {
 	setup()
 	defer teardown()
