@@ -403,6 +403,29 @@ func TestHostedAgentTriggers_RotateSecret_RevokePrevious(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+// The API sets exactly one of previous_secret_expires_at and
+// previous_secret_revoked. A response carrying neither should therefore not
+// happen — but if it does (an older server, a proxy dropping a field) the
+// decode must leave both at their zero values rather than letting a caller read
+// the missing expiry as proof of revocation. doctl renders these two fields as
+// "the old secret is dead" versus "it dies at T", so a wrong default here is an
+// operator being told a live secret is safe.
+func TestHostedAgentTriggers_RotateSecret_NeitherOutcomeField(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated"}`)
+	})
+
+	got, _, err := client.HostedAgentTriggers.RotateSecret(ctx, "trig-abc123", nil)
+	require.NoError(t, err)
+	assert.Equal(t, "whsec_rotated", got.WebhookSecret)
+	assert.Nil(t, got.PreviousSecretExpiresAt)
+	assert.False(t, got.PreviousSecretRevoked, "an absent field is not a revocation")
+}
+
 func TestHostedAgentTriggers_ListExecutions(t *testing.T) {
 	setup()
 	defer teardown()
