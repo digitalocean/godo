@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.205.0] - 2026-08-25
+
+- #1089 - @ddatta-do - feat : add routes endpoints
+- #1087 - @mishraishika24-pixel - hosted agents: remove team_id / tenant_id
+- #1086 - @gane5hvarma - Add Hosted Agents Agent Configs client + config-backed session create (MARSOHS-741)
+- #1072 - @logwolvy - hosted agents: read session events from the data-plane /events endpoint (stack on OHS_endpoints)
+- #1083 - @julia-ye - hosted agents: carry native protocol frames alongside the canonical surface
+- #1084 - @jkosanam - hosted agents: add provider OAuth connect endpoints
+
 ## [1.204.0] - 2026-08-10
 
 - #1080 - @nayanjd-do - Add constant to string match against volume capacity errors
