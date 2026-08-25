@@ -344,12 +344,34 @@ func TestHostedAgentTriggers_RotateSecret(t *testing.T) {
 
 	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated"}`)
+		assert.Empty(t, r.URL.Query().Get("revoke_previous"), "the default rotate must not ask for revocation")
+		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_expires_at":"2026-07-01T12:05:00Z"}`)
 	})
 
-	got, resp, err := client.HostedAgentTriggers.RotateSecret(ctx, "trig-abc123")
+	got, resp, err := client.HostedAgentTriggers.RotateSecret(ctx, "trig-abc123", nil)
 	require.NoError(t, err)
 	assert.Equal(t, "whsec_rotated", got.WebhookSecret)
+	require.NotNil(t, got.PreviousSecretExpiresAt)
+	assert.Equal(t, time.Date(2026, 7, 1, 12, 5, 0, 0, time.UTC), got.PreviousSecretExpiresAt.UTC())
+	assert.False(t, got.PreviousSecretRevoked)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgentTriggers_RotateSecret_RevokePrevious(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "true", r.URL.Query().Get("revoke_previous"))
+		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_revoked":true}`)
+	})
+
+	got, resp, err := client.HostedAgentTriggers.RotateSecret(ctx, "trig-abc123", &HostedAgentTriggerRotateSecretOptions{RevokePrevious: true})
+	require.NoError(t, err)
+	assert.Equal(t, "whsec_rotated", got.WebhookSecret)
+	assert.True(t, got.PreviousSecretRevoked)
+	assert.Nil(t, got.PreviousSecretExpiresAt, "there is no expiry to report when the old secret is already dead")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
