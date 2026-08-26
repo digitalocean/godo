@@ -344,7 +344,7 @@ func TestHostedAgentTriggers_RotateSecret(t *testing.T) {
 
 	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		assert.Empty(t, r.URL.Query().Get("revoke_previous"), "the default rotate must not ask for revocation")
+		assert.Empty(t, r.URL.Query().Get("grace_period_seconds"), "the default rotate must omit grace_period_seconds")
 		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_expires_at":"2026-07-01T12:05:00Z"}`)
 	})
 
@@ -357,17 +357,17 @@ func TestHostedAgentTriggers_RotateSecret(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-// A non-nil options struct with RevokePrevious unset must be indistinguishable
-// on the wire from passing nil. This is what the `omitempty` tag buys, and
-// without it a caller building options programmatically would send
-// revoke_previous=false and depend on the server parsing it.
-func TestHostedAgentTriggers_RotateSecret_ExplicitFalseOmitsParam(t *testing.T) {
+// A non-nil options struct with GracePeriodSeconds unset must be indistinguishable
+// on the wire from passing nil. This is what the `omitempty` tag on the pointer
+// buys, and without it a caller building options programmatically would send
+// grace_period_seconds=0 and revoke by accident.
+func TestHostedAgentTriggers_RotateSecret_NilGraceOmitsParam(t *testing.T) {
 	setup()
 	defer teardown()
 
 	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		assert.Empty(t, r.URL.RawQuery, "an unset RevokePrevious must put nothing on the wire")
+		assert.Empty(t, r.URL.RawQuery, "a nil GracePeriodSeconds must put nothing on the wire")
 		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_expires_at":"2026-07-01T12:05:00Z"}`)
 	})
 
@@ -385,22 +385,41 @@ func TestHostedAgentTriggers_RotateSecret_RequiresTriggerID(t *testing.T) {
 	require.Error(t, err, "an empty id would POST to the collection path instead of a trigger")
 }
 
-func TestHostedAgentTriggers_RotateSecret_RevokePrevious(t *testing.T) {
+func TestHostedAgentTriggers_RotateSecret_ZeroGraceRevokes(t *testing.T) {
 	setup()
 	defer teardown()
 
 	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		assert.Equal(t, "true", r.URL.Query().Get("revoke_previous"))
+		assert.Equal(t, "0", r.URL.Query().Get("grace_period_seconds"))
 		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_revoked":true}`)
 	})
 
-	got, resp, err := client.HostedAgentTriggers.RotateSecret(ctx, "trig-abc123", &HostedAgentTriggerRotateSecretOptions{RevokePrevious: true})
+	zero := 0
+	got, resp, err := client.HostedAgentTriggers.RotateSecret(ctx, "trig-abc123", &HostedAgentTriggerRotateSecretOptions{GracePeriodSeconds: &zero})
 	require.NoError(t, err)
 	assert.Equal(t, "whsec_rotated", got.WebhookSecret)
 	assert.True(t, got.PreviousSecretRevoked)
 	assert.Nil(t, got.PreviousSecretExpiresAt, "there is no expiry to report when the old secret is already dead")
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgentTriggers_RotateSecret_CustomGrace(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "90", r.URL.Query().Get("grace_period_seconds"))
+		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_expires_at":"2026-07-01T12:01:30Z"}`)
+	})
+
+	secs := 90
+	got, _, err := client.HostedAgentTriggers.RotateSecret(ctx, "trig-abc123", &HostedAgentTriggerRotateSecretOptions{GracePeriodSeconds: &secs})
+	require.NoError(t, err)
+	assert.Equal(t, "whsec_rotated", got.WebhookSecret)
+	require.NotNil(t, got.PreviousSecretExpiresAt)
+	assert.False(t, got.PreviousSecretRevoked)
 }
 
 // The API sets exactly one of previous_secret_expires_at and
