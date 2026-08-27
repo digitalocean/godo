@@ -50,10 +50,10 @@ const (
 type ScenarioSetSourceKind string
 
 const (
-	ScenarioSetSourceKindUnspecified    ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_UNSPECIFIED"
-	ScenarioSetSourceKindUserUpload     ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_USER_UPLOAD"
-	ScenarioSetSourceKindGoalGenerated  ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_GOAL_GENERATED"
-	ScenarioSetSourceKindLibrary        ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_LIBRARY"
+	ScenarioSetSourceKindUnspecified     ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_UNSPECIFIED"
+	ScenarioSetSourceKindUserUpload      ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_USER_UPLOAD"
+	ScenarioSetSourceKindGoalGenerated   ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_GOAL_GENERATED"
+	ScenarioSetSourceKindLibrary         ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_LIBRARY"
 	ScenarioSetSourceKindSignalGenerated ScenarioSetSourceKind = "SCENARIO_SET_SOURCE_KIND_SIGNAL_GENERATED"
 )
 
@@ -257,50 +257,50 @@ type SimulationScenarioResult struct {
 
 // SimulationRun is one execution of a scenario set against a candidate agent.
 type SimulationRun struct {
-	RunUUID                string                       `json:"run_uuid,omitempty"`
-	Name                   string                       `json:"name,omitempty"`
-	ScenarioSetUUID        string                       `json:"scenario_set_uuid,omitempty"`
-	AgentConfig            *CandidateAgentConfig        `json:"agent_config,omitempty"`
-	Status                 SimulationRunStatus          `json:"status,omitempty"`
-	UserSimulatorModelUUID string                       `json:"user_simulator_model_uuid,omitempty"`
-	JudgeModelUUID         string                       `json:"judge_model_uuid,omitempty"`
-	UserSimulatorConfig    map[string]interface{}       `json:"user_simulator_config,omitempty"`
-	ScenarioCount          uint32                       `json:"scenario_count,omitempty"`
-	TotalJourneys          uint32                       `json:"total_journeys,omitempty"`
-	JourneysFinished       uint32                       `json:"journeys_finished,omitempty"`
-	ResultSummary          *SimulationRunResultSummary  `json:"result_summary,omitempty"`
-	WorkflowUUID           string                       `json:"workflow_uuid,omitempty"`
-	ExplorationBudget      uint32                       `json:"exploration_budget,omitempty"`
-	MaxTurns               uint32                       `json:"max_turns,omitempty"`
-	FailureReason          string                       `json:"failure_reason,omitempty"`
-	CreatedAt              *Timestamp                   `json:"created_at,omitempty"`
-	UpdatedAt              *Timestamp                   `json:"updated_at,omitempty"`
-	DeletedAt              *Timestamp                   `json:"deleted_at,omitempty"`
-	UserSimulatorModelName string                       `json:"user_simulator_model_name,omitempty"`
-	JudgeModelName         string                       `json:"judge_model_name,omitempty"`
-	CreatedByUserID        string                       `json:"created_by_user_id,omitempty"`
-	CreatedByUserEmail     string                       `json:"created_by_user_email,omitempty"`
-	EvaluationRunUUID      string                       `json:"evaluation_run_uuid,omitempty"`
+	RunUUID                string                      `json:"run_uuid,omitempty"`
+	Name                   string                      `json:"name,omitempty"`
+	ScenarioSetUUID        string                      `json:"scenario_set_uuid,omitempty"`
+	AgentConfig            *CandidateAgentConfig       `json:"agent_config,omitempty"`
+	Status                 SimulationRunStatus         `json:"status,omitempty"`
+	UserSimulatorModelUUID string                      `json:"user_simulator_model_uuid,omitempty"`
+	JudgeModelUUID         string                      `json:"judge_model_uuid,omitempty"`
+	UserSimulatorConfig    map[string]interface{}      `json:"user_simulator_config,omitempty"`
+	ScenarioCount          uint32                      `json:"scenario_count,omitempty"`
+	TotalJourneys          uint32                      `json:"total_journeys,omitempty"`
+	JourneysFinished       uint32                      `json:"journeys_finished,omitempty"`
+	ResultSummary          *SimulationRunResultSummary `json:"result_summary,omitempty"`
+	WorkflowUUID           string                      `json:"workflow_uuid,omitempty"`
+	ExplorationBudget      uint32                      `json:"exploration_budget,omitempty"`
+	MaxTurns               uint32                      `json:"max_turns,omitempty"`
+	FailureReason          string                      `json:"failure_reason,omitempty"`
+	CreatedAt              *Timestamp                  `json:"created_at,omitempty"`
+	UpdatedAt              *Timestamp                  `json:"updated_at,omitempty"`
+	DeletedAt              *Timestamp                  `json:"deleted_at,omitempty"`
+	UserSimulatorModelName string                      `json:"user_simulator_model_name,omitempty"`
+	JudgeModelName         string                      `json:"judge_model_name,omitempty"`
+	CreatedByUserID        string                      `json:"created_by_user_id,omitempty"`
+	CreatedByUserEmail     string                      `json:"created_by_user_email,omitempty"`
+	EvaluationRunUUID      string                      `json:"evaluation_run_uuid,omitempty"`
 }
 
 // SimulationJourney is one independent execution within a simulation run.
 type SimulationJourney struct {
-	JourneyUUID            string                    `json:"journey_uuid,omitempty"`
-	RunUUID                string                    `json:"run_uuid,omitempty"`
-	ScenarioUUID           string                    `json:"scenario_uuid,omitempty"`
-	JourneyIndex           uint32                    `json:"journey_index,omitempty"`
-	SessionID              string                    `json:"session_id,omitempty"`
-	Status                 SimulationJourneyStatus   `json:"status,omitempty"`
-	Verdict                SimulationJourneyVerdict  `json:"verdict,omitempty"`
-	TrajectoryBucketName   string                    `json:"trajectory_bucket_name,omitempty"`
-	TrajectoryBucketRegion string                    `json:"trajectory_bucket_region,omitempty"`
-	TrajectorySpacesKey    string                    `json:"trajectory_spaces_key,omitempty"`
-	TokenUsage             *SimulationTokenUsage     `json:"token_usage,omitempty"`
-	DurationSec            string                    `json:"duration_sec,omitempty"`
-	JudgeReasoning         string                    `json:"judge_reasoning,omitempty"`
-	FailureReason          string                    `json:"failure_reason,omitempty"`
-	CreatedAt              *Timestamp                `json:"created_at,omitempty"`
-	UpdatedAt              *Timestamp                `json:"updated_at,omitempty"`
+	JourneyUUID            string                   `json:"journey_uuid,omitempty"`
+	RunUUID                string                   `json:"run_uuid,omitempty"`
+	ScenarioUUID           string                   `json:"scenario_uuid,omitempty"`
+	JourneyIndex           uint32                   `json:"journey_index,omitempty"`
+	SessionID              string                   `json:"session_id,omitempty"`
+	Status                 SimulationJourneyStatus  `json:"status,omitempty"`
+	Verdict                SimulationJourneyVerdict `json:"verdict,omitempty"`
+	TrajectoryBucketName   string                   `json:"trajectory_bucket_name,omitempty"`
+	TrajectoryBucketRegion string                   `json:"trajectory_bucket_region,omitempty"`
+	TrajectorySpacesKey    string                   `json:"trajectory_spaces_key,omitempty"`
+	TokenUsage             *SimulationTokenUsage    `json:"token_usage,omitempty"`
+	DurationSec            string                   `json:"duration_sec,omitempty"`
+	JudgeReasoning         string                   `json:"judge_reasoning,omitempty"`
+	FailureReason          string                   `json:"failure_reason,omitempty"`
+	CreatedAt              *Timestamp               `json:"created_at,omitempty"`
+	UpdatedAt              *Timestamp               `json:"updated_at,omitempty"`
 }
 
 // SimulationTrajectoryToolCall is a tool call recorded on an assistant turn.
@@ -321,13 +321,13 @@ type SimulationTrajectoryMessageTokens struct {
 
 // SimulationTrajectoryMessage is one user or assistant message in a trajectory.
 type SimulationTrajectoryMessage struct {
-	TurnIndex   uint32                              `json:"turn_index,omitempty"`
-	Role        string                              `json:"role,omitempty"`
-	Content     string                              `json:"content,omitempty"`
-	StartedAt   string                              `json:"started_at,omitempty"`
-	CompletedAt string                              `json:"completed_at,omitempty"`
-	ToolCalls   []*SimulationTrajectoryToolCall     `json:"tool_calls,omitempty"`
-	Tokens      *SimulationTrajectoryMessageTokens  `json:"tokens,omitempty"`
+	TurnIndex   uint32                             `json:"turn_index,omitempty"`
+	Role        string                             `json:"role,omitempty"`
+	Content     string                             `json:"content,omitempty"`
+	StartedAt   string                             `json:"started_at,omitempty"`
+	CompletedAt string                             `json:"completed_at,omitempty"`
+	ToolCalls   []*SimulationTrajectoryToolCall    `json:"tool_calls,omitempty"`
+	Tokens      *SimulationTrajectoryMessageTokens `json:"tokens,omitempty"`
 }
 
 // SimulationTrajectoryJudgeCriterion is a per-criterion judge evaluation.
@@ -339,43 +339,55 @@ type SimulationTrajectoryJudgeCriterion struct {
 
 // SimulationTrajectoryJudgeResult is judge output embedded in a trajectory.
 type SimulationTrajectoryJudgeResult struct {
-	Verdict          SimulationJourneyVerdict                 `json:"verdict,omitempty"`
-	Reasoning        string                                   `json:"reasoning,omitempty"`
-	CriteriaPassFail []*SimulationTrajectoryJudgeCriterion    `json:"criteria_pass_fail,omitempty"`
+	Verdict          SimulationJourneyVerdict              `json:"verdict,omitempty"`
+	Reasoning        string                                `json:"reasoning,omitempty"`
+	CriteriaPassFail []*SimulationTrajectoryJudgeCriterion `json:"criteria_pass_fail,omitempty"`
 }
 
-// SimulationEvaluationMetricResult is a per-metric score on a trajectory.
-type SimulationEvaluationMetricResult struct {
-	ErrorDescription string                    `json:"error_description,omitempty"`
-	MetricName       string                    `json:"metric_name,omitempty"`
-	MetricUUID       string                    `json:"metric_uuid,omitempty"`
-	MetricValueType  EvaluationMetricValueType `json:"metric_value_type,omitempty"`
-	NumberValue      float64                   `json:"number_value,omitempty"`
-	Reasoning        string                    `json:"reasoning,omitempty"`
-	Status           string                    `json:"status,omitempty"`
-	StringValue      string                    `json:"string_value,omitempty"`
+// EvaluationMetricResultStatus is the outcome of scoring a single metric.
+// Matches cthulhu EvaluationMetricResultStatus.
+type EvaluationMetricResultStatus string
+
+const (
+	EvaluationMetricResultStatusUnspecified EvaluationMetricResultStatus = "EVALUATION_METRIC_RESULT_STATUS_UNSPECIFIED"
+	EvaluationMetricResultStatusCompleted   EvaluationMetricResultStatus = "EVALUATION_METRIC_RESULT_STATUS_COMPLETED"
+	EvaluationMetricResultStatusFailed      EvaluationMetricResultStatus = "EVALUATION_METRIC_RESULT_STATUS_FAILED"
+	EvaluationMetricResultStatusSkipped     EvaluationMetricResultStatus = "EVALUATION_METRIC_RESULT_STATUS_SKIPPED"
+)
+
+// EvaluationMetricResult is a per-metric score and judge reasoning.
+// Matches cthulhu EvaluationMetricResult (used on simulation trajectories).
+type EvaluationMetricResult struct {
+	ErrorDescription string                       `json:"error_description,omitempty"`
+	MetricName       string                       `json:"metric_name,omitempty"`
+	MetricUUID       string                       `json:"metric_uuid,omitempty"`
+	MetricValueType  EvaluationMetricValueType    `json:"metric_value_type,omitempty"`
+	NumberValue      float64                      `json:"number_value,omitempty"`
+	Reasoning        string                       `json:"reasoning,omitempty"`
+	Status           EvaluationMetricResultStatus `json:"status,omitempty"`
+	StringValue      string                       `json:"string_value,omitempty"`
 }
 
 // SimulationTrajectory is the canonical trajectory JSON for one journey.
 type SimulationTrajectory struct {
-	AgentID            string                              `json:"agent_id,omitempty"`
-	CompletedAt        string                              `json:"completed_at,omitempty"`
-	DurationSec        string                              `json:"duration_sec,omitempty"`
-	EvaluationMetrics  []*SimulationEvaluationMetricResult `json:"evaluation_metrics,omitempty"`
-	FailureReason      string                              `json:"failure_reason,omitempty"`
-	JourneyIndex       uint32                              `json:"journey_index,omitempty"`
-	JourneyUUID        string                              `json:"journey_uuid,omitempty"`
-	Judge              *SimulationTrajectoryJudgeResult    `json:"judge,omitempty"`
-	MaxTurns           uint32                              `json:"max_turns,omitempty"`
-	Messages           []*SimulationTrajectoryMessage      `json:"messages,omitempty"`
-	RunUUID            string                              `json:"run_uuid,omitempty"`
-	ScenarioUUID       string                              `json:"scenario_uuid,omitempty"`
-	SessionID          string                              `json:"session_id,omitempty"`
-	StartedAt          string                              `json:"started_at,omitempty"`
-	Status             SimulationTrajectoryStatus          `json:"status,omitempty"`
-	TokenUsage         *SimulationTokenUsage               `json:"token_usage,omitempty"`
-	TurnCount          uint32                              `json:"turn_count,omitempty"`
-	Verdict            SimulationJourneyVerdict            `json:"verdict,omitempty"`
+	AgentID           string                           `json:"agent_id,omitempty"`
+	CompletedAt       string                           `json:"completed_at,omitempty"`
+	DurationSec       string                           `json:"duration_sec,omitempty"`
+	EvaluationMetrics []*EvaluationMetricResult        `json:"evaluation_metrics,omitempty"`
+	FailureReason     string                           `json:"failure_reason,omitempty"`
+	JourneyIndex      uint32                           `json:"journey_index,omitempty"`
+	JourneyUUID       string                           `json:"journey_uuid,omitempty"`
+	Judge             *SimulationTrajectoryJudgeResult `json:"judge,omitempty"`
+	MaxTurns          uint32                           `json:"max_turns,omitempty"`
+	Messages          []*SimulationTrajectoryMessage   `json:"messages,omitempty"`
+	RunUUID           string                           `json:"run_uuid,omitempty"`
+	ScenarioUUID      string                           `json:"scenario_uuid,omitempty"`
+	SessionID         string                           `json:"session_id,omitempty"`
+	StartedAt         string                           `json:"started_at,omitempty"`
+	Status            SimulationTrajectoryStatus       `json:"status,omitempty"`
+	TokenUsage        *SimulationTokenUsage            `json:"token_usage,omitempty"`
+	TurnCount         uint32                           `json:"turn_count,omitempty"`
+	Verdict           SimulationJourneyVerdict         `json:"verdict,omitempty"`
 }
 
 // CreateScenarioSetUploadPresignedURLsRequest requests presigned upload URLs for scenario set files.
@@ -391,8 +403,8 @@ type CreateScenarioSetUploadPresignedURLsResponse struct {
 
 // CreateScenarioSetRequest creates a scenario set from inline scenarios or an uploaded file.
 type CreateScenarioSetRequest struct {
-	Name                  string               `json:"name,omitempty"`
-	Scenarios             []*Scenario          `json:"scenarios,omitempty"`
+	Name                  string                `json:"name,omitempty"`
+	Scenarios             []*Scenario           `json:"scenarios,omitempty"`
 	FileUploadScenarioSet *FileUploadDataSource `json:"file_upload_scenario_set,omitempty"`
 }
 
@@ -419,15 +431,15 @@ type CreateScenarioSetFromLibraryRequest struct {
 
 // CreateSimulationRunRequest creates a simulation run.
 type CreateSimulationRunRequest struct {
-	ScenarioSetUUID        string                       `json:"scenario_set_uuid,omitempty"`
-	Name                   string                       `json:"name,omitempty"`
-	AgentConfig            *CandidateAgentConfig        `json:"agent_config,omitempty"`
-	UserSimulatorModelUUID string                       `json:"user_simulator_model_uuid,omitempty"`
-	JudgeModelUUID         string                       `json:"judge_model_uuid,omitempty"`
-	UserSimulatorConfig    map[string]interface{}       `json:"user_simulator_config,omitempty"`
-	ExplorationBudget      uint32                       `json:"exploration_budget,omitempty"`
-	MaxTurns               uint32                       `json:"max_turns,omitempty"`
-	EvaluationConfig       *SimulationEvaluationConfig  `json:"evaluation_config,omitempty"`
+	ScenarioSetUUID        string                      `json:"scenario_set_uuid,omitempty"`
+	Name                   string                      `json:"name,omitempty"`
+	AgentConfig            *CandidateAgentConfig       `json:"agent_config,omitempty"`
+	UserSimulatorModelUUID string                      `json:"user_simulator_model_uuid,omitempty"`
+	JudgeModelUUID         string                      `json:"judge_model_uuid,omitempty"`
+	UserSimulatorConfig    map[string]interface{}      `json:"user_simulator_config,omitempty"`
+	ExplorationBudget      uint32                      `json:"exploration_budget,omitempty"`
+	MaxTurns               uint32                      `json:"max_turns,omitempty"`
+	EvaluationConfig       *SimulationEvaluationConfig `json:"evaluation_config,omitempty"`
 }
 
 // UpdateSimulationRunRequest renames a simulation run.
@@ -475,24 +487,24 @@ type SimulationRunListOptions struct {
 
 // SimulationJourneyListOptions specifies optional parameters for listing simulation journeys.
 type SimulationJourneyListOptions struct {
-	ScenarioUUID  string                       `url:"scenario_uuid,omitempty"`
-	Statuses      []SimulationJourneyStatus    `url:"statuses,omitempty"`
-	Verdicts      []SimulationJourneyVerdict   `url:"verdicts,omitempty"`
-	Search        string                       `url:"search,omitempty"`
-	SortBy        SimulationJourneySortField   `url:"sort_by,omitempty"`
-	SortDirection GenAISortDirection           `url:"sort_direction,omitempty"`
+	ScenarioUUID  string                     `url:"scenario_uuid,omitempty"`
+	Statuses      []SimulationJourneyStatus  `url:"statuses,omitempty"`
+	Verdicts      []SimulationJourneyVerdict `url:"verdicts,omitempty"`
+	Search        string                     `url:"search,omitempty"`
+	SortBy        SimulationJourneySortField `url:"sort_by,omitempty"`
+	SortDirection GenAISortDirection         `url:"sort_direction,omitempty"`
 	ListOptions
 }
 
 // ScenarioSetListResponse is returned by ListScenarioSets.
 type ScenarioSetListResponse struct {
-	ScenarioSets            []*ScenarioSet         `json:"scenario_sets,omitempty"`
-	Links                   *Links                 `json:"links,omitempty"`
-	Meta                    *Meta                  `json:"meta,omitempty"`
-	AvailableStatuses       []ScenarioSetStatus    `json:"available_statuses,omitempty"`
+	ScenarioSets            []*ScenarioSet          `json:"scenario_sets,omitempty"`
+	Links                   *Links                  `json:"links,omitempty"`
+	Meta                    *Meta                   `json:"meta,omitempty"`
+	AvailableStatuses       []ScenarioSetStatus     `json:"available_statuses,omitempty"`
 	AvailableSourceKinds    []ScenarioSetSourceKind `json:"available_source_kinds,omitempty"`
-	AvailableSortBy         []ScenarioSetSortField `json:"available_sort_by,omitempty"`
-	AvailableSortDirections []GenAISortDirection   `json:"available_sort_directions,omitempty"`
+	AvailableSortBy         []ScenarioSetSortField  `json:"available_sort_by,omitempty"`
+	AvailableSortDirections []GenAISortDirection    `json:"available_sort_directions,omitempty"`
 }
 
 // ScenarioListResponse is returned by ListScenarios and ListScenarioLibraryScenarios.
@@ -506,12 +518,12 @@ type ScenarioListResponse struct {
 
 // ScenarioLibraryListResponse is returned by ListScenarioLibrary.
 type ScenarioLibraryListResponse struct {
-	Scenarios               []*ScenarioLibraryEntry  `json:"scenarios,omitempty"`
-	Links                   *Links                   `json:"links,omitempty"`
-	Meta                    *Meta                    `json:"meta,omitempty"`
-	AvailableCategories     []string                 `json:"available_categories,omitempty"`
+	Scenarios               []*ScenarioLibraryEntry    `json:"scenarios,omitempty"`
+	Links                   *Links                     `json:"links,omitempty"`
+	Meta                    *Meta                      `json:"meta,omitempty"`
+	AvailableCategories     []string                   `json:"available_categories,omitempty"`
 	AvailableSortBy         []ScenarioLibrarySortField `json:"available_sort_by,omitempty"`
-	AvailableSortDirections []GenAISortDirection     `json:"available_sort_directions,omitempty"`
+	AvailableSortDirections []GenAISortDirection       `json:"available_sort_directions,omitempty"`
 }
 
 // ScenarioSetDownloadURLResponse is returned by GetScenarioSetDownloadURL.
