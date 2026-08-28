@@ -260,6 +260,24 @@ func TestHostedAgentSession_IgnoresServerTeamID(t *testing.T) {
 	assert.Equal(t, HostedAgentSessionStatusReady, session.Status)
 }
 
+func TestHostedAgentSession_DecodesWarnings(t *testing.T) {
+	const sessionJSON = `{
+		"session_id": "sess-warn",
+		"agent_kind": "AGENT_KIND_CODEX_CLI",
+		"status": "SESSION_STATUS_READY",
+		"created_at": "2026-08-13T21:01:32Z",
+		"last_event_at": "2026-08-13T21:04:50Z",
+		"warnings": [
+			"policy: bash rule command \"*\" with action ask cannot be enforced by Codex CLI; approval will fall back to coarse approvalPolicy"
+		]
+	}`
+
+	var session HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(sessionJSON), &session))
+	require.Len(t, session.Warnings, 1)
+	assert.Contains(t, session.Warnings[0], "command \"*\"")
+}
+
 func TestHostedAgents_CreateSessionFromManifest(t *testing.T) {
 	setup()
 	defer teardown()
