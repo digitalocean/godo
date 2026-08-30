@@ -67,6 +67,28 @@ func TestCreateScenarioSetUploadPresignedURLsNilRequest(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
+func TestCreateScenarioSetUploadPresignedURLsMissingFiles(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CreateScenarioSetUploadPresignedURLs(ctx, &CreateScenarioSetUploadPresignedURLsRequest{})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestCreateScenarioSetUploadPresignedURLsMissingFileName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CreateScenarioSetUploadPresignedURLs(ctx, &CreateScenarioSetUploadPresignedURLsRequest{
+		Files: []*PresignedUrlFile{{FileSize: "1024"}},
+	})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
 func TestCreateScenarioSet(t *testing.T) {
 	setup()
 	defer teardown()
@@ -75,11 +97,6 @@ func TestCreateScenarioSet(t *testing.T) {
 		Name: "support-scenarios",
 		Scenarios: []*Scenario{
 			{Name: "billing dispute", Description: "user disputes a charge", MaxTurns: 5},
-		},
-		FileUploadScenarioSet: &FileUploadDataSource{
-			OriginalFileName: "scenarios.jsonl",
-			Size:             "1024",
-			StoredObjectKey:  "obj-1",
 		},
 	}
 
@@ -91,8 +108,7 @@ func TestCreateScenarioSet(t *testing.T) {
 		assert.Equal(t, createReq.Name, v.Name)
 		assert.Len(t, v.Scenarios, 1)
 		assert.Equal(t, "billing dispute", v.Scenarios[0].Name)
-		assert.NotNil(t, v.FileUploadScenarioSet)
-		assert.Equal(t, "obj-1", v.FileUploadScenarioSet.StoredObjectKey)
+		assert.Nil(t, v.FileUploadScenarioSet)
 
 		fmt.Fprint(w, `{
 			"scenario_set": {
@@ -116,11 +132,85 @@ func TestCreateScenarioSet(t *testing.T) {
 	assert.Equal(t, uint32(1), out.ScenarioCount)
 }
 
+func TestCreateScenarioSetFromFileUpload(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createReq := &CreateScenarioSetRequest{
+		Name: "support-scenarios",
+		FileUploadScenarioSet: &FileUploadDataSource{
+			OriginalFileName: "scenarios.jsonl",
+			Size:             "1024",
+			StoredObjectKey:  "obj-1",
+		},
+	}
+
+	mux.HandleFunc("/v2/gen-ai/scenario_sets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		v := new(CreateScenarioSetRequest)
+		assert.NoError(t, json.NewDecoder(r.Body).Decode(v))
+		assert.Empty(t, v.Scenarios)
+		assert.NotNil(t, v.FileUploadScenarioSet)
+		assert.Equal(t, "obj-1", v.FileUploadScenarioSet.StoredObjectKey)
+
+		fmt.Fprint(w, `{
+			"scenario_set": {
+				"scenario_set_uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+				"name": "support-scenarios",
+				"status": "SCENARIO_SET_STATUS_READY",
+				"source_kind": "SCENARIO_SET_SOURCE_KIND_USER_UPLOAD"
+			}
+		}`)
+	})
+
+	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, createReq)
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, testScenarioSetUUID, out.ScenarioSetUUID)
+}
+
 func TestCreateScenarioSetNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
 	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestCreateScenarioSetMissingName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
+		Scenarios: []*Scenario{{Description: "user disputes a charge"}},
+	})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestCreateScenarioSetRequiresExactlyOneSource(t *testing.T) {
+	setup()
+	defer teardown()
+
+	// Neither scenarios nor an uploaded file.
+	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
+		Name: "support-scenarios",
+	})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+
+	// Both scenarios and an uploaded file.
+	out, resp, err = client.GradientAI.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
+		Name:                  "support-scenarios",
+		Scenarios:             []*Scenario{{Description: "user disputes a charge"}},
+		FileUploadScenarioSet: &FileUploadDataSource{StoredObjectKey: "obj-1"},
+	})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -174,6 +264,30 @@ func TestGenerateScenarioSetNilRequest(t *testing.T) {
 	defer teardown()
 
 	out, resp, err := client.GradientAI.GenerateScenarioSet(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestGenerateScenarioSetMissingName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.GenerateScenarioSet(ctx, &GenerateScenarioSetRequest{
+		GoalDescription: "test refund flows",
+	})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestGenerateScenarioSetMissingGoalDescription(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.GenerateScenarioSet(ctx, &GenerateScenarioSetRequest{
+		Name: "goal-scenarios",
+	})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -418,6 +532,16 @@ func TestUpdateScenarioSetMissingUUID(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
+func TestUpdateScenarioSetEmptyUpdate(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.UpdateScenarioSet(ctx, testScenarioSetUUID, &UpdateScenarioSetRequest{})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
 func TestDeleteScenarioSet(t *testing.T) {
 	setup()
 	defer teardown()
@@ -656,6 +780,40 @@ func TestCreateSimulationRunNilRequest(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
+func TestCreateSimulationRunMissingScenarioSetUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
+		AgentConfig: &CandidateAgentConfig{AgentUUID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"},
+	})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestCreateSimulationRunMissingAgentUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	// No agent config at all.
+	out, resp, err := client.GradientAI.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
+		ScenarioSetUUID: testScenarioSetUUID,
+	})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+
+	// Agent config without an agent UUID.
+	out, resp, err = client.GradientAI.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
+		ScenarioSetUUID: testScenarioSetUUID,
+		AgentConfig:     &CandidateAgentConfig{Name: "candidate"},
+	})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
 func TestListSimulationRuns(t *testing.T) {
 	setup()
 	defer teardown()
@@ -810,6 +968,16 @@ func TestUpdateSimulationRunMissingUUID(t *testing.T) {
 	defer teardown()
 
 	out, resp, err := client.GradientAI.UpdateSimulationRun(ctx, "", &UpdateSimulationRunRequest{Name: "x"})
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
+
+func TestUpdateSimulationRunMissingName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.UpdateSimulationRun(ctx, testRunUUID, &UpdateSimulationRunRequest{})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)

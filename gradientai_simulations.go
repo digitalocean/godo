@@ -597,6 +597,14 @@ func (s *GradientAIServiceOp) CreateScenarioSetUploadPresignedURLs(ctx context.C
 	if createRequest == nil {
 		return nil, nil, fmt.Errorf("create request is required")
 	}
+	if len(createRequest.Files) == 0 {
+		return nil, nil, fmt.Errorf("files is required")
+	}
+	for _, file := range createRequest.Files {
+		if file == nil || file.FileName == "" {
+			return nil, nil, fmt.Errorf("file_name is required for every requested file")
+		}
+	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, scenarioSetUploadPresignedURLsPath, createRequest)
 	if err != nil {
@@ -611,10 +619,19 @@ func (s *GradientAIServiceOp) CreateScenarioSetUploadPresignedURLs(ctx context.C
 	return root, resp, nil
 }
 
-// CreateScenarioSet creates a scenario set from inline scenarios or an uploaded file.
+// CreateScenarioSet creates a scenario set from inline scenarios or an uploaded
+// file. Exactly one of the two sources must be provided.
 func (s *GradientAIServiceOp) CreateScenarioSet(ctx context.Context, createRequest *CreateScenarioSetRequest) (*ScenarioSet, *Response, error) {
 	if createRequest == nil {
 		return nil, nil, fmt.Errorf("create request is required")
+	}
+	if createRequest.Name == "" {
+		return nil, nil, fmt.Errorf("name is required")
+	}
+	hasScenarios := len(createRequest.Scenarios) > 0
+	hasFile := createRequest.FileUploadScenarioSet != nil && createRequest.FileUploadScenarioSet.StoredObjectKey != ""
+	if hasScenarios == hasFile {
+		return nil, nil, fmt.Errorf("provide exactly one of scenarios or file_upload_scenario_set")
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, scenarioSetsBasePath, createRequest)
@@ -634,6 +651,12 @@ func (s *GradientAIServiceOp) CreateScenarioSet(ctx context.Context, createReque
 func (s *GradientAIServiceOp) GenerateScenarioSet(ctx context.Context, generateRequest *GenerateScenarioSetRequest) (*ScenarioSet, *Response, error) {
 	if generateRequest == nil {
 		return nil, nil, fmt.Errorf("generate request is required")
+	}
+	if generateRequest.Name == "" {
+		return nil, nil, fmt.Errorf("name is required")
+	}
+	if generateRequest.GoalDescription == "" {
+		return nil, nil, fmt.Errorf("goal_description is required")
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, scenarioSetGeneratePath, generateRequest)
@@ -753,6 +776,9 @@ func (s *GradientAIServiceOp) UpdateScenarioSet(ctx context.Context, scenarioSet
 	}
 	if updateRequest == nil {
 		return nil, nil, fmt.Errorf("update request is required")
+	}
+	if updateRequest.Name == "" && len(updateRequest.Scenarios) == 0 {
+		return nil, nil, fmt.Errorf("at least one of name or scenarios must be set")
 	}
 	path := fmt.Sprintf(scenarioSetByIDPath, scenarioSetUUID)
 
@@ -877,6 +903,12 @@ func (s *GradientAIServiceOp) CreateSimulationRun(ctx context.Context, createReq
 	if createRequest == nil {
 		return nil, nil, fmt.Errorf("create request is required")
 	}
+	if createRequest.ScenarioSetUUID == "" {
+		return nil, nil, fmt.Errorf("scenario_set_uuid is required")
+	}
+	if createRequest.AgentConfig == nil || createRequest.AgentConfig.AgentUUID == "" {
+		return nil, nil, fmt.Errorf("agent_config.agent_uuid is required")
+	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, simulationRunsBasePath, createRequest)
 	if err != nil {
@@ -945,6 +977,9 @@ func (s *GradientAIServiceOp) UpdateSimulationRun(ctx context.Context, runUUID s
 	}
 	if updateRequest == nil {
 		return nil, nil, fmt.Errorf("update request is required")
+	}
+	if updateRequest.Name == "" {
+		return nil, nil, fmt.Errorf("name is required")
 	}
 	path := fmt.Sprintf(simulationRunByIDPath, runUUID)
 
