@@ -17,18 +17,68 @@ You can view DigitalOcean API docs here: [https://docs.digitalocean.com/referenc
 > model listing, and more — all from the same `Client`. Jump to
 > [**AI & Inference**](#ai--inference) to get started.
 
+## Quick Start
+
+Install Godo, set your DigitalOcean API token in the environment, and make your first API call:
+
+```sh
+go get github.com/digitalocean/godo
+export DIGITALOCEAN_TOKEN="dop_v1_xxxxxx"
+```
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/digitalocean/godo"
+)
+
+func main() {
+    token := os.Getenv("DIGITALOCEAN_TOKEN")
+    if token == "" {
+        log.Fatal("DIGITALOCEAN_TOKEN is not set")
+    }
+
+    client := godo.NewFromToken(token)
+    account, _, err := client.Account.Get(context.Background())
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println(account.Email)
+}
+```
+
 ## Install
+
+### Go Modules
+
+Use Go modules for new projects:
+
 ```sh
 go get github.com/digitalocean/godo@vX.Y.Z
 ```
 
 where X.Y.Z is the [version](https://github.com/digitalocean/godo/releases) you need.
 
-or
+To use the latest available version:
+
 ```sh
 go get github.com/digitalocean/godo
 ```
-for non Go modules usage or latest version.
+
+### Legacy GOPATH
+
+For non-module projects, use the latest version:
+
+```sh
+GO111MODULE=off go get github.com/digitalocean/godo
+```
 
 ## Usage
 
@@ -48,11 +98,13 @@ You can manage API tokens at the DigitalOcean Control Panel
 package main
 
 import (
+    "os"
+
     "github.com/digitalocean/godo"
 )
 
 func main() {
-    client := godo.NewFromToken("my-digitalocean-api-token")
+    client := godo.NewFromToken(os.Getenv("DIGITALOCEAN_TOKEN"))
 }
 ```
 
@@ -116,10 +168,26 @@ image, _, err := client.ImageGenerations.Generate(ctx, &godo.ImageGenerateParams
 
 For streaming, embeddings, messages, responses, async invocations, batch inference, agent inference, and full runnable programs, see [`examples/serverless-inference/`](examples/serverless-inference/) and [`examples/agent-inference/`](examples/agent-inference/).
 
-## Examples
+## Common Use Cases
 
+Use the examples below as starting points for common API tasks.
 
-To create a new Droplet:
+### List Droplets
+
+```go
+droplets, _, err := client.Droplets.List(ctx, nil)
+if err != nil {
+    return err
+}
+
+for _, droplet := range droplets {
+    fmt.Println(droplet.ID, droplet.Name)
+}
+```
+
+### Create a Droplet
+
+Choose a region, size slug, and image slug that match the Droplet you want to create. You can find available values in the DigitalOcean API documentation or Control Panel.
 
 ```go
 dropletName := "super-cool-droplet"
@@ -142,6 +210,30 @@ if err != nil {
     return err
 }
 ```
+
+### Delete a Droplet
+
+```go
+_, err := client.Droplets.Delete(ctx, dropletID)
+if err != nil {
+    return err
+}
+```
+
+### Manage SSH Keys
+
+```go
+keys, _, err := client.Keys.List(ctx, nil)
+if err != nil {
+    return err
+}
+
+for _, key := range keys {
+    fmt.Println(key.ID, key.Name)
+}
+```
+
+## Advanced Usage
 
 ### Pagination
 
