@@ -3,9 +3,6 @@
 ## [1.206.0] - 2026-08-31
 
 - #1094 - @sshirolkar - add godo support for simulations rpcs
-- #1095 - @sanpj2292 - hosted agents: decode session create warnings (MARSOHS-1019)
-- #1093 - @sdharavath - hosted agents: replace revoke_previous with grace_period_seconds (MARSOHS-1078)
-- #1092 - @sdharavath - hosted agents: let rotate-secret revoke the outgoing webhook secret (MARSOHS-1078)
 
 ## [1.205.0] - 2026-08-25
 
