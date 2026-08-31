@@ -82,9 +82,9 @@ type NfsService interface {
 	DeleteWithOptions(ctx context.Context, nfsShareId string, opts *NfsDeleteOptions) (*Response, error)
 	// Get retrieves a specific NFS share by its ID and region
 	Get(ctx context.Context, nfsShareId string, region string) (*Nfs, *Response, error)
-	// GetOptions retrieves the options and limits for creating NFS shares,
-	// including per-tier size floors, per-user/per-VPC limits, and the
-	// regions where NFS is supported
+	// GetOptions retrieves the valid parameter values for creating NFS
+	// shares: the available performance tiers with the size range each
+	// tier accepts, and the regions where NFS is supported
 	GetOptions(ctx context.Context) (*NfsOptions, *Response, error)
 	// List retrieves a list of NFS snapshots filtered by an optional share ID and region
 	ListSnapshots(ctx context.Context, opts *ListOptions, nfsShareId string, region string) ([]*NfsSnapshot, *Response, error)
@@ -185,32 +185,28 @@ type NfsCreateRequest struct {
 	PerformanceTier string   `json:"performance_tier,omitempty"`
 }
 
-// NfsOptions represents the options and limits for creating NFS shares.
+// NfsOptions represents the valid parameter values for creating NFS shares.
 type NfsOptions struct {
-	// ShareOptions are the options and limits for creating shares.
-	ShareOptions *NfsShareOptions `json:"share_options"`
-	// SupportedRegions lists the region slugs where NFS is supported.
+	// PerformanceTiers lists the performance tiers a share can be created
+	// with and the size range each accepts.
+	PerformanceTiers []*NfsPerformanceTierOption `json:"performance_tiers"`
+	// SupportedRegions lists the region slugs where NFS is supported —
+	// the same allowlist share creation validates against, so callers
+	// can fail fast before creating.
 	SupportedRegions []string `json:"supported_regions"`
 }
 
-// NfsShareOptions represents the options and limits for creating NFS shares.
-type NfsShareOptions struct {
-	// SharesPerVpc is the number of shares that can be created per VPC.
-	SharesPerVpc uint64 `json:"shares_per_vpc"`
-	// SharesPerUser is the number of shares that can be created per user.
-	SharesPerUser uint64 `json:"shares_per_user"`
-	// MinShareSizeGib is the minimum size of a high performance tier share in GiB.
-	MinShareSizeGib uint64 `json:"min_share_size_gib"`
-	// MaxShareSizeGib is the maximum size of a high performance tier share in GiB.
-	MaxShareSizeGib uint64 `json:"max_share_size_gib"`
-	// MinStandardShareSizeGib is the minimum size of a standard performance tier share in GiB.
-	MinStandardShareSizeGib uint64 `json:"min_standard_share_size_gib"`
-	// MaxStandardShareSizeGib is the maximum size of a standard performance tier share in GiB.
-	MaxStandardShareSizeGib uint64 `json:"max_standard_share_size_gib"`
-	// PricePerGibPerMonth is the price per GiB per month for the high performance tier.
-	PricePerGibPerMonth string `json:"price_per_gib_per_month,omitempty"`
-	// StandardTierPricePerGibPerMonth is the price per GiB per month for the standard performance tier.
-	StandardTierPricePerGibPerMonth string `json:"standard_tier_price_per_gib_per_month,omitempty"`
+// NfsPerformanceTierOption represents a performance tier available for share
+// creation and its accepted size range.
+type NfsPerformanceTierOption struct {
+	// Tier is the value accepted by NfsCreateRequest.PerformanceTier
+	// (e.g. "standard", "high").
+	Tier string `json:"tier"`
+	// MinSizeGib is the minimum share size in GiB for this tier.
+	MinSizeGib uint64 `json:"min_size_gib"`
+	// MaxSizeGib is the maximum share size in GiB for this tier. May vary
+	// per account.
+	MaxSizeGib uint64 `json:"max_size_gib"`
 }
 
 // NfsCreateAccessPointRequest represents a request to create an NFS access point.
@@ -422,9 +418,11 @@ func (s *NfsServiceOp) DeleteWithOptions(ctx context.Context, nfsShareId string,
 	return resp, nil
 }
 
-// GetOptions retrieves the options and limits for creating NFS shares,
-// including per-tier size floors, per-user/per-VPC share limits, and the
-// regions where NFS is supported.
+// GetOptions retrieves the valid parameter values for creating NFS shares:
+// the available performance tiers with the size range each tier accepts,
+// and the regions where NFS is supported. Size bounds are per-account and
+// can change; treat the endpoint as the source of truth rather than
+// hard-coding values.
 func (s *NfsServiceOp) GetOptions(ctx context.Context) (*NfsOptions, *Response, error) {
 	path := fmt.Sprintf("%s/options", nfsBasePath)
 

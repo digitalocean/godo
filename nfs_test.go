@@ -197,20 +197,16 @@ func TestNfsGetOptions(t *testing.T) {
 	mux.HandleFunc("/v2/nfs/options", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"share_options": {"shares_per_vpc": 10, "shares_per_user": 25, "min_share_size_gib": 500, "max_share_size_gib": 10240, "min_standard_share_size_gib": 50, "max_standard_share_size_gib": 10240, "price_per_gib_per_month": "0.16", "standard_tier_price_per_gib_per_month": "0.10"}, "supported_regions": ["atl1", "nyc2"]}`)
+		fmt.Fprint(w, `{"performance_tiers": [{"tier": "standard", "min_size_gib": 50, "max_size_gib": 10240}, {"tier": "high", "min_size_gib": 500, "max_size_gib": 10240}], "supported_regions": ["atl1", "nyc2"]}`)
 	})
 
 	options, resp, err := client.Nfs.GetOptions(context.Background())
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
-	assert.Equal(t, uint64(10), options.ShareOptions.SharesPerVpc)
-	assert.Equal(t, uint64(25), options.ShareOptions.SharesPerUser)
-	assert.Equal(t, uint64(500), options.ShareOptions.MinShareSizeGib)
-	assert.Equal(t, uint64(10240), options.ShareOptions.MaxShareSizeGib)
-	assert.Equal(t, uint64(50), options.ShareOptions.MinStandardShareSizeGib)
-	assert.Equal(t, uint64(10240), options.ShareOptions.MaxStandardShareSizeGib)
-	assert.Equal(t, "0.16", options.ShareOptions.PricePerGibPerMonth)
-	assert.Equal(t, "0.10", options.ShareOptions.StandardTierPricePerGibPerMonth)
+	assert.Equal(t, []*NfsPerformanceTierOption{
+		{Tier: "standard", MinSizeGib: 50, MaxSizeGib: 10240},
+		{Tier: "high", MinSizeGib: 500, MaxSizeGib: 10240},
+	}, options.PerformanceTiers)
 	assert.Equal(t, []string{"atl1", "nyc2"}, options.SupportedRegions)
 }
 
