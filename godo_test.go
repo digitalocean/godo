@@ -101,6 +101,7 @@ func testClientServices(t *testing.T, c *Client) {
 		"ReservedIPActions",
 		"Tags",
 		"BatchInference",
+		"Routes",
 	}
 
 	cp := reflect.ValueOf(c)
