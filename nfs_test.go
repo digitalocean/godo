@@ -37,18 +37,33 @@ func TestNfsCreate(t *testing.T) {
 	assert.Equal(t, "10.128.32.2", share.Host)
 	assert.Equal(t, "/123456/test-nfs-id", share.MountPath)
 	assert.Equal(t, "standard", share.PerformanceTier)
+}
 
-	invalidCreateRequest := &NfsCreateRequest{
-		Name:    "test-nfs-share-invalid-size",
-		SizeGib: 20,
-		Region:  "atl1",
+func TestNfsCreateSizeValidationIsServerSide(t *testing.T) {
+	setup()
+	defer teardown()
+
+	// godo no longer enforces a client-side size floor; the API rejects
+	// below-floor sizes and the error must pass through.
+	mux.HandleFunc("/v2/nfs", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"code": "INVALID_SIZE", "message": "size_gib is below the minimum of 50 GiB for the standard tier"}`)
+	})
+
+	createRequest := &NfsCreateRequest{
+		Name:            "test-nfs-share-too-small",
+		SizeGib:         20,
+		Region:          "atl1",
+		PerformanceTier: "standard",
 	}
 
-	share, resp, err = client.Nfs.Create(context.Background(), invalidCreateRequest)
+	share, resp, err := client.Nfs.Create(context.Background(), createRequest)
 	assert.Error(t, err)
-	assert.Equal(t, "size_gib is invalid because it cannot be less than 50Gib", err.Error())
+	assert.NotNil(t, resp)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Contains(t, err.Error(), "size_gib is below the minimum")
 	assert.Nil(t, share)
-	assert.Nil(t, resp)
 }
 
 func TestNfsDelete(t *testing.T) {
@@ -57,10 +72,31 @@ func TestNfsDelete(t *testing.T) {
 
 	mux.HandleFunc("/v2/nfs/test-nfs-id", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
-		w.WriteHeader(http.StatusNoContent)
+		assert.Empty(t, r.URL.Query().Get("delete_snapshots"))
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"share": {"id": "test-nfs-id", "name": "test-nfs-share", "size_gib": 50, "region": "atl1", "status": "DELETED", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": [], "host": "10.128.32.2", "mount_path": "/123456/test-nfs-id", "performance_tier": "standard"}, "action": {"id": "1", "status": "IN_PROGRESS", "type": "DELETE_SHARE", "resource_type": "network_file_share", "resource_id": "test-nfs-id", "region_slug": "atl1", "started_at": "2025-10-14T11:55:31.615157397Z"}}`)
 	})
 
 	resp, err := client.Nfs.Delete(context.Background(), "test-nfs-id", "atl1")
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+}
+
+func TestNfsDeleteWithSnapshots(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/nfs/test-nfs-id", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+		assert.Equal(t, "true", r.URL.Query().Get("delete_snapshots"))
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"share": {"id": "test-nfs-id", "name": "test-nfs-share", "size_gib": 50, "region": "atl1", "status": "DELETED", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": [], "host": "10.128.32.2", "mount_path": "/123456/test-nfs-id", "performance_tier": "standard"}, "action": {"id": "1", "status": "IN_PROGRESS", "type": "DELETE_SHARE", "resource_type": "network_file_share", "resource_id": "test-nfs-id", "region_slug": "atl1", "started_at": "2025-10-14T11:55:31.615157397Z"}}`)
+	})
+
+	resp, err := client.Nfs.DeleteWithOptions(context.Background(), "test-nfs-id", &NfsDeleteOptions{
+		Region:          "atl1",
+		DeleteSnapshots: true,
+	})
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 }
@@ -127,6 +163,51 @@ func TestNfsList(t *testing.T) {
 	assert.Equal(t, "10.128.32.3", shares[0].Host)
 	assert.Equal(t, "/123456/test-nfs-id-2", shares[0].MountPath)
 	assert.Equal(t, "standard", shares[0].PerformanceTier)
+}
+
+func TestNfsListByName(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/nfs", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		assert.Equal(t, "pvc-abc-123", r.URL.Query().Get("name"))
+		assert.Equal(t, "atl1", r.URL.Query().Get("region"))
+		assert.Equal(t, "200", r.URL.Query().Get("per_page"))
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"shares": [{"id": "test-nfs-id-1", "name": "pvc-abc-123", "size_gib": 50, "region": "atl1", "status": "ACTIVE", "created_at":"2023-10-01T00:00:00Z", "vpc_ids": [], "host": "10.128.32.2", "mount_path": "/123456/test-nfs-id-1", "performance_tier": "standard"}], "meta": {"total": 1, "per_page": 200, "page": 1}}`)
+	})
+
+	shares, resp, err := client.Nfs.ListWithOptions(context.Background(), &NfsListOptions{
+		ListOptions: ListOptions{PerPage: 200},
+		Region:      "atl1",
+		Name:        "pvc-abc-123",
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Len(t, shares, 1)
+	assert.Equal(t, "pvc-abc-123", shares[0].Name)
+	assert.Equal(t, NfsShareActive, shares[0].Status)
+}
+
+func TestNfsGetOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/nfs/options", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"performance_tiers": [{"tier": "standard", "min_size_gib": 50, "max_size_gib": 10240}, {"tier": "high", "min_size_gib": 500, "max_size_gib": 10240}], "supported_regions": ["atl1", "nyc2"]}`)
+	})
+
+	options, resp, err := client.Nfs.GetOptions(context.Background())
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, []*NfsPerformanceTierOption{
+		{Tier: "standard", MinSizeGib: 50, MaxSizeGib: 10240},
+		{Tier: "high", MinSizeGib: 500, MaxSizeGib: 10240},
+	}, options.PerformanceTiers)
+	assert.Equal(t, []string{"atl1", "nyc2"}, options.SupportedRegions)
 }
 
 func TestNfsSnapshotGet(t *testing.T) {
