@@ -2,7 +2,7 @@
 
 ## unreleased
 
-- #TBD - @sgupta832 - microdroplets: reshape onto api-v2 (size/source/urls/ports, sibling checkpoints, create options); remove MicroDropletImages (edge-hidden)
+- #1098 - @sgupta832 - microdroplets: reshape onto api-v2 (size/source/urls/ports, sibling checkpoints, create options); remove MicroDropletImages (edge-hidden)
 
 ## [1.206.0] - 2026-08-31
 
