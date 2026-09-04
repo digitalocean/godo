@@ -354,14 +354,7 @@ func NewClient(httpClient *http.Client) *Client {
 	batchInferenceURL, _ := url.Parse(defaultBatchInferenceBaseURL)
 	c.BatchInference = &BatchInferenceServiceOp{client: c, baseURL: batchInferenceURL}
 	serverlessInferenceURL, _ := url.Parse(defaultServerlessInferenceBaseURL)
-	t := newInferenceTransport(c, serverlessInferenceURL)
-	c.Chat = &ChatService{Completions: &ChatCompletionService{inferenceTransport: t}}
-	c.Embeddings = &EmbeddingService{inferenceTransport: t}
-	c.ImageGenerations = &ImageGenerationService{inferenceTransport: t}
-	c.Messages = &MessageService{inferenceTransport: t}
-	c.Models = &ModelService{inferenceTransport: t}
-	c.Responses = &ResponseService{inferenceTransport: t}
-	c.AsyncInvocations = &AsyncInvocationService{inferenceTransport: t}
+	newInferenceServices(c, serverlessInferenceURL)
 
 	c.headers = make(map[string]string)
 
