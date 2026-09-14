@@ -214,6 +214,132 @@ var (
   }
 }
 `
+	firewallCreateWithActionJSONBody = `
+{
+  "name": "f-i-r-e-w-a-l-l",
+  "inbound_rules": [
+    {
+      "protocol": "tcp",
+      "ports": "22",
+      "sources": {
+        "addresses": ["0.0.0.0/0"]
+      },
+      "action": "allow"
+    },
+    {
+      "protocol": "tcp",
+      "ports": "8080",
+      "sources": {
+        "addresses": ["192.168.1.0/24"]
+      },
+      "action": "deny"
+    }
+  ],
+  "outbound_rules": [
+    {
+      "protocol": "tcp",
+      "ports": "443",
+      "destinations": {
+        "addresses": ["0.0.0.0/0"]
+      },
+      "action": "allow"
+    },
+    {
+      "protocol": "udp",
+      "ports": "53",
+      "destinations": {
+        "addresses": ["10.0.0.0/8"]
+      },
+      "action": "deny"
+    }
+  ],
+  "droplet_ids": [123],
+  "tags": ["frontend"]
+}
+`
+	firewallWithActionJSONResponse = `
+{
+  "firewall": {
+    "id": "fe6b88f2-b42b-4bf7-bbd3-5ae20208f0b0",
+    "name": "f-i-r-e-w-a-l-l",
+    "status": "waiting",
+    "inbound_rules": [
+      {
+        "protocol": "tcp",
+        "ports": "22",
+        "sources": {
+          "addresses": ["0.0.0.0/0"]
+        },
+        "action": "allow"
+      },
+      {
+        "protocol": "tcp",
+        "ports": "8080",
+        "sources": {
+          "addresses": ["192.168.1.0/24"]
+        },
+        "action": "deny"
+      }
+    ],
+    "outbound_rules": [
+      {
+        "protocol": "tcp",
+        "ports": "443",
+        "destinations": {
+          "addresses": ["0.0.0.0/0"]
+        },
+        "action": "allow"
+      },
+      {
+        "protocol": "udp",
+        "ports": "53",
+        "destinations": {
+          "addresses": ["10.0.0.0/8"]
+        },
+        "action": "deny"
+      }
+    ],
+    "created_at": "2017-04-06T13:07:27Z",
+    "droplet_ids": [
+      123
+    ],
+    "tags": [
+      "frontend"
+    ],
+    "pending_changes": [
+      {
+        "droplet_id": 123,
+        "removing": false,
+        "status": "waiting"
+      }
+    ]
+  }
+}
+`
+	firewallRulesWithActionJSONBody = `
+{
+  "inbound_rules": [
+    {
+      "protocol": "tcp",
+      "ports": "22",
+      "sources": {
+        "addresses": ["0.0.0.0/0"]
+      },
+      "action": "deny"
+    }
+  ],
+  "outbound_rules": [
+    {
+      "protocol": "tcp",
+      "ports": "443",
+      "destinations": {
+        "addresses": ["0.0.0.0/0"]
+      },
+      "action": "deny"
+    }
+  ]
+}
+`
 )
 
 func TestFirewalls_Get(t *testing.T) {
@@ -804,6 +930,357 @@ func TestFirewalls_RemoveRules(t *testing.T) {
 
 	if err != nil {
 		t.Errorf("Firewalls.RemoveRules returned error: %v", err)
+	}
+}
+
+func TestFirewalls_GetWithAction(t *testing.T) {
+	setup()
+	defer teardown()
+
+	urlStr := "/v2/firewalls"
+	fID := "fe6b88f2-b42b-4bf7-bbd3-5ae20208f0b0"
+	urlStr = path.Join(urlStr, fID)
+
+	mux.HandleFunc(urlStr, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, firewallWithActionJSONResponse)
+	})
+
+	actualFirewall, _, err := client.Firewalls.Get(ctx, fID)
+	if err != nil {
+		t.Errorf("Firewalls.Get returned error: %v", err)
+	}
+
+	expectedFirewall := &Firewall{
+		ID:     "fe6b88f2-b42b-4bf7-bbd3-5ae20208f0b0",
+		Name:   "f-i-r-e-w-a-l-l",
+		Status: "waiting",
+		InboundRules: []InboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "22",
+				Sources: &Sources{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionAllow,
+			},
+			{
+				Protocol:  "tcp",
+				PortRange: "8080",
+				Sources: &Sources{
+					Addresses: []string{"192.168.1.0/24"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+		OutboundRules: []OutboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "443",
+				Destinations: &Destinations{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionAllow,
+			},
+			{
+				Protocol:  "udp",
+				PortRange: "53",
+				Destinations: &Destinations{
+					Addresses: []string{"10.0.0.0/8"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+		Created:    "2017-04-06T13:07:27Z",
+		DropletIDs: []int{123},
+		Tags:       []string{"frontend"},
+		PendingChanges: []PendingChange{
+			{
+				DropletID: 123,
+				Removing:  false,
+				Status:    "waiting",
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(actualFirewall, expectedFirewall) {
+		t.Errorf("Firewalls.Get returned %+v, expected %+v", actualFirewall, expectedFirewall)
+	}
+}
+
+func TestFirewalls_CreateWithAction(t *testing.T) {
+	setup()
+	defer teardown()
+
+	expectedFirewallRequest := &FirewallRequest{
+		Name: "f-i-r-e-w-a-l-l",
+		InboundRules: []InboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "22",
+				Sources: &Sources{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionAllow,
+			},
+			{
+				Protocol:  "tcp",
+				PortRange: "8080",
+				Sources: &Sources{
+					Addresses: []string{"192.168.1.0/24"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+		OutboundRules: []OutboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "443",
+				Destinations: &Destinations{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionAllow,
+			},
+			{
+				Protocol:  "udp",
+				PortRange: "53",
+				Destinations: &Destinations{
+					Addresses: []string{"10.0.0.0/8"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+		DropletIDs: []int{123},
+		Tags:       []string{"frontend"},
+	}
+
+	mux.HandleFunc("/v2/firewalls", func(w http.ResponseWriter, r *http.Request) {
+		v := new(FirewallRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		if !reflect.DeepEqual(v, expectedFirewallRequest) {
+			t.Errorf("Request body = %+v, expected %+v", v, expectedFirewallRequest)
+		}
+
+		var actualFirewallRequest *FirewallRequest
+		json.Unmarshal([]byte(firewallCreateWithActionJSONBody), &actualFirewallRequest)
+		if !reflect.DeepEqual(actualFirewallRequest, expectedFirewallRequest) {
+			t.Errorf("Request body = %+v, expected %+v", actualFirewallRequest, expectedFirewallRequest)
+		}
+
+		fmt.Fprint(w, firewallWithActionJSONResponse)
+	})
+
+	actualFirewall, _, err := client.Firewalls.Create(ctx, expectedFirewallRequest)
+	if err != nil {
+		t.Errorf("Firewalls.Create returned error: %v", err)
+	}
+
+	expectedFirewall := &Firewall{
+		ID:     "fe6b88f2-b42b-4bf7-bbd3-5ae20208f0b0",
+		Name:   "f-i-r-e-w-a-l-l",
+		Status: "waiting",
+		InboundRules: []InboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "22",
+				Sources: &Sources{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionAllow,
+			},
+			{
+				Protocol:  "tcp",
+				PortRange: "8080",
+				Sources: &Sources{
+					Addresses: []string{"192.168.1.0/24"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+		OutboundRules: []OutboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "443",
+				Destinations: &Destinations{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionAllow,
+			},
+			{
+				Protocol:  "udp",
+				PortRange: "53",
+				Destinations: &Destinations{
+					Addresses: []string{"10.0.0.0/8"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+		Created:    "2017-04-06T13:07:27Z",
+		DropletIDs: []int{123},
+		Tags:       []string{"frontend"},
+		PendingChanges: []PendingChange{
+			{
+				DropletID: 123,
+				Removing:  false,
+				Status:    "waiting",
+			},
+		},
+	}
+
+	if !reflect.DeepEqual(actualFirewall, expectedFirewall) {
+		t.Errorf("Firewalls.Create returned %+v, expected %+v", actualFirewall, expectedFirewall)
+	}
+}
+
+func TestFirewalls_AddRulesWithAction(t *testing.T) {
+	setup()
+	defer teardown()
+
+	rr := &FirewallRulesRequest{
+		InboundRules: []InboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "22",
+				Sources: &Sources{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+		OutboundRules: []OutboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "443",
+				Destinations: &Destinations{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+	}
+
+	fID := "fe6b88f2-b42b-4bf7-bbd3-5ae20208f0b0"
+	urlStr := path.Join("/v2/firewalls", fID, "rules")
+	mux.HandleFunc(urlStr, func(w http.ResponseWriter, r *http.Request) {
+		v := new(FirewallRulesRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		if !reflect.DeepEqual(v, rr) {
+			t.Errorf("Request body = %+v, expected %+v", v, rr)
+		}
+
+		var actualFirewallRulesRequest *FirewallRulesRequest
+		json.Unmarshal([]byte(firewallRulesWithActionJSONBody), &actualFirewallRulesRequest)
+		if !reflect.DeepEqual(actualFirewallRulesRequest, rr) {
+			t.Errorf("Request body = %+v, expected %+v", actualFirewallRulesRequest, rr)
+		}
+
+		fmt.Fprint(w, nil)
+	})
+
+	_, err := client.Firewalls.AddRules(ctx, fID, rr)
+
+	if err != nil {
+		t.Errorf("Firewalls.AddRules returned error: %v", err)
+	}
+}
+
+func TestFirewalls_RemoveRulesWithAction(t *testing.T) {
+	setup()
+	defer teardown()
+
+	rr := &FirewallRulesRequest{
+		InboundRules: []InboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "22",
+				Sources: &Sources{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+		OutboundRules: []OutboundRule{
+			{
+				Protocol:  "tcp",
+				PortRange: "443",
+				Destinations: &Destinations{
+					Addresses: []string{"0.0.0.0/0"},
+				},
+				Action: FirewallRuleActionDeny,
+			},
+		},
+	}
+
+	fID := "fe6b88f2-b42b-4bf7-bbd3-5ae20208f0b0"
+	urlStr := path.Join("/v2/firewalls", fID, "rules")
+	mux.HandleFunc(urlStr, func(w http.ResponseWriter, r *http.Request) {
+		v := new(FirewallRulesRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodDelete)
+		if !reflect.DeepEqual(v, rr) {
+			t.Errorf("Request body = %+v, expected %+v", v, rr)
+		}
+
+		var actualFirewallRulesRequest *FirewallRulesRequest
+		json.Unmarshal([]byte(firewallRulesWithActionJSONBody), &actualFirewallRulesRequest)
+		if !reflect.DeepEqual(actualFirewallRulesRequest, rr) {
+			t.Errorf("Request body = %+v, expected %+v", actualFirewallRulesRequest, rr)
+		}
+
+		fmt.Fprint(w, nil)
+	})
+
+	_, err := client.Firewalls.RemoveRules(ctx, fID, rr)
+
+	if err != nil {
+		t.Errorf("Firewalls.RemoveRules returned error: %v", err)
+	}
+}
+
+func TestFirewalls_ActionOmittedForBackwardCompatibility(t *testing.T) {
+	inbound := InboundRule{
+		Protocol:  "tcp",
+		PortRange: "22",
+		Sources:   &Sources{Addresses: []string{"0.0.0.0/0"}},
+	}
+	data, err := json.Marshal(inbound)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var m map[string]interface{}
+	json.Unmarshal(data, &m)
+	if _, ok := m["action"]; ok {
+		t.Error("Expected 'action' to be omitted from JSON when empty, but it was present")
+	}
+
+	outbound := OutboundRule{
+		Protocol:     "tcp",
+		PortRange:    "443",
+		Destinations: &Destinations{Addresses: []string{"0.0.0.0/0"}},
+	}
+	data, err = json.Marshal(outbound)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	json.Unmarshal(data, &m)
+	if _, ok := m["action"]; ok {
+		t.Error("Expected 'action' to be omitted from JSON when empty, but it was present")
 	}
 }
 
