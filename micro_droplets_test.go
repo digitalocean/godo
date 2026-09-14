@@ -19,13 +19,13 @@ func TestMicroDroplets_List(t *testing.T) {
 		],
 		"links": {
 			"pages": {
-				"next": "http://example.com/v2/microdroplets/instances?page=2"
+				"next": "http://example.com/v2/microdroplets?page=2"
 			}
 		},
 		"meta": {"total": 2}
 	}`
 
-	mux.HandleFunc("/v2/microdroplets/instances", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, jBlob)
 	})
@@ -53,7 +53,7 @@ func TestMicroDroplets_List_Paginated(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		if got, want := r.URL.Query().Get("page"), "2"; got != want {
 			t.Errorf("page query = %q, expected %q", got, want)
@@ -74,7 +74,7 @@ func TestMicroDroplets_ListByRegion(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		if got, want := r.URL.Query().Get("region"), "sfo3"; got != want {
 			t.Errorf("region query = %q, expected %q", got, want)
@@ -107,7 +107,7 @@ func TestMicroDroplets_ListByName(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		if got, want := r.URL.Query().Get("name"), "agent-sandbox-1"; got != want {
 			t.Errorf("name query = %q, expected %q", got, want)
@@ -140,7 +140,7 @@ func TestMicroDroplets_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances/aaa-111", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets/aaa-111", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"micro_droplet": {
@@ -148,10 +148,12 @@ func TestMicroDroplets_Get(t *testing.T) {
 				"name": "sandbox",
 				"region": "nyc3",
 				"state": "running",
-				"size": "sm-1vcpu-1gb",
+				"size": {"cpu": 2, "memory": 4096, "disk": 80},
 				"networking": "public",
-				"image": "do:microdroplet_image:img-uuid",
-				"endpoint": "https://sandbox.example.com",
+				"source": {"oci_ref": "docker.io/library/nginx:1.27"},
+				"urls": [{"hostname": "sandbox.example.com", "port": 8080, "default": true, "status": "ACTIVE"}],
+				"ports": [8080],
+				"tags": ["env:dev"],
 				"created_at": "2026-07-16T10:00:00Z"
 			}
 		}`)
@@ -167,11 +169,15 @@ func TestMicroDroplets_Get(t *testing.T) {
 		Name:       "sandbox",
 		Region:     "nyc3",
 		State:      MicroDropletStateRunning,
-		Size:       "sm-1vcpu-1gb",
+		Size:       &MicroDropletSize{CPU: 2, Memory: 4096, Disk: 80},
 		Networking: MicroDropletNetworkingPublic,
-		Image:      "do:microdroplet_image:img-uuid",
-		Endpoint:   "https://sandbox.example.com",
-		Created:    "2026-07-16T10:00:00Z",
+		Source:     &MicroDropletSource{OCIRef: "docker.io/library/nginx:1.27"},
+		URLs: []MicroDropletURL{
+			{Hostname: "sandbox.example.com", Port: 8080, Default: true, Status: MicroDropletURLStatusActive},
+		},
+		Ports:   []uint32{8080},
+		Tags:    []string{"env:dev"},
+		Created: "2026-07-16T10:00:00Z",
 	}
 	if !reflect.DeepEqual(microDroplet, expected) {
 		t.Errorf("MicroDroplets.Get returned %+v, expected %+v", microDroplet, expected)
@@ -197,26 +203,32 @@ func TestMicroDroplets_Create(t *testing.T) {
 	createRequest := &MicroDropletCreateRequest{
 		Name:         "sandbox",
 		Region:       "nyc3",
-		Size:         "sm-1vcpu-1gb",
-		Image:        "do:microdroplet_image:img-uuid",
+		Size:         &MicroDropletSizeRequest{CPU: 2, Memory: 4096},
+		Source:       &MicroDropletSource{OCIRef: "docker.io/library/nginx:1.27"},
 		Networking:   MicroDropletNetworkingVPC,
 		VPCUUID:      "vpc-uuid",
 		AutoPause:    &AutoPauseConfig{Enabled: &autoPauseEnabled, IdleTimeout: "5m"},
 		AutoResume:   &autoResume,
 		HTTPPort:     8080,
 		HTTPProtocol: MicroDropletHTTPProtocolHTTP2,
+		Ports:        []uint32{80, 8080},
 		Environment:  map[string]string{"FOO": "bar"},
 		Tags:         []string{"env:dev", "team:agents"},
 	}
 
-	mux.HandleFunc("/v2/microdroplets/instances", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 
 		expected := map[string]interface{}{
-			"name":       "sandbox",
-			"region":     "nyc3",
-			"size":       "sm-1vcpu-1gb",
-			"image":      "do:microdroplet_image:img-uuid",
+			"name":   "sandbox",
+			"region": "nyc3",
+			"size": map[string]interface{}{
+				"cpu":    float64(2),
+				"memory": float64(4096),
+			},
+			"source": map[string]interface{}{
+				"oci_ref": "docker.io/library/nginx:1.27",
+			},
 			"networking": "vpc",
 			"vpc_uuid":   "vpc-uuid",
 			"auto_pause": map[string]interface{}{
@@ -226,6 +238,7 @@ func TestMicroDroplets_Create(t *testing.T) {
 			"auto_resume":   true,
 			"http_port":     float64(8080),
 			"http_protocol": "http2",
+			"ports":         []interface{}{float64(80), float64(8080)},
 			"environment":   map[string]interface{}{"FOO": "bar"},
 			"tags":          []interface{}{"env:dev", "team:agents"},
 		}
@@ -254,25 +267,23 @@ func TestMicroDroplets_Create(t *testing.T) {
 	}
 }
 
-func TestMicroDroplets_Create_Minimal(t *testing.T) {
+func TestMicroDroplets_Create_FromCheckpoint(t *testing.T) {
 	setup()
 	defer teardown()
 
 	createRequest := &MicroDropletCreateRequest{
-		Name:   "sandbox",
-		Region: "nyc3",
-		Size:   "sm-1vcpu-1gb",
-		Image:  "do:microdroplet_image:img-uuid",
+		Name:   "sandbox-clone",
+		Source: &MicroDropletSource{CheckpointID: "chk-1"},
 	}
 
-	mux.HandleFunc("/v2/microdroplets/instances", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 
 		expected := map[string]interface{}{
-			"name":   "sandbox",
-			"region": "nyc3",
-			"size":   "sm-1vcpu-1gb",
-			"image":  "do:microdroplet_image:img-uuid",
+			"name": "sandbox-clone",
+			"source": map[string]interface{}{
+				"checkpoint_id": "chk-1",
+			},
 		}
 
 		var got map[string]interface{}
@@ -280,10 +291,10 @@ func TestMicroDroplets_Create_Minimal(t *testing.T) {
 			t.Fatalf("decode request body: %v", err)
 		}
 		if !reflect.DeepEqual(got, expected) {
-			t.Errorf("Create (minimal) body\n got=%#v\nwant=%#v", got, expected)
+			t.Errorf("Create (checkpoint) body\n got=%#v\nwant=%#v", got, expected)
 		}
 
-		fmt.Fprint(w, `{"micro_droplet": {"id": "aaa-111"}}`)
+		fmt.Fprint(w, `{"micro_droplet": {"id": "bbb-222"}}`)
 	})
 
 	if _, _, err := client.MicroDroplets.Create(ctx, createRequest); err != nil {
@@ -305,7 +316,7 @@ func TestMicroDroplets_Pause(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances/aaa-111/pause", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets/aaa-111/pause", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		fmt.Fprint(w, `{"micro_droplet": {"id": "aaa-111", "state": "paused"}}`)
 	})
@@ -334,7 +345,7 @@ func TestMicroDroplets_Resume(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances/aaa-111/resume", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets/aaa-111/resume", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		fmt.Fprint(w, `{"micro_droplet": {"id": "aaa-111", "state": "running"}}`)
 	})
@@ -363,7 +374,7 @@ func TestMicroDroplets_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances/aaa-111", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets/aaa-111", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -387,24 +398,45 @@ func TestMicroDroplets_ListCheckpoints(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/microdroplets/instances/aaa-111/checkpoints", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/microdroplets/checkpoints", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
+		if got, want := r.URL.Query().Get("micro_droplet_id"), "aaa-111"; got != want {
+			t.Errorf("micro_droplet_id query = %q, expected %q", got, want)
+		}
 		fmt.Fprint(w, `{
 			"checkpoints": [
-				{"id": "chk-1", "micro_droplet_id": "aaa-111", "status": "CHECKPOINT_AVAILABLE", "memory_bytes": 1024, "disk_bytes": 2048},
+				{
+					"id": "chk-1",
+					"micro_droplet_id": "aaa-111",
+					"micro_droplet_name": "sandbox",
+					"region": "nyc3",
+					"status": "CHECKPOINT_AVAILABLE",
+					"memory_bytes": 1024,
+					"disk_bytes": 2048
+				},
 				{"id": "chk-2", "micro_droplet_id": "aaa-111", "status": "CHECKPOINT_CREATING"}
 			],
 			"meta": {"total": 2}
 		}`)
 	})
 
-	checkpoints, resp, err := client.MicroDroplets.ListCheckpoints(ctx, "aaa-111", nil)
+	checkpoints, resp, err := client.MicroDroplets.ListCheckpoints(ctx, &ListMicroDropletCheckpointsOptions{
+		MicroDropletID: "aaa-111",
+	})
 	if err != nil {
 		t.Fatalf("MicroDroplets.ListCheckpoints returned error: %v", err)
 	}
 
 	expected := []MicroDropletCheckpoint{
-		{ID: "chk-1", MicroDropletID: "aaa-111", Status: MicroDropletCheckpointStatusAvailable, MemoryBytes: 1024, DiskBytes: 2048},
+		{
+			ID:               "chk-1",
+			MicroDropletID:   "aaa-111",
+			MicroDropletName: "sandbox",
+			Region:           "nyc3",
+			Status:           MicroDropletCheckpointStatusAvailable,
+			MemoryBytes:      1024,
+			DiskBytes:        2048,
+		},
 		{ID: "chk-2", MicroDropletID: "aaa-111", Status: MicroDropletCheckpointStatusCreating},
 	}
 	if !reflect.DeepEqual(checkpoints, expected) {
@@ -416,13 +448,162 @@ func TestMicroDroplets_ListCheckpoints(t *testing.T) {
 	}
 }
 
-func TestMicroDroplets_ListCheckpoints_EmptyID(t *testing.T) {
-	_, _, err := (&MicroDropletsServiceOp{}).ListCheckpoints(ctx, "", nil)
+func TestMicroDroplets_ListCheckpoints_All(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microdroplets/checkpoints", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if got := r.URL.Query().Get("micro_droplet_id"); got != "" {
+			t.Errorf("unexpected micro_droplet_id query = %q", got)
+		}
+		fmt.Fprint(w, `{"checkpoints": [{"id": "chk-1"}], "meta": {"total": 1}}`)
+	})
+
+	checkpoints, _, err := client.MicroDroplets.ListCheckpoints(ctx, nil)
+	if err != nil {
+		t.Fatalf("MicroDroplets.ListCheckpoints returned error: %v", err)
+	}
+	if len(checkpoints) != 1 || checkpoints[0].ID != "chk-1" {
+		t.Errorf("MicroDroplets.ListCheckpoints returned %+v", checkpoints)
+	}
+}
+
+func TestMicroDroplets_CreateCheckpoint(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microdroplets/aaa-111/checkpoints", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		var got map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		expected := map[string]interface{}{"name": "chk-named"}
+		if !reflect.DeepEqual(got, expected) {
+			t.Errorf("CreateCheckpoint body\n got=%#v\nwant=%#v", got, expected)
+		}
+
+		fmt.Fprint(w, `{"checkpoint": {"id": "chk-1", "micro_droplet_id": "aaa-111", "status": "CHECKPOINT_CREATING"}}`)
+	})
+
+	checkpoint, _, err := client.MicroDroplets.CreateCheckpoint(ctx, "aaa-111", &MicroDropletCheckpointCreateRequest{Name: "chk-named"})
+	if err != nil {
+		t.Fatalf("MicroDroplets.CreateCheckpoint returned error: %v", err)
+	}
+	if checkpoint.ID != "chk-1" || checkpoint.Status != MicroDropletCheckpointStatusCreating {
+		t.Errorf("MicroDroplets.CreateCheckpoint returned %+v", checkpoint)
+	}
+}
+
+func TestMicroDroplets_CreateCheckpoint_EmptyID(t *testing.T) {
+	_, _, err := (&MicroDropletsServiceOp{}).CreateCheckpoint(ctx, "", nil)
+	if err == nil {
+		t.Fatal("expected error for empty microDropletID")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroDroplets_GetCheckpoint(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microdroplets/checkpoints/chk-1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"checkpoint": {"id": "chk-1", "status": "CHECKPOINT_AVAILABLE", "region": "nyc3"}}`)
+	})
+
+	checkpoint, _, err := client.MicroDroplets.GetCheckpoint(ctx, "chk-1")
+	if err != nil {
+		t.Fatalf("MicroDroplets.GetCheckpoint returned error: %v", err)
+	}
+	expected := &MicroDropletCheckpoint{
+		ID:     "chk-1",
+		Status: MicroDropletCheckpointStatusAvailable,
+		Region: "nyc3",
+	}
+	if !reflect.DeepEqual(checkpoint, expected) {
+		t.Errorf("MicroDroplets.GetCheckpoint returned %+v, expected %+v", checkpoint, expected)
+	}
+}
+
+func TestMicroDroplets_GetCheckpoint_EmptyID(t *testing.T) {
+	_, _, err := (&MicroDropletsServiceOp{}).GetCheckpoint(ctx, "")
 	if err == nil {
 		t.Fatal("expected error for empty id")
 	}
 	if _, ok := err.(*ArgError); !ok {
 		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroDroplets_DeleteCheckpoint(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microdroplets/checkpoints/chk-1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	if _, err := client.MicroDroplets.DeleteCheckpoint(ctx, "chk-1"); err != nil {
+		t.Fatalf("MicroDroplets.DeleteCheckpoint returned error: %v", err)
+	}
+}
+
+func TestMicroDroplets_DeleteCheckpoint_EmptyID(t *testing.T) {
+	_, err := (&MicroDropletsServiceOp{}).DeleteCheckpoint(ctx, "")
+	if err == nil {
+		t.Fatal("expected error for empty id")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroDroplets_GetCreateOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microdroplets/options", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+			"regions": [{"slug": "nyc1", "available": true}],
+			"default_region": "nyc1",
+			"sizes": [{
+				"size": {"cpu": 2, "memory": 4096, "disk": 80},
+				"available": true,
+				"pricing": {"price_per_hour": 0.0119, "price_per_month": 8.0}
+			}],
+			"features": [{"name": "microdroplet", "enabled": true}],
+			"account_limits": {"max_concurrent_running": 10, "max_total_count": 25}
+		}`)
+	})
+
+	opts, _, err := client.MicroDroplets.GetCreateOptions(ctx)
+	if err != nil {
+		t.Fatalf("MicroDroplets.GetCreateOptions returned error: %v", err)
+	}
+
+	expected := &MicroDropletCreateOptions{
+		Regions:       []MicroDropletRegionOption{{Slug: "nyc1", Available: true}},
+		DefaultRegion: "nyc1",
+		Sizes: []MicroDropletSizeOption{{
+			Size:      MicroDropletSize{CPU: 2, Memory: 4096, Disk: 80},
+			Available: true,
+			Pricing:   &MicroDropletSizePricing{PricePerHour: 0.0119, PricePerMonth: 8.0},
+		}},
+		Features: []MicroDropletFeatureOption{{Name: "microdroplet", Enabled: true}},
+		AccountLimits: &MicroDropletAccountLimits{
+			MaxConcurrentRunning: 10,
+			MaxTotalCount:        25,
+		},
+	}
+	if !reflect.DeepEqual(opts, expected) {
+		t.Errorf("MicroDroplets.GetCreateOptions returned %+v, expected %+v", opts, expected)
 	}
 }
 

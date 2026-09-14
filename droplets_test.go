@@ -290,7 +290,7 @@ func TestDroplets_GetDroplet(t *testing.T) {
 
 	mux.HandleFunc("/v2/droplets/12345", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"droplet":{"id":12345}}`)
+		fmt.Fprint(w, `{"droplet":{"id":12345,"vpc_uuid":"880b7f98-f062-404d-b33c-458d545696f6","subnet_uuid":"6b5c619c-359c-44ca-87e2-47e98170c01d"}}`)
 	})
 
 	droplets, _, err := client.Droplets.Get(ctx, 12345)
@@ -298,7 +298,11 @@ func TestDroplets_GetDroplet(t *testing.T) {
 		t.Errorf("Droplet.Get returned error: %v", err)
 	}
 
-	expected := &Droplet{ID: 12345}
+	expected := &Droplet{
+		ID:         12345,
+		VPCUUID:    "880b7f98-f062-404d-b33c-458d545696f6",
+		SubnetUUID: "6b5c619c-359c-44ca-87e2-47e98170c01d",
+	}
 	if !reflect.DeepEqual(droplets, expected) {
 		t.Errorf("Droplets.Get\n got=%#v\nwant=%#v", droplets, expected)
 	}
@@ -319,9 +323,10 @@ func TestDroplets_Create(t *testing.T) {
 			{ID: "hello-im-another-volume"},
 			{Name: "should be ignored due to Name", ID: "aaa-111-bbb-222-ccc"},
 		},
-		Tags:    []string{"one", "two"},
-		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
-		Backups: true,
+		Tags:       []string{"one", "two"},
+		VPCUUID:    "880b7f98-f062-404d-b33c-458d545696f6",
+		SubnetUUID: "6b5c619c-359c-44ca-87e2-47e98170c01d",
+		Backups:    true,
 		BackupPolicy: &DropletBackupPolicyRequest{
 			Plan:    "weekly",
 			Weekday: "MON",
@@ -345,6 +350,7 @@ func TestDroplets_Create(t *testing.T) {
 			},
 			"tags":          []interface{}{"one", "two"},
 			"vpc_uuid":      "880b7f98-f062-404d-b33c-458d545696f6",
+			"subnet_uuid":   "6b5c619c-359c-44ca-87e2-47e98170c01d",
 			"backups":       true,
 			"backup_policy": map[string]interface{}{"plan": "weekly", "weekday": "MON", "hour": float64(0)},
 		}
@@ -352,7 +358,8 @@ func TestDroplets_Create(t *testing.T) {
 {
   "droplet": {
     "id": 1,
-    "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6"
+    "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+    "subnet_uuid": "6b5c619c-359c-44ca-87e2-47e98170c01d"
   },
   "links": {
     "actions": [
@@ -391,6 +398,11 @@ func TestDroplets_Create(t *testing.T) {
 	vpcid := "880b7f98-f062-404d-b33c-458d545696f6"
 	if id := droplet.VPCUUID; id != vpcid {
 		t.Errorf("expected VPC uuid '%s', received '%s'", vpcid, id)
+	}
+
+	subnetid := "6b5c619c-359c-44ca-87e2-47e98170c01d"
+	if id := droplet.SubnetUUID; id != subnetid {
+		t.Errorf("expected subnet uuid '%s', received '%s'", subnetid, id)
 	}
 
 	if a := resp.Links.Actions[0]; a.ID != 1 {
@@ -692,8 +704,9 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 		Image: DropletCreateImage{
 			ID: 1,
 		},
-		Tags:    []string{"one", "two"},
-		VPCUUID: "880b7f98-f062-404d-b33c-458d545696f6",
+		Tags:       []string{"one", "two"},
+		VPCUUID:    "880b7f98-f062-404d-b33c-458d545696f6",
+		SubnetUUID: "6b5c619c-359c-44ca-87e2-47e98170c01d",
 	}
 
 	mux.HandleFunc("/v2/droplets", func(w http.ResponseWriter, r *http.Request) {
@@ -709,17 +722,20 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 			"monitoring":         false,
 			"tags":               []interface{}{"one", "two"},
 			"vpc_uuid":           "880b7f98-f062-404d-b33c-458d545696f6",
+			"subnet_uuid":        "6b5c619c-359c-44ca-87e2-47e98170c01d",
 		}
 		jsonBlob := `
 {
   "droplets": [
     {
       "id": 1,
-	  "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6"
+	  "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+	  "subnet_uuid": "6b5c619c-359c-44ca-87e2-47e98170c01d"
     },
     {
       "id": 2,
-	  "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6"
+	  "vpc_uuid": "880b7f98-f062-404d-b33c-458d545696f6",
+	  "subnet_uuid": "6b5c619c-359c-44ca-87e2-47e98170c01d"
     }
   ],
   "links": {
@@ -765,6 +781,14 @@ func TestDroplets_CreateMultiple(t *testing.T) {
 	}
 	if id := droplets[1].VPCUUID; id != vpcid {
 		t.Errorf("expected VPC uuid '%s', received '%s'", vpcid, id)
+	}
+
+	subnetid := "6b5c619c-359c-44ca-87e2-47e98170c01d"
+	if id := droplets[0].SubnetUUID; id != subnetid {
+		t.Errorf("expected subnet uuid '%s', received '%s'", subnetid, id)
+	}
+	if id := droplets[1].SubnetUUID; id != subnetid {
+		t.Errorf("expected subnet uuid '%s', received '%s'", subnetid, id)
 	}
 
 	if a := resp.Links.Actions[0]; a.ID != 1 {
