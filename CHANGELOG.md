@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+- @rodrigoea - prepayment: add public prepayment config and status client methods
+
 ## [1.208.0] - 2026-09-15
 
 - #1105 - @AKatruwar - registry: expose registry UUID and add ListByUUID
