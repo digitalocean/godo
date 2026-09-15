@@ -82,6 +82,7 @@ func testClientServices(t *testing.T, c *Client) {
 		"Actions",
 		"Balance",
 		"BillingHistory",
+		"BillingInsights",
 		"CDNs",
 		"Domains",
 		"Droplets",
