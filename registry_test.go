@@ -15,6 +15,7 @@ import (
 
 const (
 	testRegistry          = "test-registry"
+	testRegistryUUID      = "aaaaaaaa-0000-0000-0000-000000000001"
 	testRegion            = "r1"
 	testRepository        = "test/repository"
 	testEncodedRepository = "test%2Frepository"
@@ -972,6 +973,7 @@ func TestRegistries_Get(t *testing.T) {
 	defer teardown()
 
 	want := &Registry{
+		UUID:                       testRegistryUUID,
 		Name:                       testRegistry,
 		StorageUsageBytes:          0,
 		StorageUsageBytesUpdatedAt: testTime,
@@ -983,6 +985,7 @@ func TestRegistries_Get(t *testing.T) {
 	getResponseJSON := `
 {
 	"registry": {
+		"uuid": "` + testRegistryUUID + `",
 		"name": "` + testRegistry + `",
 		"storage_usage_bytes": 0,
 		"storage_usage_bytes_updated_at": "` + testTimeString + `",
@@ -1000,12 +1003,45 @@ func TestRegistries_Get(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestRegistries_GetByUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	want := &Registry{
+		UUID:                       testRegistryUUID,
+		Name:                       testRegistry,
+		StorageUsageBytesUpdatedAt: testTime,
+		CreatedAt:                  testTime,
+		Region:                     testRegion,
+	}
+
+	getResponseJSON := `
+{
+	"registry": {
+		"uuid": "` + testRegistryUUID + `",
+		"name": "` + testRegistry + `",
+		"storage_usage_bytes_updated_at": "` + testTimeString + `",
+		"created_at": "` + testTimeString + `",
+		"region": "` + testRegion + `"
+	}
+}`
+
+	mux.HandleFunc(fmt.Sprintf("/v2/registries/%s", testRegistryUUID), func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, getResponseJSON)
+	})
+	got, _, err := client.Registries.Get(ctx, testRegistryUUID)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
 func TestRegistries_List(t *testing.T) {
 	setup()
 	defer teardown()
 
 	wantRegistries := []*Registry{
 		{
+			UUID:                       testRegistryUUID,
 			Name:                       testRegistry,
 			StorageUsageBytes:          0,
 			StorageUsageBytesUpdatedAt: testTime,
@@ -1017,6 +1053,7 @@ func TestRegistries_List(t *testing.T) {
 {
 	"registries": [
 		{
+			"uuid": "` + testRegistryUUID + `",
 			"name": "` + testRegistry + `",
 			"storage_usage_bytes": 0,
 			"storage_usage_bytes_updated_at": "` + testTimeString + `",
@@ -1032,6 +1069,42 @@ func TestRegistries_List(t *testing.T) {
 		fmt.Fprint(w, getResponseJSON)
 	})
 	got, _, err := client.Registries.List(ctx)
+	require.NoError(t, err)
+	require.Equal(t, wantRegistries, got)
+}
+
+func TestRegistries_ListByUUID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	wantRegistries := []*Registry{
+		{
+			UUID:                       testRegistryUUID,
+			Name:                       testRegistry,
+			StorageUsageBytesUpdatedAt: testTime,
+			CreatedAt:                  testTime,
+			Region:                     testRegion,
+		},
+	}
+	getResponseJSON := `
+{
+	"registries": [
+		{
+			"uuid": "` + testRegistryUUID + `",
+			"name": "` + testRegistry + `",
+			"storage_usage_bytes_updated_at": "` + testTimeString + `",
+			"created_at": "` + testTimeString + `",
+			"region": "` + testRegion + `"
+		}
+	]
+}`
+
+	mux.HandleFunc("/v2/registries", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		require.Equal(t, testRegistryUUID, r.URL.Query().Get("uuid"))
+		fmt.Fprint(w, getResponseJSON)
+	})
+	got, _, err := client.Registries.ListByUUID(ctx, testRegistryUUID)
 	require.NoError(t, err)
 	require.Equal(t, wantRegistries, got)
 }
