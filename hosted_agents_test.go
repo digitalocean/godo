@@ -456,6 +456,103 @@ func TestHostedAgentSessionFromConfigRequest_JSONOmitsFalseResumeOnTopoff(t *tes
 	assert.JSONEq(t, `{"name":"session-from-config","config_id":"019fb39c-14d9-7080-933e-b9b90e25acda"}`, string(body))
 }
 
+func TestHostedAgents_UpdateSession(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-patch", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"resume_on_topoff":true}`, string(raw))
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-patch",
+				"name": "patched",
+				"agent_kind": "AGENT_KIND_OPENCODE",
+				"status": "SESSION_STATUS_READY",
+				"created_at": "2026-08-01T12:00:00Z",
+				"last_event_at": "2026-08-01T12:00:00Z",
+				"resume_on_topoff": true
+			}
+		}`)
+	})
+
+	granted := true
+	session, resp, err := client.HostedAgents.UpdateSession(ctx, "sess-patch", &HostedAgentSessionUpdateRequest{
+		ResumeOnTopoff: &granted,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, session)
+	assert.Equal(t, "sess-patch", session.SessionID)
+	assert.True(t, session.ResumeOnTopoff)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+// Revoking has to reach the server as an explicit false. omitempty on a *bool
+// drops only nil, so the pointer is what keeps this from being indistinguishable
+// from "leave it alone".
+func TestHostedAgents_UpdateSession_RevokesExplicitly(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-patch", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"resume_on_topoff":false}`, string(raw))
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-patch",
+				"status": "SESSION_STATUS_READY"
+			}
+		}`)
+	})
+
+	revoked := false
+	session, _, err := client.HostedAgents.UpdateSession(ctx, "sess-patch", &HostedAgentSessionUpdateRequest{
+		ResumeOnTopoff: &revoked,
+	})
+	require.NoError(t, err)
+	assert.False(t, session.ResumeOnTopoff)
+}
+
+// The server rejects an empty body and an unknown session id, so both are caught
+// before a request is spent. No mux handler is registered: reaching the network
+// would 404 the test.
+func TestHostedAgents_UpdateSession_Validation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.UpdateSession(ctx, "", &HostedAgentSessionUpdateRequest{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "session id is required")
+
+	for name, update := range map[string]*HostedAgentSessionUpdateRequest{
+		"nil request":  nil,
+		"no field set": {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := client.HostedAgents.UpdateSession(ctx, "sess-patch", update)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "at least one field")
+		})
+	}
+}
+
+func TestHostedAgentSessionUpdateRequest_JSONOmitsUnsetFields(t *testing.T) {
+	body, err := json.Marshal(&HostedAgentSessionUpdateRequest{})
+	require.NoError(t, err)
+	// An unset field must not appear at all: PATCH leaves omitted properties
+	// alone, so sending false here would revoke a consent nobody named.
+	assert.JSONEq(t, `{}`, string(body))
+}
+
 func TestHostedAgents_CreateSessionFromConfig_Validation(t *testing.T) {
 	setup()
 	defer teardown()
