@@ -404,6 +404,58 @@ func TestHostedAgents_CreateSessionFromConfig(t *testing.T) {
 	assert.Equal(t, "019fb39c-14d9-7080-933e-b9b90e25acda", session.ConfigID)
 }
 
+func TestHostedAgents_CreateSessionFromConfig_ResumeOnTopoff(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+		assert.Empty(t, r.URL.Query().Get("resume_on_topoff"), "config create sends consent in the JSON body, not as a query param")
+		var body HostedAgentSessionFromConfigRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "session-from-config", body.Name)
+		assert.Equal(t, "019fb39c-14d9-7080-933e-b9b90e25acda", body.ConfigID)
+		assert.True(t, body.ResumeOnTopoff)
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-cfg-topoff",
+				"name": "session-from-config",
+				"agent_kind": "AGENT_KIND_OPENCODE",
+				"status": "SESSION_STATUS_PROVISIONING",
+				"sandbox_id": "sbx-cfg",
+				"created_at": "2026-08-01T12:00:00Z",
+				"last_event_at": "2026-08-01T12:00:00Z",
+				"resume_on_topoff": true,
+				"config_id": "019fb39c-14d9-7080-933e-b9b90e25acda"
+			}
+		}`)
+	})
+
+	session, resp, err := client.HostedAgents.CreateSessionFromConfig(ctx, &HostedAgentSessionFromConfigRequest{
+		Name:           "session-from-config",
+		ConfigID:       "019fb39c-14d9-7080-933e-b9b90e25acda",
+		ResumeOnTopoff: true,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.NotNil(t, session)
+	assert.Equal(t, "sess-cfg-topoff", session.SessionID)
+	assert.True(t, session.ResumeOnTopoff)
+	assert.Equal(t, "sbx-cfg", session.SandboxID)
+}
+
+func TestHostedAgentSessionFromConfigRequest_JSONOmitsFalseResumeOnTopoff(t *testing.T) {
+	body, err := json.Marshal(&HostedAgentSessionFromConfigRequest{
+		Name:     "session-from-config",
+		ConfigID: "019fb39c-14d9-7080-933e-b9b90e25acda",
+	})
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"name":"session-from-config","config_id":"019fb39c-14d9-7080-933e-b9b90e25acda"}`, string(body))
+}
+
 func TestHostedAgents_CreateSessionFromConfig_Validation(t *testing.T) {
 	setup()
 	defer teardown()
