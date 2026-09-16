@@ -310,6 +310,50 @@ func TestHostedAgentSession_DecodesSandboxIDAndResumeOnTopoff(t *testing.T) {
 	assert.Contains(t, fields, "resume_on_topoff")
 }
 
+func TestHostedAgentSession_DecodesPauseReason(t *testing.T) {
+	const sessionJSON = `{
+		"session_id": "01a0a8de-2977-704d-8a70-f09d4f2d11ac",
+		"agent_kind": "AGENT_KIND_OPENCODE",
+		"status": "SESSION_STATUS_PAUSED",
+		"pause_reason": "low_balance",
+		"created_at": "2026-09-16T06:18:47.031022Z",
+		"last_event_at": "2026-09-16T06:18:47.381155Z"
+	}`
+
+	var session HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(sessionJSON), &session))
+	assert.Equal(t, HostedAgentSessionStatusPaused, session.Status)
+	assert.Equal(t, HostedAgentSessionPauseReasonLowBalance, session.PauseReason)
+}
+
+// The API reserves the right to add reasons, so a value this client has no
+// constant for still has to survive decoding intact.
+func TestHostedAgentSession_KeepsUnknownPauseReasonVerbatim(t *testing.T) {
+	const sessionJSON = `{
+		"session_id": "sess-future",
+		"status": "SESSION_STATUS_PAUSED",
+		"pause_reason": "some_future_reason"
+	}`
+
+	var session HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(sessionJSON), &session))
+	assert.Equal(t, HostedAgentSessionPauseReason("some_future_reason"), session.PauseReason)
+}
+
+// A running session has no reason to report, so the field must not appear.
+func TestHostedAgentSession_JSONOmitsEmptyPauseReason(t *testing.T) {
+	body, err := json.Marshal(&HostedAgentSession{
+		SessionID: "sess-running",
+		AgentKind: HostedAgentKindOpenCode,
+		Status:    HostedAgentSessionStatusReady,
+	})
+	require.NoError(t, err)
+
+	var fields map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(body, &fields))
+	assert.NotContains(t, fields, "pause_reason")
+}
+
 func TestHostedAgentSession_JSONOmitsFalseResumeOnTopoff(t *testing.T) {
 	body, err := json.Marshal(&HostedAgentSession{
 		SessionID: "sess-no-topoff",
