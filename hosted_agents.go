@@ -300,6 +300,12 @@ type HostedAgentSession struct {
 	ParentSessionID string `json:"parent_session_id,omitempty"`
 	// ForkID is a branch label on forked sessions; empty/omitted for roots.
 	ForkID string `json:"fork_id,omitempty"`
+	// SizeSlug is the sandbox size slug this session's sandbox actually
+	// booted at (spec.sandbox.sizeSlug, or the service default when the
+	// manifest omitted one), e.g. "mv-2vcpu-4gb". Empty for a session that
+	// has not reached a sandbox yet, and for sessions created before this
+	// field existed.
+	SizeSlug string `json:"size_slug,omitempty"`
 }
 
 // HostedAgentRun represents a single execution within a session.
