@@ -18,13 +18,15 @@ import (
 )
 
 var hostedAgentSession = HostedAgentSession{
-	SessionID:   "sess-abc123",
-	Name:        "godo-fixture",
-	AgentKind:   HostedAgentKindClaudeCode,
-	Status:      HostedAgentSessionStatusReady,
-	CreatedAt:   Timestamp{Time: time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)},
-	LastEventAt: Timestamp{Time: time.Date(2026, 3, 1, 12, 5, 0, 0, time.UTC)},
-	RepoHint:    "digitalocean/godo",
+	SessionID:      "sess-abc123",
+	Name:           "godo-fixture",
+	AgentKind:      HostedAgentKindClaudeCode,
+	Status:         HostedAgentSessionStatusReady,
+	SandboxID:      "sbx-abc123",
+	ResumeOnTopoff: true,
+	CreatedAt:      Timestamp{Time: time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)},
+	LastEventAt:    Timestamp{Time: time.Date(2026, 3, 1, 12, 5, 0, 0, time.UTC)},
+	RepoHint:       "digitalocean/godo",
 	ProviderAuth: map[string]HostedAgentProviderAuthState{
 		"github": HostedAgentProviderAuthStateAuthorized,
 	},
@@ -36,6 +38,8 @@ var hostedAgentSessionJSON = `
 	"name": "godo-fixture",
 	"agent_kind": "AGENT_KIND_CLAUDE_CODE",
 	"status": "SESSION_STATUS_READY",
+	"sandbox_id": "sbx-abc123",
+	"resume_on_topoff": true,
 	"created_at": "2026-03-01T12:00:00Z",
 	"last_event_at": "2026-03-01T12:05:00Z",
 	"repo_hint": "digitalocean/godo",
@@ -278,6 +282,48 @@ func TestHostedAgentSession_DecodesWarnings(t *testing.T) {
 	assert.Contains(t, session.Warnings[0], "command \"*\"")
 }
 
+// MARSOHS-1438: doctl -o json was dropping these fields because godo lacked them.
+func TestHostedAgentSession_DecodesSandboxIDAndResumeOnTopoff(t *testing.T) {
+	const sessionJSON = `{
+		"session_id": "01a0a8de-2977-704d-8a70-f09d4f2d11ac",
+		"name": "j5-probe-good",
+		"agent_kind": "AGENT_KIND_OPENCODE",
+		"status": "SESSION_STATUS_READY",
+		"sandbox_id": "01a0a8de-29b6-746e-8ef1-21b698621078",
+		"created_at": "2026-09-16T06:18:47.031022Z",
+		"last_event_at": "2026-09-16T06:18:47.381155Z",
+		"resume_on_topoff": true,
+		"config_id": "01a0a8de-2966-705c-8827-4a5b0ec51140"
+	}`
+
+	var session HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(sessionJSON), &session))
+	assert.Equal(t, "01a0a8de-29b6-746e-8ef1-21b698621078", session.SandboxID)
+	assert.True(t, session.ResumeOnTopoff)
+	assert.Equal(t, "01a0a8de-2966-705c-8827-4a5b0ec51140", session.ConfigID)
+
+	body, err := json.Marshal(&session)
+	require.NoError(t, err)
+	var fields map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(body, &fields))
+	assert.Contains(t, fields, "sandbox_id")
+	assert.Contains(t, fields, "resume_on_topoff")
+}
+
+func TestHostedAgentSession_JSONOmitsFalseResumeOnTopoff(t *testing.T) {
+	body, err := json.Marshal(&HostedAgentSession{
+		SessionID: "sess-no-topoff",
+		AgentKind: HostedAgentKindOpenCode,
+		Status:    HostedAgentSessionStatusReady,
+	})
+	require.NoError(t, err)
+
+	var fields map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(body, &fields))
+	assert.NotContains(t, fields, "resume_on_topoff")
+	assert.NotContains(t, fields, "sandbox_id")
+}
+
 func TestHostedAgents_CreateSessionFromManifest(t *testing.T) {
 	setup()
 	defer teardown()
@@ -420,6 +466,31 @@ spec:
 	assert.Equal(t, HostedAgentKindOpenAICodex, got.AgentKind)
 	assert.Equal(t, "sess_a91f3", got.OpenAISessionID)
 	assert.Equal(t, "env_abc123", got.OpenAIEnvironmentID)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgents_CreateSessionFromManifest_ResumeOnTopoff(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const manifest = `name: probe
+agent: opencode
+`
+
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
+		assert.Equal(t, "true", r.URL.Query().Get("resume_on_topoff"))
+		fmt.Fprintf(w, `{"session":%s}`, hostedAgentSessionJSON)
+	})
+
+	got, resp, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte(manifest), &HostedAgentManifestCreateOptions{
+		ResumeOnTopoff: true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, hostedAgentSession, *got)
+	assert.True(t, got.ResumeOnTopoff)
+	assert.Equal(t, "sbx-abc123", got.SandboxID)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
