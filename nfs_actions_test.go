@@ -9,6 +9,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNfsActionGet(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/nfs/actions/action-id-1", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"action": {"id": "action-id-1", "status": "COMPLETED", "type": "RESIZE_SHARE", "resource_type": "network_file_share", "resource_id": "my-nfs-id", "region_slug": "atl1", "started_at": "2025-10-14T11:55:31.615157397Z"}}`)
+	})
+
+	action, resp, err := client.NfsActions.Get(context.Background(), "action-id-1")
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "action-id-1", action.ID)
+	assert.Equal(t, NfsActionStatusCompleted, action.Status)
+	assert.Equal(t, "RESIZE_SHARE", action.Type)
+	assert.Equal(t, "my-nfs-id", action.ResourceID)
+	assert.Equal(t, "atl1", action.RegionSlug)
+}
+
 func TestNfsResize(t *testing.T) {
 	setup()
 	defer teardown()
