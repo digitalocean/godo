@@ -53,6 +53,10 @@ func (s *SSEReader) Next() (*SSEEvent, error) {
 
 	for {
 		line, err := s.readLine()
+		if err != nil && err != io.EOF {
+			s.err = err
+			return nil, err
+		}
 		eof := err == io.EOF
 
 		if len(line) == 0 {
@@ -66,10 +70,6 @@ func (s *SSEReader) Next() (*SSEEvent, error) {
 			if eof {
 				s.err = io.EOF
 				return nil, io.EOF
-			}
-			if err != nil {
-				s.err = err
-				return nil, err
 			}
 			continue
 		}
@@ -107,10 +107,6 @@ func (s *SSEReader) Next() (*SSEEvent, error) {
 			ev := s.makeEvent(eventTyp, retry)
 			s.err = io.EOF
 			return ev, nil
-		}
-		if err != nil {
-			s.err = err
-			return nil, err
 		}
 	}
 }

@@ -134,6 +134,58 @@ func TestSSEReader_TrailingEventWithoutBlankLine(t *testing.T) {
 	}
 }
 
+type failingSSEReader struct {
+	data  string
+	err   error
+	reads int
+}
+
+func (r *failingSSEReader) Read(p []byte) (int, error) {
+	r.reads++
+	n := copy(p, r.data)
+	r.data = r.data[n:]
+	return n, r.err
+}
+
+func TestSSEReader_ReadError(t *testing.T) {
+	for _, data := range []string{
+		"",
+		"data: incomplete\n",
+		"data: incomplete\n: keep-alive",
+		": keep-alive",
+		"data: incomplete",
+	} {
+		t.Run(data, func(t *testing.T) {
+			wantErr := errors.New("stream interrupted")
+			source := &failingSSEReader{data: data, err: wantErr}
+			r := NewSSEReader(source)
+			for attempt := 0; attempt < 2; attempt++ {
+				ev, err := r.Next()
+				if ev != nil || !errors.Is(err, wantErr) {
+					t.Fatalf("Next = (%v, %v), want (nil, %v)", ev, err, wantErr)
+				}
+			}
+			if source.reads != 1 {
+				t.Errorf("source reads = %d, want 1", source.reads)
+			}
+		})
+	}
+}
+
+func TestSSEReader_CompleteEventBeforeReadError(t *testing.T) {
+	wantErr := errors.New("stream interrupted")
+	source := &failingSSEReader{data: "data: complete\n\ndata: incomplete\n", err: wantErr}
+	r := NewSSEReader(source)
+	ev, err := r.Next()
+	if err != nil || ev == nil || string(ev.Data) != "complete" {
+		t.Fatalf("first Next = (%v, %v), want complete event", ev, err)
+	}
+	ev, err = r.Next()
+	if ev != nil || !errors.Is(err, wantErr) {
+		t.Fatalf("second Next = (%v, %v), want (nil, %v)", ev, err, wantErr)
+	}
+}
+
 func TestSSEReader_NoLeadingSpaceValue(t *testing.T) {
 	r := NewSSEReader(strings.NewReader("data:no-space\ndata:  two-spaces\n\n"))
 	ev, err := r.Next()
