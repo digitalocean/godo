@@ -201,24 +201,21 @@ type ListMicroVMCheckpointsOptions struct {
 
 // MicroVMCreateOptions is the response from GET /v2/microvms/options.
 type MicroVMCreateOptions struct {
-	Regions       []MicroVMRegionOption  `json:"regions,omitempty"`
 	DefaultRegion string                 `json:"default_region,omitempty"`
 	Sizes         []MicroVMSizeOption    `json:"sizes,omitempty"`
 	Features      []MicroVMFeatureOption `json:"features,omitempty"`
 	AccountLimits *MicroVMAccountLimits  `json:"account_limits,omitempty"`
 }
 
-// MicroVMRegionOption is one region evaluated for the authenticated team.
-type MicroVMRegionOption struct {
-	Slug              string `json:"slug,omitempty"`
-	Available         bool   `json:"available"`
-	UnavailableReason string `json:"unavailable_reason,omitempty"`
-}
-
-// MicroVMSizeOption is one supported size evaluated for the team.
+// MicroVMSizeOption is one supported size evaluated for the team. Regions
+// holds the slugs where the team can create this size; a region it cannot use
+// is absent rather than listed as unavailable.
 type MicroVMSizeOption struct {
-	Size      MicroVMSize         `json:"size"`
+	CPU       uint32              `json:"cpu"`
+	Memory    uint32              `json:"memory"`
+	Disk      uint64              `json:"disk"`
 	Available bool                `json:"available"`
+	Regions   []string            `json:"regions"`
 	Pricing   *MicroVMSizePricing `json:"pricing,omitempty"`
 }
 
@@ -538,8 +535,9 @@ func (s *MicroVMsServiceOp) DeleteCheckpoint(ctx context.Context, id string) (*R
 	return s.client.Do(ctx, req, nil)
 }
 
-// GetCreateOptions returns the regions, sizes, features, and account limits
-// available to the authenticated team when creating a MicroVM.
+// GetCreateOptions returns the sizes, the regions each one can be created in,
+// the feature gates, and the account limits available to the authenticated
+// team when creating a MicroVM.
 func (s *MicroVMsServiceOp) GetCreateOptions(ctx context.Context) (*MicroVMCreateOptions, *Response, error) {
 	req, err := s.client.NewRequest(ctx, http.MethodGet, microVMOptionsPath, nil)
 	if err != nil {

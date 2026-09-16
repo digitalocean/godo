@@ -571,11 +571,13 @@ func TestMicroVMs_GetCreateOptions(t *testing.T) {
 	mux.HandleFunc("/v2/microvms/options", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
-			"regions": [{"slug": "nyc1", "available": true}],
 			"default_region": "nyc1",
 			"sizes": [{
-				"size": {"cpu": 2, "memory": 4096, "disk": 80},
+				"cpu": 2,
+				"memory": 4096,
+				"disk": 80,
 				"available": true,
+				"regions": ["nyc1", "sfo3"],
 				"pricing": {"price_per_hour": 0.0119, "price_per_month": 8.0}
 			}],
 			"features": [{"name": "microvm", "enabled": true}],
@@ -589,11 +591,13 @@ func TestMicroVMs_GetCreateOptions(t *testing.T) {
 	}
 
 	expected := &MicroVMCreateOptions{
-		Regions:       []MicroVMRegionOption{{Slug: "nyc1", Available: true}},
 		DefaultRegion: "nyc1",
 		Sizes: []MicroVMSizeOption{{
-			Size:      MicroVMSize{CPU: 2, Memory: 4096, Disk: 80},
+			CPU:       2,
+			Memory:    4096,
+			Disk:      80,
 			Available: true,
+			Regions:   []string{"nyc1", "sfo3"},
 			Pricing:   &MicroVMSizePricing{PricePerHour: 0.0119, PricePerMonth: 8.0},
 		}},
 		Features: []MicroVMFeatureOption{{Name: "microvm", Enabled: true}},
