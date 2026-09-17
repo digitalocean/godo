@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/url"
@@ -23,6 +24,17 @@ func main() {
 		outcome = godo.HostedAgentHITLOutcome(v)
 	}
 
+	// HITL_CONTENT, if set, must be a JSON object — the answer to an MCP form
+	// elicitation (e.g. {"site_url": "https://acme.atlassian.net"}). Leave it
+	// unset for a plain approval, where Outcome alone is the whole answer.
+	var content map[string]any
+	if v := os.Getenv("HITL_CONTENT"); v != "" {
+		if err := json.Unmarshal([]byte(v), &content); err != nil {
+			fmt.Fprintf(os.Stderr, "HITL_CONTENT must be a JSON object: %v\n", err)
+			os.Exit(2)
+		}
+	}
+
 	client := mustClient()
 	ctx := context.Background()
 
@@ -30,6 +42,7 @@ func main() {
 		Outcome: outcome,
 		Reason:  os.Getenv("HITL_REASON"),
 		Source:  godo.HostedAgentResolutionSourceOutOfBand,
+		Content: content,
 	})
 	if err != nil {
 		die(err)
