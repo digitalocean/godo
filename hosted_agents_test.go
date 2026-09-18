@@ -660,6 +660,42 @@ func TestHostedAgents_GetSession_OpenAIFields(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func TestHostedAgents_GetSession_SizeSlug(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-sized", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"session":{
+			"session_id": "sess-sized",
+			"agent_kind": "AGENT_KIND_OPENCODE",
+			"status": "SESSION_STATUS_READY",
+			"size_slug": "mv-2vcpu-4gb"
+		}}`)
+	})
+
+	got, resp, err := client.HostedAgents.GetSession(ctx, "sess-sized")
+	require.NoError(t, err)
+	assert.Equal(t, "mv-2vcpu-4gb", got.SizeSlug)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+// A session predating this field, or one that has not reached a sandbox yet,
+// must decode to an empty SizeSlug rather than erroring on the absent key.
+func TestHostedAgents_GetSession_SizeSlugAbsent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprintf(w, `{"session":%s}`, hostedAgentSessionJSON)
+	})
+
+	got, _, err := client.HostedAgents.GetSession(ctx, "sess-abc123")
+	require.NoError(t, err)
+	assert.Empty(t, got.SizeSlug)
+}
+
 func TestHostedAgents_ListSessions(t *testing.T) {
 	setup()
 	defer teardown()
