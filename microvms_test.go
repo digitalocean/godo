@@ -618,3 +618,235 @@ func TestMicroVM_URN(t *testing.T) {
 		t.Errorf("MicroVM.URN = %q, expected %q", got, want)
 	}
 }
+
+func TestMicroVMs_Exec(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/exec", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var got MicroVMExecRequest
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode body: %v", err)
+		}
+		want := MicroVMExecRequest{Argv: []string{"echo", "hi"}, Cwd: "/app"}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("request body = %+v, expected %+v", got, want)
+		}
+		fmt.Fprint(w, `{"stdout":"hi\n","stderr":"","exit_code":0}`)
+	})
+
+	result, _, err := client.MicroVMs.Exec(ctx, "aaa-111", &MicroVMExecRequest{
+		Argv: []string{"echo", "hi"},
+		Cwd:  "/app",
+	})
+	if err != nil {
+		t.Fatalf("MicroVMs.Exec returned error: %v", err)
+	}
+	expected := &MicroVMExecResult{Stdout: "hi\n", Stderr: "", ExitCode: 0}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("MicroVMs.Exec returned %+v, expected %+v", result, expected)
+	}
+}
+
+func TestMicroVMs_Exec_Truncated(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/exec", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"stdout":"partial","stderr":"","exit_code":0,"truncated":true}`)
+	})
+
+	result, _, err := client.MicroVMs.Exec(ctx, "aaa-111", &MicroVMExecRequest{
+		Argv: []string{"yes"},
+	})
+	if err != nil {
+		t.Fatalf("MicroVMs.Exec returned error: %v", err)
+	}
+	expected := &MicroVMExecResult{Stdout: "partial", Stderr: "", ExitCode: 0, Truncated: true}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("MicroVMs.Exec returned %+v, expected %+v", result, expected)
+	}
+}
+
+func TestMicroVMs_Exec_NonZeroExit(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/exec", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"stdout":"","stderr":"boom\n","exit_code":7}`)
+	})
+
+	result, _, err := client.MicroVMs.Exec(ctx, "aaa-111", &MicroVMExecRequest{
+		Argv: []string{"false"},
+	})
+	if err != nil {
+		t.Fatalf("MicroVMs.Exec returned error for non-zero exit: %v", err)
+	}
+	expected := &MicroVMExecResult{Stdout: "", Stderr: "boom\n", ExitCode: 7}
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("MicroVMs.Exec returned %+v, expected %+v", result, expected)
+	}
+}
+
+func TestMicroVMs_Exec_EmptyID(t *testing.T) {
+	_, _, err := (&MicroVMsServiceOp{}).Exec(ctx, "", &MicroVMExecRequest{Argv: []string{"true"}})
+	if err == nil {
+		t.Fatal("expected error for empty id")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroVMs_Exec_NilRequest(t *testing.T) {
+	_, _, err := (&MicroVMsServiceOp{}).Exec(ctx, "aaa-111", nil)
+	if err == nil {
+		t.Fatal("expected error for nil request")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroVMs_Exec_EmptyArgv(t *testing.T) {
+	_, _, err := (&MicroVMsServiceOp{}).Exec(ctx, "aaa-111", &MicroVMExecRequest{})
+	if err == nil {
+		t.Fatal("expected error for empty argv")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroVMs_Exec_Forbidden(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/exec", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, `{"id":"forbidden","message":"exec_pty feature gate is off"}`)
+	})
+
+	result, resp, err := client.MicroVMs.Exec(ctx, "aaa-111", &MicroVMExecRequest{
+		Argv: []string{"true"},
+	})
+	if err == nil {
+		t.Fatal("expected error for 403")
+	}
+	if result != nil {
+		t.Errorf("expected nil result on error, got %+v", result)
+	}
+	if resp == nil || resp.StatusCode != http.StatusForbidden {
+		t.Errorf("expected Response with StatusForbidden, got %+v", resp)
+	}
+	if _, ok := err.(*ErrorResponse); !ok {
+		t.Errorf("expected *ErrorResponse, got %T: %v", err, err)
+	}
+}
+
+func TestMicroVMs_ConsoleURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	got, err := client.MicroVMs.ConsoleURL("aaa-111", nil)
+	if err != nil {
+		t.Fatalf("ConsoleURL returned error: %v", err)
+	}
+	want := "ws://" + client.BaseURL.Host + "/v2/microvms/aaa-111/console"
+	if got != want {
+		t.Errorf("ConsoleURL = %q, expected %q", got, want)
+	}
+}
+
+func TestMicroVMs_ConsoleURL_WithSize(t *testing.T) {
+	setup()
+	defer teardown()
+
+	got, err := client.MicroVMs.ConsoleURL("aaa-111", &MicroVMConsoleOptions{Rows: 40, Cols: 120})
+	if err != nil {
+		t.Fatalf("ConsoleURL returned error: %v", err)
+	}
+	want := "ws://" + client.BaseURL.Host + "/v2/microvms/aaa-111/console?cols=120&rows=40"
+	if got != want {
+		t.Errorf("ConsoleURL = %q, expected %q", got, want)
+	}
+}
+
+func TestMicroVMs_ConsoleURL_HTTPS(t *testing.T) {
+	c := NewClient(nil)
+	got, err := c.MicroVMs.ConsoleURL("aaa-111", nil)
+	if err != nil {
+		t.Fatalf("ConsoleURL returned error: %v", err)
+	}
+	want := "wss://api.digitalocean.com/v2/microvms/aaa-111/console"
+	if got != want {
+		t.Errorf("ConsoleURL = %q, expected %q", got, want)
+	}
+}
+
+func TestMicroVMs_ConsoleURL_EmptyID(t *testing.T) {
+	_, err := (&MicroVMsServiceOp{client: NewClient(nil)}).ConsoleURL("", nil)
+	if err == nil {
+		t.Fatal("expected error for empty id")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMarshalMicroVMConsoleResize(t *testing.T) {
+	got, err := MarshalMicroVMConsoleResize(24, 80)
+	if err != nil {
+		t.Fatalf("MarshalMicroVMConsoleResize: %v", err)
+	}
+	want := `{"resize":{"rows":24,"cols":80}}`
+	if string(got) != want {
+		t.Errorf("got %s, expected %s", got, want)
+	}
+}
+
+func TestParseMicroVMConsoleControl(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want *MicroVMConsoleControl
+	}{
+		{
+			name: "error",
+			in:   `{"error":{"code":"dial_failed","message":"no endpoint"}}`,
+			want: &MicroVMConsoleControl{Error: &MicroVMConsoleError{Code: MicroVMConsoleErrDialFailed, Message: "no endpoint"}},
+		},
+		{
+			name: "exit",
+			in:   `{"exit":{"code":0}}`,
+			want: &MicroVMConsoleControl{Exit: &MicroVMConsoleExit{Code: 0}},
+		},
+		{
+			name: "status",
+			in:   `{"status":{"state":"resuming"}}`,
+			want: &MicroVMConsoleControl{Status: &MicroVMConsoleStatus{State: "resuming"}},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := ParseMicroVMConsoleControl([]byte(tc.in))
+			if err != nil {
+				t.Fatalf("ParseMicroVMConsoleControl: %v", err)
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("got %+v, expected %+v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestParseMicroVMConsoleControl_Unrecognized(t *testing.T) {
+	_, err := ParseMicroVMConsoleControl([]byte(`{"resize":{"rows":1,"cols":1}}`))
+	if err == nil {
+		t.Fatal("expected error for unrecognized control frame")
+	}
+}
