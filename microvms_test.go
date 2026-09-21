@@ -613,7 +613,7 @@ func TestMicroVMs_GetCreateOptions(t *testing.T) {
 
 func TestMicroVM_URN(t *testing.T) {
 	md := MicroVM{ID: "aaa-111"}
-	want := "do:microdroplet:aaa-111"
+	want := "do:microvm:aaa-111"
 	if got := md.URN(); got != want {
 		t.Errorf("MicroVM.URN = %q, expected %q", got, want)
 	}

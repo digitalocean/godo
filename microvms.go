@@ -246,13 +246,8 @@ func (m MicroVM) String() string {
 }
 
 // URN returns the MicroVM ID in a valid DO API URN form.
-//
-// The collection is still "microdroplet" on purpose. URNs are persisted by
-// tags and emitted in billing events, and the collection name comes from a
-// proto enum shared across those consumers, so renaming it is a coordinated
-// change rather than part of this one.
 func (m MicroVM) URN() string {
-	return ToURN("MicroDroplet", m.ID)
+	return ToURN("MicroVM", m.ID)
 }
 
 // String returns a human-readable description of a MicroVMCheckpoint.
