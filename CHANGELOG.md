@@ -3,7 +3,6 @@
 ## [1.211.0] - 2026-09-22
 
 - #1021 - @SSharma-10 - Add OHS endpoints
-- #1113 - @Spherrrical - hosted agents: surface pause_reason on Session
 
 ## [1.210.0] - 2026-09-18
 
