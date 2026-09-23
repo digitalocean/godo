@@ -126,6 +126,71 @@ func TestMicroVMs_ListByName(t *testing.T) {
 	}
 }
 
+func TestMicroVMs_ListByTag(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if got, want := r.URL.Query().Get("tag_name"), "prod"; got != want {
+			t.Errorf("tag_name query = %q, expected %q", got, want)
+		}
+		fmt.Fprint(w, `{"microvms": [{"id": "aaa-111", "name": "agent-sandbox-1"}]}`)
+	})
+
+	microVMs, _, err := client.MicroVMs.ListByTag(ctx, "prod", nil)
+	if err != nil {
+		t.Fatalf("MicroVMs.ListByTag returned error: %v", err)
+	}
+
+	expected := []MicroVM{{ID: "aaa-111", Name: "agent-sandbox-1"}}
+	if !reflect.DeepEqual(microVMs, expected) {
+		t.Errorf("MicroVMs.ListByTag returned %+v, expected %+v", microVMs, expected)
+	}
+}
+
+func TestMicroVMs_ListByTag_EmptyTag(t *testing.T) {
+	_, _, err := (&MicroVMsServiceOp{}).ListByTag(ctx, "", nil)
+	if err == nil {
+		t.Fatal("expected error for empty tag")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroVMs_ListFiltered(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		q := r.URL.Query()
+		if got, want := q.Get("region"), "nyc1"; got != want {
+			t.Errorf("region query = %q, expected %q", got, want)
+		}
+		if got, want := q.Get("name"), "agent-sandbox-1"; got != want {
+			t.Errorf("name query = %q, expected %q", got, want)
+		}
+		if got, want := q.Get("tag_name"), "prod"; got != want {
+			t.Errorf("tag_name query = %q, expected %q", got, want)
+		}
+		fmt.Fprint(w, `{"microvms": [{"id": "aaa-111"}]}`)
+	})
+
+	microVMs, _, err := client.MicroVMs.ListFiltered(ctx, &ListMicroVMsOptions{
+		Region:  "nyc1",
+		Name:    "agent-sandbox-1",
+		TagName: "prod",
+	})
+	if err != nil {
+		t.Fatalf("MicroVMs.ListFiltered returned error: %v", err)
+	}
+	if len(microVMs) != 1 || microVMs[0].ID != "aaa-111" {
+		t.Errorf("MicroVMs.ListFiltered returned %+v", microVMs)
+	}
+}
+
 func TestMicroVMs_ListByName_EmptyName(t *testing.T) {
 	_, _, err := (&MicroVMsServiceOp{}).ListByName(ctx, "", nil)
 	if err == nil {
@@ -153,6 +218,7 @@ func TestMicroVMs_Get(t *testing.T) {
 				"source": {"oci_ref": "docker.io/library/nginx:1.27"},
 				"urls": [{"hostname": "sandbox.example.com", "port": 8080, "default": true, "status": "ACTIVE"}],
 				"ports": [8080],
+				"http_protocol": "http2",
 				"tags": ["env:dev"],
 				"created_at": "2026-07-16T10:00:00Z"
 			}
@@ -175,9 +241,10 @@ func TestMicroVMs_Get(t *testing.T) {
 		URLs: []MicroVMURL{
 			{Hostname: "sandbox.example.com", Port: 8080, Default: true, Status: MicroVMURLStatusActive},
 		},
-		Ports:   []uint32{8080},
-		Tags:    []string{"env:dev"},
-		Created: "2026-07-16T10:00:00Z",
+		Ports:        []uint32{8080},
+		HTTPProtocol: MicroVMHTTPProtocolHTTP2,
+		Tags:         []string{"env:dev"},
+		Created:      "2026-07-16T10:00:00Z",
 	}
 	if !reflect.DeepEqual(microVM, expected) {
 		t.Errorf("MicroVMs.Get returned %+v, expected %+v", microVM, expected)
@@ -410,6 +477,7 @@ func TestMicroVMs_ListCheckpoints(t *testing.T) {
 					"microvm_id": "aaa-111",
 					"microvm_name": "sandbox",
 					"region": "nyc3",
+					"size": {"cpu": 2, "memory": 4096, "disk": 80},
 					"status": "CHECKPOINT_AVAILABLE",
 					"memory_bytes": 1024,
 					"disk_bytes": 2048
@@ -433,6 +501,7 @@ func TestMicroVMs_ListCheckpoints(t *testing.T) {
 			MicroVMID:   "aaa-111",
 			MicroVMName: "sandbox",
 			Region:      "nyc3",
+			Size:        &MicroVMSize{CPU: 2, Memory: 4096, Disk: 80},
 			Status:      MicroVMCheckpointStatusAvailable,
 			MemoryBytes: 1024,
 			DiskBytes:   2048,
