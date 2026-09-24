@@ -448,6 +448,43 @@ func TestHostedAgents_CreateSessionFromConfig(t *testing.T) {
 	assert.Equal(t, "019fb39c-14d9-7080-933e-b9b90e25acda", session.ConfigID)
 }
 
+func TestHostedAgents_CreateSessionFromEnvironment(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+		var body HostedAgentSessionFromEnvironmentRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "session-from-env", body.Name)
+		assert.Equal(t, "019fb39c-14d9-7080-933e-b9b90e25acda", body.ConfigID)
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-env",
+				"name": "session-from-env",
+				"agent_kind": "AGENT_KIND_OPENCODE",
+				"status": "SESSION_STATUS_PROVISIONING",
+				"created_at": "2026-08-01T12:00:00Z",
+				"last_event_at": "2026-08-01T12:00:00Z",
+				"config_id": "019fb39c-14d9-7080-933e-b9b90e25acda"
+			}
+		}`)
+	})
+
+	session, resp, err := client.HostedAgents.CreateSessionFromEnvironment(ctx, &HostedAgentSessionFromEnvironmentRequest{
+		Name:     "session-from-env",
+		ConfigID: "019fb39c-14d9-7080-933e-b9b90e25acda",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.NotNil(t, session)
+	assert.Equal(t, "sess-env", session.SessionID)
+	assert.Equal(t, "019fb39c-14d9-7080-933e-b9b90e25acda", session.ConfigID)
+}
+
 func TestHostedAgents_CreateSessionFromConfig_ResumeOnTopoff(t *testing.T) {
 	setup()
 	defer teardown()
