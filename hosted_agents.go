@@ -218,9 +218,12 @@ const (
 	HostedAgentSessionPauseReasonManual HostedAgentSessionPauseReason = "manual"
 	// HostedAgentSessionPauseReasonIdle is an automatic pause after inactivity.
 	HostedAgentSessionPauseReasonIdle HostedAgentSessionPauseReason = "idle"
-	// HostedAgentSessionPauseReasonLowBalance is a pause by the prepayment gate.
+	// HostedAgentSessionPauseReasonZeroBalance is a pause by the prepayment gate.
 	// It is the only reason the server auto-resumes from, and only for sessions
 	// with ResumeOnTopoff set.
+	HostedAgentSessionPauseReasonZeroBalance HostedAgentSessionPauseReason = "zero_balance"
+	// Deprecated: Use HostedAgentSessionPauseReasonZeroBalance. Servers now return
+	// "zero_balance"; this constant is kept for backward compatibility with older API responses.
 	HostedAgentSessionPauseReasonLowBalance HostedAgentSessionPauseReason = "low_balance"
 )
 
