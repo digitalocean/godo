@@ -80,6 +80,77 @@ func TestHostedAgents_GetAgentConfig(t *testing.T) {
 	assert.NotContains(t, string(mustMarshal(t, got)), `"configured"`)
 }
 
+func TestHostedAgents_CreateEnvironment(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/configs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body HostedEnvironmentCreateRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "support-agent", body.Name)
+		assert.Contains(t, body.ManifestYAML, "agent:")
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprintf(w, `{"config":%s}`, hostedAgentConfigJSON)
+	})
+
+	got, resp, err := client.HostedAgents.CreateEnvironment(ctx, &HostedEnvironmentCreateRequest{
+		Name: "support-agent",
+		ManifestYAML: "name: support-agent\n" +
+			"agent: claude-code\n" +
+			"secrets:\n" +
+			"  ANTHROPIC_API_KEY: sk-test\n",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.Equal(t, hostedAgentConfig.ID, got.ID)
+}
+
+func TestHostedAgents_ListEnvironments(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/configs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"configs":[{"id":"019fb39c-14d9-7080-933e-b9b90e25acda","name":"support-agent","agentspec_schema_version":"agents.digitalocean.com/v1alpha1","content_hash":"75803fef24dc731824ecd4a1853c76153c7d8503534092b94da3ca3f31a882f4","created_by":"user-1","created_at":"2026-08-01T12:00:00Z","updated_at":"2026-08-01T12:00:00Z"}],"next_page_token":""}`)
+	})
+
+	got, resp, err := client.HostedAgents.ListEnvironments(ctx, &HostedEnvironmentListOptions{PageSize: 5})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Len(t, got.Configs, 1)
+	assert.Equal(t, "support-agent", got.Configs[0].Name)
+}
+
+func TestHostedAgents_GetEnvironment(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprintf(w, `{"config":%s}`, hostedAgentConfigJSON)
+	})
+
+	got, resp, err := client.HostedAgents.GetEnvironment(ctx, hostedAgentConfig.ID)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, hostedAgentConfig.ID, got.ID)
+}
+
+func TestHostedAgents_DeleteEnvironment(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	resp, err := client.HostedAgents.DeleteEnvironment(ctx, hostedAgentConfig.ID)
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, resp.StatusCode)
+}
+
 func TestHostedAgents_CreateAgentConfig(t *testing.T) {
 	setup()
 	defer teardown()
