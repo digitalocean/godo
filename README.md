@@ -18,17 +18,30 @@ You can view DigitalOcean API docs here: [https://docs.digitalocean.com/referenc
 > [**AI & Inference**](#ai--inference) to get started.
 
 ## Install
+
+### Go Modules (Recommended)
+
 ```sh
 go get github.com/digitalocean/godo@vX.Y.Z
 ```
 
 where X.Y.Z is the [version](https://github.com/digitalocean/godo/releases) you need.
 
-or
+Use the latest available version with:
+
 ```sh
 go get github.com/digitalocean/godo
 ```
-for non Go modules usage or latest version.
+
+### Legacy GOPATH
+
+If you are maintaining a project that does not use Go modules, use:
+
+```sh
+go get github.com/digitalocean/godo
+```
+
+New projects should use Go modules.
 
 ## Usage
 
@@ -43,16 +56,20 @@ access different parts of the DigitalOcean API.
 
 You can manage API tokens at the DigitalOcean Control Panel
 [Applications Page](https://cloud.digitalocean.com/settings/applications).
+Store tokens in environment variables or another secure secret store instead of
+hard-coding them in source files.
 
 ```go
 package main
 
 import (
+    "os"
+
     "github.com/digitalocean/godo"
 )
 
 func main() {
-    client := godo.NewFromToken("my-digitalocean-api-token")
+    client := godo.NewFromToken(os.Getenv("DIGITALOCEAN_TOKEN"))
 }
 ```
 
@@ -77,6 +94,50 @@ func main() {
 > ```
 
 If you need to provide a `context.Context` to your new client, you should use [`godo.NewClient`](https://godoc.org/github.com/digitalocean/godo#NewClient) to manually construct a client instead.
+
+## Quick Start
+
+This minimal program authenticates with a DigitalOcean API token and lists the
+Droplets in your account:
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/digitalocean/godo"
+)
+
+func main() {
+    token := os.Getenv("DIGITALOCEAN_TOKEN")
+    if token == "" {
+        log.Fatal("DIGITALOCEAN_TOKEN is not set")
+    }
+
+    client := godo.NewFromToken(token)
+    ctx := context.Background()
+
+    droplets, _, err := client.Droplets.List(ctx, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    for _, droplet := range droplets {
+        fmt.Printf("%d: %s\n", droplet.ID, droplet.Name)
+    }
+}
+```
+
+Run it with:
+
+```sh
+export DIGITALOCEAN_TOKEN="dop_v1_xxxxxx"
+go run .
+```
 
 ## AI & Inference
 
@@ -118,8 +179,11 @@ For streaming, embeddings, messages, responses, async invocations, batch inferen
 
 ## Examples
 
+### Create a Droplet
 
-To create a new Droplet:
+To create a new Droplet, provide a name, region slug, size slug, and image slug.
+Regions, sizes, and images are account- and product-dependent, so use values
+that are available for your account and workload:
 
 ```go
 dropletName := "super-cool-droplet"
@@ -143,7 +207,44 @@ if err != nil {
 }
 ```
 
-### Pagination
+### Common Use Cases
+
+#### List Droplets
+
+```go
+droplets, _, err := client.Droplets.List(ctx, nil)
+if err != nil {
+    return err
+}
+
+for _, droplet := range droplets {
+    fmt.Println(droplet.Name)
+}
+```
+
+#### Delete a Droplet
+
+```go
+_, err := client.Droplets.Delete(ctx, dropletID)
+if err != nil {
+    return err
+}
+```
+
+#### List SSH Keys
+
+```go
+keys, _, err := client.Keys.List(ctx, nil)
+if err != nil {
+    return err
+}
+
+for _, key := range keys {
+    fmt.Println(key.Name)
+}
+```
+
+### Advanced: Pagination
 
 If a list of items is paginated by the API, you must request pages individually. For example, to fetch all Droplets:
 
@@ -218,13 +319,13 @@ func ListRepositoriesV2(ctx context.Context, client *godo.Client, registryName s
 }
 ```
 
-### Automatic Retries and Exponential Backoff
+### Advanced: Automatic Retries and Exponential Backoff
 
-The Godo client can be configured to use automatic retries and exponentional backoff for requests that fail with 429 or 500-level response codes via [go-retryablehttp](https://github.com/hashicorp/go-retryablehttp). To configure Godo to enable usage of go-retryablehttp, the `RetryConfig.RetryMax` must be set.
+The Godo client can be configured to use automatic retries and exponential backoff for requests that fail with 429 or 500-level response codes via [go-retryablehttp](https://github.com/hashicorp/go-retryablehttp). To configure Godo to enable usage of go-retryablehttp, the `RetryConfig.RetryMax` must be set.
 
 ```go
 tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{
-    AccessToken: "dop_v1_xxxxxx",
+    AccessToken: os.Getenv("DIGITALOCEAN_TOKEN"),
 })
 
 oauth_client := oauth2.NewClient(oauth2.NoContext, tokenSrc)
