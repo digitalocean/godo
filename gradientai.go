@@ -3182,10 +3182,10 @@ type EvaluationDatasetDeleteResponse struct{}
 // CreateEvaluationDatasetRequest is the request body for creating an
 // evaluation dataset from a previously uploaded file.
 type CreateEvaluationDatasetRequest struct {
-	Name               string                    `json:"name,omitempty"`
-	DatasetType        EvaluationDatasetType     `json:"dataset_type,omitempty"`
-	DatasetParadigm    EvaluationDatasetParadigm `json:"dataset_paradigm,omitempty"`
-	FileUploadDataset  *FileUploadDataSource     `json:"file_upload_dataset,omitempty"`
+	Name              string                    `json:"name,omitempty"`
+	DatasetType       EvaluationDatasetType     `json:"dataset_type,omitempty"`
+	DatasetParadigm   EvaluationDatasetParadigm `json:"dataset_paradigm,omitempty"`
+	FileUploadDataset *FileUploadDataSource     `json:"file_upload_dataset,omitempty"`
 }
 
 // CreateEvaluationDatasetResponse is the response returned by
