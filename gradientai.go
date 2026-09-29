@@ -261,6 +261,7 @@ type GradientAIService interface {
 	ListModelEvaluationPresets(ctx context.Context) (*ModelEvaluationPresetListResponse, *Response, error)
 	ListModelEvaluationMetrics(ctx context.Context) (*ModelEvaluationMetricListResponse, *Response, error)
 	ListEvaluationDatasets(ctx context.Context, opt *EvaluationDatasetListOptions) (*EvaluationDatasetListResponse, *Response, error)
+	CreateEvaluationDataset(ctx context.Context, createRequest *CreateEvaluationDatasetRequest) (*CreateEvaluationDatasetResponse, *Response, error)
 	DeleteEvaluationDataset(ctx context.Context, datasetUUID string) (*EvaluationDatasetDeleteResponse, *Response, error)
 	CreateScenarioSetUploadPresignedURLs(ctx context.Context, createRequest *CreateScenarioSetUploadPresignedURLsRequest) (*CreateScenarioSetUploadPresignedURLsResponse, *Response, error)
 	CreateScenarioSet(ctx context.Context, createRequest *CreateScenarioSetRequest) (*ScenarioSet, *Response, error)
@@ -3177,6 +3178,41 @@ type EvaluationDatasetListResponse struct {
 // EvaluationDatasetDeleteResponse is the response returned by
 // DeleteEvaluationDataset.
 type EvaluationDatasetDeleteResponse struct{}
+
+// CreateEvaluationDatasetRequest is the request body for creating an
+// evaluation dataset from a previously uploaded file.
+type CreateEvaluationDatasetRequest struct {
+	Name               string                    `json:"name,omitempty"`
+	DatasetType        EvaluationDatasetType     `json:"dataset_type,omitempty"`
+	DatasetParadigm    EvaluationDatasetParadigm `json:"dataset_paradigm,omitempty"`
+	FileUploadDataset  *FileUploadDataSource     `json:"file_upload_dataset,omitempty"`
+}
+
+// CreateEvaluationDatasetResponse is the response returned by
+// CreateEvaluationDataset.
+type CreateEvaluationDatasetResponse struct {
+	EvaluationDatasetUUID string `json:"evaluation_dataset_uuid,omitempty"`
+}
+
+// CreateEvaluationDataset registers an evaluation dataset from a file that was
+// previously uploaded via CreateModelEvalDatasetUploadPresignedURLs.
+func (s *GradientAIServiceOp) CreateEvaluationDataset(ctx context.Context, createRequest *CreateEvaluationDatasetRequest) (*CreateEvaluationDatasetResponse, *Response, error) {
+	if createRequest == nil {
+		return nil, nil, fmt.Errorf("create request is required")
+	}
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, evaluationDatasetsBasePath, createRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(CreateEvaluationDatasetResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
 
 // CreateModelEvaluationRun creates a new model evaluation run.
 func (s *GradientAIServiceOp) CreateModelEvaluationRun(ctx context.Context, createRequest *CreateModelEvaluationRunRequest) (*ModelEvaluationRunCreateResponse, *Response, error) {

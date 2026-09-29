@@ -4509,3 +4509,46 @@ func TestDeleteEvaluationDatasetInvalidURL(t *testing.T) {
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
 }
+
+func TestCreateEvaluationDataset(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/evaluation_datasets", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var got CreateEvaluationDatasetRequest
+		assert.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		assert.Equal(t, "my-dataset", got.Name)
+		assert.Equal(t, EvaluationDatasetTypeModel, got.DatasetType)
+		assert.Equal(t, EvaluationDatasetParadigmSingleTurn, got.DatasetParadigm)
+		require.NotNil(t, got.FileUploadDataset)
+		assert.Equal(t, "queries.csv", got.FileUploadDataset.OriginalFileName)
+		assert.Equal(t, "object-key", got.FileUploadDataset.StoredObjectKey)
+		fmt.Fprint(w, `{"evaluation_dataset_uuid":"11111111-1111-1111-1111-111111111111"}`)
+	})
+
+	out, resp, err := client.GradientAI.CreateEvaluationDataset(ctx, &CreateEvaluationDatasetRequest{
+		Name:            "my-dataset",
+		DatasetType:     EvaluationDatasetTypeModel,
+		DatasetParadigm: EvaluationDatasetParadigmSingleTurn,
+		FileUploadDataset: &FileUploadDataSource{
+			OriginalFileName: "queries.csv",
+			Size:             "123",
+			StoredObjectKey:  "object-key",
+		},
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", out.EvaluationDatasetUUID)
+}
+
+func TestCreateEvaluationDatasetMissingRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	out, resp, err := client.GradientAI.CreateEvaluationDataset(ctx, nil)
+	assert.Error(t, err)
+	assert.Nil(t, out)
+	assert.Nil(t, resp)
+}
