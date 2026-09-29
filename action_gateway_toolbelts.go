@@ -160,7 +160,7 @@ func (s *ActionGatewayToolbeltsService) Search(ctx context.Context, opt *ActionG
 
 // Get retrieves one toolbelt.
 func (s *ActionGatewayToolbeltsService) Get(ctx context.Context, name string, opt *ActionGatewayGetToolbeltOptions) (*ActionGatewayGetToolbeltResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", name)
+	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", actionGatewayPathPart{"name", name})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -169,7 +169,7 @@ func (s *ActionGatewayToolbeltsService) Get(ctx context.Context, name string, op
 
 // Delete deletes a toolbelt.
 func (s *ActionGatewayToolbeltsService) Delete(ctx context.Context, name string) (*ActionGatewayToolbeltResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", name)
+	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", actionGatewayPathPart{"name", name})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -181,7 +181,7 @@ func (s *ActionGatewayToolbeltsService) AddTools(ctx context.Context, name strin
 	if body == nil {
 		return nil, nil, NewArgError("body", "cannot be nil")
 	}
-	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", name)
+	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", actionGatewayPathPart{"name", name})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -193,7 +193,7 @@ func (s *ActionGatewayToolbeltsService) RemoveTools(ctx context.Context, name st
 	if body == nil {
 		return nil, nil, NewArgError("body", "cannot be nil")
 	}
-	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", name)
+	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", actionGatewayPathPart{"name", name})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -202,7 +202,7 @@ func (s *ActionGatewayToolbeltsService) RemoveTools(ctx context.Context, name st
 
 // ListProviders lists providers in a toolbelt.
 func (s *ActionGatewayToolbeltsService) ListProviders(ctx context.Context, name string, opt *ActionGatewayToolbeltProviderOptions) (*ActionGatewayToolbeltProvidersResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", name)
+	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", actionGatewayPathPart{"name", name})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -211,7 +211,11 @@ func (s *ActionGatewayToolbeltsService) ListProviders(ctx context.Context, name 
 
 // ListProviderTools lists a provider's tools in a toolbelt.
 func (s *ActionGatewayToolbeltsService) ListProviderTools(ctx context.Context, name, provider string, opt *ActionGatewayToolbeltProviderOptions) (*ActionGatewayToolbeltProviderToolsResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", name, "providers", provider)
+	path, err := actionGatewayItem(actionGatewayPath+"/toolbelts", actionGatewayPathPart{"name", name})
+	if err != nil {
+		return nil, nil, err
+	}
+	path, err = actionGatewayItem(path+"/providers", actionGatewayPathPart{"provider", provider})
 	if err != nil {
 		return nil, nil, err
 	}

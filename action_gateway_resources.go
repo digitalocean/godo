@@ -95,7 +95,7 @@ func (s *ActionGatewayOutputViewsService) List(ctx context.Context, opt *ActionG
 
 // Get retrieves an output view.
 func (s *ActionGatewayOutputViewsService) Get(ctx context.Context, viewID string) (*ActionGatewayOutputViewResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/output-views", viewID)
+	path, err := actionGatewayItem(actionGatewayPath+"/output-views", actionGatewayPathPart{"viewID", viewID})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -104,7 +104,7 @@ func (s *ActionGatewayOutputViewsService) Get(ctx context.Context, viewID string
 
 // Delete deletes an output view.
 func (s *ActionGatewayOutputViewsService) Delete(ctx context.Context, viewID string) (*ActionGatewayOutputViewResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/output-views", viewID)
+	path, err := actionGatewayItem(actionGatewayPath+"/output-views", actionGatewayPathPart{"viewID", viewID})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -216,7 +216,7 @@ func (s *ActionGatewayMCPServersService) List(ctx context.Context) (*ActionGatew
 
 // Get retrieves one MCP server.
 func (s *ActionGatewayMCPServersService) Get(ctx context.Context, ref string) (*ActionGatewayMCPServerResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", ref)
+	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", actionGatewayPathPart{"ref", ref})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -228,7 +228,7 @@ func (s *ActionGatewayMCPServersService) Update(ctx context.Context, ref string,
 	if body == nil {
 		return nil, nil, NewArgError("body", "cannot be nil")
 	}
-	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", ref)
+	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", actionGatewayPathPart{"ref", ref})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -237,7 +237,7 @@ func (s *ActionGatewayMCPServersService) Update(ctx context.Context, ref string,
 
 // Delete unregisters an MCP server.
 func (s *ActionGatewayMCPServersService) Delete(ctx context.Context, ref string) (*ActionGatewayMCPServerResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", ref)
+	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", actionGatewayPathPart{"ref", ref})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -249,7 +249,7 @@ func (s *ActionGatewayMCPServersService) Resync(ctx context.Context, ref string,
 	if body == nil {
 		return nil, nil, NewArgError("body", "cannot be nil")
 	}
-	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", ref)
+	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", actionGatewayPathPart{"ref", ref})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -258,7 +258,7 @@ func (s *ActionGatewayMCPServersService) Resync(ctx context.Context, ref string,
 
 // ListTools retrieves the discovered server tools.
 func (s *ActionGatewayMCPServersService) ListTools(ctx context.Context, ref string) (*ActionGatewayMCPServerToolsResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", ref)
+	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", actionGatewayPathPart{"ref", ref})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -270,7 +270,7 @@ func (s *ActionGatewayMCPServersService) UpdateTools(ctx context.Context, ref st
 	if body == nil {
 		return nil, nil, NewArgError("body", "cannot be nil")
 	}
-	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", ref)
+	path, err := actionGatewayItem(actionGatewayPath+"/mcp-servers", actionGatewayPathPart{"ref", ref})
 	if err != nil {
 		return nil, nil, err
 	}

@@ -131,7 +131,7 @@ func (s *ActionGatewayConnectionsService) List(ctx context.Context, opt *ActionG
 
 // Get retrieves one connection.
 func (s *ActionGatewayConnectionsService) Get(ctx context.Context, id string) (*ActionGatewayConnectionResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/connections", id)
+	path, err := actionGatewayItem(actionGatewayPath+"/connections", actionGatewayPathPart{"id", id})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -140,7 +140,7 @@ func (s *ActionGatewayConnectionsService) Get(ctx context.Context, id string) (*
 
 // Delete revokes and deletes a connection.
 func (s *ActionGatewayConnectionsService) Delete(ctx context.Context, id string) (*ActionGatewayConnectionResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/connections", id)
+	path, err := actionGatewayItem(actionGatewayPath+"/connections", actionGatewayPathPart{"id", id})
 	if err != nil {
 		return nil, nil, err
 	}

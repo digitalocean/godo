@@ -397,7 +397,7 @@ func (s *ActionGatewayToolsService) ListHealth(ctx context.Context, opt *ActionG
 
 // GetHealth retrieves health and optionally history for one tool.
 func (s *ActionGatewayToolsService) GetHealth(ctx context.Context, slug string, opt *ActionGatewayToolHealthOptions) (*ActionGatewayGetToolHealthResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/tools/health/tools", slug)
+	path, err := actionGatewayItem(actionGatewayPath+"/tools/health/tools", actionGatewayPathPart{"slug", slug})
 	if err != nil {
 		return nil, nil, err
 	}

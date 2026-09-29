@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -46,6 +47,7 @@ func actionGatewayTestSession(t *testing.T) (*ActionGatewaySession, *httptest.Se
 			t.Errorf("MCP path = %s", request.URL.Path)
 		}
 		var envelope struct {
+			ID     int64  `json:"id"`
 			Method string `json:"method"`
 			Params struct {
 				Name      string          `json:"name"`
@@ -82,14 +84,16 @@ func actionGatewayTestSession(t *testing.T) (*ActionGatewaySession, *httptest.Se
 				result = `{"structuredContent":{"results":[{"results":[{"name":"fetch","description":"Fetch","inputSchema":{"type":"object"}}]}]}}`
 			case actionGatewayCodeTool:
 				writer.Header().Set("Content-Type", "text/event-stream")
-				_, _ = io.WriteString(writer, "event: message\ndata: {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"structuredContent\":{\"stdout\":\"hi\"}}}\n\n")
+				_, _ = fmt.Fprintf(writer, "event: message\ndata: {\"jsonrpc\":\"2.0\",\"id\":%d,\"result\":{\"structuredContent\":{\"stdout\":\"hi\"}}}\n\n", envelope.ID)
 				return
 			case "fetch":
 				result = `{"structuredContent":{"ok":true}}`
 			case "error":
 				result = `{"isError":true,"structuredContent":{"error":{"message":"permission denied","class":"forbidden"}}}`
+			case "nested_error":
+				result = `{"isError":true,"structuredContent":{"error":{"message":"failed","invocation_id":"nested-id"}}}`
 			case "rpc_error":
-				_, _ = io.WriteString(writer, `{"jsonrpc":"2.0","id":1,"error":{"code":-32001,"message":"unavailable"}}`)
+				_, _ = fmt.Fprintf(writer, `{"jsonrpc":"2.0","id":%d,"error":{"code":-32001,"message":"unavailable"}}`, envelope.ID)
 				return
 			default:
 				t.Errorf("unexpected tool = %q", envelope.Params.Name)
@@ -97,7 +101,7 @@ func actionGatewayTestSession(t *testing.T) (*ActionGatewaySession, *httptest.Se
 		default:
 			t.Errorf("unexpected method = %s", envelope.Method)
 		}
-		_, _ = fmt.Fprintf(writer, `{"jsonrpc":"2.0","id":1,"result":%s}`, result)
+		_, _ = fmt.Fprintf(writer, `{"jsonrpc":"2.0","id":%d,"result":%s}`, envelope.ID, result)
 	}))
 	client, err := New(server.Client(), SetBaseURL(server.URL), WithActionGatewayMCPBaseURL(server.URL))
 	if err != nil {
@@ -146,6 +150,11 @@ func TestActionGatewaySessionRuntime(t *testing.T) {
 	output, _, err = session.Tools.Call(ctx, "fetch", map[string]interface{}{"url": "example.com"})
 	if err != nil || string(output) != `{"ok":true}` {
 		t.Fatalf("direct call = %s, %v", output, err)
+	}
+	_, _, err = session.Tools.Call(ctx, "nested_error", nil)
+	var nestedError *ActionGatewayToolError
+	if !errors.As(err, &nestedError) || nestedError.InvocationID != "nested-id" {
+		t.Fatalf("nested invocation ID = %v", err)
 	}
 	output, _, err = session.Code.Execute(ctx, "print('hi')", "test")
 	if err != nil || !strings.Contains(string(output), "hi") {
@@ -273,5 +282,73 @@ func TestActionGatewayRuntimeFailures(t *testing.T) {
 	}
 	if _, _, err = session.Tools.List(context.Background(), false); err == nil || !strings.Contains(err.Error(), "cross-origin") {
 		t.Fatalf("expected redirect rejection, got %v", err)
+	}
+}
+
+func TestActionGatewaySSEIncremental(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		var call struct {
+			ID int64 `json:"id"`
+		}
+		if err := json.NewDecoder(request.Body).Decode(&call); err != nil {
+			t.Error(err)
+			return
+		}
+		writer.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+		_, _ = fmt.Fprintf(writer, "data: {\"event\":\"ping\"}\n\ndata: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\"}\n\ndata: {\"jsonrpc\":\"2.0\",\"id\":%d,\"result\":{\"tools\":[{\"name\":\"current\"}]}}\n\n", call.ID)
+		writer.(http.Flusher).Flush()
+		<-request.Context().Done()
+	}))
+	defer server.Close()
+	client, err := New(server.Client(), WithActionGatewayMCPBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := newActionGatewaySession(client, &ActionGatewaySessionCreateResponse{Session: &ActionGatewaySessionRecord{SessionURN: "urn:abc"}, MCPURL: "https://actions.do-ai.run/mcp/session/abc"}, "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	tools, response, err := session.Tools.List(ctx, true)
+	if err != nil || response == nil || len(tools) != 1 || tools[0].Name != "current" {
+		t.Fatalf("incremental SSE tools = %+v, response = %+v, err = %v", tools, response, err)
+	}
+}
+
+func TestActionGatewayRPCResponseIDs(t *testing.T) {
+	cases := []struct {
+		name, contentType, body, message string
+	}{
+		{"wrong JSON result", "application/json", `{"jsonrpc":"2.0","id":2,"result":{"tools":[]}}`, "mismatched"},
+		{"missing JSON ID", "application/json", `{"jsonrpc":"2.0","result":{"tools":[]}}`, "mismatched"},
+		{"string JSON ID", "application/json", `{"jsonrpc":"2.0","id":"1","result":{"tools":[]}}`, "mismatched"},
+		{"wrong JSON error", "application/json", `{"jsonrpc":"2.0","id":2,"error":{"code":-32001,"message":"unavailable"}}`, "mismatched"},
+		{"wrong SSE result", "text/event-stream", "data: {\"jsonrpc\":\"2.0\",\"id\":2,\"result\":{\"tools\":[]}}\n\n", "mismatched"},
+		{"wrong SSE error", "text/event-stream", "data: {\"jsonrpc\":\"2.0\",\"id\":2,\"error\":{\"code\":-32001,\"message\":\"unavailable\"}}\n\n", "mismatched"},
+		{"missing SSE ID", "text/event-stream", "data: {\"jsonrpc\":\"2.0\",\"result\":{\"tools\":[]}}\n\n", "invalid JSON-RPC response ID"},
+		{"empty SSE", "text/event-stream", "data: {\"event\":\"ping\"}\n\n", "without a matching"},
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				writer.Header().Set("Content-Type", test.contentType)
+				_, _ = io.WriteString(writer, test.body)
+			}))
+			defer server.Close()
+			client, err := New(server.Client(), WithActionGatewayMCPBaseURL(server.URL))
+			if err != nil {
+				t.Fatal(err)
+			}
+			session, err := newActionGatewaySession(client, &ActionGatewaySessionCreateResponse{Session: &ActionGatewaySessionRecord{SessionURN: "urn:abc"}, MCPURL: "https://actions.do-ai.run/mcp/session/abc"}, "alice")
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, response, err := session.Tools.List(context.Background(), true)
+			var protocolError *ActionGatewayProtocolError
+			if !errors.As(err, &protocolError) || !strings.Contains(protocolError.Message, test.message) || response == nil || response.StatusCode != http.StatusOK {
+				t.Fatalf("protocol error = %v, response = %+v", err, response)
+			}
+		})
 	}
 }

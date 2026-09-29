@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync/atomic"
 )
@@ -118,7 +120,7 @@ func (session *ActionGatewaySession) headers(request *http.Request) {
 	request.Header.Set("X-Session-Id", session.sessionID)
 }
 
-func (session *ActionGatewaySession) do(ctx context.Context, endpoint string, body interface{}, accept string) ([]byte, *Response, error) {
+func (session *ActionGatewaySession) do(ctx context.Context, endpoint string, body interface{}, accept string, readBody func(*http.Response) ([]byte, error)) ([]byte, *Response, error) {
 	request, err := session.client.NewRequest(ctx, http.MethodPost, endpoint, body)
 	if err != nil {
 		return nil, nil, err
@@ -159,21 +161,62 @@ func (session *ActionGatewaySession) do(ctx context.Context, endpoint string, bo
 	if err = CheckResponse(actual); err != nil {
 		return nil, response, err
 	}
-	data, err := io.ReadAll(actual.Body)
+	if readBody == nil {
+		readBody = func(response *http.Response) ([]byte, error) { return io.ReadAll(response.Body) }
+	}
+	data, err := readBody(actual)
 	return data, response, err
 }
 
 func (session *ActionGatewaySession) rpc(ctx context.Context, method string, params interface{}) (json.RawMessage, *Response, error) {
-	message := map[string]interface{}{"jsonrpc": "2.0", "id": session.requestID.Add(1), "method": method}
+	requestID := session.requestID.Add(1)
+	message := map[string]interface{}{"jsonrpc": "2.0", "id": requestID, "method": method}
 	if params != nil {
 		message["params"] = params
 	}
-	data, response, err := session.do(ctx, session.endpoint.String(), message, "application/json, text/event-stream")
+	data, response, err := session.do(ctx, session.endpoint.String(), message, "application/json, text/event-stream", func(actual *http.Response) ([]byte, error) {
+		mediaType, _, _ := mime.ParseMediaType(actual.Header.Get("Content-Type"))
+		if mediaType == "text/event-stream" {
+			reader := NewSSEReader(actual.Body)
+			for {
+				event, err := reader.Next()
+				if errors.Is(err, io.EOF) {
+					return nil, &ActionGatewayProtocolError{Message: "SSE stream ended without a matching JSON-RPC response"}
+				}
+				if err != nil {
+					return nil, err
+				}
+				var candidate struct {
+					ID     json.RawMessage `json:"id"`
+					Result json.RawMessage `json:"result"`
+					Error  json.RawMessage `json:"error"`
+				}
+				if json.Unmarshal(event.Data, &candidate) != nil || (len(candidate.Result) == 0 && len(candidate.Error) == 0) {
+					continue
+				}
+				var eventID int64
+				if json.Unmarshal(candidate.ID, &eventID) != nil {
+					return nil, &ActionGatewayProtocolError{Message: "missing or invalid JSON-RPC response ID"}
+				}
+				if eventID != requestID {
+					return nil, &ActionGatewayProtocolError{Message: "mismatched JSON-RPC response ID"}
+				}
+				return append([]byte(nil), event.Data...), nil
+			}
+		}
+		const maxJSONResponse = 32 << 20
+		data, err := io.ReadAll(io.LimitReader(actual.Body, maxJSONResponse+1))
+		if len(data) > maxJSONResponse {
+			return nil, &ActionGatewayProtocolError{Message: "JSON-RPC response exceeds size limit"}
+		}
+		return data, err
+	})
 	if err != nil {
 		return nil, response, err
 	}
 	var envelope struct {
 		JSONRPC string          `json:"jsonrpc"`
+		ID      json.RawMessage `json:"id"`
 		Result  json.RawMessage `json:"result"`
 		Error   *struct {
 			Code    int             `json:"code"`
@@ -182,16 +225,13 @@ func (session *ActionGatewaySession) rpc(ctx context.Context, method string, par
 		} `json:"error"`
 	}
 	if err = json.Unmarshal(data, &envelope); err != nil {
-		data, err = actionGatewaySSEMessage(data)
-		if err != nil {
-			return nil, response, err
-		}
-		if err = json.Unmarshal(data, &envelope); err != nil {
-			return nil, response, &ActionGatewayProtocolError{Message: "malformed JSON-RPC response"}
-		}
+		return nil, response, &ActionGatewayProtocolError{Message: "malformed JSON-RPC response"}
 	}
 	if envelope.JSONRPC != "2.0" {
 		return nil, response, &ActionGatewayProtocolError{Message: "missing JSON-RPC version"}
+	}
+	if !bytes.Equal(bytes.TrimSpace(envelope.ID), []byte(strconv.FormatInt(requestID, 10))) {
+		return nil, response, &ActionGatewayProtocolError{Message: "mismatched JSON-RPC response ID"}
 	}
 	if envelope.Error != nil {
 		return nil, response, &ActionGatewayProtocolError{Message: envelope.Error.Message, Code: envelope.Error.Code, Data: envelope.Error.Data}
@@ -200,34 +240,6 @@ func (session *ActionGatewaySession) rpc(ctx context.Context, method string, par
 		return nil, response, &ActionGatewayProtocolError{Message: "missing JSON-RPC result"}
 	}
 	return envelope.Result, response, nil
-}
-
-func actionGatewaySSEMessage(data []byte) ([]byte, error) {
-	var lines []string
-	for _, line := range strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n") {
-		if strings.HasPrefix(line, "data:") {
-			lines = append(lines, strings.TrimSpace(strings.TrimPrefix(line, "data:")))
-		}
-		if line == "" && len(lines) != 0 {
-			candidate := []byte(strings.Join(lines, "\n"))
-			if actionGatewayRPCEvent(candidate) {
-				return candidate, nil
-			}
-			lines = nil
-		}
-	}
-	if len(lines) > 0 && actionGatewayRPCEvent([]byte(strings.Join(lines, "\n"))) {
-		return []byte(strings.Join(lines, "\n")), nil
-	}
-	return nil, &ActionGatewayProtocolError{Message: "malformed JSON or SSE response"}
-}
-
-func actionGatewayRPCEvent(data []byte) bool {
-	var event map[string]json.RawMessage
-	if json.Unmarshal(data, &event) != nil {
-		return false
-	}
-	return event["result"] != nil || event["error"] != nil
 }
 
 // ActionGatewayMCPTool is a session-visible MCP tool definition.
@@ -422,7 +434,9 @@ func (tools *ActionGatewaySessionTools) Call(ctx context.Context, name string, a
 			if details.Message != "" {
 				failure.Message = details.Message
 			}
-			failure.InvocationID = details.InvocationID
+			if details.InvocationID != "" {
+				failure.InvocationID = details.InvocationID
+			}
 		}
 		return nil, response, failure
 	}
@@ -462,7 +476,7 @@ func (session *ActionGatewaySession) decide(ctx context.Context, approvalID, dec
 	endpoint.Path = "/approvals/" + approvalID
 	endpoint.RawPath = "/approvals/" + url.PathEscape(approvalID)
 	endpoint.RawQuery = ""
-	data, response, err := session.do(ctx, endpoint.String(), map[string]string{"decision": decision}, "application/json")
+	data, response, err := session.do(ctx, endpoint.String(), map[string]string{"decision": decision}, "application/json", nil)
 	if err != nil {
 		return nil, response, err
 	}

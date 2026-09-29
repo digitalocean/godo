@@ -3,6 +3,7 @@ package godo
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -97,6 +98,36 @@ func TestActionGatewayPublicOperations(t *testing.T) {
 			results := method.Call(args)
 			if errValue := results[len(results)-1]; !errValue.IsNil() {
 				t.Fatal(errValue.Interface())
+			}
+		})
+	}
+}
+
+func TestActionGatewayEmptyPathArguments(t *testing.T) {
+	client := NewClient(nil)
+	ctx := context.Background()
+	cases := []struct {
+		name, argument string
+		call           func() error
+	}{
+		{"tool slug", "slug", func() error { _, _, err := client.ActionGateway.Tools.GetHealth(ctx, "", nil); return err }},
+		{"toolbelt name", "name", func() error { _, _, err := client.ActionGateway.Toolbelts.Get(ctx, "", nil); return err }},
+		{"toolbelt provider", "provider", func() error {
+			_, _, err := client.ActionGateway.Toolbelts.ListProviderTools(ctx, "belt", "", nil)
+			return err
+		}},
+		{"view ID", "viewID", func() error { _, _, err := client.ActionGateway.OutputViews.Get(ctx, ""); return err }},
+		{"server ref", "ref", func() error { _, _, err := client.ActionGateway.MCPServers.Get(ctx, ""); return err }},
+		{"connection ID", "id", func() error { _, _, err := client.ActionGateway.Connections.Get(ctx, ""); return err }},
+		{"session URN", "urn", func() error { _, err := client.ActionGateway.Sessions.Delete(ctx, ""); return err }},
+		{"user ID", "userID", func() error { _, _, err := client.ActionGateway.Users.Get(ctx, ""); return err }},
+		{"actor ID", "actorID", func() error { _, _, err := client.ActionGateway.ActorLimits.Get(ctx, ""); return err }},
+	}
+	for _, test := range cases {
+		t.Run(test.name, func(t *testing.T) {
+			var argumentError *ArgError
+			if err := test.call(); !errors.As(err, &argumentError) || argumentError.arg != test.argument {
+				t.Fatalf("error = %v, want argument %q", err, test.argument)
 			}
 		})
 	}

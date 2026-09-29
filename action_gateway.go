@@ -53,14 +53,16 @@ func actionGatewayRequest[T any](ctx context.Context, client *Client, method, pa
 	return result, response, nil
 }
 
-func actionGatewayItem(path string, parts ...string) (string, error) {
-	for _, part := range parts {
-		if strings.TrimSpace(part) == "" {
-			return "", NewArgError("id", "cannot be empty")
-		}
-		path += "/" + url.PathEscape(part)
+type actionGatewayPathPart struct {
+	name  string
+	value string
+}
+
+func actionGatewayItem(path string, part actionGatewayPathPart) (string, error) {
+	if strings.TrimSpace(part.value) == "" {
+		return "", NewArgError(part.name, "cannot be empty")
 	}
-	return path, nil
+	return path + "/" + url.PathEscape(part.value), nil
 }
 
 // ActionGatewayPagination describes offset-based list results.

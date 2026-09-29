@@ -147,7 +147,7 @@ func (s *ActionGatewaySessionsService) Search(ctx context.Context, opt *ActionGa
 
 // Delete deletes a session by URN.
 func (s *ActionGatewaySessionsService) Delete(ctx context.Context, urn string) (*Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/sessions", urn)
+	path, err := actionGatewayItem(actionGatewayPath+"/sessions", actionGatewayPathPart{"urn", urn})
 	if err != nil {
 		return nil, err
 	}

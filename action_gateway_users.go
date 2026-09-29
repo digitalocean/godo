@@ -70,7 +70,7 @@ func (s *ActionGatewayUsersService) List(ctx context.Context, opt *ActionGateway
 
 // Get retrieves an end-user summary.
 func (s *ActionGatewayUsersService) Get(ctx context.Context, userID string) (*ActionGatewayUserResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/users", userID)
+	path, err := actionGatewayItem(actionGatewayPath+"/users", actionGatewayPathPart{"userID", userID})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -112,7 +112,7 @@ type ActionGatewayClearLimitsRequest struct {
 
 // Get retrieves an actor's configured and effective limits.
 func (s *ActionGatewayActorLimitsService) Get(ctx context.Context, actorID string) (*ActionGatewayActorLimitsResponse, *Response, error) {
-	path, err := actionGatewayItem(actionGatewayPath+"/actors", actorID)
+	path, err := actionGatewayItem(actionGatewayPath+"/actors", actionGatewayPathPart{"actorID", actorID})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -124,7 +124,7 @@ func (s *ActionGatewayActorLimitsService) Set(ctx context.Context, actorID strin
 	if body == nil {
 		return nil, NewArgError("body", "cannot be nil")
 	}
-	path, err := actionGatewayItem(actionGatewayPath+"/actors", actorID)
+	path, err := actionGatewayItem(actionGatewayPath+"/actors", actionGatewayPathPart{"actorID", actorID})
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (s *ActionGatewayActorLimitsService) Clear(ctx context.Context, actorID str
 	if body == nil {
 		return nil, NewArgError("body", "cannot be nil")
 	}
-	path, err := actionGatewayItem(actionGatewayPath+"/actors", actorID)
+	path, err := actionGatewayItem(actionGatewayPath+"/actors", actionGatewayPathPart{"actorID", actorID})
 	if err != nil {
 		return nil, err
 	}
