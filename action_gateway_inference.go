@@ -337,7 +337,11 @@ func (session *ActionGatewaySession) HandleMessageToolCalls(ctx context.Context,
 		if block.Type == "tool_use" {
 			arguments := json.RawMessage(`{}`)
 			if block.Input != nil {
-				arguments, _ = json.Marshal(block.Input)
+				var err error
+				arguments, err = json.Marshal(block.Input)
+				if err != nil {
+					return nil, nil, fmt.Errorf("action gateway: marshal tool input: %w", err)
+				}
 			}
 			calls = append(calls, ActionGatewayToolCall{ID: block.ID, Name: block.Name, Arguments: arguments})
 		}

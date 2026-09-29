@@ -1,11 +1,13 @@
 package godo
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -216,6 +218,19 @@ func TestActionGatewayInferenceAdapters(t *testing.T) {
 	}
 }
 
+func TestActionGatewayMessageToolMarshalError(t *testing.T) {
+	session, server := actionGatewayTestSession(t)
+	defer server.Close()
+	message := &Message{Content: []MessageContentBlock{
+		{Type: "tool_use", ID: "valid", Name: "fetch", Input: map[string]interface{}{"url": "https://example.com"}},
+		{Type: "tool_use", ID: "invalid", Name: "fetch", Input: map[string]interface{}{"value": math.NaN()}},
+	}}
+	_, response, err := session.HandleMessageToolCalls(context.Background(), message)
+	if err == nil || !strings.Contains(err.Error(), "unsupported value") || response != nil {
+		t.Fatalf("marshal error = %v, response = %+v", err, response)
+	}
+}
+
 func TestActionGatewayAuthenticationAndErrors(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.Header.Get("Authorization") != "Bearer sdk-token" {
@@ -285,6 +300,41 @@ func TestActionGatewayRuntimeFailures(t *testing.T) {
 	}
 }
 
+func TestActionGatewaySessionMCPOrigin(t *testing.T) {
+	client := NewClient(nil)
+	urls := []struct {
+		url     string
+		allowed bool
+	}{
+		{"https://actions.do-ai.run/mcp/session/abc", true},
+		{"https://actions.do-ai.run:443/mcp/session/abc", true},
+		{"https://attacker.example/mcp/session/abc", false},
+		{"https://actions.do-ai.run.attacker.example/mcp/session/abc", false},
+		{"https://actions.do-ai.run:8443/mcp/session/abc", false},
+		{"http://actions.do-ai.run/mcp/session/abc", false},
+	}
+	for _, test := range urls {
+		t.Run(test.url, func(t *testing.T) {
+			created := &ActionGatewaySessionCreateResponse{Session: &ActionGatewaySessionRecord{SessionURN: "urn:abc"}, MCPURL: test.url}
+			session, err := newActionGatewaySession(client, created, "alice")
+			if (err == nil) != test.allowed || (err == nil && session.MCPURL != test.url) {
+				t.Fatalf("bound URL = %+v, err = %v, allowed = %v", session, err, test.allowed)
+			}
+		})
+	}
+	devClient, err := New(nil, WithActionGatewayMCPBaseURL("http://127.0.0.1:8080"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := newActionGatewaySession(devClient, &ActionGatewaySessionCreateResponse{Session: &ActionGatewaySessionRecord{SessionURN: "urn:abc"}, MCPURL: "https://attacker.example/mcp/session/abc"}, "alice")
+	if err != nil || session.MCPURL != "http://127.0.0.1:8080/mcp/session/abc" {
+		t.Fatalf("development override = %+v, err = %v", session, err)
+	}
+	if _, err := newActionGatewaySession(devClient, &ActionGatewaySessionCreateResponse{Session: &ActionGatewaySessionRecord{SessionURN: "urn:abc"}, MCPURL: "http://actions.do-ai.run/mcp/session/abc"}, "alice"); err == nil {
+		t.Fatal("expected returned HTTP URL to be rejected even with override")
+	}
+}
+
 func TestActionGatewaySSEIncremental(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		var call struct {
@@ -350,5 +400,27 @@ func TestActionGatewayRPCResponseIDs(t *testing.T) {
 				t.Fatalf("protocol error = %v, response = %+v", err, response)
 			}
 		})
+	}
+}
+
+func TestActionGatewaySSESizeLimit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "text/event-stream")
+		_, _ = writer.Write([]byte("data: "))
+		_, _ = writer.Write(bytes.Repeat([]byte("x"), actionGatewayMaxRPCResponseBytes+1))
+	}))
+	defer server.Close()
+	client, err := New(server.Client(), WithActionGatewayMCPBaseURL(server.URL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	session, err := newActionGatewaySession(client, &ActionGatewaySessionCreateResponse{Session: &ActionGatewaySessionRecord{SessionURN: "urn:abc"}, MCPURL: "https://actions.do-ai.run/mcp/session/abc"}, "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, response, err := session.Tools.List(context.Background(), true)
+	var protocolError *ActionGatewayProtocolError
+	if !errors.As(err, &protocolError) || !strings.Contains(protocolError.Message, "SSE response exceeds size limit") || response == nil {
+		t.Fatalf("SSE limit error = %v, response = %+v", err, response)
 	}
 }

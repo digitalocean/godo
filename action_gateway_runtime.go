@@ -17,10 +17,11 @@ import (
 )
 
 const (
-	actionGatewaySearchTool = "action_search"
-	actionGatewayInvokeTool = "action_invoke"
-	actionGatewayCodeTool   = "action_code"
-	actionGatewayMCPVersion = "2025-06-18"
+	actionGatewaySearchTool          = "action_search"
+	actionGatewayInvokeTool          = "action_invoke"
+	actionGatewayCodeTool            = "action_code"
+	actionGatewayMCPVersion          = "2025-06-18"
+	actionGatewayMaxRPCResponseBytes = 32 << 20
 )
 
 // WithActionGatewayMCPBaseURL replaces only the origin of returned session MCP
@@ -76,6 +77,12 @@ func newActionGatewaySession(client *Client, created *ActionGatewaySessionCreate
 	endpoint, err := url.Parse(created.MCPURL)
 	if err != nil {
 		return nil, err
+	}
+	if err = validateActionGatewayURL(endpoint, false); err != nil {
+		return nil, err
+	}
+	if client.actionGatewayMCPBaseURL == nil && (!strings.EqualFold(endpoint.Hostname(), "actions.do-ai.run") || (endpoint.Port() != "" && endpoint.Port() != "443")) {
+		return nil, &ActionGatewayProtocolError{Message: "untrusted MCP URL origin"}
 	}
 	if client.actionGatewayMCPBaseURL != nil {
 		endpoint.Scheme = client.actionGatewayMCPBaseURL.Scheme
@@ -177,9 +184,13 @@ func (session *ActionGatewaySession) rpc(ctx context.Context, method string, par
 	data, response, err := session.do(ctx, session.endpoint.String(), message, "application/json, text/event-stream", func(actual *http.Response) ([]byte, error) {
 		mediaType, _, _ := mime.ParseMediaType(actual.Header.Get("Content-Type"))
 		if mediaType == "text/event-stream" {
-			reader := NewSSEReader(actual.Body)
+			limited := &io.LimitedReader{R: actual.Body, N: actionGatewayMaxRPCResponseBytes + 1}
+			reader := NewSSEReader(limited)
 			for {
 				event, err := reader.Next()
+				if limited.N == 0 {
+					return nil, &ActionGatewayProtocolError{Message: "SSE response exceeds size limit"}
+				}
 				if errors.Is(err, io.EOF) {
 					return nil, &ActionGatewayProtocolError{Message: "SSE stream ended without a matching JSON-RPC response"}
 				}
@@ -204,9 +215,8 @@ func (session *ActionGatewaySession) rpc(ctx context.Context, method string, par
 				return append([]byte(nil), event.Data...), nil
 			}
 		}
-		const maxJSONResponse = 32 << 20
-		data, err := io.ReadAll(io.LimitReader(actual.Body, maxJSONResponse+1))
-		if len(data) > maxJSONResponse {
+		data, err := io.ReadAll(io.LimitReader(actual.Body, actionGatewayMaxRPCResponseBytes+1))
+		if len(data) > actionGatewayMaxRPCResponseBytes {
 			return nil, &ActionGatewayProtocolError{Message: "JSON-RPC response exceeds size limit"}
 		}
 		return data, err

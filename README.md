@@ -109,8 +109,9 @@ runs sandboxed code. `MessageTools`/`HandleMessageToolCalls` and
 `ResponseTools`/`HandleResponseToolCalls` integrate with the other inference
 formats. `CreateRuntime` defaults to an ask-before-executing policy; provide an
 explicit policy to change it. Omitted `Tools` enables all tools, while an empty
-non-nil slice enables none. MCP calls use the session URL returned by the API;
-`WithActionGatewayMCPBaseURL` overrides its origin for development or tests.
+non-nil slice enables none. MCP calls accept only HTTPS session URLs on
+`actions.do-ai.run`; `WithActionGatewayMCPBaseURL` overrides the origin for
+development or tests.
 
 ## AI & Inference
 
