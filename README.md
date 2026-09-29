@@ -78,6 +78,40 @@ func main() {
 
 If you need to provide a `context.Context` to your new client, you should use [`godo.NewClient`](https://godoc.org/github.com/digitalocean/godo#NewClient) to manually construct a client instead.
 
+## Action Gateway
+
+`client.ActionGateway` exposes the Action Gateway control-plane resources: tools,
+toolbelts, output views, MCP servers, connections, sessions, users, and end-user
+limits. Use a PAT with the corresponding `action_gateway` scopes. For example:
+
+```go
+toolbelts, _, err := client.ActionGateway.Toolbelts.List(ctx, &godo.ActionGatewayToolbeltsListOptions{Status: "active"})
+if err != nil { return err }
+fmt.Println(toolbelts.Toolbelts)
+
+session, _, err := client.ActionGateway.Sessions.CreateRuntime(ctx, &godo.ActionGatewaySessionCreateRequest{
+    ActorID: "alice",
+})
+if err != nil { return err }
+tools, _, err := session.ChatTools(ctx, nil) // action_search, action_invoke, action_code
+if err != nil { return err }
+completion, _, err := client.Chat.Completions.New(ctx, &godo.ChatCompletionNewParams{
+    Model: "llama3.3-70b-instruct", Messages: []godo.ChatCompletionMessage{godo.UserMessage("Find recent news")}, Tools: tools,
+})
+if err != nil { return err }
+toolMessages, _, err := session.HandleChatToolCalls(ctx, completion)
+if err != nil { return err }
+fmt.Println(toolMessages)
+```
+
+`session.Tools` supports direct discovery and invocation, while `session.Code`
+runs sandboxed code. `MessageTools`/`HandleMessageToolCalls` and
+`ResponseTools`/`HandleResponseToolCalls` integrate with the other inference
+formats. `CreateRuntime` defaults to an ask-before-executing policy; provide an
+explicit policy to change it. Omitted `Tools` enables all tools, while an empty
+non-nil slice enables none. MCP calls use the session URL returned by the API;
+`WithActionGatewayMCPBaseURL` overrides its origin for development or tests.
+
 ## AI & Inference
 
 > Talk to models on DigitalOcean's [Gradient AI Platform](https://www.digitalocean.com/products/gradient) with the same `godo.Client`.
