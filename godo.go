@@ -105,6 +105,7 @@ type Client struct {
 	Routes              RoutesService
 	PartnerAttachment   PartnerAttachmentService
 	AgentPlatform       AgentPlatformService
+	ActionGateway       *ActionGatewayService
 	HostedAgents        HostedAgentsService
 	HostedAgentTriggers HostedAgentTriggersService
 	DedicatedInference  DedicatedInferenceService
@@ -127,6 +128,8 @@ type Client struct {
 
 	// Optional rate limiter to ensure QoS.
 	rateLimiter *rate.Limiter
+	// Optional Action Gateway MCP origin override for development and testing.
+	actionGatewayMCPBaseURL *url.URL
 
 	// Optional retry values. Setting the RetryConfig.RetryMax value enables automatically retrying requests
 	// that fail with 429 or 500-level response codes using the go-retryablehttp client
@@ -364,6 +367,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Routes = &RoutesServiceOp{client: c}
 	c.PartnerAttachment = &PartnerAttachmentServiceOp{client: c}
 	c.AgentPlatform = &AgentPlatformServiceOp{client: c}
+	c.ActionGateway = newActionGatewayService(c)
 	c.HostedAgents = &HostedAgentsServiceOp{client: c}
 	c.HostedAgentTriggers = &HostedAgentTriggersServiceOp{client: c}
 	c.DedicatedInference = &DedicatedInferenceServiceOp{client: c}
