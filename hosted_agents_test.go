@@ -1200,10 +1200,11 @@ func TestHostedAgents_ListSandboxSizes(t *testing.T) {
 		assert.Empty(t, r.URL.RawQuery)
 		fmt.Fprint(w, `{
 			"sizes": [
-				{"slug": "mv-1vcpu-2gb", "vcpus": 1, "memory_mb": 2048},
-				{"slug": "mv-2vcpu-4gb", "vcpus": 2, "memory_mb": 4096},
-				{"slug": "mv-8vcpu-16gb", "vcpus": 8, "memory_mb": 16384},
-				{"slug": "mv-16vcpu-32gb", "vcpus": 16, "memory_mb": 32768}
+				{"slug": "mars-1vcpu-1gb", "vcpus": 1, "memory_mb": 1024, "price_per_hour_usd": 0.00001, "price_per_month_usd": 39.804},
+				{"slug": "mars-2vcpu-2gb", "vcpus": 2, "memory_mb": 2048, "price_per_hour_usd": 0.00003, "price_per_month_usd": 79.608},
+				{"slug": "mars-2vcpu-4gb", "vcpus": 2, "memory_mb": 4096, "price_per_hour_usd": 0.00003, "price_per_month_usd": 93.744},
+				{"slug": "mars-4vcpu-8gb", "vcpus": 4, "memory_mb": 8192, "price_per_hour_usd": 0.00007, "price_per_month_usd": 187.488},
+				{"slug": "mars-16vcpu-32gb", "vcpus": 16, "memory_mb": 32768, "price_per_hour_usd": 0.00028, "price_per_month_usd": 749.952}
 			]
 		}`)
 	})
@@ -1212,10 +1213,11 @@ func TestHostedAgents_ListSandboxSizes(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, []HostedAgentSandboxSize{
-		{Slug: "mv-1vcpu-2gb", VCPUs: 1, MemoryMB: 2048},
-		{Slug: "mv-2vcpu-4gb", VCPUs: 2, MemoryMB: 4096},
-		{Slug: "mv-8vcpu-16gb", VCPUs: 8, MemoryMB: 16384},
-		{Slug: "mv-16vcpu-32gb", VCPUs: 16, MemoryMB: 32768},
+		{Slug: "mars-1vcpu-1gb", VCPUs: 1, MemoryMB: 1024, PricePerHourUSD: 0.00001, PricePerMonthUSD: 39.804},
+		{Slug: "mars-2vcpu-2gb", VCPUs: 2, MemoryMB: 2048, PricePerHourUSD: 0.00003, PricePerMonthUSD: 79.608},
+		{Slug: "mars-2vcpu-4gb", VCPUs: 2, MemoryMB: 4096, PricePerHourUSD: 0.00003, PricePerMonthUSD: 93.744},
+		{Slug: "mars-4vcpu-8gb", VCPUs: 4, MemoryMB: 8192, PricePerHourUSD: 0.00007, PricePerMonthUSD: 187.488},
+		{Slug: "mars-16vcpu-32gb", VCPUs: 16, MemoryMB: 32768, PricePerHourUSD: 0.00028, PricePerMonthUSD: 749.952},
 	}, got.Sizes)
 }
 
