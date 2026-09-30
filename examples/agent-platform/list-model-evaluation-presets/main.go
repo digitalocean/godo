@@ -1,5 +1,5 @@
 // Command list-model-evaluation-presets lists all saved model evaluation
-// presets via the GradientAI API.
+// presets via the Agent Platform API.
 //
 // Required env vars:
 //   - DIGITALOCEAN_TOKEN: a DigitalOcean API token.
@@ -18,7 +18,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.ListModelEvaluationPresets(ctx)
+	out, _, err := client.AgentPlatform.ListModelEvaluationPresets(ctx)
 	if err != nil {
 		panic(err)
 	}

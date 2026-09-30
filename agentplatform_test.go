@@ -1133,7 +1133,7 @@ func TestListAgents(t *testing.T) {
 		PerPage: 1,
 	}
 
-	agents, resp, err := client.GradientAI.ListAgents(ctx, req)
+	agents, resp, err := client.AgentPlatform.ListAgents(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListAgents returned error: %v", err)
 	}
@@ -1171,7 +1171,7 @@ func TestCreateAgent(t *testing.T) {
 		WorkspaceUuid:     "00000000-0000-0000-0000-000000000000",
 	}
 
-	res, _, err := client.GradientAI.CreateAgent(ctx, req)
+	res, _, err := client.AgentPlatform.CreateAgent(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.Create returned error: %v", err)
 	}
@@ -1189,7 +1189,7 @@ func TestListAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GradientAI.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	keys, resp, err := client.AgentPlatform.ListAgentAPIKeys(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -1213,7 +1213,7 @@ func TestCreateAPIKey(t *testing.T) {
 		Name:      "Key One",
 	}
 
-	key, resp, err := client.GradientAI.CreateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
+	key, resp, err := client.AgentPlatform.CreateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1235,7 +1235,7 @@ func TestUpdateAPIKey(t *testing.T) {
 		Name:       "Key One",
 	}
 
-	key, resp, err := client.GradientAI.UpdateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	key, resp, err := client.AgentPlatform.UpdateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1251,7 +1251,7 @@ func TestDeleteAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	key, resp, err := client.GradientAI.DeleteAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	key, resp, err := client.AgentPlatform.DeleteAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1267,7 +1267,7 @@ func TestRegenerateAPIKey(t *testing.T) {
 		fmt.Fprint(w, apiKeyInfoResponse)
 	})
 
-	key, resp, err := client.GradientAI.RegenerateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	key, resp, err := client.AgentPlatform.RegenerateAgentAPIKey(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "Key One", key.Name)
@@ -1283,7 +1283,7 @@ func TestGetAgent(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GradientAI.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
+	res, resp, err := client.AgentPlatform.GetAgent(ctx, "00000000-0000-0000-0000-000000000000")
 	if err != nil {
 		t.Errorf("GenAI.Get returned error: %v", err)
 	}
@@ -1303,7 +1303,7 @@ func TestDeleteAgent(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GradientAI.DeleteAgent(ctx, "def5d52c-30c5-11f0-bf8f-4e013e2ddde4")
+	res, resp, err := client.AgentPlatform.DeleteAgent(ctx, "def5d52c-30c5-11f0-bf8f-4e013e2ddde4")
 	if err != nil {
 		t.Errorf("GenAI.Delete returned error: %v", err)
 	}
@@ -1325,7 +1325,7 @@ func TestUpdateAgent(t *testing.T) {
 		Tags: []string{"updated", "example"},
 	}
 
-	res, resp, err := client.GradientAI.UpdateAgent(ctx, "00000000-0000-0000-0000-000000000000", req)
+	res, resp, err := client.AgentPlatform.UpdateAgent(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.Update returned error: %v", err)
 	}
@@ -1348,7 +1348,7 @@ func TestUpdateAgentVisibility(t *testing.T) {
 		Visibility: "VISIBILITY_PRIVATE",
 	}
 
-	res, resp, err := client.GradientAI.UpdateAgentVisibility(ctx, "00000000-0000-0000-0000-000000000000", req)
+	res, resp, err := client.AgentPlatform.UpdateAgentVisibility(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateVisibility returned error: %v", err)
 	}
@@ -1377,7 +1377,7 @@ func TestListKnowledgeBases(t *testing.T) {
 		PerPage: 1,
 	}
 
-	knowledgeBases, resp, err := client.GradientAI.ListKnowledgeBases(ctx, req)
+	knowledgeBases, resp, err := client.AgentPlatform.ListKnowledgeBases(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListKnowledgeBases returned error: %v", err)
 	}
@@ -1405,7 +1405,7 @@ func TestListIndexingJobs(t *testing.T) {
 		PerPage: 2,
 	}
 
-	result, resp, err := client.GradientAI.ListIndexingJobs(ctx, req)
+	result, resp, err := client.AgentPlatform.ListIndexingJobs(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.ListIndexingJobs returned error: %v", err)
 	}
@@ -1433,7 +1433,7 @@ func TestListIndexingJobDataSources(t *testing.T) {
 		fmt.Fprint(w, indexingJobDataSourcesResponse)
 	})
 
-	result, resp, err := client.GradientAI.ListIndexingJobDataSources(ctx, indexingJobUUID)
+	result, resp, err := client.AgentPlatform.ListIndexingJobDataSources(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.ListIndexingJobDataSources returned error: %v", err)
 	}
@@ -1477,7 +1477,7 @@ func TestGetIndexingJob(t *testing.T) {
 		fmt.Fprint(w, indexingJobResponse)
 	})
 
-	result, resp, err := client.GradientAI.GetIndexingJob(ctx, indexingJobUUID)
+	result, resp, err := client.AgentPlatform.GetIndexingJob(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.GetIndexingJob returned error: %v", err)
 	}
@@ -1529,7 +1529,7 @@ func TestCancelIndexingJob(t *testing.T) {
 		fmt.Fprint(w, cancelIndexingJobResponse)
 	})
 
-	result, resp, err := client.GradientAI.CancelIndexingJob(ctx, indexingJobUUID)
+	result, resp, err := client.AgentPlatform.CancelIndexingJob(ctx, indexingJobUUID)
 	if err != nil {
 		t.Errorf("GenAI.CancelIndexingJob returned error: %v", err)
 	}
@@ -1581,7 +1581,7 @@ func TestCreateKnowledgeBase(t *testing.T) {
 		},
 	}
 
-	res, _, err := client.GradientAI.CreateKnowledgeBase(ctx, req)
+	res, _, err := client.AgentPlatform.CreateKnowledgeBase(ctx, req)
 	if err != nil {
 		t.Errorf("GenAI.CreateKnowledgeBase returned error: %v", err)
 	}
@@ -1611,7 +1611,7 @@ func TestListDataSources(t *testing.T) {
 		PerPage: 1,
 	}
 
-	dataSources, resp, err := client.GradientAI.ListKnowledgeBaseDataSources(ctx, "11111111-1111-1111-1111-111111111111", req)
+	dataSources, resp, err := client.AgentPlatform.ListKnowledgeBaseDataSources(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.ListDataSources returned error: %v", err)
 	}
@@ -1638,7 +1638,7 @@ func TestAddDataSource(t *testing.T) {
 		},
 	}
 
-	res, _, err := client.GradientAI.AddKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", req)
+	res, _, err := client.AgentPlatform.AddKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.AddDataSource returned error: %v", err)
 	}
@@ -1656,7 +1656,7 @@ func TestDeleteDataSource(t *testing.T) {
 		fmt.Fprint(w, deleteDataSourceResponse)
 	})
 
-	kbUUID, dsUUID, resp, err := client.GradientAI.DeleteKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222")
+	kbUUID, dsUUID, resp, err := client.AgentPlatform.DeleteKnowledgeBaseDataSource(ctx, "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222")
 	if err != nil {
 		t.Errorf("GenAI.DeleteDataSource returned error: %v", err)
 	}
@@ -1675,7 +1675,7 @@ func TestGetKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, knowledgeBaseGetResponse)
 	})
 
-	res, dbStatus, resp, err := client.GradientAI.GetKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
+	res, dbStatus, resp, err := client.AgentPlatform.GetKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.GetKnowledgeBase returned error: %v", err)
 	}
@@ -1700,7 +1700,7 @@ func TestUpdateKnowledgeBase(t *testing.T) {
 		Tags: []string{"updated", "example"},
 	}
 
-	res, resp, err := client.GradientAI.UpdateKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111", req)
+	res, resp, err := client.AgentPlatform.UpdateKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateKnowledgeBase returned error: %v", err)
 	}
@@ -1720,7 +1720,7 @@ func TestDeleteKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, deleteKnowledgeBaseResponse)
 	})
 
-	kbUUID, resp, err := client.GradientAI.DeleteKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
+	kbUUID, resp, err := client.AgentPlatform.DeleteKnowledgeBase(ctx, "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.DeleteKnowledgeBase returned error: %v", err)
 	}
@@ -1738,7 +1738,7 @@ func TestAttachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GradientAI.AttachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.AgentPlatform.AttachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	if err != nil {
 		t.Errorf("GenAI.AttachKnowledgBase returned error: %v", err)
 	}
@@ -1756,7 +1756,7 @@ func TestDetachKnowledgeBase(t *testing.T) {
 		fmt.Fprint(w, agentResponse)
 	})
 
-	res, resp, err := client.GradientAI.DetachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
+	res, resp, err := client.AgentPlatform.DetachKnowledgeBaseToAgent(ctx, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111")
 	fmt.Print(res)
 	fmt.Print(resp)
 
@@ -1788,7 +1788,7 @@ func TestAddAgentRoute(t *testing.T) {
 		RouteName:       "weather route app",
 	}
 
-	res, resp, err := client.GradientAI.AddAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
+	res, resp, err := client.AgentPlatform.AddAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
 	if err != nil {
 		t.Errorf("GenAI.AddAgentRoute returned error: %v", err)
 	}
@@ -1806,7 +1806,7 @@ func TestDeleteAgentRoute(t *testing.T) {
 		fmt.Fprint(w, agentRouteResponse)
 	})
 
-	res, resp, err := client.GradientAI.DeleteAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001")
+	res, resp, err := client.AgentPlatform.DeleteAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001")
 	if err != nil {
 		t.Errorf("GenAI.DeleteAgentRoute returned error: %v", err)
 	}
@@ -1831,7 +1831,7 @@ func TestUpdateAgentRoute(t *testing.T) {
 		RouteName:       "weather route app",
 	}
 
-	res, resp, err := client.GradientAI.UpdateAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
+	res, resp, err := client.AgentPlatform.UpdateAgentRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000001", req)
 	if err != nil {
 		t.Errorf("GenAI.UpdateAgentRoute returned error: %v", err)
 	}
@@ -1849,7 +1849,7 @@ func TestListVersions(t *testing.T) {
 		fmt.Fprint(w, listAgentVersionsResponse)
 	})
 
-	versions, resp, err := client.GradientAI.ListAgentVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
+	versions, resp, err := client.AgentPlatform.ListAgentVersions(ctx, "00000000-0000-0000-0000-000000000000", nil)
 	if err != nil {
 		t.Errorf("GenAI.ListAgentVersions returned error: %v", err)
 	}
@@ -1868,7 +1868,7 @@ func TestRollbackVersion(t *testing.T) {
 		fmt.Fprint(w, rollbackResponse)
 	})
 
-	versions, resp, err := client.GradientAI.RollbackAgentVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
+	versions, resp, err := client.AgentPlatform.RollbackAgentVersion(ctx, "00000000-0000-0000-0000-000000000000", "00000000000000000000000000000000000000000000000000000000000000")
 	if err != nil {
 		t.Errorf("GenAI.RollbackVersion returned error: %v", err)
 	}
@@ -1886,7 +1886,7 @@ func TestListAnthropicAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listAnthropicAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GradientAI.ListAnthropicAPIKeys(ctx, nil)
+	keys, resp, err := client.AgentPlatform.ListAnthropicAPIKeys(ctx, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -1910,7 +1910,7 @@ func TestCreateAnthropicAPIKey(t *testing.T) {
 		ApiKey: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GradientAI.CreateAnthropicAPIKey(ctx, req)
+	key, resp, err := client.AgentPlatform.CreateAnthropicAPIKey(ctx, req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1926,7 +1926,7 @@ func TestGetAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GradientAI.GetAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.AgentPlatform.GetAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1948,7 +1948,7 @@ func TestUpdateAnthropicAPIKey(t *testing.T) {
 		ApiKeyUuid: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GradientAI.UpdateAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
+	key, resp, err := client.AgentPlatform.UpdateAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1964,7 +1964,7 @@ func TestDeleteAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, anthropicAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GradientAI.DeleteAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.AgentPlatform.DeleteAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "Anthropic Key One", key.Name)
@@ -1980,7 +1980,7 @@ func TestListAgentsByAnthropicAPIKey(t *testing.T) {
 		fmt.Fprint(w, listAgentsByAnthropicAPIKeyResponse)
 	})
 
-	agents, resp, err := client.GradientAI.ListAgentsByAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	agents, resp, err := client.AgentPlatform.ListAgentsByAnthropicAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(agents))
@@ -2003,7 +2003,7 @@ func TestListOpenAIAPIKeys(t *testing.T) {
 		fmt.Fprint(w, listOpenAIAPIKeysResponse)
 	})
 
-	keys, resp, err := client.GradientAI.ListOpenAIAPIKeys(ctx, nil)
+	keys, resp, err := client.AgentPlatform.ListOpenAIAPIKeys(ctx, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(keys))
@@ -2027,7 +2027,7 @@ func TestCreateOpenAIAPIKey(t *testing.T) {
 		ApiKey: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GradientAI.CreateOpenAIAPIKey(ctx, req)
+	key, resp, err := client.AgentPlatform.CreateOpenAIAPIKey(ctx, req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -2043,7 +2043,7 @@ func TestGetOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, openaiAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GradientAI.GetOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.AgentPlatform.GetOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -2065,7 +2065,7 @@ func TestUpdateOpenAIAPIKey(t *testing.T) {
 		ApiKeyUuid: "11111111-1111-1111-1111-111111111111",
 	}
 
-	key, resp, err := client.GradientAI.UpdateOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
+	key, resp, err := client.AgentPlatform.UpdateOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -2081,7 +2081,7 @@ func TestDeleteOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, openaiAPIKeyInfoResponse)
 	})
 
-	key, resp, err := client.GradientAI.DeleteOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
+	key, resp, err := client.AgentPlatform.DeleteOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "OpenAI One", key.Name)
@@ -2097,7 +2097,7 @@ func TestListAgentsByOpenAIAPIKey(t *testing.T) {
 		fmt.Fprint(w, listAgentsByOpenAIAPIKeyResponse)
 	})
 
-	agents, resp, err := client.GradientAI.ListAgentsByOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	agents, resp, err := client.AgentPlatform.ListAgentsByOpenAIAPIKey(ctx, "11111111-1111-1111-1111-111111111111", nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, 2, len(agents))
@@ -2171,7 +2171,7 @@ func TestCreateFunctionRoute(t *testing.T) {
 }`),
 	}
 
-	agent, res, err := client.GradientAI.CreateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", req)
+	agent, res, err := client.AgentPlatform.CreateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", req)
 	if err != nil {
 		t.Errorf("GenAI.Create returned error: %v", err)
 	}
@@ -2227,7 +2227,7 @@ func TestUpdateFunctionRoute(t *testing.T) {
         }`),
 	}
 
-	agent, resp, err := client.GradientAI.UpdateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
+	agent, resp, err := client.AgentPlatform.UpdateFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000", req)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, req.Description, agent.Functions[0].Description)
@@ -2243,7 +2243,7 @@ func TestDeleteFunctionRoute(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	_, resp, err := client.GradientAI.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
+	_, resp, err := client.AgentPlatform.DeleteFunctionRoute(ctx, "00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 }
@@ -2261,7 +2261,7 @@ func TestListInferenceRouters(t *testing.T) {
 		fmt.Fprint(w, listInferenceRoutersResponse)
 	})
 
-	routers, resp, err := client.GradientAI.ListInferenceRouters(ctx, &ListOptions{Page: 1, PerPage: 10})
+	routers, resp, err := client.AgentPlatform.ListInferenceRouters(ctx, &ListOptions{Page: 1, PerPage: 10})
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	require.Len(t, routers, 1)
@@ -2285,7 +2285,7 @@ func TestListInferenceRouterTaskPresets(t *testing.T) {
 		fmt.Fprint(w, listInferenceRouterTaskPresetsResponse)
 	})
 
-	tasks, resp, err := client.GradientAI.ListInferenceRouterTaskPresets(ctx, &ListOptions{Page: 1, PerPage: 10})
+	tasks, resp, err := client.AgentPlatform.ListInferenceRouterTaskPresets(ctx, &ListOptions{Page: 1, PerPage: 10})
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	require.Len(t, tasks, 2)
@@ -2307,7 +2307,7 @@ func TestGetInferenceRouter(t *testing.T) {
 		fmt.Fprint(w, getInferenceRouterResponse)
 	})
 
-	router, resp, err := client.GradientAI.GetInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	router, resp, err := client.AgentPlatform.GetInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	require.NotNil(t, router)
@@ -2332,7 +2332,7 @@ func TestCreateInferenceRouter(t *testing.T) {
 		Description:    "Router used for unit tests.",
 		FallbackModels: []string{"openai-gpt-4"},
 	}
-	router, resp, err := client.GradientAI.CreateInferenceRouter(ctx, create)
+	router, resp, err := client.AgentPlatform.CreateInferenceRouter(ctx, create)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	require.NotNil(t, router)
@@ -2350,7 +2350,7 @@ func TestUpdateInferenceRouter(t *testing.T) {
 
 	name := "router-renamed"
 	update := &InferenceRouterUpdateRequest{Name: name}
-	router, resp, err := client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", update)
+	router, resp, err := client.AgentPlatform.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", update)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	require.NotNil(t, router)
@@ -2366,7 +2366,7 @@ func TestDeleteInferenceRouter(t *testing.T) {
 		fmt.Fprint(w, `{"uuid":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}`)
 	})
 
-	out, resp, err := client.GradientAI.DeleteInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	out, resp, err := client.AgentPlatform.DeleteInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	require.NotNil(t, out)
@@ -2377,13 +2377,13 @@ func TestCreateInferenceRouterValidation(t *testing.T) {
 	setup()
 	defer teardown()
 
-	_, _, err := client.GradientAI.CreateInferenceRouter(ctx, nil)
+	_, _, err := client.AgentPlatform.CreateInferenceRouter(ctx, nil)
 	assert.Error(t, err)
 
-	_, _, err = client.GradientAI.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{Name: "n"})
+	_, _, err = client.AgentPlatform.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{Name: "n"})
 	assert.Error(t, err)
 
-	_, _, err = client.GradientAI.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{
+	_, _, err = client.AgentPlatform.CreateInferenceRouter(ctx, &InferenceRouterCreateRequest{
 		Name:           "router",
 		FallbackModels: []string{"a", ""},
 	})
@@ -2394,13 +2394,13 @@ func TestUpdateInferenceRouterValidation(t *testing.T) {
 	setup()
 	defer teardown()
 
-	_, _, err := client.GradientAI.UpdateInferenceRouter(ctx, "", &InferenceRouterUpdateRequest{Name: "x"})
+	_, _, err := client.AgentPlatform.UpdateInferenceRouter(ctx, "", &InferenceRouterUpdateRequest{Name: "x"})
 	assert.Error(t, err)
 
-	_, _, err = client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", nil)
+	_, _, err = client.AgentPlatform.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", nil)
 	assert.Error(t, err)
 
-	_, _, err = client.GradientAI.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", &InferenceRouterUpdateRequest{})
+	_, _, err = client.AgentPlatform.UpdateInferenceRouter(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", &InferenceRouterUpdateRequest{})
 	assert.Error(t, err)
 }
 
@@ -2423,7 +2423,7 @@ func TestListAvailableModels(t *testing.T) {
 		PerPage: 1,
 	}
 
-	models, resp, err := client.GradientAI.ListAvailableModels(ctx, req)
+	models, resp, err := client.AgentPlatform.ListAvailableModels(ctx, req)
 	if err != nil {
 		t.Fatalf("GenAI ListAvailableModels returned error: %v", err)
 	}
@@ -2454,7 +2454,7 @@ func TestSearchModels(t *testing.T) {
 	})
 
 	// Test matching query
-	uuids, resp, err := client.GradientAI.SearchModels(ctx, "llama")
+	uuids, resp, err := client.AgentPlatform.SearchModels(ctx, "llama")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, 1, len(uuids))
@@ -2471,7 +2471,7 @@ func TestSearchModelsNoMatch(t *testing.T) {
 	})
 
 	// Test non-matching query
-	uuids, resp, err := client.GradientAI.SearchModels(ctx, "nonexistent")
+	uuids, resp, err := client.AgentPlatform.SearchModels(ctx, "nonexistent")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, 0, len(uuids))
@@ -2487,7 +2487,7 @@ func TestGetModelByUUID(t *testing.T) {
 	})
 
 	// Test existing UUID
-	model, resp, err := client.GradientAI.GetModelByUUID(ctx, "00000000-0000-0000-0000-000000000000")
+	model, resp, err := client.AgentPlatform.GetModelByUUID(ctx, "00000000-0000-0000-0000-000000000000")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.NotNil(t, model)
@@ -2505,7 +2505,7 @@ func TestGetModelByUUIDNotFound(t *testing.T) {
 	})
 
 	// Test non-existing UUID
-	model, resp, err := client.GradientAI.GetModelByUUID(ctx, "99999999-9999-9999-9999-999999999999")
+	model, resp, err := client.AgentPlatform.GetModelByUUID(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Nil(t, model)
@@ -2520,7 +2520,7 @@ func TestListDatacenterRegions(t *testing.T) {
 		fmt.Fprint(w, listDatacenterRegionsResponse)
 	})
 
-	regions, resp, err := client.GradientAI.ListDatacenterRegions(ctx, nil, nil)
+	regions, resp, err := client.AgentPlatform.ListDatacenterRegions(ctx, nil, nil)
 	if err != nil {
 		t.Fatalf("GenAI ListDatacenterRegions returned error: %v", err)
 	}
@@ -2785,7 +2785,7 @@ func TestListCustomModels(t *testing.T) {
 		},
 	}
 
-	out, resp, err := client.GradientAI.ListCustomModels(ctx, opt)
+	out, resp, err := client.AgentPlatform.ListCustomModels(ctx, opt)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -2847,7 +2847,7 @@ func TestListCustomModelsNoOptions(t *testing.T) {
 		fmt.Fprint(w, listCustomModelsResponse)
 	})
 
-	out, resp, err := client.GradientAI.ListCustomModels(ctx, nil)
+	out, resp, err := client.AgentPlatform.ListCustomModels(ctx, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, 2, len(out.Models))
@@ -2862,7 +2862,7 @@ func TestGetCustomModel(t *testing.T) {
 		fmt.Fprint(w, getCustomModelResponse)
 	})
 
-	model, resp, err := client.GradientAI.GetCustomModel(ctx, "11111111-1111-1111-1111-111111111111")
+	model, resp, err := client.AgentPlatform.GetCustomModel(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -2913,7 +2913,7 @@ func TestGetCustomModelFailed(t *testing.T) {
 		fmt.Fprint(w, getFailedCustomModelResponse)
 	})
 
-	model, resp, err := client.GradientAI.GetCustomModel(ctx, "55555555-5555-5555-5555-555555555555")
+	model, resp, err := client.AgentPlatform.GetCustomModel(ctx, "55555555-5555-5555-5555-555555555555")
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -2932,7 +2932,7 @@ func TestGetCustomModelMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	model, resp, err := client.GradientAI.GetCustomModel(ctx, "")
+	model, resp, err := client.AgentPlatform.GetCustomModel(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, model)
 	assert.Nil(t, resp)
@@ -2942,7 +2942,7 @@ func TestGetCustomModelInvalidURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	model, resp, err := client.GradientAI.GetCustomModel(ctx, "bad\nuuid")
+	model, resp, err := client.AgentPlatform.GetCustomModel(ctx, "bad\nuuid")
 	assert.Error(t, err)
 	assert.Nil(t, model)
 	assert.Nil(t, resp)
@@ -2957,7 +2957,7 @@ func TestGetCustomModelServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"missing"}`, http.StatusNotFound)
 	})
 
-	model, resp, err := client.GradientAI.GetCustomModel(ctx, "99999999-9999-9999-9999-999999999999")
+	model, resp, err := client.AgentPlatform.GetCustomModel(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.Error(t, err)
 	assert.Nil(t, model)
 	assert.NotNil(t, resp)
@@ -3000,7 +3000,7 @@ func TestImportCustomModel(t *testing.T) {
 		Tags:                     &CustomModelTags{Tags: []string{"fast", "small"}},
 	}
 
-	out, resp, err := client.GradientAI.ImportCustomModel(ctx, req)
+	out, resp, err := client.AgentPlatform.ImportCustomModel(ctx, req)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3029,7 +3029,7 @@ func TestImportCustomModelNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.ImportCustomModel(ctx, nil)
+	out, resp, err := client.AgentPlatform.ImportCustomModel(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3043,7 +3043,7 @@ func TestImportCustomModelMissingName(t *testing.T) {
 		SourceType: CustomModelSourceTypeHuggingFace,
 	}
 
-	out, resp, err := client.GradientAI.ImportCustomModel(ctx, req)
+	out, resp, err := client.AgentPlatform.ImportCustomModel(ctx, req)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3057,7 +3057,7 @@ func TestImportCustomModelMissingSourceType(t *testing.T) {
 		Name: "team/new-model",
 	}
 
-	out, resp, err := client.GradientAI.ImportCustomModel(ctx, req)
+	out, resp, err := client.AgentPlatform.ImportCustomModel(ctx, req)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3072,7 +3072,7 @@ func TestDeleteCustomModel(t *testing.T) {
 		fmt.Fprint(w, deleteCustomModelResponse)
 	})
 
-	out, resp, err := client.GradientAI.DeleteCustomModel(ctx, "11111111-1111-1111-1111-111111111111")
+	out, resp, err := client.AgentPlatform.DeleteCustomModel(ctx, "11111111-1111-1111-1111-111111111111")
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3084,7 +3084,7 @@ func TestDeleteCustomModelMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteCustomModel(ctx, "")
+	out, resp, err := client.AgentPlatform.DeleteCustomModel(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3099,7 +3099,7 @@ func TestDeleteCustomModelServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"model not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.DeleteCustomModel(ctx, "99999999-9999-9999-9999-999999999999")
+	out, resp, err := client.AgentPlatform.DeleteCustomModel(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -3129,7 +3129,7 @@ func TestUpdateCustomModelMetadata(t *testing.T) {
 		Tags:        &CustomModelTags{Tags: []string{"updated", "v2"}},
 	}
 
-	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
+	model, resp, err := client.AgentPlatform.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3165,7 +3165,7 @@ func TestUpdateCustomModelMetadataSpacesFields(t *testing.T) {
 		License:          "apache-2.0",
 	}
 
-	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "22222222-2222-2222-2222-222222222222", req)
+	model, resp, err := client.AgentPlatform.UpdateCustomModelMetadata(ctx, "22222222-2222-2222-2222-222222222222", req)
 	assert.NoError(t, err)
 	assert.NotNil(t, model)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3201,7 +3201,7 @@ func TestUpdateCustomModelMetadataOmitsUnsetSpacesFields(t *testing.T) {
 	})
 
 	req := &CustomModelMetadataUpdateRequest{Description: "Updated description"}
-	_, _, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
+	_, _, err := client.AgentPlatform.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.NoError(t, err)
 }
 
@@ -3211,7 +3211,7 @@ func TestUpdateCustomModelMetadataMissingUUID(t *testing.T) {
 
 	req := &CustomModelMetadataUpdateRequest{Description: "x"}
 
-	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "", req)
+	model, resp, err := client.AgentPlatform.UpdateCustomModelMetadata(ctx, "", req)
 	assert.Error(t, err)
 	assert.Nil(t, model)
 	assert.Nil(t, resp)
@@ -3221,7 +3221,7 @@ func TestUpdateCustomModelMetadataNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", nil)
+	model, resp, err := client.AgentPlatform.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", nil)
 	assert.Error(t, err)
 	assert.Nil(t, model)
 	assert.Nil(t, resp)
@@ -3236,7 +3236,7 @@ func TestListCustomModelsServerError(t *testing.T) {
 		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
 	})
 
-	out, resp, err := client.GradientAI.ListCustomModels(ctx, nil)
+	out, resp, err := client.AgentPlatform.ListCustomModels(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -3256,7 +3256,7 @@ func TestImportCustomModelServerError(t *testing.T) {
 		Name:       "team/new-model",
 		SourceType: CustomModelSourceTypeHuggingFace,
 	}
-	out, resp, err := client.GradientAI.ImportCustomModel(ctx, req)
+	out, resp, err := client.AgentPlatform.ImportCustomModel(ctx, req)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -3273,7 +3273,7 @@ func TestUpdateCustomModelMetadataServerError(t *testing.T) {
 	})
 
 	req := &CustomModelMetadataUpdateRequest{Description: "x"}
-	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
+	model, resp, err := client.AgentPlatform.UpdateCustomModelMetadata(ctx, "11111111-1111-1111-1111-111111111111", req)
 	assert.Error(t, err)
 	assert.Nil(t, model)
 	assert.NotNil(t, resp)
@@ -3284,7 +3284,7 @@ func TestDeleteCustomModelInvalidURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteCustomModel(ctx, "bad\nuuid")
+	out, resp, err := client.AgentPlatform.DeleteCustomModel(ctx, "bad\nuuid")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3294,7 +3294,7 @@ func TestUpdateCustomModelMetadataInvalidURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	model, resp, err := client.GradientAI.UpdateCustomModelMetadata(ctx, "bad\nuuid", &CustomModelMetadataUpdateRequest{Description: "x"})
+	model, resp, err := client.AgentPlatform.UpdateCustomModelMetadata(ctx, "bad\nuuid", &CustomModelMetadataUpdateRequest{Description: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, model)
 	assert.Nil(t, resp)
@@ -3329,7 +3329,7 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 		},
 	}
 
-	metric, resp, err := client.GradientAI.CreateCustomEvaluationMetric(ctx, req)
+	metric, resp, err := client.AgentPlatform.CreateCustomEvaluationMetric(ctx, req)
 	assert.NoError(t, err)
 	assert.NotNil(t, metric)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3347,7 +3347,7 @@ func TestCreateCustomEvaluationMetricNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	metric, resp, err := client.GradientAI.CreateCustomEvaluationMetric(ctx, nil)
+	metric, resp, err := client.AgentPlatform.CreateCustomEvaluationMetric(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, metric)
 	assert.Nil(t, resp)
@@ -3382,7 +3382,7 @@ func TestUpdateCustomEvaluationMetric(t *testing.T) {
 		},
 	}
 
-	metric, resp, err := client.GradientAI.UpdateCustomEvaluationMetric(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", req)
+	metric, resp, err := client.AgentPlatform.UpdateCustomEvaluationMetric(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", req)
 	assert.NoError(t, err)
 	assert.NotNil(t, metric)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3401,7 +3401,7 @@ func TestDeleteCustomEvaluationMetric(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.GradientAI.DeleteCustomEvaluationMetric(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	resp, err := client.AgentPlatform.DeleteCustomEvaluationMetric(ctx, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3411,7 +3411,7 @@ func TestDeleteCustomEvaluationMetricMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	resp, err := client.GradientAI.DeleteCustomEvaluationMetric(ctx, "")
+	resp, err := client.AgentPlatform.DeleteCustomEvaluationMetric(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 }
@@ -3432,7 +3432,7 @@ func TestDeleteModelEvaluationRun(t *testing.T) {
 		fmt.Fprint(w, deleteModelEvaluationRunResponse)
 	})
 
-	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "12345678-1234-1234-1234-123456789012")
+	out, resp, err := client.AgentPlatform.DeleteModelEvaluationRun(ctx, "12345678-1234-1234-1234-123456789012")
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3444,7 +3444,7 @@ func TestDeleteModelEvaluationRunMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "")
+	out, resp, err := client.AgentPlatform.DeleteModelEvaluationRun(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3459,7 +3459,7 @@ func TestDeleteModelEvaluationRunServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999")
+	out, resp, err := client.AgentPlatform.DeleteModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -3470,7 +3470,7 @@ func TestDeleteModelEvaluationRunInvalidURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteModelEvaluationRun(ctx, "bad\nuuid")
+	out, resp, err := client.AgentPlatform.DeleteModelEvaluationRun(ctx, "bad\nuuid")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3485,7 +3485,7 @@ func TestDeleteModelEvaluationPreset(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "12345678-1234-1234-1234-123456789012")
+	out, resp, err := client.AgentPlatform.DeleteModelEvaluationPreset(ctx, "12345678-1234-1234-1234-123456789012")
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3495,7 +3495,7 @@ func TestDeleteModelEvaluationPresetMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "")
+	out, resp, err := client.AgentPlatform.DeleteModelEvaluationPreset(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3510,7 +3510,7 @@ func TestDeleteModelEvaluationPresetServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"evaluation preset not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "99999999-9999-9999-9999-999999999999")
+	out, resp, err := client.AgentPlatform.DeleteModelEvaluationPreset(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -3521,7 +3521,7 @@ func TestDeleteModelEvaluationPresetInvalidURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, "bad\nuuid")
+	out, resp, err := client.AgentPlatform.DeleteModelEvaluationPreset(ctx, "bad\nuuid")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3563,7 +3563,7 @@ func TestCancelModelEvaluationRun(t *testing.T) {
 		fmt.Fprint(w, cancelModelEvaluationRunResponse)
 	})
 
-	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, evalRunUUID)
+	out, resp, err := client.AgentPlatform.CancelModelEvaluationRun(ctx, evalRunUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.NotNil(t, out.Run)
@@ -3584,7 +3584,7 @@ func TestCancelModelEvaluationRunMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "")
+	out, resp, err := client.AgentPlatform.CancelModelEvaluationRun(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3599,7 +3599,7 @@ func TestCancelModelEvaluationRunServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999")
+	out, resp, err := client.AgentPlatform.CancelModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -3610,7 +3610,7 @@ func TestCancelModelEvaluationRunInvalidURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CancelModelEvaluationRun(ctx, "bad\nuuid")
+	out, resp, err := client.AgentPlatform.CancelModelEvaluationRun(ctx, "bad\nuuid")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3655,7 +3655,7 @@ func TestUpdateModelEvaluationRun(t *testing.T) {
 		Name: "Updated run",
 	}
 
-	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, evalRunUUID, updateReq)
+	out, resp, err := client.AgentPlatform.UpdateModelEvaluationRun(ctx, evalRunUUID, updateReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.NotNil(t, out.Run)
@@ -3678,7 +3678,7 @@ func TestUpdateModelEvaluationRunMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, "", &UpdateModelEvaluationRunRequest{Name: "x"})
+	out, resp, err := client.AgentPlatform.UpdateModelEvaluationRun(ctx, "", &UpdateModelEvaluationRunRequest{Name: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3688,7 +3688,7 @@ func TestUpdateModelEvaluationRunMissingRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, "12345678-1234-1234-1234-123456789012", nil)
+	out, resp, err := client.AgentPlatform.UpdateModelEvaluationRun(ctx, "12345678-1234-1234-1234-123456789012", nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3703,7 +3703,7 @@ func TestUpdateModelEvaluationRunServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999", &UpdateModelEvaluationRunRequest{Name: "x"})
+	out, resp, err := client.AgentPlatform.UpdateModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999", &UpdateModelEvaluationRunRequest{Name: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -3714,7 +3714,7 @@ func TestUpdateModelEvaluationRunInvalidURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateModelEvaluationRun(ctx, "bad\nuuid", &UpdateModelEvaluationRunRequest{Name: "x"})
+	out, resp, err := client.AgentPlatform.UpdateModelEvaluationRun(ctx, "bad\nuuid", &UpdateModelEvaluationRunRequest{Name: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3754,7 +3754,7 @@ func TestCreateModelEvaluationRun(t *testing.T) {
 		fmt.Fprint(w, createModelEvaluationRunResponse)
 	})
 
-	out, resp, err := client.GradientAI.CreateModelEvaluationRun(ctx, createReq)
+	out, resp, err := client.AgentPlatform.CreateModelEvaluationRun(ctx, createReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3765,7 +3765,7 @@ func TestCreateModelEvaluationRunNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateModelEvaluationRun(ctx, nil)
+	out, resp, err := client.AgentPlatform.CreateModelEvaluationRun(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3780,7 +3780,7 @@ func TestCreateModelEvaluationRunServerError(t *testing.T) {
 		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
 	})
 
-	out, resp, err := client.GradientAI.CreateModelEvaluationRun(ctx, &CreateModelEvaluationRunRequest{Name: "x"})
+	out, resp, err := client.AgentPlatform.CreateModelEvaluationRun(ctx, &CreateModelEvaluationRunRequest{Name: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -3825,7 +3825,7 @@ func TestCreateModelEvalDatasetUploadPresignedURLs(t *testing.T) {
 		fmt.Fprint(w, createModelEvalDatasetUploadPresignedURLsResponse)
 	})
 
-	out, resp, err := client.GradientAI.CreateModelEvalDatasetUploadPresignedURLs(ctx, createReq)
+	out, resp, err := client.AgentPlatform.CreateModelEvalDatasetUploadPresignedURLs(ctx, createReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3840,7 +3840,7 @@ func TestCreateModelEvalDatasetUploadPresignedURLsNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateModelEvalDatasetUploadPresignedURLs(ctx, nil)
+	out, resp, err := client.AgentPlatform.CreateModelEvalDatasetUploadPresignedURLs(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -3930,7 +3930,7 @@ func TestGetModelEvaluationRun(t *testing.T) {
 		fmt.Fprint(w, getModelEvaluationRunResponse)
 	})
 
-	out, resp, err := client.GradientAI.GetModelEvaluationRun(ctx, evalRunUUID, &ModelEvaluationRunGetOptions{Page: 2, PerPage: 25})
+	out, resp, err := client.AgentPlatform.GetModelEvaluationRun(ctx, evalRunUUID, &ModelEvaluationRunGetOptions{Page: 2, PerPage: 25})
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -3976,7 +3976,7 @@ func TestGetModelEvaluationRunNoOptions(t *testing.T) {
 		fmt.Fprint(w, getModelEvaluationRunResponse)
 	})
 
-	out, _, err := client.GradientAI.GetModelEvaluationRun(ctx, evalRunUUID, nil)
+	out, _, err := client.AgentPlatform.GetModelEvaluationRun(ctx, evalRunUUID, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 }
@@ -3985,7 +3985,7 @@ func TestGetModelEvaluationRunMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetModelEvaluationRun(ctx, "", nil)
+	out, resp, err := client.AgentPlatform.GetModelEvaluationRun(ctx, "", nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -4000,7 +4000,7 @@ func TestGetModelEvaluationRunServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"evaluation run not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.GetModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999", nil)
+	out, resp, err := client.AgentPlatform.GetModelEvaluationRun(ctx, "99999999-9999-9999-9999-999999999999", nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -4044,7 +4044,7 @@ func TestGetModelEvaluationPreset(t *testing.T) {
 		fmt.Fprint(w, getModelEvaluationPresetResponse)
 	})
 
-	out, resp, err := client.GradientAI.GetModelEvaluationPreset(ctx, evalPresetUUID)
+	out, resp, err := client.AgentPlatform.GetModelEvaluationPreset(ctx, evalPresetUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.NotNil(t, out.Preset)
@@ -4066,7 +4066,7 @@ func TestGetModelEvaluationPresetMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetModelEvaluationPreset(ctx, "")
+	out, resp, err := client.AgentPlatform.GetModelEvaluationPreset(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -4081,7 +4081,7 @@ func TestGetModelEvaluationPresetServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"preset not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.GetModelEvaluationPreset(ctx, "99999999-9999-9999-9999-999999999999")
+	out, resp, err := client.AgentPlatform.GetModelEvaluationPreset(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -4106,7 +4106,7 @@ func TestGetModelEvaluationRunResultsDownloadURL(t *testing.T) {
 		fmt.Fprint(w, getModelEvaluationRunResultsDownloadURLResponse)
 	})
 
-	out, resp, err := client.GradientAI.GetModelEvaluationRunResultsDownloadURL(ctx, evalRunUUID)
+	out, resp, err := client.AgentPlatform.GetModelEvaluationRunResultsDownloadURL(ctx, evalRunUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -4118,7 +4118,7 @@ func TestGetModelEvaluationRunResultsDownloadURLMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetModelEvaluationRunResultsDownloadURL(ctx, "")
+	out, resp, err := client.AgentPlatform.GetModelEvaluationRunResultsDownloadURL(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -4133,7 +4133,7 @@ func TestGetModelEvaluationRunResultsDownloadURLServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"run not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.GetModelEvaluationRunResultsDownloadURL(ctx, "99999999-9999-9999-9999-999999999999")
+	out, resp, err := client.AgentPlatform.GetModelEvaluationRunResultsDownloadURL(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -4197,7 +4197,7 @@ func TestListModelEvaluationRuns(t *testing.T) {
 		fmt.Fprint(w, listModelEvaluationRunsResponse)
 	})
 
-	out, resp, err := client.GradientAI.ListModelEvaluationRuns(ctx, &ModelEvaluationRunListOptions{
+	out, resp, err := client.AgentPlatform.ListModelEvaluationRuns(ctx, &ModelEvaluationRunListOptions{
 		EvalPresetUUID: "preset-uuid",
 		Status:         ModelEvaluationRunSuccessful,
 		Statuses: []ModelEvaluationRunStatus{
@@ -4249,7 +4249,7 @@ func TestListModelEvaluationRunsNoOptions(t *testing.T) {
 		fmt.Fprint(w, listModelEvaluationRunsResponse)
 	})
 
-	out, _, err := client.GradientAI.ListModelEvaluationRuns(ctx, nil)
+	out, _, err := client.AgentPlatform.ListModelEvaluationRuns(ctx, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Len(t, out.Runs, 2)
@@ -4285,7 +4285,7 @@ func TestListModelEvaluationPresets(t *testing.T) {
 		fmt.Fprint(w, listModelEvaluationPresetsResponse)
 	})
 
-	out, resp, err := client.GradientAI.ListModelEvaluationPresets(ctx)
+	out, resp, err := client.AgentPlatform.ListModelEvaluationPresets(ctx)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -4304,7 +4304,7 @@ func TestListModelEvaluationPresetsServerError(t *testing.T) {
 		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
 	})
 
-	out, resp, err := client.GradientAI.ListModelEvaluationPresets(ctx)
+	out, resp, err := client.AgentPlatform.ListModelEvaluationPresets(ctx)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -4347,7 +4347,7 @@ func TestListModelEvaluationMetrics(t *testing.T) {
 		fmt.Fprint(w, listModelEvaluationMetricsResponse)
 	})
 
-	out, resp, err := client.GradientAI.ListModelEvaluationMetrics(ctx)
+	out, resp, err := client.AgentPlatform.ListModelEvaluationMetrics(ctx)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -4369,7 +4369,7 @@ func TestListModelEvaluationMetricsServerError(t *testing.T) {
 		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
 	})
 
-	out, resp, err := client.GradientAI.ListModelEvaluationMetrics(ctx)
+	out, resp, err := client.AgentPlatform.ListModelEvaluationMetrics(ctx)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -4410,7 +4410,7 @@ func TestListEvaluationDatasets(t *testing.T) {
 		fmt.Fprint(w, listEvaluationDatasetsResponse)
 	})
 
-	out, resp, err := client.GradientAI.ListEvaluationDatasets(ctx, nil)
+	out, resp, err := client.AgentPlatform.ListEvaluationDatasets(ctx, nil)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -4434,7 +4434,7 @@ func TestListEvaluationDatasetsWithOptions(t *testing.T) {
 		fmt.Fprint(w, listEvaluationDatasetsResponse)
 	})
 
-	out, resp, err := client.GradientAI.ListEvaluationDatasets(ctx, &EvaluationDatasetListOptions{
+	out, resp, err := client.AgentPlatform.ListEvaluationDatasets(ctx, &EvaluationDatasetListOptions{
 		DatasetType: EvaluationDatasetTypeADK,
 	})
 	assert.NoError(t, err)
@@ -4452,7 +4452,7 @@ func TestListEvaluationDatasetsServerError(t *testing.T) {
 		http.Error(w, `{"id":"server_error","message":"boom"}`, http.StatusInternalServerError)
 	})
 
-	out, resp, err := client.GradientAI.ListEvaluationDatasets(ctx, nil)
+	out, resp, err := client.AgentPlatform.ListEvaluationDatasets(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -4468,7 +4468,7 @@ func TestDeleteEvaluationDataset(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	out, resp, err := client.GradientAI.DeleteEvaluationDataset(ctx, "12345678-1234-1234-1234-123456789012")
+	out, resp, err := client.AgentPlatform.DeleteEvaluationDataset(ctx, "12345678-1234-1234-1234-123456789012")
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -4478,7 +4478,7 @@ func TestDeleteEvaluationDatasetMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteEvaluationDataset(ctx, "")
+	out, resp, err := client.AgentPlatform.DeleteEvaluationDataset(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -4493,7 +4493,7 @@ func TestDeleteEvaluationDatasetServerError(t *testing.T) {
 		http.Error(w, `{"id":"not_found","message":"evaluation dataset not found"}`, http.StatusNotFound)
 	})
 
-	out, resp, err := client.GradientAI.DeleteEvaluationDataset(ctx, "99999999-9999-9999-9999-999999999999")
+	out, resp, err := client.AgentPlatform.DeleteEvaluationDataset(ctx, "99999999-9999-9999-9999-999999999999")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.NotNil(t, resp)
@@ -4504,7 +4504,7 @@ func TestDeleteEvaluationDatasetInvalidURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteEvaluationDataset(ctx, "bad\nuuid")
+	out, resp, err := client.AgentPlatform.DeleteEvaluationDataset(ctx, "bad\nuuid")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)

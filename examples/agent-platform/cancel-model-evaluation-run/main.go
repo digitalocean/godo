@@ -1,5 +1,5 @@
 // Command cancel-model-evaluation-run cancels an in-progress model evaluation
-// run via the GradientAI API. The run must be in a non-terminal status
+// run via the Agent Platform API. The run must be in a non-terminal status
 // (queued, running_dataset, or evaluating_results).
 //
 // Required env vars:
@@ -26,7 +26,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.CancelModelEvaluationRun(ctx, runUUID)
+	out, _, err := client.AgentPlatform.CancelModelEvaluationRun(ctx, runUUID)
 	if err != nil {
 		panic(err)
 	}

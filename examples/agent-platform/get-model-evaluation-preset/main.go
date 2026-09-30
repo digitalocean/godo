@@ -1,5 +1,5 @@
 // Command get-model-evaluation-preset retrieves a saved model evaluation
-// preset via the GradientAI API.
+// preset via the Agent Platform API.
 //
 // Required env vars:
 //   - DIGITALOCEAN_TOKEN: a DigitalOcean API token.
@@ -25,7 +25,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.GetModelEvaluationPreset(ctx, presetUUID)
+	out, _, err := client.AgentPlatform.GetModelEvaluationPreset(ctx, presetUUID)
 	if err != nil {
 		panic(err)
 	}

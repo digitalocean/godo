@@ -1,6 +1,6 @@
 // Command get-model-evaluation-run retrieves a model evaluation run, including
 // the run summary, aggregated result metrics, and a paginated list of
-// per-prompt results, via the GradientAI API.
+// per-prompt results, via the Agent Platform API.
 //
 // Required env vars:
 //   - DIGITALOCEAN_TOKEN: a DigitalOcean API token.
@@ -26,7 +26,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.GetModelEvaluationRun(ctx, runUUID, &godo.ModelEvaluationRunGetOptions{
+	out, _, err := client.AgentPlatform.GetModelEvaluationRun(ctx, runUUID, &godo.ModelEvaluationRunGetOptions{
 		Page:    1,
 		PerPage: 50,
 	})

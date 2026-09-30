@@ -46,7 +46,7 @@ func TestCreateScenarioSetUploadPresignedURLs(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.CreateScenarioSetUploadPresignedURLs(ctx, createReq)
+	out, resp, err := client.AgentPlatform.CreateScenarioSetUploadPresignedURLs(ctx, createReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -61,7 +61,7 @@ func TestCreateScenarioSetUploadPresignedURLsNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateScenarioSetUploadPresignedURLs(ctx, nil)
+	out, resp, err := client.AgentPlatform.CreateScenarioSetUploadPresignedURLs(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -71,7 +71,7 @@ func TestCreateScenarioSetUploadPresignedURLsMissingFiles(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateScenarioSetUploadPresignedURLs(ctx, &CreateScenarioSetUploadPresignedURLsRequest{})
+	out, resp, err := client.AgentPlatform.CreateScenarioSetUploadPresignedURLs(ctx, &CreateScenarioSetUploadPresignedURLsRequest{})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -81,7 +81,7 @@ func TestCreateScenarioSetUploadPresignedURLsMissingFileName(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateScenarioSetUploadPresignedURLs(ctx, &CreateScenarioSetUploadPresignedURLsRequest{
+	out, resp, err := client.AgentPlatform.CreateScenarioSetUploadPresignedURLs(ctx, &CreateScenarioSetUploadPresignedURLsRequest{
 		Files: []*PresignedUrlFile{{FileSize: "1024"}},
 	})
 	assert.Error(t, err)
@@ -121,7 +121,7 @@ func TestCreateScenarioSet(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, createReq)
+	out, resp, err := client.AgentPlatform.CreateScenarioSet(ctx, createReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -164,7 +164,7 @@ func TestCreateScenarioSetFromFileUpload(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, createReq)
+	out, resp, err := client.AgentPlatform.CreateScenarioSet(ctx, createReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -175,7 +175,7 @@ func TestCreateScenarioSetNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, nil)
+	out, resp, err := client.AgentPlatform.CreateScenarioSet(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -185,7 +185,7 @@ func TestCreateScenarioSetMissingName(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
+	out, resp, err := client.AgentPlatform.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
 		Scenarios: []*Scenario{{Description: "user disputes a charge"}},
 	})
 	assert.Error(t, err)
@@ -198,7 +198,7 @@ func TestCreateScenarioSetRequiresExactlyOneSource(t *testing.T) {
 	defer teardown()
 
 	// Neither scenarios nor an uploaded file.
-	out, resp, err := client.GradientAI.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
+	out, resp, err := client.AgentPlatform.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
 		Name: "support-scenarios",
 	})
 	assert.Error(t, err)
@@ -206,7 +206,7 @@ func TestCreateScenarioSetRequiresExactlyOneSource(t *testing.T) {
 	assert.Nil(t, resp)
 
 	// Both scenarios and an uploaded file.
-	out, resp, err = client.GradientAI.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
+	out, resp, err = client.AgentPlatform.CreateScenarioSet(ctx, &CreateScenarioSetRequest{
 		Name:                  "support-scenarios",
 		Scenarios:             []*Scenario{{Description: "user disputes a charge"}},
 		FileUploadScenarioSet: &FileUploadDataSource{StoredObjectKey: "obj-1"},
@@ -249,7 +249,7 @@ func TestGenerateScenarioSet(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.GenerateScenarioSet(ctx, generateReq)
+	out, resp, err := client.AgentPlatform.GenerateScenarioSet(ctx, generateReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -263,7 +263,7 @@ func TestGenerateScenarioSetNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GenerateScenarioSet(ctx, nil)
+	out, resp, err := client.AgentPlatform.GenerateScenarioSet(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -273,7 +273,7 @@ func TestGenerateScenarioSetMissingName(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GenerateScenarioSet(ctx, &GenerateScenarioSetRequest{
+	out, resp, err := client.AgentPlatform.GenerateScenarioSet(ctx, &GenerateScenarioSetRequest{
 		GoalDescription: "test refund flows",
 	})
 	assert.Error(t, err)
@@ -285,7 +285,7 @@ func TestGenerateScenarioSetMissingGoalDescription(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GenerateScenarioSet(ctx, &GenerateScenarioSetRequest{
+	out, resp, err := client.AgentPlatform.GenerateScenarioSet(ctx, &GenerateScenarioSetRequest{
 		Name: "goal-scenarios",
 	})
 	assert.Error(t, err)
@@ -330,7 +330,7 @@ func TestListScenarioSets(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.ListScenarioSets(ctx, &ScenarioSetListOptions{
+	out, resp, err := client.AgentPlatform.ListScenarioSets(ctx, &ScenarioSetListOptions{
 		Statuses: []ScenarioSetStatus{
 			ScenarioSetStatusReady,
 			ScenarioSetStatusGenerating,
@@ -375,7 +375,7 @@ func TestGetScenarioSet(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.GetScenarioSet(ctx, testScenarioSetUUID)
+	out, resp, err := client.AgentPlatform.GetScenarioSet(ctx, testScenarioSetUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -387,7 +387,7 @@ func TestGetScenarioSetMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetScenarioSet(ctx, "")
+	out, resp, err := client.AgentPlatform.GetScenarioSet(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -417,7 +417,7 @@ func TestListScenarios(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.ListScenarios(ctx, testScenarioSetUUID, &ScenarioListOptions{
+	out, resp, err := client.AgentPlatform.ListScenarios(ctx, testScenarioSetUUID, &ScenarioListOptions{
 		Search:        "billing",
 		SortBy:        ScenarioSortFieldName,
 		SortDirection: GenAISortDirectionAsc,
@@ -438,7 +438,7 @@ func TestListScenariosMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.ListScenarios(ctx, "", nil)
+	out, resp, err := client.AgentPlatform.ListScenarios(ctx, "", nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -456,7 +456,7 @@ func TestGetScenarioSetDownloadURL(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.GetScenarioSetDownloadURL(ctx, testScenarioSetUUID)
+	out, resp, err := client.AgentPlatform.GetScenarioSetDownloadURL(ctx, testScenarioSetUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -468,7 +468,7 @@ func TestGetScenarioSetDownloadURLMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetScenarioSetDownloadURL(ctx, "")
+	out, resp, err := client.AgentPlatform.GetScenarioSetDownloadURL(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -505,7 +505,7 @@ func TestUpdateScenarioSet(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.UpdateScenarioSet(ctx, testScenarioSetUUID, updateReq)
+	out, resp, err := client.AgentPlatform.UpdateScenarioSet(ctx, testScenarioSetUUID, updateReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -516,7 +516,7 @@ func TestUpdateScenarioSetNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateScenarioSet(ctx, testScenarioSetUUID, nil)
+	out, resp, err := client.AgentPlatform.UpdateScenarioSet(ctx, testScenarioSetUUID, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -526,7 +526,7 @@ func TestUpdateScenarioSetMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateScenarioSet(ctx, "", &UpdateScenarioSetRequest{Name: "x"})
+	out, resp, err := client.AgentPlatform.UpdateScenarioSet(ctx, "", &UpdateScenarioSetRequest{Name: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -536,7 +536,7 @@ func TestUpdateScenarioSetEmptyUpdate(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateScenarioSet(ctx, testScenarioSetUUID, &UpdateScenarioSetRequest{})
+	out, resp, err := client.AgentPlatform.UpdateScenarioSet(ctx, testScenarioSetUUID, &UpdateScenarioSetRequest{})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -551,7 +551,7 @@ func TestDeleteScenarioSet(t *testing.T) {
 		fmt.Fprint(w, `{"scenario_set_uuid":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}`)
 	})
 
-	out, resp, err := client.GradientAI.DeleteScenarioSet(ctx, testScenarioSetUUID)
+	out, resp, err := client.AgentPlatform.DeleteScenarioSet(ctx, testScenarioSetUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -562,7 +562,7 @@ func TestDeleteScenarioSetMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteScenarioSet(ctx, "")
+	out, resp, err := client.AgentPlatform.DeleteScenarioSet(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -595,7 +595,7 @@ func TestListScenarioLibrary(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.ListScenarioLibrary(ctx, &ScenarioLibraryListOptions{
+	out, resp, err := client.AgentPlatform.ListScenarioLibrary(ctx, &ScenarioLibraryListOptions{
 		Category:      "support",
 		Search:        "refund",
 		SortBy:        ScenarioLibrarySortFieldName,
@@ -634,7 +634,7 @@ func TestListScenarioLibraryScenarios(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.ListScenarioLibraryScenarios(ctx, testLibraryUUID, &ScenarioListOptions{
+	out, resp, err := client.AgentPlatform.ListScenarioLibraryScenarios(ctx, testLibraryUUID, &ScenarioListOptions{
 		Search:        "persona",
 		SortBy:        ScenarioSortFieldFileOrder,
 		SortDirection: GenAISortDirectionAsc,
@@ -650,7 +650,7 @@ func TestListScenarioLibraryScenariosMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.ListScenarioLibraryScenarios(ctx, "", nil)
+	out, resp, err := client.AgentPlatform.ListScenarioLibraryScenarios(ctx, "", nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -684,7 +684,7 @@ func TestCreateScenarioSetFromLibrary(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.CreateScenarioSetFromLibrary(ctx, testLibraryUUID, createReq)
+	out, resp, err := client.AgentPlatform.CreateScenarioSetFromLibrary(ctx, testLibraryUUID, createReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -697,7 +697,7 @@ func TestCreateScenarioSetFromLibraryMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateScenarioSetFromLibrary(ctx, "", &CreateScenarioSetFromLibraryRequest{Name: "x"})
+	out, resp, err := client.AgentPlatform.CreateScenarioSetFromLibrary(ctx, "", &CreateScenarioSetFromLibraryRequest{Name: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -759,7 +759,7 @@ func TestCreateSimulationRun(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.CreateSimulationRun(ctx, createReq)
+	out, resp, err := client.AgentPlatform.CreateSimulationRun(ctx, createReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -774,7 +774,7 @@ func TestCreateSimulationRunNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateSimulationRun(ctx, nil)
+	out, resp, err := client.AgentPlatform.CreateSimulationRun(ctx, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -784,7 +784,7 @@ func TestCreateSimulationRunMissingScenarioSetUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
+	out, resp, err := client.AgentPlatform.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
 		AgentConfig: &CandidateAgentConfig{AgentUUID: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"},
 	})
 	assert.Error(t, err)
@@ -797,7 +797,7 @@ func TestCreateSimulationRunMissingAgentUUID(t *testing.T) {
 	defer teardown()
 
 	// No agent config at all.
-	out, resp, err := client.GradientAI.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
+	out, resp, err := client.AgentPlatform.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
 		ScenarioSetUUID: testScenarioSetUUID,
 	})
 	assert.Error(t, err)
@@ -805,7 +805,7 @@ func TestCreateSimulationRunMissingAgentUUID(t *testing.T) {
 	assert.Nil(t, resp)
 
 	// Agent config without an agent UUID.
-	out, resp, err = client.GradientAI.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
+	out, resp, err = client.AgentPlatform.CreateSimulationRun(ctx, &CreateSimulationRunRequest{
 		ScenarioSetUUID: testScenarioSetUUID,
 		AgentConfig:     &CandidateAgentConfig{Name: "candidate"},
 	})
@@ -846,7 +846,7 @@ func TestListSimulationRuns(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.ListSimulationRuns(ctx, &SimulationRunListOptions{
+	out, resp, err := client.AgentPlatform.ListSimulationRuns(ctx, &SimulationRunListOptions{
 		ScenarioSetUUID: testScenarioSetUUID,
 		Statuses: []SimulationRunStatus{
 			SimulationRunStatusRunning,
@@ -897,7 +897,7 @@ func TestGetSimulationRun(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.GetSimulationRun(ctx, testRunUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationRun(ctx, testRunUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -915,7 +915,7 @@ func TestGetSimulationRunMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetSimulationRun(ctx, "")
+	out, resp, err := client.AgentPlatform.GetSimulationRun(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -946,7 +946,7 @@ func TestUpdateSimulationRun(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.UpdateSimulationRun(ctx, testRunUUID, updateReq)
+	out, resp, err := client.AgentPlatform.UpdateSimulationRun(ctx, testRunUUID, updateReq)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -957,7 +957,7 @@ func TestUpdateSimulationRunNilRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateSimulationRun(ctx, testRunUUID, nil)
+	out, resp, err := client.AgentPlatform.UpdateSimulationRun(ctx, testRunUUID, nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -967,7 +967,7 @@ func TestUpdateSimulationRunMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateSimulationRun(ctx, "", &UpdateSimulationRunRequest{Name: "x"})
+	out, resp, err := client.AgentPlatform.UpdateSimulationRun(ctx, "", &UpdateSimulationRunRequest{Name: "x"})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -977,7 +977,7 @@ func TestUpdateSimulationRunMissingName(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.UpdateSimulationRun(ctx, testRunUUID, &UpdateSimulationRunRequest{})
+	out, resp, err := client.AgentPlatform.UpdateSimulationRun(ctx, testRunUUID, &UpdateSimulationRunRequest{})
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -998,7 +998,7 @@ func TestCancelSimulationRun(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.CancelSimulationRun(ctx, testRunUUID)
+	out, resp, err := client.AgentPlatform.CancelSimulationRun(ctx, testRunUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -1009,7 +1009,7 @@ func TestCancelSimulationRunMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.CancelSimulationRun(ctx, "")
+	out, resp, err := client.AgentPlatform.CancelSimulationRun(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -1024,7 +1024,7 @@ func TestDeleteSimulationRun(t *testing.T) {
 		fmt.Fprint(w, `{"run_uuid":"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}`)
 	})
 
-	out, resp, err := client.GradientAI.DeleteSimulationRun(ctx, testRunUUID)
+	out, resp, err := client.AgentPlatform.DeleteSimulationRun(ctx, testRunUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -1035,7 +1035,7 @@ func TestDeleteSimulationRunMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.DeleteSimulationRun(ctx, "")
+	out, resp, err := client.AgentPlatform.DeleteSimulationRun(ctx, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -1076,7 +1076,7 @@ func TestListSimulationJourneys(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.ListSimulationJourneys(ctx, testRunUUID, &SimulationJourneyListOptions{
+	out, resp, err := client.AgentPlatform.ListSimulationJourneys(ctx, testRunUUID, &SimulationJourneyListOptions{
 		ScenarioUUID: testJourneyUUID,
 		Statuses: []SimulationJourneyStatus{
 			SimulationJourneyStatusFinished,
@@ -1107,7 +1107,7 @@ func TestListSimulationJourneysMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.ListSimulationJourneys(ctx, "", nil)
+	out, resp, err := client.AgentPlatform.ListSimulationJourneys(ctx, "", nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -1132,7 +1132,7 @@ func TestGetSimulationJourney(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.GetSimulationJourney(ctx, testRunUUID, testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationJourney(ctx, testRunUUID, testJourneyUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -1147,7 +1147,7 @@ func TestGetSimulationJourneyMissingRunUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetSimulationJourney(ctx, "", testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationJourney(ctx, "", testJourneyUUID)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -1157,7 +1157,7 @@ func TestGetSimulationJourneyMissingJourneyUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetSimulationJourney(ctx, testRunUUID, "")
+	out, resp, err := client.AgentPlatform.GetSimulationJourney(ctx, testRunUUID, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -1175,7 +1175,7 @@ func TestGetSimulationJourneyTrajectoryURL(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.GetSimulationJourneyTrajectoryURL(ctx, testRunUUID, testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectoryURL(ctx, testRunUUID, testJourneyUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -1187,7 +1187,7 @@ func TestGetSimulationJourneyTrajectoryURLMissingRunUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetSimulationJourneyTrajectoryURL(ctx, "", testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectoryURL(ctx, "", testJourneyUUID)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -1197,7 +1197,7 @@ func TestGetSimulationJourneyTrajectoryURLMissingJourneyUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetSimulationJourneyTrajectoryURL(ctx, testRunUUID, "")
+	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectoryURL(ctx, testRunUUID, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -1229,7 +1229,7 @@ func TestGetSimulationJourneyTrajectory(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.GradientAI.GetSimulationJourneyTrajectory(ctx, testRunUUID, testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectory(ctx, testRunUUID, testJourneyUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -1247,7 +1247,7 @@ func TestGetSimulationJourneyTrajectoryMissingRunUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetSimulationJourneyTrajectory(ctx, "", testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectory(ctx, "", testJourneyUUID)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
@@ -1257,7 +1257,7 @@ func TestGetSimulationJourneyTrajectoryMissingJourneyUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.GradientAI.GetSimulationJourneyTrajectory(ctx, testRunUUID, "")
+	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectory(ctx, testRunUUID, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)

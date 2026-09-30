@@ -1,5 +1,5 @@
 // Command delete-model-evaluation-preset deletes a saved model evaluation
-// preset via the GradientAI API.
+// preset via the Agent Platform API.
 //
 // Required env vars:
 //   - DIGITALOCEAN_TOKEN: a DigitalOcean API token.
@@ -25,7 +25,7 @@ func main() {
 
 	ctx := context.Background()
 
-	_, resp, err := client.GradientAI.DeleteModelEvaluationPreset(ctx, presetUUID)
+	_, resp, err := client.AgentPlatform.DeleteModelEvaluationPreset(ctx, presetUUID)
 	if err != nil {
 		panic(err)
 	}
