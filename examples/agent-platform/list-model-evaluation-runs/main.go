@@ -1,6 +1,6 @@
 // Command list-model-evaluation-runs lists model evaluation runs, optionally
 // filtered by preset UUID, status (single or multiple), candidate model source
-// types, and free-text search. Results can also be sorted, via the GradientAI
+// types, and free-text search. Results can also be sorted, via the Agent Platform
 // API.
 //
 // Required env vars:
@@ -51,7 +51,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.ListModelEvaluationRuns(ctx, opt)
+	out, _, err := client.AgentPlatform.ListModelEvaluationRuns(ctx, opt)
 	if err != nil {
 		panic(err)
 	}

@@ -1,6 +1,6 @@
 // Command get-model-evaluation-run-results-download-url returns a presigned
 // download URL for a model evaluation run's results (gzip-compressed JSON) via
-// the GradientAI API.
+// the Agent Platform API.
 //
 // Required env vars:
 //   - DIGITALOCEAN_TOKEN: a DigitalOcean API token.
@@ -26,7 +26,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.GetModelEvaluationRunResultsDownloadURL(ctx, runUUID)
+	out, _, err := client.AgentPlatform.GetModelEvaluationRunResultsDownloadURL(ctx, runUUID)
 	if err != nil {
 		panic(err)
 	}

@@ -1,4 +1,4 @@
-// Command list-evaluation-datasets lists evaluation datasets via the GradientAI
+// Command list-evaluation-datasets lists evaluation datasets via the Agent Platform
 // API. Results can optionally be filtered by dataset type.
 //
 // Required env vars:
@@ -18,7 +18,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.ListEvaluationDatasets(ctx, nil)
+	out, _, err := client.AgentPlatform.ListEvaluationDatasets(ctx, nil)
 	if err != nil {
 		panic(err)
 	}

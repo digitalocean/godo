@@ -104,7 +104,7 @@ type Client struct {
 	VPCs                VPCsService
 	Routes              RoutesService
 	PartnerAttachment   PartnerAttachmentService
-	GradientAI          GradientAIService
+	AgentPlatform       AgentPlatformService
 	ActionGateway       *ActionGatewayService
 	HostedAgents        HostedAgentsService
 	HostedAgentTriggers HostedAgentTriggersService
@@ -366,7 +366,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.VPCs = &VPCsServiceOp{client: c}
 	c.Routes = &RoutesServiceOp{client: c}
 	c.PartnerAttachment = &PartnerAttachmentServiceOp{client: c}
-	c.GradientAI = &GradientAIServiceOp{client: c}
+	c.AgentPlatform = &AgentPlatformServiceOp{client: c}
 	c.ActionGateway = newActionGatewayService(c)
 	c.HostedAgents = &HostedAgentsServiceOp{client: c}
 	c.HostedAgentTriggers = &HostedAgentTriggersServiceOp{client: c}

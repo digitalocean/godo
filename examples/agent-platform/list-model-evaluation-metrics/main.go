@@ -1,5 +1,5 @@
 // Command list-model-evaluation-metrics lists all available metrics that can
-// be selected when creating a model evaluation run, via the GradientAI API.
+// be selected when creating a model evaluation run, via the Agent Platform API.
 //
 // Required env vars:
 //   - DIGITALOCEAN_TOKEN: a DigitalOcean API token.
@@ -18,7 +18,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.ListModelEvaluationMetrics(ctx)
+	out, _, err := client.AgentPlatform.ListModelEvaluationMetrics(ctx)
 	if err != nil {
 		panic(err)
 	}

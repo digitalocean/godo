@@ -1,6 +1,6 @@
 // Command create-model-eval-dataset-upload-presigned-urls creates presigned
 // URLs that can be used to upload model evaluation dataset files via the
-// GradientAI API.
+// Agent Platform API.
 //
 // Required env vars:
 //   - DIGITALOCEAN_TOKEN: a DigitalOcean API token.
@@ -39,7 +39,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.CreateModelEvalDatasetUploadPresignedURLs(ctx, createRequest)
+	out, _, err := client.AgentPlatform.CreateModelEvalDatasetUploadPresignedURLs(ctx, createRequest)
 	if err != nil {
 		panic(err)
 	}

@@ -12,7 +12,7 @@ You can view DigitalOcean API docs here: [https://docs.digitalocean.com/referenc
 > **🚀 New in v1.191.0 — AI & Inference support**
 >
 > `godo` now ships first-class support for DigitalOcean's
-> [Gradient AI Platform](https://www.digitalocean.com/products/gradient): chat
+> [DigitalOcean Inference](https://docs.digitalocean.com/products/inference/): chat
 > completions (with streaming), image generation, embeddings, batch inference,
 > model listing, and more — all from the same `Client`. Jump to
 > [**AI & Inference**](#ai--inference) to get started.
@@ -64,7 +64,7 @@ func main() {
 > | What you're calling | What you need |
 > | --- | --- |
 > | Infrastructure APIs (`Droplets`, `Kubernetes`, `Volumes`, …) | A DigitalOcean API token (PAT). |
-> | Inference APIs (`Chat`, `Models`, `Embeddings`, `ImageGenerations`, `Messages`, `Responses`, `BatchInference`, …) | A PAT created with **full access** scope, **or** a Gradient **Model Access Key**. |
+> | Inference APIs (`Chat`, `Models`, `Embeddings`, `ImageGenerations`, `Messages`, `Responses`, `BatchInference`, …) | A PAT created with **full access** scope, **or** a **model access key**. |
 >
 > If you only have a limited-scope PAT, infrastructure calls will work but
 > inference calls will fail with `401`. Create a new PAT with full access, or use
@@ -73,7 +73,7 @@ func main() {
 > ```go
 > // Either credential works with godo.NewFromToken:
 > client := godo.NewFromToken(os.Getenv("DIGITALOCEAN_TOKEN"))  // full-access PAT
-> client := godo.NewFromToken(os.Getenv("MODEL_ACCESS_KEY"))    // Gradient model access key
+> client := godo.NewFromToken(os.Getenv("MODEL_ACCESS_KEY"))    // model access key
 > ```
 
 If you need to provide a `context.Context` to your new client, you should use [`godo.NewClient`](https://godoc.org/github.com/digitalocean/godo#NewClient) to manually construct a client instead.
@@ -115,9 +115,9 @@ development or tests.
 
 ## AI & Inference
 
-> Talk to models on DigitalOcean's [Gradient AI Platform](https://www.digitalocean.com/products/gradient) with the same `godo.Client`.
+> Talk to models on [DigitalOcean Inference](https://docs.digitalocean.com/products/inference/) with the same `godo.Client`.
 
-The [Serverless Inference API](https://docs.digitalocean.com/reference/api/reference/serverless-inference/) is available at `https://inference.do-ai.run/`. Use a **DigitalOcean PAT with full access scope** or a Gradient **Model Access Key** — see the [credentials note](#authentication) above.
+The [Serverless Inference API](https://docs.digitalocean.com/reference/api/reference/serverless-inference/) is available at `https://inference.do-ai.run/`. Use a **DigitalOcean PAT with full access scope** or a **model access key** — see the [credentials note](#authentication) above.
 
 #### Chat completion
 

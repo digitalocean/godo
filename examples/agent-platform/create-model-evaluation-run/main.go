@@ -1,5 +1,5 @@
 // Command create-model-evaluation-run creates a new model evaluation run via
-// the GradientAI API.
+// the Agent Platform API.
 //
 // Required env vars:
 //   - DIGITALOCEAN_TOKEN: a DigitalOcean API token.
@@ -41,7 +41,7 @@ func main() {
 
 	ctx := context.Background()
 
-	out, _, err := client.GradientAI.CreateModelEvaluationRun(ctx, createRequest)
+	out, _, err := client.AgentPlatform.CreateModelEvaluationRun(ctx, createRequest)
 	if err != nil {
 		panic(err)
 	}
