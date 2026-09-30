@@ -509,6 +509,73 @@ func TestHostedAgentTriggers_GetExecution(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func TestHostedAgentTriggers_Cancel(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/triggers/trig-abc123/executions/exec-1/cancel", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Empty(t, r.URL.RawQuery, "a nil options struct must put nothing on the wire")
+		fmt.Fprint(w, `{
+			"execution": {
+				"execution_id": "exec-1",
+				"trigger_id": "trig-abc123",
+				"status": "failed",
+				"session_id": "sess-1",
+				"run_id": "run-9",
+				"failure_reason": "This run was cancelled by a user.",
+				"created_at": "2026-07-01T12:10:00Z",
+				"updated_at": "2026-07-01T12:12:00Z"
+			}
+		}`)
+	})
+
+	got, resp, err := client.HostedAgentTriggers.Cancel(ctx, "trig-abc123", "exec-1", nil)
+	require.NoError(t, err)
+	assert.Equal(t, "exec-1", got.ExecutionID)
+	assert.Equal(t, HostedAgentTriggerExecutionStatusFailed, got.Status)
+	assert.Equal(t, "This run was cancelled by a user.", got.FailureReason)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgentTriggers_Cancel_Force(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/triggers/trig-abc123/executions/exec-1/cancel", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "true", r.URL.Query().Get("force"))
+		fmt.Fprint(w, `{
+			"execution": {
+				"execution_id": "exec-1",
+				"trigger_id": "trig-abc123",
+				"status": "failed",
+				"failure_reason": "This run was cancelled by a user."
+			}
+		}`)
+	})
+
+	got, _, err := client.HostedAgentTriggers.Cancel(ctx, "trig-abc123", "exec-1", &HostedAgentTriggerCancelExecutionOptions{Force: true})
+	require.NoError(t, err)
+	assert.Equal(t, HostedAgentTriggerExecutionStatusFailed, got.Status)
+}
+
+func TestHostedAgentTriggers_Cancel_RequiresTriggerID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgentTriggers.Cancel(ctx, "", "exec-1", nil)
+	require.Error(t, err)
+}
+
+func TestHostedAgentTriggers_Cancel_RequiresExecutionID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgentTriggers.Cancel(ctx, "trig-abc123", "", nil)
+	require.Error(t, err)
+}
+
 func TestHostedAgentTriggers_GetBySession(t *testing.T) {
 	setup()
 	defer teardown()
