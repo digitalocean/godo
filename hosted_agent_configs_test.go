@@ -183,6 +183,50 @@ func TestHostedAgents_CreateAgentConfig(t *testing.T) {
 	assert.Equal(t, hostedAgentConfig.ID, got.ID)
 }
 
+func TestHostedAgents_CreateAgentConfigFromSource(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/configs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, hostedAgentConfig.ID, body["source_config_id"])
+		assert.Equal(t, []any{"OPENAI_API_KEY"}, body["reuse_secrets"])
+		assert.Equal(t, map[string]any{"logs": false}, body["insights"])
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprintf(w, `{"config":%s}`, hostedAgentConfigJSON)
+	})
+
+	logs := false
+	_, _, err := client.HostedAgents.CreateAgentConfig(ctx, &HostedAgentConfigCreateRequest{
+		Name:           "support-agent-v2",
+		ManifestYAML:   "agent: opencode\n",
+		Insights:       &HostedAgentInsightsOptIn{Logs: &logs},
+		SourceConfigID: hostedAgentConfig.ID,
+		ReuseSecrets:   []string{"OPENAI_API_KEY"},
+	})
+	require.NoError(t, err)
+}
+
+// A plain create must not send the reuse pair: the API rejects one half alone.
+func TestHostedAgentConfigCreateRequest_OmitsEmptyReusePair(t *testing.T) {
+	raw, err := json.Marshal(HostedAgentConfigCreateRequest{
+		Name:         "support-agent",
+		ManifestYAML: "agent: opencode\n",
+		ReuseSecrets: []string{},
+	})
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"name":"support-agent","manifest_yaml":"agent: opencode\n"}`, string(raw))
+
+	var cfg HostedAgentConfig
+	require.NoError(t, json.Unmarshal([]byte(`{"id":"x","insights":{"logs":false}}`), &cfg))
+	require.NotNil(t, cfg.Insights)
+	require.NotNil(t, cfg.Insights.Logs)
+	assert.False(t, *cfg.Insights.Logs)
+	assert.Nil(t, cfg.Insights.Traces)
+}
+
 func TestHostedAgents_DeleteAgentConfig(t *testing.T) {
 	setup()
 	defer teardown()
