@@ -32,6 +32,21 @@ func newInferenceTransport(client *Client, baseURL *url.URL) *inferenceTransport
 	return &inferenceTransport{client: client, baseURL: baseURL}
 }
 
+// newInferenceServices wires the shared OpenAI-compatible inference services
+// onto c with requests resolved against baseURL. It is used by NewClient for
+// DigitalOcean's Serverless Inference API and by NewOrcaRouterClient for
+// OrcaRouter's OpenAI-compatible gateway endpoint.
+func newInferenceServices(c *Client, baseURL *url.URL) {
+	t := newInferenceTransport(c, baseURL)
+	c.Chat = &ChatService{Completions: &ChatCompletionService{inferenceTransport: t}}
+	c.Embeddings = &EmbeddingService{inferenceTransport: t}
+	c.ImageGenerations = &ImageGenerationService{inferenceTransport: t}
+	c.Messages = &MessageService{inferenceTransport: t}
+	c.Models = &ModelService{inferenceTransport: t}
+	c.Responses = &ResponseService{inferenceTransport: t}
+	c.AsyncInvocations = &AsyncInvocationService{inferenceTransport: t}
+}
+
 // inferenceTransport is the shared request layer embedded by every inference service.
 type inferenceTransport struct {
 	client  *Client
