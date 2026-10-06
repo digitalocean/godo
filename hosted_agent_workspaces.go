@@ -48,7 +48,16 @@ type HostedAgentWorkspace struct {
 	// the first save.
 	LastSavedAt *Timestamp `json:"last_saved_at,omitempty"`
 	CreatedAt   Timestamp  `json:"created_at"`
-	UpdatedAt   Timestamp  `json:"updated_at"`
+	// UpdatedAt is when a user request last changed the workspace. It equals
+	// CreatedAt until then; changes the platform makes itself, such as a save
+	// finishing, do not move it.
+	UpdatedAt Timestamp `json:"updated_at"`
+	// CreatedBy is the user (user UUID) who created the workspace. It never
+	// changes.
+	CreatedBy string `json:"created_by"`
+	// UpdatedBy is the user (user UUID) whose request last changed the
+	// workspace. It equals CreatedBy until then.
+	UpdatedBy string `json:"updated_by"`
 }
 
 // HostedAgentWorkspaceCreateRequest is the body for CreateWorkspace.

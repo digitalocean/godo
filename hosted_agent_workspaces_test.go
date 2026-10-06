@@ -24,6 +24,8 @@ var hostedAgentWorkspace = HostedAgentWorkspace{
 	LastSavedAt:       &Timestamp{Time: time.Date(2026, 10, 5, 9, 30, 0, 0, time.UTC)},
 	CreatedAt:         Timestamp{Time: time.Date(2026, 10, 1, 8, 0, 0, 0, time.UTC)},
 	UpdatedAt:         Timestamp{Time: time.Date(2026, 10, 5, 9, 31, 0, 0, time.UTC)},
+	CreatedBy:         "7f3c1e52-9a4b-4d6e-8c21-5b0a9d3e6f14",
+	UpdatedBy:         "7f3c1e52-9a4b-4d6e-8c21-5b0a9d3e6f14",
 }
 
 var hostedAgentWorkspaceJSON = `
@@ -36,7 +38,9 @@ var hostedAgentWorkspaceJSON = `
 	"bytes_used": 734003200,
 	"last_saved_at": "2026-10-05T09:30:00Z",
 	"created_at": "2026-10-01T08:00:00Z",
-	"updated_at": "2026-10-05T09:31:00Z"
+	"updated_at": "2026-10-05T09:31:00Z",
+	"created_by": "7f3c1e52-9a4b-4d6e-8c21-5b0a9d3e6f14",
+	"updated_by": "7f3c1e52-9a4b-4d6e-8c21-5b0a9d3e6f14"
 }
 `
 
