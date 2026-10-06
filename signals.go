@@ -90,7 +90,7 @@ type SignalsPageInfo struct {
 	EndCursor   string `json:"end_cursor,omitempty"`
 }
 
-// SignalsAgentConsent is GET /v1/signals/agents/{agent_id}/consent.
+// SignalsAgentConsent is GET /v1/consent/{agent_id} (consent-gateway).
 type SignalsAgentConsent struct {
 	TeamID    int64  `json:"team_id"`
 	AgentID   string `json:"agent_id"`
@@ -323,8 +323,9 @@ func (s *SignalsServiceOp) get(ctx context.Context, path string, out interface{}
 }
 
 // GetAgentConsent returns collection consent for one agent (default deny if no row).
+// Uses GET /v1/consent/{agent_id} on consent-gateway (same public path as Cloud UI / SetAgentConsent).
 func (s *SignalsServiceOp) GetAgentConsent(ctx context.Context, agentID string) (*SignalsAgentConsent, *Response, error) {
-	path := fmt.Sprintf("%s/agents/%s/consent", signalsBasePath, agentID)
+	path := fmt.Sprintf("%s/%s", consentBasePath, agentID)
 	root := new(SignalsAgentConsent)
 	resp, err := s.get(ctx, path, root)
 	if err != nil {

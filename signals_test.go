@@ -12,7 +12,7 @@ func TestSignals_GetAgentConsent(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v1/signals/agents/agent-1/consent", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v1/consent/agent-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"team_id":123,"agent_id":"agent-1","enabled":true,"allowed":true}`)
 	})
