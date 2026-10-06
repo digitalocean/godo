@@ -48,7 +48,7 @@ const (
 	hostedAgentSessionCheckpointRollbackPath = hostedAgentSessionCheckpointByIDPath + "/rollback"
 	hostedAgentSessionForkPath               = hostedAgentSessionByIDPath + "/fork"
 
-	// Persistent workspaces: team-scoped disks that outlive sessions.
+	// Persistent workspaces: team-scoped sets of files that outlive sessions.
 	hostedAgentWorkspacesBasePath = "/v2/agents/workspaces"
 	hostedAgentWorkspaceByIDPath  = hostedAgentWorkspacesBasePath + "/%s"
 
@@ -90,8 +90,9 @@ type HostedAgentsService interface {
 	// CreateSessionFromEnvironment provisions a session from an existing
 	// immutable Environment, referenced by config_id. The request uses
 	// Content-Type: application/json with a {name, config_id} body (optional
-	// resume_on_topoff); the environment's stored manifest and declared
-	// credentials seed the session at create time.
+	// resume_on_topoff and workspace_id); the environment's stored manifest and
+	// declared credentials seed the session at create time. This is the only
+	// create path that can attach a persistent workspace.
 	CreateSessionFromEnvironment(context.Context, *HostedAgentSessionFromEnvironmentRequest) (*HostedAgentSession, *Response, error)
 	// CreateSessionFromConfig is an alias for CreateSessionFromEnvironment.
 	// Prefer CreateSessionFromEnvironment; this name remains for compatibility.
@@ -147,7 +148,7 @@ type HostedAgentsService interface {
 	ForkSession(context.Context, string, *HostedAgentForkSessionRequest) (*HostedAgentForkSessionResponse, *Response, error)
 	RollbackToCheckpoint(context.Context, string, string) (*HostedAgentSession, *Response, error)
 
-	// Persistent workspaces (separate disks that outlive sessions, attached to a
+	// Persistent workspaces (separate sets of files that outlive sessions, attached to a
 	// session at create time). Routes live under /v2/agents/workspaces. These are
 	// distinct from the session /workspace file transfer APIs above.
 	CreateWorkspace(context.Context, *HostedAgentWorkspaceCreateRequest) (*HostedAgentWorkspace, *Response, error)
@@ -570,7 +571,8 @@ type HostedAgentSessionFromConfigRequest struct {
 	// when false, which leaves the server default (also false).
 	ResumeOnTopoff bool `json:"resume_on_topoff,omitempty"`
 	// WorkspaceID attaches an existing persistent workspace (see
-	// HostedAgentWorkspace) to the new session. Session-scoped, not
+	// HostedAgentWorkspace) to the new session. This is the only create path
+	// that can attach one; CreateSessionFromManifest cannot. Session-scoped, not
 	// environment-scoped: the referenced Environment never names a workspace, so
 	// one shared Environment can be used with a different workspace per session.
 	// Omitted when empty, which creates the session without one.
@@ -606,6 +608,10 @@ func (r *HostedAgentSessionUpdateRequest) empty() bool {
 // OpenAISessionID is sent as the openai_session_id query parameter (not in the
 // YAML body). harness-api persists it for AGENT_KIND_OPENAI_CODEX attach
 // correlation. See docs/design/openai-sandbox-provider.md.
+//
+// A persistent workspace cannot be attached when creating from a manifest. To
+// use one, save the manifest as an Environment and create the session with
+// CreateSessionFromEnvironment (or CreateSessionFromConfig) and WorkspaceID.
 type HostedAgentManifestCreateOptions struct {
 	OpenAISessionID string `url:"openai_session_id,omitempty"`
 	// ResumeOnTopoff opts the new session in to automatic resumption when the
@@ -614,12 +620,6 @@ type HostedAgentManifestCreateOptions struct {
 	// immutable and shared through Agent Configs, while spending consent has to
 	// stay per-session. Omitted when false (the server default).
 	ResumeOnTopoff bool `url:"resume_on_topoff,omitempty"`
-	// WorkspaceID attaches an existing persistent workspace (see
-	// HostedAgentWorkspace) to the new session. It is a query parameter rather
-	// than an agents.yaml field because that document is immutable and shared
-	// through Agent Configs, while the workspace is chosen per session. Omitted
-	// when empty.
-	WorkspaceID string `url:"workspace_id,omitempty"`
 }
 
 // HostedAgentSessionListOptions specifies optional list filters.

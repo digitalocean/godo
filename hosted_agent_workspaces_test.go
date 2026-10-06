@@ -498,45 +498,34 @@ func TestHostedAgents_CreateSessionFromConfig_WorkspaceID(t *testing.T) {
 	}
 }
 
-func TestHostedAgents_CreateSessionFromManifest_WorkspaceID(t *testing.T) {
+func TestHostedAgents_CreateSessionFromManifest_NoWorkspaceIDQuery(t *testing.T) {
 	const manifest = `name: probe
 agent: opencode
 `
-	tests := []struct {
-		name        string
-		workspaceID string
-		wantInQuery bool
-	}{
-		{name: "set", workspaceID: hostedAgentWorkspaceTestID, wantInQuery: true},
-		{name: "empty", workspaceID: "", wantInQuery: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			setup()
-			defer teardown()
+	setup()
+	defer teardown()
 
-			mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
-				testMethod(t, r, http.MethodPost)
-				assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
-				assert.Equal(t, tt.wantInQuery, r.URL.Query().Has("workspace_id"))
-				assert.Equal(t, tt.workspaceID, r.URL.Query().Get("workspace_id"))
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
+		// A workspace cannot be attached from a manifest, so no workspace_id is sent.
+		assert.False(t, r.URL.Query().Has("workspace_id"))
 
-				// The workspace is per-session, so it never lands in the manifest body.
-				raw, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
-				assert.Equal(t, manifest, string(raw))
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.Equal(t, manifest, string(raw))
 
-				fmt.Fprintf(w, `{"session":{"session_id":"sess-man-ws","workspace_id":%q}}`, tt.workspaceID)
-			})
+		fmt.Fprint(w, `{"session":{"session_id":"sess-man"}}`)
+	})
 
-			got, resp, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte(manifest), &HostedAgentManifestCreateOptions{
-				WorkspaceID: tt.workspaceID,
-			})
-			require.NoError(t, err)
-			require.NotNil(t, resp)
-			assert.Equal(t, tt.workspaceID, got.WorkspaceID)
-		})
-	}
+	got, resp, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte(manifest), &HostedAgentManifestCreateOptions{
+		ResumeOnTopoff:  true,
+		OpenAISessionID: "sess_abc",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, "sess-man", got.SessionID)
+	assert.Empty(t, got.WorkspaceID)
 }
 
 func TestHostedAgentSessionFromConfigRequest_JSONIncludesWorkspaceID(t *testing.T) {

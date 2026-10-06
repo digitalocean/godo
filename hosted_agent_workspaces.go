@@ -28,7 +28,7 @@ const (
 	HostedAgentWorkspaceStateFailed HostedAgentWorkspaceState = "FAILED"
 )
 
-// HostedAgentWorkspace is a persistent workspace: a separate disk that outlives
+// HostedAgentWorkspace is a persistent workspace: a separate set of files that outlives
 // sessions and is attached to one session at a time. It is not the session's
 // /workspace file transfer API (see HostedAgentWorkspaceTransfer and
 // UploadWorkspace / DownloadWorkspace), which moves files in and out of a
@@ -53,7 +53,7 @@ type HostedAgentWorkspace struct {
 
 // HostedAgentWorkspaceCreateRequest is the body for CreateWorkspace.
 type HostedAgentWorkspaceCreateRequest struct {
-	// SizeGibibytes is the disk size, from 1 to 100. The server validates it, and
+	// SizeGibibytes is the size in GiB, from 1 to 100. The server validates it, and
 	// a team limit can lower the maximum.
 	SizeGibibytes int32 `json:"size_gibibytes"`
 	// Name is an optional label. It is not unique.
