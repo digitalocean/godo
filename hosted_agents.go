@@ -48,6 +48,10 @@ const (
 	hostedAgentSessionCheckpointRollbackPath = hostedAgentSessionCheckpointByIDPath + "/rollback"
 	hostedAgentSessionForkPath               = hostedAgentSessionByIDPath + "/fork"
 
+	// Persistent workspaces: team-scoped disks that outlive sessions.
+	hostedAgentWorkspacesBasePath = "/v2/agents/workspaces"
+	hostedAgentWorkspaceByIDPath  = hostedAgentWorkspacesBasePath + "/%s"
+
 	// HostedAgentForkMaxCount is the v1 cap on children created by one fork call.
 	HostedAgentForkMaxCount = 4
 
@@ -142,6 +146,14 @@ type HostedAgentsService interface {
 	DeleteCheckpoint(context.Context, string, string) (*HostedAgentCheckpointDeleteResponse, *Response, error)
 	ForkSession(context.Context, string, *HostedAgentForkSessionRequest) (*HostedAgentForkSessionResponse, *Response, error)
 	RollbackToCheckpoint(context.Context, string, string) (*HostedAgentSession, *Response, error)
+
+	// Persistent workspaces (separate disks that outlive sessions, attached to a
+	// session at create time). Routes live under /v2/agents/workspaces. These are
+	// distinct from the session /workspace file transfer APIs above.
+	CreateWorkspace(context.Context, *HostedAgentWorkspaceCreateRequest) (*HostedAgentWorkspace, *Response, error)
+	ListWorkspaces(context.Context, *HostedAgentWorkspaceListOptions) (*HostedAgentWorkspacesListResponse, *Response, error)
+	GetWorkspace(context.Context, string) (*HostedAgentWorkspace, *Response, error)
+	DeleteWorkspace(context.Context, string) (*Response, error)
 
 	// Environments (immutable team-scoped environment definitions). Routes
 	// live under /v2/agents/configs. Prefer the Environment* methods; the
@@ -412,6 +424,10 @@ type HostedAgentSession struct {
 	// get/list so clients can confirm enrollment. Never inherited by forks.
 	// Omitted when false.
 	ResumeOnTopoff bool `json:"resume_on_topoff,omitempty"`
+	// WorkspaceID is the persistent workspace this session attaches (see
+	// HostedAgentWorkspace). Set at create and returned on get/list; omitted
+	// when the session has no persistent workspace.
+	WorkspaceID string `json:"workspace_id,omitempty"`
 	// OpenAISessionID is the OpenAI Agents session id (sess_…) linked to this DO
 	// sandbox for AGENT_KIND_OPENAI_CODEX. Used by attach to bridge to OpenAI;
 	// omitempty for other agent kinds.
@@ -553,6 +569,12 @@ type HostedAgentSessionFromConfigRequest struct {
 	// shared Environment cannot enrol every session created from it. Omitted
 	// when false, which leaves the server default (also false).
 	ResumeOnTopoff bool `json:"resume_on_topoff,omitempty"`
+	// WorkspaceID attaches an existing persistent workspace (see
+	// HostedAgentWorkspace) to the new session. Session-scoped, not
+	// environment-scoped: the referenced Environment never names a workspace, so
+	// one shared Environment can be used with a different workspace per session.
+	// Omitted when empty, which creates the session without one.
+	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
 // HostedAgentSessionFromEnvironmentRequest is the advertised alias for
@@ -592,6 +614,12 @@ type HostedAgentManifestCreateOptions struct {
 	// immutable and shared through Agent Configs, while spending consent has to
 	// stay per-session. Omitted when false (the server default).
 	ResumeOnTopoff bool `url:"resume_on_topoff,omitempty"`
+	// WorkspaceID attaches an existing persistent workspace (see
+	// HostedAgentWorkspace) to the new session. It is a query parameter rather
+	// than an agents.yaml field because that document is immutable and shared
+	// through Agent Configs, while the workspace is chosen per session. Omitted
+	// when empty.
+	WorkspaceID string `url:"workspace_id,omitempty"`
 }
 
 // HostedAgentSessionListOptions specifies optional list filters.
