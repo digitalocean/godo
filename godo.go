@@ -111,6 +111,7 @@ type Client struct {
 	HostedAgentTriggers HostedAgentTriggersService
 	DedicatedInference  DedicatedInferenceService
 	BatchInference      BatchInferenceService
+	Signals             SignalsService
 	BYOIPPrefixes       BYOIPPrefixesService
 
 	// Serverless Inference resources at https://inference.do-ai.run.
@@ -375,6 +376,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.DedicatedInference = &DedicatedInferenceServiceOp{client: c}
 	batchInferenceURL, _ := url.Parse(defaultBatchInferenceBaseURL)
 	c.BatchInference = &BatchInferenceServiceOp{client: c, baseURL: batchInferenceURL}
+	c.Signals = &SignalsServiceOp{client: c}
 	serverlessInferenceURL, _ := url.Parse(defaultServerlessInferenceBaseURL)
 	t := newInferenceTransport(c, serverlessInferenceURL)
 	c.Chat = &ChatService{Completions: &ChatCompletionService{inferenceTransport: t}}
