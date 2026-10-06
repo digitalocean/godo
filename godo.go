@@ -74,6 +74,7 @@ type Client struct {
 	Functions           FunctionsService
 	Images              ImagesService
 	ImageActions        ImageActionsService
+	Insights            InsightsService
 	Invoices            InvoicesService
 	Keys                KeysService
 	Kubernetes          KubernetesService
@@ -334,6 +335,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Functions = &FunctionsServiceOp{client: c}
 	c.Images = &ImagesServiceOp{client: c}
 	c.ImageActions = &ImageActionsServiceOp{client: c}
+	c.Insights = &InsightsServiceOp{client: c}
 	c.Invoices = &InvoicesServiceOp{client: c}
 	c.Keys = &KeysServiceOp{client: c}
 	c.Kubernetes = &KubernetesServiceOp{client: c}
