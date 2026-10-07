@@ -75,10 +75,18 @@ type HostedAgentWorkspaceCreateRequest struct {
 }
 
 // HostedAgentWorkspaceListOptions paginates ListWorkspaces (newest-first).
+//
+// A page can hold fewer workspaces than PageSize, even none, while
+// NextPageToken is not empty (for example when State skips records), so keep
+// requesting pages until NextPageToken is empty.
 type HostedAgentWorkspaceListOptions struct {
 	PageToken string `url:"page_token,omitempty"`
 	// PageSize defaults to 50 on the server and is clamped to 200.
 	PageSize int `url:"page_size,omitempty"`
+	// State, when not empty, lists only workspaces in that state. It takes one
+	// value; the server answers 400 for anything that is not one of the five
+	// HostedAgentWorkspaceState values.
+	State HostedAgentWorkspaceState `url:"state,omitempty"`
 }
 
 // HostedAgentWorkspacesListResponse is returned by ListWorkspaces.

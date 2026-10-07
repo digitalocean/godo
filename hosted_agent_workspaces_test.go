@@ -303,16 +303,19 @@ func TestHostedAgents_GetWorkspace_NotFound(t *testing.T) {
 
 func TestHostedAgents_ListWorkspaces(t *testing.T) {
 	tests := []struct {
-		name     string
-		opt      *HostedAgentWorkspaceListOptions
-		wantSize string
-		wantTok  string
+		name      string
+		opt       *HostedAgentWorkspaceListOptions
+		wantSize  string
+		wantTok   string
+		wantState string
 	}{
 		{name: "nil options"},
 		{name: "empty options", opt: &HostedAgentWorkspaceListOptions{}},
 		{name: "page size only", opt: &HostedAgentWorkspaceListOptions{PageSize: 25}, wantSize: "25"},
 		{name: "page token only", opt: &HostedAgentWorkspaceListOptions{PageToken: "tok-1"}, wantTok: "tok-1"},
 		{name: "both", opt: &HostedAgentWorkspaceListOptions{PageSize: 25, PageToken: "tok-1"}, wantSize: "25", wantTok: "tok-1"},
+		{name: "state only", opt: &HostedAgentWorkspaceListOptions{State: HostedAgentWorkspaceStateAvailable}, wantState: "AVAILABLE"},
+		{name: "state with paging", opt: &HostedAgentWorkspaceListOptions{State: HostedAgentWorkspaceStateAttached, PageSize: 25, PageToken: "tok-1"}, wantSize: "25", wantTok: "tok-1", wantState: "ATTACHED"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -326,6 +329,8 @@ func TestHostedAgents_ListWorkspaces(t *testing.T) {
 				assert.Equal(t, tt.wantTok != "", q.Has("page_token"))
 				assert.Equal(t, tt.wantSize, q.Get("page_size"))
 				assert.Equal(t, tt.wantTok, q.Get("page_token"))
+				assert.Equal(t, tt.wantState != "", q.Has("state"))
+				assert.Equal(t, tt.wantState, q.Get("state"))
 				fmt.Fprintf(w, `{"workspaces":[%s],"next_page_token":"tok-2"}`, hostedAgentWorkspaceJSON)
 			})
 
