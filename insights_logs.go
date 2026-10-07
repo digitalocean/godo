@@ -29,7 +29,8 @@ const (
 	InsightsLogsSortDirectionDescending = "SORT_DIRECTION_DESC"
 )
 
-// LogsSearchRequest describes an Insights logs search.
+// LogsSearchRequest describes an Insights logs search. TimeRange must not
+// exceed seven days.
 type LogsSearchRequest struct {
 	TimeRange  LogsTimeRange          `json:"time_range"`
 	Filter     *LogsFilterExpression  `json:"filter,omitempty"`
@@ -105,7 +106,8 @@ type LogsNumberArrayValue struct {
 	Values []float64 `json:"values"`
 }
 
-// LogsOrderBy is a logs search sort clause.
+// LogsOrderBy is a logs search sort clause. Cursor pagination is available
+// only when ordering by timestamp alone.
 type LogsOrderBy struct {
 	Field     LogsFieldRef `json:"field"`
 	Direction string       `json:"direction,omitempty"`
@@ -113,6 +115,7 @@ type LogsOrderBy struct {
 
 // LogsPaginationRequest configures cursor pagination for a logs search.
 type LogsPaginationRequest struct {
+	// Limit defaults to 100 and is clamped to 1000 by the API.
 	Limit  int    `json:"limit,omitempty"`
 	Cursor string `json:"cursor,omitempty"`
 }
@@ -142,7 +145,8 @@ type InsightsLogRecord struct {
 	Attributes     map[string]string `json:"attributes,omitempty"`
 }
 
-// SearchLogs searches log records in a region.
+// SearchLogs searches log records in a region. Cursor pagination requires
+// ordering by timestamp alone; other sort orders return HasMore as false.
 func (s *InsightsServiceOp) SearchLogs(ctx context.Context, region string, search *LogsSearchRequest) (*LogsSearchResponse, *Response, error) {
 	path := "/v2/insights/query/" + url.PathEscape(region) + "/logs/search"
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, search)

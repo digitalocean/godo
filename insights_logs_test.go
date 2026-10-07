@@ -128,6 +128,41 @@ func TestInsights_SearchLogs(t *testing.T) {
 	}
 }
 
+func TestLogsFilterValueArrays(t *testing.T) {
+	tests := []struct {
+		name  string
+		value LogsFilterValue
+		want  string
+	}{
+		{
+			name: "strings",
+			value: LogsFilterValue{
+				StringArrayValue: &LogsStringArrayValue{Values: []string{"droplet-123", "droplet-456"}},
+			},
+			want: `{"string_array_value":{"values":["droplet-123","droplet-456"]}}`,
+		},
+		{
+			name: "numbers",
+			value: LogsFilterValue{
+				NumberArrayValue: &LogsNumberArrayValue{Values: []float64{42, 84}},
+			},
+			want: `{"number_array_value":{"values":[42,84]}}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := json.Marshal(tt.value)
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+			if string(got) != tt.want {
+				t.Errorf("JSON = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestInsights_SearchLogsCursorAndEmptyData(t *testing.T) {
 	setup()
 	defer teardown()
