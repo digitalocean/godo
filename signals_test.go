@@ -252,3 +252,148 @@ func TestSignals_DialogueStepsRawJSON(t *testing.T) {
 		t.Fatalf("invalid json: %s", b)
 	}
 }
+
+func TestSignals_ListConsents(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+			"team_id":123,
+			"consents":[
+				{"id":1,"team_id":123,"agent_id":"agent-1","enabled":true,"updated_at":"2026-10-05T12:00:00Z"},
+				{"id":2,"team_id":123,"agent_id":"agent-2","enabled":false,"updated_at":"2026-10-05T13:00:00Z"}
+			]
+		}`)
+	})
+
+	got, _, err := client.Signals.ListConsents(ctx)
+	if err != nil {
+		t.Fatalf("ListConsents: %v", err)
+	}
+	if got.TeamID != 123 {
+		t.Errorf("team_id=%d, want 123", got.TeamID)
+	}
+	if len(got.Consents) != 2 {
+		t.Fatalf("len(consents)=%d, want 2", len(got.Consents))
+	}
+	if got.Consents[0].AgentID != "agent-1" || !got.Consents[0].Enabled {
+		t.Errorf("unexpected consent[0]: %+v", got.Consents[0])
+	}
+	if got.Consents[1].AgentID != "agent-2" || got.Consents[1].Enabled {
+		t.Errorf("unexpected consent[1]: %+v", got.Consents[1])
+	}
+}
+
+func TestSignals_ListConsents_Empty(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"team_id":123,"consents":[]}`)
+	})
+
+	got, _, err := client.Signals.ListConsents(ctx)
+	if err != nil {
+		t.Fatalf("ListConsents: %v", err)
+	}
+	if len(got.Consents) != 0 {
+		t.Errorf("expected empty consents, got %d", len(got.Consents))
+	}
+}
+
+func TestSignals_CreateExport(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/exports", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body SignalsCreateExportRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if body.AgentID != "agent-1" {
+			t.Errorf("agent_id=%s, want agent-1", body.AgentID)
+		}
+		if !reflect.DeepEqual(body.SignalType, []string{"Looping"}) {
+			t.Errorf("signal_type=%v, want [Looping]", body.SignalType)
+		}
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"export_id":"exp-new","agent_id":"agent-1","status":"pending","created_at":1728000000,"filters":{"signal_type":["Looping"]}}`)
+	})
+
+	got, resp, err := client.Signals.CreateExport(ctx, &SignalsCreateExportRequest{
+		AgentID:    "agent-1",
+		SignalType: []string{"Looping"},
+	})
+	if err != nil {
+		t.Fatalf("CreateExport: %v", err)
+	}
+	if resp.StatusCode != http.StatusCreated {
+		t.Errorf("status=%d, want 201", resp.StatusCode)
+	}
+	if got.ExportID != "exp-new" || got.Status != "pending" {
+		t.Errorf("unexpected export: %+v", got)
+	}
+}
+
+func TestSignals_CreateExport_WithTimeRange(t *testing.T) {
+	setup()
+	defer teardown()
+
+	start := int64(1727740800)
+	end := int64(1728000000)
+
+	mux.HandleFunc("/v1/signals/exports", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body SignalsCreateExportRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if body.AgentID != "agent-1" {
+			t.Errorf("agent_id=%s", body.AgentID)
+		}
+		if body.StartTime == nil || *body.StartTime != start {
+			t.Errorf("start_time=%v, want %d", body.StartTime, start)
+		}
+		if body.EndTime == nil || *body.EndTime != end {
+			t.Errorf("end_time=%v, want %d", body.EndTime, end)
+		}
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"export_id":"exp-time","agent_id":"agent-1","status":"pending","created_at":1728000000,"filters":{"start_time":1727740800,"end_time":1728000000}}`)
+	})
+
+	got, _, err := client.Signals.CreateExport(ctx, &SignalsCreateExportRequest{
+		AgentID:   "agent-1",
+		StartTime: &start,
+		EndTime:   &end,
+	})
+	if err != nil {
+		t.Fatalf("CreateExport: %v", err)
+	}
+	if got.ExportID != "exp-time" {
+		t.Errorf("unexpected export: %+v", got)
+	}
+}
+
+func TestSignals_CreateExport_NilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.Signals.CreateExport(ctx, nil)
+	if err == nil {
+		t.Fatal("expected error for nil request")
+	}
+}
+
+func TestSignals_CreateExport_EmptyAgentID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.Signals.CreateExport(ctx, &SignalsCreateExportRequest{})
+	if err == nil {
+		t.Fatal("expected error for empty agent_id")
+	}
+}
