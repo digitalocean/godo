@@ -92,7 +92,7 @@ const (
 )
 
 // InsightsService manages Insights notification channels, alert rules, alert
-// instances, and PromQL queries.
+// instances, PromQL queries, and logs searches.
 type InsightsService interface {
 	ListNotificationChannels(context.Context, *ListOptions) ([]NotificationChannel, *Response, error)
 	GetNotificationChannel(context.Context, string) (*NotificationChannel, *Response, error)
@@ -120,6 +120,8 @@ type InsightsService interface {
 	Labels(context.Context, string, *PromSelectorOptions) (*PromLabelsResponse, *Response, error)
 	PostLabels(context.Context, string, *PromSelectorOptions) (*PromLabelsResponse, *Response, error)
 	LabelValues(context.Context, string, string, *PromSelectorOptions) (*PromLabelsResponse, *Response, error)
+
+	SearchLogs(context.Context, string, *LogsSearchRequest) (*LogsSearchResponse, *Response, error)
 }
 
 // InsightsServiceOp handles communication with Insights methods of the DigitalOcean API.
