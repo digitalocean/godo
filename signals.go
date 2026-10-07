@@ -13,9 +13,9 @@ const (
 )
 
 // SignalsService is the MCP v1 client: GETs on /v1/signals plus consent
-// enable/disable on /v1/consent (consent-gateway). Create-export and
-// generate-report are omitted until they are an explicit product ask.
+// enable/disable on /v1/consent (consent-gateway).
 type SignalsService interface {
+	ListConsents(context.Context) (*SignalsListConsentsResponse, *Response, error)
 	GetAgentConsent(context.Context, string) (*SignalsAgentConsent, *Response, error)
 	SetAgentConsent(context.Context, string, bool) (*SignalsConsentRecord, *Response, error)
 	ListAgentSessions(context.Context, string, *SignalsListAgentSessionsOptions) (*SignalsListAgentSessionsResponse, *Response, error)
@@ -23,6 +23,7 @@ type SignalsService interface {
 	ListSessionDialogues(context.Context, string, *SignalsListDialoguesOptions) (*SignalsSessionDialoguesResponse, *Response, error)
 	GetSegment(context.Context, string, *SignalsCursorPageOptions) (*SignalsSegmentDetailResponse, *Response, error)
 	GetSegmentSignalReport(context.Context, string) (*SignalsReport, *Response, error)
+	CreateExport(context.Context, *SignalsCreateExportRequest) (*SignalsExportJob, *Response, error)
 	ListExports(context.Context, *SignalsListExportsOptions) (*SignalsListExportsResponse, *Response, error)
 	GetExport(context.Context, string) (*SignalsExportJob, *Response, error)
 	GetExportDownload(context.Context, string) (*SignalsExportDownload, *Response, error)
@@ -115,6 +116,20 @@ type signalsSetConsentRequest struct {
 
 type signalsSetConsentRoot struct {
 	Consent *SignalsConsentRecord `json:"consent"`
+}
+
+// SignalsListConsentsResponse is GET /v1/consent (consent-gateway).
+type SignalsListConsentsResponse struct {
+	TeamID   int64                  `json:"team_id"`
+	Consents []SignalsConsentRecord `json:"consents"`
+}
+
+// SignalsCreateExportRequest is the body for POST /v1/signals/exports.
+type SignalsCreateExportRequest struct {
+	AgentID    string   `json:"agent_id"`
+	SignalType []string `json:"signal_type,omitempty"`
+	StartTime  *int64   `json:"start_time,omitempty"`
+	EndTime    *int64   `json:"end_time,omitempty"`
 }
 
 // SignalsSession is a session list node.
@@ -322,6 +337,17 @@ func (s *SignalsServiceOp) get(ctx context.Context, path string, out interface{}
 	return s.client.Do(ctx, req, out)
 }
 
+// ListConsents returns all consent records for the authenticated team.
+// Uses GET /v1/consent on consent-gateway.
+func (s *SignalsServiceOp) ListConsents(ctx context.Context) (*SignalsListConsentsResponse, *Response, error) {
+	root := new(SignalsListConsentsResponse)
+	resp, err := s.get(ctx, consentBasePath, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
 // GetAgentConsent returns collection consent for one agent (default deny if no row).
 // Uses GET /v1/consent/{agent_id} on consent-gateway (same public path as Cloud UI / SetAgentConsent).
 func (s *SignalsServiceOp) GetAgentConsent(ctx context.Context, agentID string) (*SignalsAgentConsent, *Response, error) {
@@ -415,6 +441,28 @@ func (s *SignalsServiceOp) GetSegmentSignalReport(ctx context.Context, segmentID
 	path := fmt.Sprintf("%s/segments/%s/signal-report", signalsBasePath, segmentID)
 	root := new(SignalsReport)
 	resp, err := s.get(ctx, path, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// CreateExport starts a bulk signal export job (POST /v1/signals/exports).
+// The create is idempotent: if an active export already exists for the same
+// parameters the server returns it instead of creating a duplicate.
+func (s *SignalsServiceOp) CreateExport(ctx context.Context, body *SignalsCreateExportRequest) (*SignalsExportJob, *Response, error) {
+	if body == nil {
+		return nil, nil, fmt.Errorf("signals: create export request is required")
+	}
+	if body.AgentID == "" {
+		return nil, nil, fmt.Errorf("signals: agent_id is required")
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodPost, signalsBasePath+"/exports", body)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(SignalsExportJob)
+	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
 	}
