@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 const (
@@ -13,7 +15,8 @@ const (
 )
 
 // SignalsService is the MCP v1 client: GETs on /v1/signals plus consent
-// enable/disable on /v1/consent (consent-gateway).
+// enable/disable on /v1/consent (consent-gateway), and on-demand data
+// deletion jobs on /v1/signals/deletions.
 type SignalsService interface {
 	ListConsents(context.Context) (*SignalsListConsentsResponse, *Response, error)
 	GetAgentConsent(context.Context, string) (*SignalsAgentConsent, *Response, error)
@@ -28,7 +31,27 @@ type SignalsService interface {
 	GetExport(context.Context, string) (*SignalsExportJob, *Response, error)
 	GetExportDownload(context.Context, string) (*SignalsExportDownload, *Response, error)
 	GetExportOptions(context.Context) (*SignalsExportOptions, *Response, error)
+	CreateDeletion(context.Context, *SignalsCreateDeletionRequest) (*SignalsDeletionJob, *Response, error)
+	GetDeletion(context.Context, string) (*SignalsDeletionJob, *Response, error)
+	ListDeletions(context.Context, *SignalsListDeletionsOptions) (*SignalsListDeletionsResponse, *Response, error)
 }
+
+// Deletion types and job statuses used by the Signals deletion API.
+const (
+	// SignalsDeletionTypeManagedAgent deletes all Signals data for one managed agent.
+	SignalsDeletionTypeManagedAgent = "managed_agent"
+	// SignalsDeletionTypeInference deletes all Signals data for team-wide inference traffic.
+	SignalsDeletionTypeInference = "inference"
+
+	// SignalsDeletionStatusQueued means the job is waiting to be picked up.
+	SignalsDeletionStatusQueued = "queued"
+	// SignalsDeletionStatusRunning means the job is being processed.
+	SignalsDeletionStatusRunning = "running"
+	// SignalsDeletionStatusComplete means the job finished successfully.
+	SignalsDeletionStatusComplete = "complete"
+	// SignalsDeletionStatusFailed means the job failed; see ErrorMessage.
+	SignalsDeletionStatusFailed = "failed"
+)
 
 // SignalsServiceOp communicates with the Signals consumption API.
 type SignalsServiceOp struct {
@@ -130,6 +153,51 @@ type SignalsCreateExportRequest struct {
 	SignalType []string `json:"signal_type,omitempty"`
 	StartTime  *int64   `json:"start_time,omitempty"`
 	EndTime    *int64   `json:"end_time,omitempty"`
+}
+
+// SignalsCreateDeletionRequest is the body for POST /v1/signals/deletions.
+type SignalsCreateDeletionRequest struct {
+	// Type is SignalsDeletionTypeManagedAgent or SignalsDeletionTypeInference.
+	// The server can infer it when omitted (agent_id present means managed_agent,
+	// otherwise a team-wide inference deletion), but godo requires it so a missing
+	// AgentID can never turn into a team-wide deletion by accident.
+	Type string `json:"type"`
+	// TeamID is the numeric team id; it must match the authenticated team.
+	TeamID int64 `json:"team_id"`
+	// AgentID is required for managed_agent and must be empty for inference.
+	AgentID string `json:"agent_id,omitempty"`
+}
+
+// SignalsDeletionJob is one deletion job (POST/GET /v1/signals/deletions...).
+// Timestamps are Unix seconds. Status is a plain string so new server-side
+// statuses keep decoding.
+type SignalsDeletionJob struct {
+	TeamID       int64   `json:"team_id"`
+	DeletionID   string  `json:"deletion_id"`
+	Type         string  `json:"type"`
+	AgentID      string  `json:"agent_id,omitempty"`
+	Status       string  `json:"status"`
+	ErrorMessage *string `json:"error_message,omitempty"`
+	CreatedAt    int64   `json:"created_at"`
+	StartedAt    *int64  `json:"started_at,omitempty"`
+	CompletedAt  *int64  `json:"completed_at,omitempty"`
+}
+
+// SignalsListDeletionsOptions are query params for GET /v1/signals/deletions.
+type SignalsListDeletionsOptions struct {
+	SignalsCursorPageOptions
+}
+
+// SignalsDeletionEdge is one edge in a deletion list.
+type SignalsDeletionEdge struct {
+	Cursor string             `json:"cursor"`
+	Node   SignalsDeletionJob `json:"node"`
+}
+
+// SignalsListDeletionsResponse is GET /v1/signals/deletions.
+type SignalsListDeletionsResponse struct {
+	Edges    []SignalsDeletionEdge `json:"edges"`
+	PageInfo SignalsPageInfo       `json:"page_info"`
 }
 
 // SignalsSession is a session list node.
@@ -509,6 +577,85 @@ func (s *SignalsServiceOp) GetExportDownload(ctx context.Context, exportID strin
 func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExportOptions, *Response, error) {
 	root := new(SignalsExportOptions)
 	resp, err := s.get(ctx, signalsBasePath+"/exports/options", root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// CreateDeletion starts an on-demand data deletion job (POST /v1/signals/deletions).
+//
+// The server answers 202 when a new job is created and 200 when an active
+// (queued or running) job for the same target already exists; check
+// Response.StatusCode to tell them apart. For SignalsDeletionTypeManagedAgent
+// AgentID is required; for SignalsDeletionTypeInference it must be empty.
+//
+// If the client retries requests (for example one built with
+// WithRetryAndBackoffs), a repeated POST while the first job is still active
+// returns that same job, but a repeat after the first job has finished starts
+// a new job.
+func (s *SignalsServiceOp) CreateDeletion(ctx context.Context, body *SignalsCreateDeletionRequest) (*SignalsDeletionJob, *Response, error) {
+	if body == nil {
+		return nil, nil, fmt.Errorf("signals: create deletion request is required")
+	}
+	if body.TeamID <= 0 {
+		return nil, nil, fmt.Errorf("signals: team_id is required")
+	}
+	switch body.Type {
+	case SignalsDeletionTypeManagedAgent:
+		if body.AgentID == "" {
+			return nil, nil, fmt.Errorf("signals: agent_id is required for managed_agent")
+		}
+	case SignalsDeletionTypeInference:
+		if body.AgentID != "" {
+			return nil, nil, fmt.Errorf("signals: agent_id must not be set for inference")
+		}
+	default:
+		return nil, nil, fmt.Errorf("signals: type must be managed_agent or inference")
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodPost, signalsBasePath+"/deletions", body)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(SignalsDeletionJob)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// GetDeletion returns one deletion job (GET /v1/signals/deletions/{deletion_id}).
+// The server returns 404 both for unknown ids and for jobs owned by another team.
+func (s *SignalsServiceOp) GetDeletion(ctx context.Context, deletionID string) (*SignalsDeletionJob, *Response, error) {
+	trimmed := strings.TrimSpace(deletionID)
+	if trimmed == "" {
+		return nil, nil, fmt.Errorf("signals: deletion_id is required")
+	}
+	// "." and ".." are not changed by url.PathEscape and would be cleaned into
+	// the list route, so reject them.
+	if trimmed == "." || trimmed == ".." {
+		return nil, nil, fmt.Errorf("signals: deletion_id is invalid")
+	}
+	path := signalsBasePath + "/deletions/" + url.PathEscape(deletionID)
+	root := new(SignalsDeletionJob)
+	resp, err := s.get(ctx, path, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// ListDeletions lists deletion jobs for the team, newest first
+// (GET /v1/signals/deletions). Limit and After are passed through. When Limit
+// is 0 the server uses its default page size (5) and it caps larger values at 100.
+func (s *SignalsServiceOp) ListDeletions(ctx context.Context, opts *SignalsListDeletionsOptions) (*SignalsListDeletionsResponse, *Response, error) {
+	path, err := addOptions(signalsBasePath+"/deletions", opts)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(SignalsListDeletionsResponse)
+	resp, err := s.get(ctx, path, root)
 	if err != nil {
 		return nil, resp, err
 	}

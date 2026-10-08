@@ -1,7 +1,9 @@
 package godo
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -396,4 +398,585 @@ func TestSignals_CreateExport_EmptyAgentID(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for empty agent_id")
 	}
+}
+
+const testDeletionID = "01JABCDEFGHJKMNPQRSTVWXYZ0"
+
+// registerNoCallHandler fails the test if the path is hit and returns a counter.
+func registerNoCallHandler(t *testing.T, pattern string) *int {
+	t.Helper()
+	calls := 0
+	mux.HandleFunc(pattern, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		t.Errorf("unexpected HTTP call: %s %s", r.Method, r.URL.String())
+		w.WriteHeader(http.StatusInternalServerError)
+	})
+	return &calls
+}
+
+func assertErrStatus(t *testing.T, err error, resp *Response, want int) {
+	t.Helper()
+	if err == nil {
+		t.Fatalf("expected error with status %d", want)
+	}
+	var errResp *ErrorResponse
+	if !errors.As(err, &errResp) {
+		t.Fatalf("expected *ErrorResponse, got %T: %v", err, err)
+	}
+	if errResp.Response.StatusCode != want {
+		t.Errorf("error status=%d, want %d", errResp.Response.StatusCode, want)
+	}
+	if resp == nil || resp.StatusCode != want {
+		t.Errorf("resp=%v, want status %d", resp, want)
+	}
+}
+
+func TestSignals_CreateDeletion_ManagedAgent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body SignalsCreateDeletionRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Errorf("decode: %v", err)
+			return
+		}
+		want := SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 12345, AgentID: "agt-uuid"}
+		if body != want {
+			t.Errorf("body=%+v, want %+v", body, want)
+		}
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null}`)
+	})
+
+	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
+		Type: SignalsDeletionTypeManagedAgent, TeamID: 12345, AgentID: "agt-uuid",
+	})
+	if err != nil {
+		t.Fatalf("CreateDeletion: %v", err)
+	}
+	if resp.StatusCode != http.StatusAccepted {
+		t.Errorf("status=%d, want 202", resp.StatusCode)
+	}
+	want := &SignalsDeletionJob{
+		TeamID: 12345, DeletionID: testDeletionID, Type: "managed_agent", AgentID: "agt-uuid",
+		Status: SignalsDeletionStatusQueued, CreatedAt: 1728324000,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v want %+v", got, want)
+	}
+}
+
+func TestSignals_CreateDeletion_Inference(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var m map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+			t.Errorf("decode: %v", err)
+			return
+		}
+		if m["type"] != "inference" {
+			t.Errorf("type=%v, want inference", m["type"])
+		}
+		if m["team_id"] != float64(12345) {
+			t.Errorf("team_id=%v, want 12345", m["team_id"])
+		}
+		if _, has := m["agent_id"]; has {
+			t.Errorf("agent_id must not be sent for inference: %v", m)
+		}
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"inference","status":"queued","created_at":1728324000}`)
+	})
+
+	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
+		Type: SignalsDeletionTypeInference, TeamID: 12345,
+	})
+	if err != nil {
+		t.Fatalf("CreateDeletion: %v", err)
+	}
+	if resp.StatusCode != http.StatusAccepted {
+		t.Errorf("status=%d, want 202", resp.StatusCode)
+	}
+	if got.Type != "inference" || got.AgentID != "" {
+		t.Errorf("unexpected job: %+v", got)
+	}
+}
+
+func TestSignals_CreateDeletion_ExistingActiveJob(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"running","created_at":1728324000,"started_at":1728324010}`)
+	})
+
+	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
+		Type: SignalsDeletionTypeManagedAgent, TeamID: 12345, AgentID: "agt-uuid",
+	})
+	if err != nil {
+		t.Fatalf("CreateDeletion: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status=%d, want 200", resp.StatusCode)
+	}
+	if got.DeletionID != testDeletionID || got.Status != SignalsDeletionStatusRunning {
+		t.Errorf("unexpected job: %+v", got)
+	}
+	if got.StartedAt == nil || *got.StartedAt != 1728324010 {
+		t.Errorf("started_at=%v", got.StartedAt)
+	}
+}
+
+func TestSignals_CreateDeletion_Validation(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     *SignalsCreateDeletionRequest
+		wantMsg string
+	}{
+		{"NilRequest", nil, "signals: create deletion request is required"},
+		{"ZeroTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 0}, "signals: team_id is required"},
+		{"NegativeTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: -1}, "signals: team_id is required"},
+		{"EmptyType", &SignalsCreateDeletionRequest{TeamID: 1}, "signals: type must be managed_agent or inference"},
+		{"UnknownType", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1, AgentID: "a"}, "signals: type must be managed_agent or inference"},
+		{"BadTypeAndBadTeamReportsTeamFirst", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 0}, "signals: team_id is required"},
+		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 1}, "signals: agent_id is required for managed_agent"},
+		{"InferenceWithAgentID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1, AgentID: "a"}, "signals: agent_id must not be set for inference"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+			calls := registerNoCallHandler(t, "/v1/signals/deletions")
+
+			got, resp, err := client.Signals.CreateDeletion(ctx, tt.req)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if err.Error() != tt.wantMsg {
+				t.Errorf("error=%q, want %q", err.Error(), tt.wantMsg)
+			}
+			if got != nil || resp != nil {
+				t.Errorf("expected nil job and response, got %+v / %+v", got, resp)
+			}
+			if *calls != 0 {
+				t.Errorf("HTTP calls=%d, want 0", *calls)
+			}
+		})
+	}
+}
+
+func TestSignals_CreateDeletion_DoesNotMutateRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{"deletion_id":"x","status":"queued"}`)
+	})
+	req := &SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 7, AgentID: " agt "}
+	orig := *req
+	if _, _, err := client.Signals.CreateDeletion(ctx, req); err != nil {
+		t.Fatalf("CreateDeletion: %v", err)
+	}
+	if *req != orig {
+		t.Errorf("request mutated: %+v", *req)
+	}
+}
+
+func TestSignals_CreateDeletion_ErrorStatuses(t *testing.T) {
+	tests := []struct {
+		name   string
+		status int
+		body   string
+	}{
+		{"Forbidden", http.StatusForbidden, `{"id":"forbidden","message":"team mismatch"}`},
+		{"AgentNotFound", http.StatusNotFound, `{"id":"not_found","message":"agent not found"}`},
+		{"TooManyActive", http.StatusTooManyRequests, `{"id":"too_many_requests","message":"too many active deletions"}`},
+		{"ServerError", http.StatusInternalServerError, `{"id":"server_error","message":"boom"}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+			mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, http.MethodPost)
+				w.WriteHeader(tt.status)
+				fmt.Fprint(w, tt.body)
+			})
+
+			got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
+				Type: SignalsDeletionTypeManagedAgent, TeamID: 1, AgentID: "agt",
+			})
+			if got != nil {
+				t.Errorf("expected nil job, got %+v", got)
+			}
+			assertErrStatus(t, err, resp, tt.status)
+		})
+	}
+}
+
+func TestSignals_CreateDeletion_ForbiddenMessage(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, `{"id":"forbidden","message":"team mismatch"}`)
+	})
+	_, _, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1})
+	if err == nil || !errors.As(err, new(*ErrorResponse)) {
+		t.Fatalf("expected ErrorResponse, got %v", err)
+	}
+	var errResp *ErrorResponse
+	errors.As(err, &errResp)
+	if errResp.Message != "team mismatch" {
+		t.Errorf("message=%q, want %q", errResp.Message, "team mismatch")
+	}
+}
+
+func TestSignals_CreateDeletion_ContextCancelled(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{}`)
+	})
+	cctx, cancel := context.WithCancel(ctx)
+	cancel()
+
+	got, _, err := client.Signals.CreateDeletion(cctx, &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1})
+	if err == nil {
+		t.Fatal("expected error for cancelled context")
+	}
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("error=%v, want context.Canceled", err)
+	}
+	if got != nil {
+		t.Errorf("expected nil job, got %+v", got)
+	}
+}
+
+func TestSignals_CreateDeletion_EmptyBody(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	})
+
+	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1})
+	if err == nil {
+		t.Fatal("expected decode error for empty body")
+	}
+	if resp != nil {
+		t.Errorf("expected nil response, got %+v", resp)
+	}
+	if got != nil {
+		t.Errorf("expected nil job, got %+v", got)
+	}
+}
+
+func TestSignals_GetDeletion_Queued(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null,"extra_future_field":true}`)
+	})
+
+	got, resp, err := client.Signals.GetDeletion(ctx, testDeletionID)
+	if err != nil {
+		t.Fatalf("GetDeletion: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status=%d, want 200", resp.StatusCode)
+	}
+	if got.ErrorMessage != nil || got.StartedAt != nil || got.CompletedAt != nil {
+		t.Errorf("expected nil optional fields: %+v", got)
+	}
+	if got.Status != SignalsDeletionStatusQueued || got.AgentID != "agt-uuid" {
+		t.Errorf("unexpected job: %+v", got)
+	}
+}
+
+func TestSignals_GetDeletion_Failed(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"inference","status":"failed","error_message":"max attempts exceeded","created_at":1,"started_at":2,"completed_at":3}`)
+	})
+
+	got, _, err := client.Signals.GetDeletion(ctx, testDeletionID)
+	if err != nil {
+		t.Fatalf("GetDeletion: %v", err)
+	}
+	if got.Status != SignalsDeletionStatusFailed {
+		t.Errorf("status=%s", got.Status)
+	}
+	if got.ErrorMessage == nil || *got.ErrorMessage != "max attempts exceeded" {
+		t.Errorf("error_message=%v", got.ErrorMessage)
+	}
+}
+
+func TestSignals_GetDeletion_Complete(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"a","status":"complete","created_at":10,"started_at":20,"completed_at":30}`)
+	})
+
+	got, _, err := client.Signals.GetDeletion(ctx, testDeletionID)
+	if err != nil {
+		t.Fatalf("GetDeletion: %v", err)
+	}
+	if got.Status != SignalsDeletionStatusComplete {
+		t.Errorf("status=%s", got.Status)
+	}
+	if got.StartedAt == nil || *got.StartedAt != 20 || got.CompletedAt == nil || *got.CompletedAt != 30 || got.CreatedAt != 10 {
+		t.Errorf("unexpected timestamps: %+v", got)
+	}
+}
+
+func TestSignals_GetDeletion_UnknownStatus(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"deletion_id":"`+testDeletionID+`","status":"cancelled","created_at":1}`)
+	})
+
+	got, _, err := client.Signals.GetDeletion(ctx, testDeletionID)
+	if err != nil {
+		t.Fatalf("GetDeletion: %v", err)
+	}
+	if got.Status != "cancelled" {
+		t.Errorf("status=%s, want cancelled", got.Status)
+	}
+}
+
+func TestSignals_GetDeletion_EmptyID(t *testing.T) {
+	for _, id := range []string{"", "   ", "\t\n"} {
+		t.Run(fmt.Sprintf("%q", id), func(t *testing.T) {
+			setup()
+			defer teardown()
+			listCalls := registerNoCallHandler(t, "/v1/signals/deletions")
+			itemCalls := registerNoCallHandler(t, "/v1/signals/deletions/")
+
+			got, resp, err := client.Signals.GetDeletion(ctx, id)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if got != nil || resp != nil {
+				t.Errorf("expected nil job and response")
+			}
+			if *listCalls != 0 || *itemCalls != 0 {
+				t.Errorf("HTTP calls list=%d item=%d, want 0", *listCalls, *itemCalls)
+			}
+		})
+	}
+}
+
+func TestSignals_GetDeletion_DotIDs(t *testing.T) {
+	for _, id := range []string{".", "..", " . ", " .. "} {
+		t.Run(fmt.Sprintf("%q", id), func(t *testing.T) {
+			setup()
+			defer teardown()
+			listCalls := registerNoCallHandler(t, "/v1/signals/deletions")
+			itemCalls := registerNoCallHandler(t, "/v1/signals/deletions/")
+
+			_, resp, err := client.Signals.GetDeletion(ctx, id)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if resp != nil {
+				t.Errorf("expected nil response")
+			}
+			if *listCalls != 0 || *itemCalls != 0 {
+				t.Errorf("HTTP calls list=%d item=%d, want 0", *listCalls, *itemCalls)
+			}
+		})
+	}
+}
+
+func TestSignals_GetDeletion_EscapesID(t *testing.T) {
+	tests := []struct {
+		id          string
+		wantEscaped string
+	}{
+		{"a/b", "/v1/signals/deletions/a%2Fb"},
+		{"a?x=1", "/v1/signals/deletions/a%3Fx=1"},
+		{" abc ", "/v1/signals/deletions/%20abc%20"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.id, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			called := false
+			mux.HandleFunc("/v1/signals/deletions/", func(w http.ResponseWriter, r *http.Request) {
+				called = true
+				testMethod(t, r, http.MethodGet)
+				if got := r.URL.EscapedPath(); got != tt.wantEscaped {
+					t.Errorf("escaped path=%q, want %q", got, tt.wantEscaped)
+				}
+				if r.URL.RawQuery != "" {
+					t.Errorf("unexpected query %q", r.URL.RawQuery)
+				}
+				fmt.Fprint(w, `{"deletion_id":"x","status":"queued","created_at":1}`)
+			})
+
+			if _, _, err := client.Signals.GetDeletion(ctx, tt.id); err != nil {
+				t.Fatalf("GetDeletion: %v", err)
+			}
+			if !called {
+				t.Error("handler not called")
+			}
+		})
+	}
+}
+
+func TestSignals_GetDeletion_NotFound(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, `{"id":"not_found","message":"deletion not found"}`)
+	})
+
+	got, resp, err := client.Signals.GetDeletion(ctx, testDeletionID)
+	if got != nil {
+		t.Errorf("expected nil job, got %+v", got)
+	}
+	assertErrStatus(t, err, resp, http.StatusNotFound)
+}
+
+func TestSignals_ListDeletions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{
+			"edges":[
+				{"cursor":"c1","node":{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"a","status":"running","created_at":2}},
+				{"cursor":"c2","node":{"team_id":1,"deletion_id":"01JABCDEFGHJKMNPQRSTVWXYZ1","type":"inference","status":"complete","created_at":1,"completed_at":5}}
+			],
+			"page_info":{"has_next_page":true,"end_cursor":"c2"}
+		}`)
+	})
+
+	got, _, err := client.Signals.ListDeletions(ctx, nil)
+	if err != nil {
+		t.Fatalf("ListDeletions: %v", err)
+	}
+	if len(got.Edges) != 2 {
+		t.Fatalf("edges=%d, want 2", len(got.Edges))
+	}
+	if !got.PageInfo.HasNextPage || got.PageInfo.EndCursor != "c2" {
+		t.Errorf("unexpected page_info: %+v", got.PageInfo)
+	}
+	if got.Edges[0].Node.DeletionID != testDeletionID || got.Edges[1].Node.Type != "inference" || got.Edges[1].Node.AgentID != "" {
+		t.Errorf("unexpected edges: %+v", got.Edges)
+	}
+}
+
+func TestSignals_ListDeletions_NilOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if r.URL.RawQuery != "" {
+			t.Errorf("unexpected query %q", r.URL.RawQuery)
+		}
+		fmt.Fprint(w, `{"edges":[],"page_info":{"has_next_page":false}}`)
+	})
+
+	if _, _, err := client.Signals.ListDeletions(ctx, nil); err != nil {
+		t.Fatalf("ListDeletions: %v", err)
+	}
+}
+
+func TestSignals_ListDeletions_WithOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{"limit": "50", "after": "abc"})
+		fmt.Fprint(w, `{"edges":[],"page_info":{"has_next_page":false}}`)
+	})
+
+	_, _, err := client.Signals.ListDeletions(ctx, &SignalsListDeletionsOptions{
+		SignalsCursorPageOptions: SignalsCursorPageOptions{Limit: 50, After: "abc"},
+	})
+	if err != nil {
+		t.Fatalf("ListDeletions: %v", err)
+	}
+}
+
+func TestSignals_ListDeletions_CursorRoundTrip(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const cursor = "YWJjZA=="
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		if got := r.URL.Query().Get("after"); got != cursor {
+			t.Errorf("after=%q, want %q", got, cursor)
+		}
+		fmt.Fprint(w, `{"edges":[],"page_info":{"has_next_page":false}}`)
+	})
+
+	_, _, err := client.Signals.ListDeletions(ctx, &SignalsListDeletionsOptions{
+		SignalsCursorPageOptions: SignalsCursorPageOptions{After: cursor},
+	})
+	if err != nil {
+		t.Fatalf("ListDeletions: %v", err)
+	}
+}
+
+func TestSignals_ListDeletions_Empty(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"edges":[],"page_info":{"has_next_page":false}}`)
+	})
+
+	got, _, err := client.Signals.ListDeletions(ctx, nil)
+	if err != nil {
+		t.Fatalf("ListDeletions: %v", err)
+	}
+	if len(got.Edges) != 0 || got.PageInfo.HasNextPage {
+		t.Errorf("unexpected response: %+v", got)
+	}
+}
+
+func TestSignals_ListDeletions_BadCursor(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"id":"bad_request","message":"invalid cursor"}`)
+	})
+
+	got, resp, err := client.Signals.ListDeletions(ctx, &SignalsListDeletionsOptions{
+		SignalsCursorPageOptions: SignalsCursorPageOptions{After: "garbage"},
+	})
+	if got != nil {
+		t.Errorf("expected nil response body, got %+v", got)
+	}
+	assertErrStatus(t, err, resp, http.StatusBadRequest)
 }
