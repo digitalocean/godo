@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.221.0] - 2026-10-08
+
+- Remove Allowed from SignalsAgentConsent; public consent GET exposes enabled only.
+
 ## [1.220.0] - 2026-10-08
 
 - #1138 - @sanpj2292 - feat(MARSOHS-1935): add persistent workspaces to the hosted agents client
