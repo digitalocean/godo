@@ -253,6 +253,7 @@ func TestHostedAgentWorkspace_DecodesAllStates(t *testing.T) {
 		{"ATTACHED", HostedAgentWorkspaceStateAttached},
 		{"RELEASING", HostedAgentWorkspaceStateReleasing},
 		{"FAILED", HostedAgentWorkspaceStateFailed},
+		{"DELETING", HostedAgentWorkspaceStateDeleting},
 	}
 	for _, tt := range tests {
 		t.Run(tt.wire, func(t *testing.T) {

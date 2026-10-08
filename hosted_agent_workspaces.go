@@ -26,6 +26,9 @@ const (
 	HostedAgentWorkspaceStateReleasing HostedAgentWorkspaceState = "RELEASING"
 	// HostedAgentWorkspaceStateFailed means the workspace is not usable.
 	HostedAgentWorkspaceStateFailed HostedAgentWorkspaceState = "FAILED"
+	// HostedAgentWorkspaceStateDeleting means the workspace is being deleted. It
+	// cannot be attached or deleted again until the delete finishes.
+	HostedAgentWorkspaceStateDeleting HostedAgentWorkspaceState = "DELETING"
 )
 
 // HostedAgentWorkspace is a persistent workspace: a separate set of files that outlives
@@ -84,7 +87,7 @@ type HostedAgentWorkspaceListOptions struct {
 	// PageSize defaults to 50 on the server and is clamped to 200.
 	PageSize int `url:"page_size,omitempty"`
 	// State, when not empty, lists only workspaces in that state. It takes one
-	// value; the server answers 400 for anything that is not one of the five
+	// value; the server answers 400 for anything that is not one of the six
 	// HostedAgentWorkspaceState values.
 	State HostedAgentWorkspaceState `url:"state,omitempty"`
 }
@@ -102,7 +105,9 @@ type hostedAgentWorkspaceRoot struct {
 
 // CreateWorkspace creates a persistent workspace. The API answers 201 for a new
 // workspace and 200 when an IdempotencyKey replays an earlier create; both are
-// returned as success.
+// returned as success. It answers 409 when the team is at its workspace limit,
+// or when the key belongs to a workspace that is being deleted: retry in a
+// moment, and the key then creates a new workspace.
 func (s *HostedAgentsServiceOp) CreateWorkspace(ctx context.Context, create *HostedAgentWorkspaceCreateRequest) (*HostedAgentWorkspace, *Response, error) {
 	if create == nil {
 		return nil, nil, errors.New("hosted agents: create request is required")
@@ -164,8 +169,10 @@ func (s *HostedAgentsServiceOp) GetWorkspace(ctx context.Context, workspaceID st
 	return root.Workspace, resp, nil
 }
 
-// DeleteWorkspace deletes a persistent workspace. The API returns HTTP 204, or
-// 409 when a session is still using the workspace.
+// DeleteWorkspace deletes a persistent workspace. The API returns HTTP 204 once
+// its files are gone, or 409 when a session still holds the workspace or it is
+// attaching or being saved; retry after the session is removed or the save ends.
+// A repeat call after a delete is a 404.
 func (s *HostedAgentsServiceOp) DeleteWorkspace(ctx context.Context, workspaceID string) (*Response, error) {
 	if workspaceID == "" {
 		return nil, errors.New("hosted agents: workspace id is required")
