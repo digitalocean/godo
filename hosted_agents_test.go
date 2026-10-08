@@ -1969,3 +1969,160 @@ func TestHostedAgents_ProviderAuth_RequiredArgs(t *testing.T) {
 	_, _, err = client.HostedAgents.PollProviderAuth(ctx, "github", "")
 	require.EqualError(t, err, "hosted agents: poll url is required")
 }
+
+func TestHostedAgents_ListConnections(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "alice", r.URL.Query().Get("user_id"))
+		assert.Equal(t, "active", r.URL.Query().Get("status"))
+		assert.Equal(t, "2", r.URL.Query().Get("page"))
+		assert.Equal(t, "50", r.URL.Query().Get("per_page"))
+		fmt.Fprint(w, `{
+			"connections": [
+				{
+					"id": "16019d21-aaaa",
+					"provider": "github",
+					"provider_display_name": "GitHub",
+					"user_id": "alice",
+					"status": "active",
+					"owning_user_id": "419299d4-273a-43b6-a6c9-d52d1a53bd42",
+					"created_at": "2026-10-07T20:13:40Z",
+					"updated_at": "2026-10-07T20:13:40Z",
+					"oauth": {"scopes": ["repo", "read:org"], "granted_at": "2026-10-07T20:13:40Z"}
+				}
+			],
+			"pagination": {"page": 2, "per_page": 50, "total": 1}
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.ListConnections(ctx, "github", &HostedAgentConnectionListOptions{
+		ActorID: "alice",
+		Status:  "active",
+		Page:    2,
+		PerPage: 50,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, &HostedAgentConnectionsListResponse{
+		Connections: []HostedAgentConnection{
+			{
+				ID:                  "16019d21-aaaa",
+				Provider:            "github",
+				ProviderDisplayName: "GitHub",
+				ActorID:             "alice",
+				Status:              "active",
+				OwningUserID:        "419299d4-273a-43b6-a6c9-d52d1a53bd42",
+				CreatedAt:           &Timestamp{Time: time.Date(2026, 10, 7, 20, 13, 40, 0, time.UTC)},
+				UpdatedAt:           &Timestamp{Time: time.Date(2026, 10, 7, 20, 13, 40, 0, time.UTC)},
+				OAuth: &HostedAgentConnectionOAuth{
+					Scopes:    []string{"repo", "read:org"},
+					GrantedAt: &Timestamp{Time: time.Date(2026, 10, 7, 20, 13, 40, 0, time.UTC)},
+				},
+			},
+		},
+		Pagination: HostedAgentConnectionPagination{Page: 2, PerPage: 50, Total: 1},
+	}, got)
+}
+
+func TestHostedAgents_CreateConnection_Pending(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body HostedAgentConnectionCreateRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, "alice", body.ActorID)
+		assert.Equal(t, []string{"repo"}, body.Scopes)
+		fmt.Fprint(w, `{
+			"connection": {"id": "c1", "provider": "github", "user_id": "alice", "status": "pending"},
+			"authorization": {
+				"status": "pending",
+				"connect_url": "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc",
+				"verification_code": "k5r2cprq",
+				"expires_at": "2036-08-10T10:44:32Z"
+			}
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.CreateConnection(ctx, "github", &HostedAgentConnectionCreateRequest{
+		ActorID: "alice",
+		Scopes:  []string{"repo"},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "alice", got.Connection.ActorID)
+	assert.Equal(t, "pending", got.Connection.Status)
+	require.NotNil(t, got.Authorization)
+	assert.Equal(t, "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc", got.Authorization.ConnectURL)
+	assert.Equal(t, "k5r2cprq", got.Authorization.VerificationCode)
+}
+
+func TestHostedAgents_CreateConnection_Active(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"active"}}`)
+	})
+
+	got, _, err := client.HostedAgents.CreateConnection(ctx, "github", &HostedAgentConnectionCreateRequest{ActorID: "alice"})
+	require.NoError(t, err)
+	assert.Equal(t, "active", got.Connection.Status)
+	assert.Nil(t, got.Authorization)
+}
+
+func TestHostedAgents_GetConnection(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github/connections/c1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"active"}}`)
+	})
+
+	got, resp, err := client.HostedAgents.GetConnection(ctx, "github", "c1")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "c1", got.Connection.ID)
+	assert.Equal(t, "alice", got.Connection.ActorID)
+}
+
+func TestHostedAgents_DeleteConnection(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/agents/auth/github/connections/c1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"revoked"}}`)
+	})
+
+	got, resp, err := client.HostedAgents.DeleteConnection(ctx, "github", "c1")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "revoked", got.Connection.Status)
+}
+
+func TestHostedAgents_Connections_RequiredArgs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.ListConnections(ctx, "", nil)
+	require.EqualError(t, err, "hosted agents: provider is required")
+
+	_, _, err = client.HostedAgents.CreateConnection(ctx, "github", nil)
+	require.EqualError(t, err, "hosted agents: actor is required")
+
+	_, _, err = client.HostedAgents.CreateConnection(ctx, "github", &HostedAgentConnectionCreateRequest{})
+	require.EqualError(t, err, "hosted agents: actor is required")
+
+	_, _, err = client.HostedAgents.GetConnection(ctx, "github", "")
+	require.EqualError(t, err, "hosted agents: connection id is required")
+
+	_, _, err = client.HostedAgents.DeleteConnection(ctx, "", "c1")
+	require.EqualError(t, err, "hosted agents: provider is required")
+}

@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.219.0] - 2026-10-08
+
+- #1143 - @jkosanam - hosted agents: add external-provider connection management methods
+- #1141 - @dmamidala-glitch - COBS-1352: Add Insights logs query support
+
+## [1.218.0] - 2026-10-07
+
+- #1140 - @sauravk-digitalocean - feat(FI-610): add Signals consent and export client
+- #1139 - @smirdha-source - Add Signals client for investigation GETs and consent enable/disable
+- #1137 - @kishlay-singh-DO - Add an Insights client for channels, alert rules, instances, and PromQL.
+
 ## [1.217.0] - 2026-10-01
 
 - #1130 - @aguan-hue - Syncing Model Evaluation fields from gen-ai Public API

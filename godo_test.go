@@ -102,6 +102,7 @@ func testClientServices(t *testing.T, c *Client) {
 		"ReservedIPActions",
 		"Tags",
 		"BatchInference",
+		"Signals",
 		"HostedAgents",
 		"Routes",
 	}

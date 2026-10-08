@@ -5,7 +5,7 @@
 // Optional:
 //
 //	DIGITALOCEAN_API_URL   API base override, including trailing slash (staging)
-//	INSIGHTS_REGION        run PromQL calls in this region, for example nyc3
+//	INSIGHTS_REGION        run PromQL and logs calls in this region, for example nyc3
 //	INSIGHTS_QUERY         PromQL expression (default do.droplets.cpu_time)
 //	INSIGHTS_SMOKE_WRITE=1 create, then delete, an email channel and a paused alert rule
 //	INSIGHTS_EMAIL         verified team email, required with INSIGHTS_SMOKE_WRITE=1
@@ -98,6 +98,24 @@ func main() {
 				return err
 			}
 			fmt.Printf("       → resultType=%s samples=%d\n", out.ResultType, len(out.Vector)+len(out.Matrix))
+			return nil
+		})
+		check("SearchLogs", func() error {
+			out, _, err := client.Insights.SearchLogs(ctx, region, &godo.LogsSearchRequest{
+				TimeRange: godo.LogsTimeRange{
+					From: godo.LogsTimeInstant{Relative: "5m"},
+					To:   godo.LogsTimeInstant{Relative: "now"},
+				},
+				OrderBy: []godo.LogsOrderBy{{
+					Field:     godo.LogsFieldRef{Name: "timestamp"},
+					Direction: godo.InsightsLogsSortDirectionDescending,
+				}},
+				Pagination: &godo.LogsPaginationRequest{Limit: 10},
+			})
+			if err != nil {
+				return err
+			}
+			fmt.Printf("       → %d log record(s)\n", len(out.Data))
 			return nil
 		})
 		check("PostQuery", func() error {
