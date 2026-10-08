@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.220.0] - 2026-10-08
+
+- #1138 - @sanpj2292 - feat(MARSOHS-1935): add persistent workspaces to the hosted agents client
+
 ## [1.219.0] - 2026-10-08
 
 - #1143 - @jkosanam - hosted agents: add external-provider connection management methods
