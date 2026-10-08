@@ -54,6 +54,10 @@ const (
 	hostedAgentSessionCheckpointRollbackPath = hostedAgentSessionCheckpointByIDPath + "/rollback"
 	hostedAgentSessionForkPath               = hostedAgentSessionByIDPath + "/fork"
 
+	// Persistent workspaces: team-scoped sets of files that outlive sessions.
+	hostedAgentWorkspacesBasePath = "/v2/agents/workspaces"
+	hostedAgentWorkspaceByIDPath  = hostedAgentWorkspacesBasePath + "/%s"
+
 	// HostedAgentForkMaxCount is the v1 cap on children created by one fork call.
 	HostedAgentForkMaxCount = 4
 
@@ -92,8 +96,9 @@ type HostedAgentsService interface {
 	// CreateSessionFromEnvironment provisions a session from an existing
 	// immutable Environment, referenced by config_id. The request uses
 	// Content-Type: application/json with a {name, config_id} body (optional
-	// resume_on_topoff); the environment's stored manifest and declared
-	// credentials seed the session at create time.
+	// resume_on_topoff and workspace_id); the environment's stored manifest and
+	// declared credentials seed the session at create time. This is the only
+	// create path that can attach a persistent workspace.
 	CreateSessionFromEnvironment(context.Context, *HostedAgentSessionFromEnvironmentRequest) (*HostedAgentSession, *Response, error)
 	// CreateSessionFromConfig is an alias for CreateSessionFromEnvironment.
 	// Prefer CreateSessionFromEnvironment; this name remains for compatibility.
@@ -162,6 +167,14 @@ type HostedAgentsService interface {
 	DeleteCheckpoint(context.Context, string, string) (*HostedAgentCheckpointDeleteResponse, *Response, error)
 	ForkSession(context.Context, string, *HostedAgentForkSessionRequest) (*HostedAgentForkSessionResponse, *Response, error)
 	RollbackToCheckpoint(context.Context, string, string) (*HostedAgentSession, *Response, error)
+
+	// Persistent workspaces (separate sets of files that outlive sessions, attached to a
+	// session at create time). Routes live under /v2/agents/workspaces. These are
+	// distinct from the session /workspace file transfer APIs above.
+	CreateWorkspace(context.Context, *HostedAgentWorkspaceCreateRequest) (*HostedAgentWorkspace, *Response, error)
+	ListWorkspaces(context.Context, *HostedAgentWorkspaceListOptions) (*HostedAgentWorkspacesListResponse, *Response, error)
+	GetWorkspace(context.Context, string) (*HostedAgentWorkspace, *Response, error)
+	DeleteWorkspace(context.Context, string) (*Response, error)
 
 	// Environments (immutable team-scoped environment definitions). Routes
 	// live under /v2/agents/configs. Prefer the Environment* methods; the
@@ -432,6 +445,10 @@ type HostedAgentSession struct {
 	// get/list so clients can confirm enrollment. Never inherited by forks.
 	// Omitted when false.
 	ResumeOnTopoff bool `json:"resume_on_topoff,omitempty"`
+	// WorkspaceID is the persistent workspace this session attaches (see
+	// HostedAgentWorkspace). Set at create and returned on get/list; omitted
+	// when the session has no persistent workspace.
+	WorkspaceID string `json:"workspace_id,omitempty"`
 	// OpenAISessionID is the OpenAI Agents session id (sess_…) linked to this DO
 	// sandbox for AGENT_KIND_OPENAI_CODEX. Used by attach to bridge to OpenAI;
 	// omitempty for other agent kinds.
@@ -573,6 +590,13 @@ type HostedAgentSessionFromConfigRequest struct {
 	// shared Environment cannot enrol every session created from it. Omitted
 	// when false, which leaves the server default (also false).
 	ResumeOnTopoff bool `json:"resume_on_topoff,omitempty"`
+	// WorkspaceID attaches an existing persistent workspace (see
+	// HostedAgentWorkspace) to the new session. This is the only create path
+	// that can attach one; CreateSessionFromManifest cannot. Session-scoped, not
+	// environment-scoped: the referenced Environment never names a workspace, so
+	// one shared Environment can be used with a different workspace per session.
+	// Omitted when empty, which creates the session without one.
+	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
 // HostedAgentSessionFromEnvironmentRequest is the advertised alias for
@@ -604,6 +628,10 @@ func (r *HostedAgentSessionUpdateRequest) empty() bool {
 // OpenAISessionID is sent as the openai_session_id query parameter (not in the
 // YAML body). harness-api persists it for AGENT_KIND_OPENAI_CODEX attach
 // correlation. See docs/design/openai-sandbox-provider.md.
+//
+// A persistent workspace cannot be attached when creating from a manifest. To
+// use one, save the manifest as an Environment and create the session with
+// CreateSessionFromEnvironment (or CreateSessionFromConfig) and WorkspaceID.
 type HostedAgentManifestCreateOptions struct {
 	OpenAISessionID string `url:"openai_session_id,omitempty"`
 	// ResumeOnTopoff opts the new session in to automatic resumption when the
