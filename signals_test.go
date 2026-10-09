@@ -380,6 +380,43 @@ func TestSignals_CreateExport_WithTimeRange(t *testing.T) {
 	}
 }
 
+func TestSignals_CreateExport_WithSessionIDs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	sessionIDs := []string{"sess-1", "sess-2"}
+
+	mux.HandleFunc("/v1/signals/exports", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body SignalsCreateExportRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if body.AgentID != "agent-1" {
+			t.Errorf("agent_id=%s, want agent-1", body.AgentID)
+		}
+		if !reflect.DeepEqual(body.SessionIDs, sessionIDs) {
+			t.Errorf("session_ids=%v, want %v", body.SessionIDs, sessionIDs)
+		}
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"export_id":"exp-sess","agent_id":"agent-1","status":"queued","created_at":1728000000,"filters":{"session_ids":["sess-1","sess-2"]}}`)
+	})
+
+	got, _, err := client.Signals.CreateExport(ctx, &SignalsCreateExportRequest{
+		AgentID:    "agent-1",
+		SessionIDs: sessionIDs,
+	})
+	if err != nil {
+		t.Fatalf("CreateExport: %v", err)
+	}
+	if got.ExportID != "exp-sess" {
+		t.Errorf("unexpected export: %+v", got)
+	}
+	if !reflect.DeepEqual(got.Filters.SessionIDs, sessionIDs) {
+		t.Errorf("filters.session_ids=%v, want %v", got.Filters.SessionIDs, sessionIDs)
+	}
+}
+
 func TestSignals_CreateExport_NilRequest(t *testing.T) {
 	setup()
 	defer teardown()
