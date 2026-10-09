@@ -431,7 +431,7 @@ func assertErrStatus(t *testing.T, err error, resp *Response, want int) {
 	}
 }
 
-func TestSignals_CreateDeletion_ManagedAgent(t *testing.T) {
+func TestSignals_CreateDeletion_Agent(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -442,12 +442,12 @@ func TestSignals_CreateDeletion_ManagedAgent(t *testing.T) {
 			t.Errorf("decode: %v", err)
 			return
 		}
-		want := SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 12345, AgentID: "agt-uuid"}
+		want := SignalsCreateDeletionRequest{Type: "agent", TeamID: 12345, AgentID: "agt-uuid"}
 		if body != want {
 			t.Errorf("body=%+v, want %+v", body, want)
 		}
 		w.WriteHeader(http.StatusAccepted)
-		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null}`)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null}`)
 	})
 
 	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
@@ -460,7 +460,7 @@ func TestSignals_CreateDeletion_ManagedAgent(t *testing.T) {
 		t.Errorf("status=%d, want 202", resp.StatusCode)
 	}
 	want := &SignalsDeletionJob{
-		TeamID: 12345, DeletionID: testDeletionID, Type: "managed_agent", AgentID: "agt-uuid",
+		TeamID: 12345, DeletionID: testDeletionID, Type: "agent", AgentID: "agt-uuid",
 		Status: SignalsDeletionStatusQueued, CreatedAt: 1728324000,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -513,7 +513,7 @@ func TestSignals_CreateDeletion_ExistingActiveJob(t *testing.T) {
 	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"running","created_at":1728324000,"started_at":1728324010}`)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"agt-uuid","status":"running","created_at":1728324000,"started_at":1728324010}`)
 	})
 
 	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
@@ -542,10 +542,10 @@ func TestSignals_CreateDeletion_Validation(t *testing.T) {
 		{"NilRequest", nil, "signals: create deletion request is required"},
 		{"ZeroTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 0}, "signals: team_id is required"},
 		{"NegativeTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: -1}, "signals: team_id is required"},
-		{"EmptyType", &SignalsCreateDeletionRequest{TeamID: 1}, "signals: type must be managed_agent or inference"},
-		{"UnknownType", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1, AgentID: "a"}, "signals: type must be managed_agent or inference"},
+		{"EmptyType", &SignalsCreateDeletionRequest{TeamID: 1}, "signals: type must be agent or inference"},
+		{"UnknownType", &SignalsCreateDeletionRequest{Type: "bogus", TeamID: 1, AgentID: "a"}, "signals: type must be agent or inference"},
 		{"BadTypeAndBadTeamReportsTeamFirst", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 0}, "signals: team_id is required"},
-		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 1}, "signals: agent_id is required for managed_agent"},
+		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1}, "signals: agent_id is required for agent"},
 		{"InferenceWithAgentID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1, AgentID: "a"}, "signals: agent_id must not be set for inference"},
 	}
 	for _, tt := range tests {
@@ -579,7 +579,7 @@ func TestSignals_CreateDeletion_DoesNotMutateRequest(t *testing.T) {
 		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprint(w, `{"deletion_id":"x","status":"queued"}`)
 	})
-	req := &SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 7, AgentID: " agt "}
+	req := &SignalsCreateDeletionRequest{Type: "agent", TeamID: 7, AgentID: " agt "}
 	orig := *req
 	if _, _, err := client.Signals.CreateDeletion(ctx, req); err != nil {
 		t.Fatalf("CreateDeletion: %v", err)
@@ -689,7 +689,7 @@ func TestSignals_GetDeletion_Queued(t *testing.T) {
 
 	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null,"extra_future_field":true}`)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null,"extra_future_field":true}`)
 	})
 
 	got, resp, err := client.Signals.GetDeletion(ctx, testDeletionID)
@@ -732,7 +732,7 @@ func TestSignals_GetDeletion_Complete(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"a","status":"complete","created_at":10,"started_at":20,"completed_at":30}`)
+		fmt.Fprint(w, `{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"a","status":"complete","created_at":10,"started_at":20,"completed_at":30}`)
 	})
 
 	got, _, err := client.Signals.GetDeletion(ctx, testDeletionID)
@@ -870,7 +870,7 @@ func TestSignals_ListDeletions(t *testing.T) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"edges":[
-				{"cursor":"c1","node":{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"a","status":"running","created_at":2}},
+				{"cursor":"c1","node":{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"a","status":"running","created_at":2}},
 				{"cursor":"c2","node":{"team_id":1,"deletion_id":"01JABCDEFGHJKMNPQRSTVWXYZ1","type":"inference","status":"complete","created_at":1,"completed_at":5}}
 			],
 			"page_info":{"has_next_page":true,"end_cursor":"c2"}

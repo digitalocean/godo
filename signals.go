@@ -38,8 +38,10 @@ type SignalsService interface {
 
 // Deletion types and job statuses used by the Signals deletion API.
 const (
-	// SignalsDeletionTypeManagedAgent deletes all Signals data for one managed agent.
-	SignalsDeletionTypeManagedAgent = "managed_agent"
+	// SignalsDeletionTypeAgent deletes all Signals data for one agent.
+	SignalsDeletionTypeAgent = "agent"
+	// SignalsDeletionTypeManagedAgent is deprecated; use SignalsDeletionTypeAgent.
+	SignalsDeletionTypeManagedAgent = SignalsDeletionTypeAgent
 	// SignalsDeletionTypeInference deletes all Signals data for team-wide inference traffic.
 	SignalsDeletionTypeInference = "inference"
 
@@ -158,15 +160,15 @@ type SignalsCreateExportRequest struct {
 
 // SignalsCreateDeletionRequest is the body for POST /v1/signals/deletions.
 // JSON keys match CreateDeletionRequest in signals-api OpenAPI:
-// required type + team_id; agent_id only for managed_agent (omit for inference).
+// required type + team_id; agent_id only for agent (omit for inference).
 type SignalsCreateDeletionRequest struct {
-	// Type is SignalsDeletionTypeManagedAgent or SignalsDeletionTypeInference.
+	// Type is SignalsDeletionTypeAgent or SignalsDeletionTypeInference.
 	// Required by the server (omitting type is 400). godo also requires it so a
 	// missing AgentID can never be mistaken for a team-wide inference deletion.
 	Type string `json:"type"`
 	// TeamID is the numeric team id; it must match the authenticated team.
 	TeamID int64 `json:"team_id"`
-	// AgentID is required for managed_agent and must be empty for inference.
+	// AgentID is required for agent and must be empty for inference.
 	// Omitted from the JSON body when empty.
 	AgentID string `json:"agent_id,omitempty"`
 }
@@ -596,12 +598,12 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 //   - 400 — invalid body (type/agent_id rules, unknown fields, bad UUID)
 //   - 401 — missing team auth
 //   - 403 — body team_id does not match authenticated team
-//   - 404 — managed_agent unknown for this team
+//   - 404 — agent unknown for this team
 //   - 429 — too many active deletion jobs for this team (inflight cap)
 //   - 500 — internal error
 //
 // Check Response.StatusCode to tell 200 vs 202 apart. For
-// SignalsDeletionTypeManagedAgent AgentID is required; for
+// SignalsDeletionTypeAgent AgentID is required; for
 // SignalsDeletionTypeInference it must be empty (and is omitted from JSON).
 //
 // If the client retries requests (for example one built with
@@ -618,16 +620,16 @@ func (s *SignalsServiceOp) CreateDeletion(ctx context.Context, body *SignalsCrea
 	typ := strings.TrimSpace(body.Type)
 	agentID := strings.TrimSpace(body.AgentID)
 	switch typ {
-	case SignalsDeletionTypeManagedAgent:
+	case SignalsDeletionTypeAgent:
 		if agentID == "" {
-			return nil, nil, fmt.Errorf("signals: agent_id is required for managed_agent")
+			return nil, nil, fmt.Errorf("signals: agent_id is required for agent")
 		}
 	case SignalsDeletionTypeInference:
 		if agentID != "" {
 			return nil, nil, fmt.Errorf("signals: agent_id must not be set for inference")
 		}
 	default:
-		return nil, nil, fmt.Errorf("signals: type must be managed_agent or inference")
+		return nil, nil, fmt.Errorf("signals: type must be agent or inference")
 	}
 	reqBody := &SignalsCreateDeletionRequest{
 		Type:    typ,
