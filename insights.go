@@ -113,8 +113,52 @@ const (
 	InsightsLogsSortDirectionDescending = "SORT_DIRECTION_DESC"
 )
 
+// Insights spans filter node types. These select which fields of a
+// SpansFilterExpression are used.
+const (
+	InsightsSpansFilterTypeCondition  = "condition"
+	InsightsSpansFilterTypeAnd        = "and"
+	InsightsSpansFilterTypeOr         = "or"
+	InsightsSpansFilterTypeNot        = "not"
+	InsightsSpansFilterTypeTextSearch = "text_search"
+)
+
+// Insights spans filter condition operators.
+const (
+	InsightsSpansFilterOperatorEqual              = "eq"
+	InsightsSpansFilterOperatorNotEqual           = "neq"
+	InsightsSpansFilterOperatorGreaterThan        = "gt"
+	InsightsSpansFilterOperatorGreaterThanOrEqual = "gte"
+	InsightsSpansFilterOperatorLessThan           = "lt"
+	InsightsSpansFilterOperatorLessThanOrEqual    = "lte"
+	InsightsSpansFilterOperatorIn                 = "in"
+	InsightsSpansFilterOperatorExists             = "exists"
+)
+
+// Insights spans field scopes. Omit the scope for well-known span fields or to
+// search both attribute maps.
+const (
+	InsightsSpansFieldScopeResource   = "resource"
+	InsightsSpansFieldScopeAttributes = "attributes"
+)
+
+// Insights spans sort directions.
+const (
+	InsightsSpansSortDirectionAscending  = "asc"
+	InsightsSpansSortDirectionDescending = "desc"
+)
+
+// Insights spans filter value types, used in the typed-wrapper encoding of a
+// SpansFilterValue.
+const (
+	InsightsSpansValueTypeString      = "string"
+	InsightsSpansValueTypeNumber      = "number"
+	InsightsSpansValueTypeBool        = "bool"
+	InsightsSpansValueTypeStringArray = "string_array"
+)
+
 // InsightsService manages Insights notification channels, alert rules, alert
-// instances, PromQL queries, and logs searches.
+// instances, PromQL queries, logs searches, and spans searches.
 type InsightsService interface {
 	ListNotificationChannels(context.Context, *ListOptions) ([]NotificationChannel, *Response, error)
 	GetNotificationChannel(context.Context, string) (*NotificationChannel, *Response, error)
@@ -144,6 +188,8 @@ type InsightsService interface {
 	LabelValues(context.Context, string, string, *PromSelectorOptions) (*PromLabelsResponse, *Response, error)
 
 	SearchLogs(context.Context, string, *LogsSearchRequest) (*LogsSearchResponse, *Response, error)
+
+	SearchSpans(context.Context, string, *SpansSearchRequest) (*SpansSearchResponse, *Response, error)
 }
 
 // InsightsServiceOp handles communication with Insights methods of the DigitalOcean API.
@@ -952,4 +998,231 @@ func setListPaging(resp *Response, links *Links, meta *Meta) {
 	if meta != nil {
 		resp.Meta = meta
 	}
+}
+
+// SpansSearchRequest describes an Insights spans search. TimeRange must not
+// exceed seven days.
+type SpansSearchRequest struct {
+	TimeRange  SpansTimeRange          `json:"timeRange"`
+	Filter     *SpansFilterExpression  `json:"filter,omitempty"`
+	OrderBy    []SpansOrderBy          `json:"orderBy,omitempty"`
+	Pagination *SpansPaginationRequest `json:"pagination,omitempty"`
+}
+
+// SpansTimeRange is an inclusive spans query time window.
+type SpansTimeRange struct {
+	From SpansTimeBound `json:"from"`
+	To   SpansTimeBound `json:"to"`
+}
+
+// SpansTimeBound is a single time bound. Set exactly one of Relative or
+// Absolute. Relative accepts "now", a bare lookback duration such as "1h" or
+// "7d", or an offset such as "now-15m". Absolute accepts an RFC3339 string or a
+// Unix timestamp encoded as a decimal string.
+type SpansTimeBound struct {
+	Relative string `json:"relative,omitempty"`
+	Absolute string `json:"absolute,omitempty"`
+}
+
+// SpansFilterExpression is a type-discriminated boolean filter tree. Set Type
+// to select the node kind: a condition node sets Field, Operator, and Value;
+// and/or/not nodes set Expressions; a text_search node sets Query.
+type SpansFilterExpression struct {
+	Type        string                  `json:"type"`
+	Field       *SpansFilterField       `json:"field,omitempty"`
+	Operator    string                  `json:"operator,omitempty"`
+	Value       *SpansFilterValue       `json:"value,omitempty"`
+	Expressions []SpansFilterExpression `json:"expressions,omitempty"`
+	Query       string                  `json:"query,omitempty"`
+}
+
+// SpansFilterField references a searchable span field. Name may be a well-known
+// field such as "serviceName" or "statusCode", or an attribute key. Scope is
+// optional: "resource" or "attributes" to target one attribute map, or empty
+// for well-known fields and to search both maps.
+type SpansFilterField struct {
+	Name  string `json:"name"`
+	Scope string `json:"scope,omitempty"`
+}
+
+// SpansFilterValue is a filter comparison value. Set exactly one field; it is
+// encoded as the API's typed wrapper, for example {"type":"string","value":"x"}.
+// Scalar fields use pointers so zero, false, and an empty string can be sent.
+type SpansFilterValue struct {
+	String      *string
+	Number      *float64
+	Bool        *bool
+	StringArray []string
+}
+
+// SpansOrderBy is a spans search sort clause.
+type SpansOrderBy struct {
+	Field     SpansFilterField `json:"field"`
+	Direction string           `json:"direction,omitempty"`
+}
+
+// SpansPaginationRequest limits the number of spans returned. Limit defaults to
+// 100 and is clamped to 1000 by the API.
+type SpansPaginationRequest struct {
+	Limit int `json:"limit,omitempty"`
+}
+
+// SpansSearchResponse contains matching spans and pagination state.
+type SpansSearchResponse struct {
+	Data       []SpanRecord             `json:"data,omitempty"`
+	Pagination *SpansPaginationResponse `json:"pagination,omitempty"`
+}
+
+// SpanRecord is a single span returned by a spans search.
+type SpanRecord struct {
+	TraceID       string            `json:"traceId,omitempty"`
+	SpanID        string            `json:"spanId,omitempty"`
+	ParentSpanID  string            `json:"parentSpanId,omitempty"`
+	StartTime     time.Time         `json:"startTime"`
+	EndTime       time.Time         `json:"endTime"`
+	DurationNs    int64             `json:"durationNs,omitempty"`
+	Name          string            `json:"name,omitempty"`
+	Kind          string            `json:"kind,omitempty"`
+	StatusCode    string            `json:"statusCode,omitempty"`
+	StatusMessage string            `json:"statusMessage,omitempty"`
+	ServiceName   string            `json:"serviceName,omitempty"`
+	Resource      map[string]string `json:"resource,omitempty"`
+	Attributes    map[string]string `json:"attributes,omitempty"`
+	Region        string            `json:"region,omitempty"`
+}
+
+// SpansPaginationResponse describes whether more spans matched than were
+// returned. Cursor-based continuation is not yet supported.
+type SpansPaginationResponse struct {
+	HasMore bool `json:"hasMore"`
+}
+
+type spansFilterValueWire struct {
+	Type  string      `json:"type"`
+	Value interface{} `json:"value"`
+}
+
+// MarshalJSON encodes a SpansFilterValue as the API's typed wrapper. Exactly
+// one field must be set.
+func (v SpansFilterValue) MarshalJSON() ([]byte, error) {
+	var (
+		typ string
+		val interface{}
+	)
+	n := 0
+	if v.String != nil {
+		typ, val = InsightsSpansValueTypeString, *v.String
+		n++
+	}
+	if v.Number != nil {
+		typ, val = InsightsSpansValueTypeNumber, *v.Number
+		n++
+	}
+	if v.Bool != nil {
+		typ, val = InsightsSpansValueTypeBool, *v.Bool
+		n++
+	}
+	if v.StringArray != nil {
+		typ, val = InsightsSpansValueTypeStringArray, v.StringArray
+		n++
+	}
+	if n != 1 {
+		return nil, fmt.Errorf("godo: SpansFilterValue must set exactly one field, got %d", n)
+	}
+	return json.Marshal(spansFilterValueWire{Type: typ, Value: val})
+}
+
+// UnmarshalJSON accepts both the typed wrapper {"type":...,"value":...} and a
+// bare scalar or string array.
+func (v *SpansFilterValue) UnmarshalJSON(data []byte) error {
+	*v = SpansFilterValue{}
+
+	// Typed wrapper: a JSON object carrying a non-empty "type".
+	var wire struct {
+		Type  string          `json:"type"`
+		Value json.RawMessage `json:"value"`
+	}
+	if err := json.Unmarshal(data, &wire); err == nil && wire.Type != "" {
+		return v.setFromWire(wire.Type, wire.Value)
+	}
+
+	// Bare form.
+	var raw interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	switch val := raw.(type) {
+	case nil:
+		return nil
+	case string:
+		v.String = &val
+	case float64:
+		v.Number = &val
+	case bool:
+		v.Bool = &val
+	case []interface{}:
+		arr := make([]string, len(val))
+		for i, e := range val {
+			s, ok := e.(string)
+			if !ok {
+				return fmt.Errorf("godo: SpansFilterValue array element %d is not a string", i)
+			}
+			arr[i] = s
+		}
+		v.StringArray = arr
+	default:
+		return fmt.Errorf("godo: unsupported SpansFilterValue %T", raw)
+	}
+	return nil
+}
+
+func (v *SpansFilterValue) setFromWire(typ string, raw json.RawMessage) error {
+	switch typ {
+	case InsightsSpansValueTypeString:
+		var s string
+		if err := json.Unmarshal(raw, &s); err != nil {
+			return err
+		}
+		v.String = &s
+	case InsightsSpansValueTypeNumber:
+		var n float64
+		if err := json.Unmarshal(raw, &n); err != nil {
+			return err
+		}
+		v.Number = &n
+	case InsightsSpansValueTypeBool:
+		var b bool
+		if err := json.Unmarshal(raw, &b); err != nil {
+			return err
+		}
+		v.Bool = &b
+	case InsightsSpansValueTypeStringArray:
+		var arr []string
+		if err := json.Unmarshal(raw, &arr); err != nil {
+			return err
+		}
+		v.StringArray = arr
+	default:
+		return fmt.Errorf("godo: unknown SpansFilterValue type %q", typ)
+	}
+	return nil
+}
+
+// SearchSpans searches tracing spans in a region. The request time range must
+// not exceed seven days. Results are ordered by start time descending unless
+// OrderBy overrides it. Cursor pagination is not yet supported; the response
+// Pagination.HasMore reports whether more spans matched than were returned.
+func (s *InsightsServiceOp) SearchSpans(ctx context.Context, region string, search *SpansSearchRequest) (*SpansSearchResponse, *Response, error) {
+	path := "/v2/insights/query/" + url.PathEscape(region) + "/spans/search"
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, search)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	result := new(SpansSearchResponse)
+	resp, err := s.client.Do(ctx, req, result)
+	if err != nil {
+		return nil, resp, err
+	}
+	return result, resp, nil
 }
