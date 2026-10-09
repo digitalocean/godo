@@ -22,7 +22,6 @@ type SignalsService interface {
 	GetAgentConsent(context.Context, string) (*SignalsAgentConsent, *Response, error)
 	SetAgentConsent(context.Context, string, bool) (*SignalsConsentRecord, *Response, error)
 	ListAgentSessions(context.Context, string, *SignalsListAgentSessionsOptions) (*SignalsListAgentSessionsResponse, *Response, error)
-	ListSessionSegments(context.Context, string, *SignalsListSegmentsOptions) (*SignalsListSegmentsResponse, *Response, error)
 	ListSessionDialogues(context.Context, string, *SignalsListDialoguesOptions) (*SignalsSessionDialoguesResponse, *Response, error)
 	CreateExport(context.Context, *SignalsCreateExportRequest) (*SignalsExportJob, *Response, error)
 	ListExports(context.Context, *SignalsListExportsOptions) (*SignalsListExportsResponse, *Response, error)
@@ -72,22 +71,6 @@ type SignalsListAgentSessionsOptions struct {
 	StartTime  *int64   `url:"start_time,omitempty"`
 	EndTime    *int64   `url:"end_time,omitempty"`
 	SignalType []string `url:"signal_type,omitempty"`
-}
-
-// SignalsListSegmentsOptions are query params for GET /sessions/{id}/segments.
-type SignalsListSegmentsOptions struct {
-	SignalsCursorPageOptions
-	Before         string   `url:"before,omitempty"`
-	SignalType     []string `url:"signal_type,omitempty"`
-	SignalCategory string   `url:"signal_category,omitempty"`
-	SignalLayer    string   `url:"signal_layer,omitempty"`
-	Concerning     *bool    `url:"concerning,omitempty"`
-	StartedAfter   string   `url:"started_after,omitempty"`
-	StartedBefore  string   `url:"started_before,omitempty"`
-	StartTime      *int64   `url:"start_time,omitempty"`
-	EndTime        *int64   `url:"end_time,omitempty"`
-	Sort           string   `url:"sort,omitempty"`
-	Order          string   `url:"order,omitempty"`
 }
 
 // SignalsListDialoguesOptions are query params for GET /sessions/{id}/dialogues.
@@ -226,46 +209,6 @@ type SignalsSessionEdge struct {
 // SignalsListAgentSessionsResponse is GET /agents/{agent_id}/sessions.
 type SignalsListAgentSessionsResponse struct {
 	Edges    []SignalsSessionEdge `json:"edges"`
-	PageInfo SignalsPageInfo      `json:"page_info"`
-}
-
-// SignalsSummary is a compact signal chip on a segment index row.
-type SignalsSummary struct {
-	SignalType string `json:"signal_type"`
-	Category   string `json:"category,omitempty"`
-	Layer      string `json:"layer,omitempty"`
-	Concerning bool   `json:"concerning,omitempty"`
-}
-
-// SignalsSegment is a segment list node.
-type SignalsSegment struct {
-	SegmentID        string           `json:"segment_id"`
-	SessionID        string           `json:"session_id"`
-	SegmentSeq       int              `json:"segment_seq"`
-	StartedAt        string           `json:"started_at"`
-	EndedAt          *string          `json:"ended_at,omitempty"`
-	Status           string           `json:"status"`
-	AnnotationStatus string           `json:"annotation_status"`
-	CloseReason      *string          `json:"close_reason,omitempty"`
-	TotalTurns       int              `json:"total_turns"`
-	UserTurns        *int             `json:"user_turns,omitempty"`
-	AssistantTurns   *int             `json:"assistant_turns,omitempty"`
-	DurationSeconds  int              `json:"duration_seconds"`
-	OverallQuality   *string          `json:"overall_quality,omitempty"`
-	Concerning       *bool            `json:"concerning,omitempty"`
-	Signals          []SignalsSummary `json:"signals"`
-	InTimeRange      bool             `json:"in_time_range,omitempty"`
-}
-
-// SignalsSegmentEdge is one edge in a segment list.
-type SignalsSegmentEdge struct {
-	Cursor string         `json:"cursor"`
-	Node   SignalsSegment `json:"node"`
-}
-
-// SignalsListSegmentsResponse is GET /sessions/{session_id}/segments.
-type SignalsListSegmentsResponse struct {
-	Edges    []SignalsSegmentEdge `json:"edges"`
 	PageInfo SignalsPageInfo      `json:"page_info"`
 }
 
@@ -420,21 +363,6 @@ func (s *SignalsServiceOp) ListAgentSessions(ctx context.Context, agentID string
 		return nil, nil, err
 	}
 	root := new(SignalsListAgentSessionsResponse)
-	resp, err := s.get(ctx, path, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root, resp, nil
-}
-
-// ListSessionSegments lists annotated segments for a session.
-func (s *SignalsServiceOp) ListSessionSegments(ctx context.Context, sessionID string, opts *SignalsListSegmentsOptions) (*SignalsListSegmentsResponse, *Response, error) {
-	path := fmt.Sprintf("%s/sessions/%s/segments", signalsBasePath, sessionID)
-	path, err := addOptions(path, opts)
-	if err != nil {
-		return nil, nil, err
-	}
-	root := new(SignalsListSegmentsResponse)
 	resp, err := s.get(ctx, path, root)
 	if err != nil {
 		return nil, resp, err

@@ -89,27 +89,6 @@ func TestSignals_ListAgentSessions(t *testing.T) {
 	}
 }
 
-func TestSignals_ListSessionSegments(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/signals/sessions/sess-1/segments", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{
-			"edges":[{"cursor":"c","node":{"segment_id":"seg-1","session_id":"sess-1","segment_seq":1,"started_at":"2026-10-01T12:00:00Z","status":"closed","annotation_status":"done","total_turns":8,"duration_seconds":300,"signals":[{"signal_type":"Looping"}]}}],
-			"page_info":{"has_next_page":false}
-		}`)
-	})
-
-	got, _, err := client.Signals.ListSessionSegments(ctx, "sess-1", nil)
-	if err != nil {
-		t.Fatalf("ListSessionSegments: %v", err)
-	}
-	if got.Edges[0].Node.SegmentID != "seg-1" {
-		t.Errorf("unexpected segment: %+v", got.Edges[0].Node)
-	}
-}
-
 func TestSignals_ListSessionDialogues(t *testing.T) {
 	setup()
 	defer teardown()
