@@ -118,6 +118,24 @@ func main() {
 			fmt.Printf("       → %d log record(s)\n", len(out.Data))
 			return nil
 		})
+		check("SearchSpans", func() error {
+			out, _, err := client.Insights.SearchSpans(ctx, region, &godo.SpansSearchRequest{
+				TimeRange: godo.SpansTimeRange{
+					From: godo.SpansTimeBound{Relative: "5m"},
+					To:   godo.SpansTimeBound{Relative: "now"},
+				},
+				OrderBy: []godo.SpansOrderBy{{
+					Field:     godo.SpansFilterField{Name: "startTime"},
+					Direction: godo.InsightsSpansSortDirectionDescending,
+				}},
+				Pagination: &godo.SpansPaginationRequest{Limit: 10},
+			})
+			if err != nil {
+				return err
+			}
+			fmt.Printf("       → %d span(s)\n", len(out.Data))
+			return nil
+		})
 		check("PostQuery", func() error {
 			_, _, err := client.Insights.PostQuery(ctx, region, &godo.PromQueryOptions{Query: query, Timeout: "30s"})
 			return err
