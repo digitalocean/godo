@@ -239,9 +239,7 @@ type SignalsInstance struct {
 // SignalsSessionDialogue is a dialogue plus session-scoped chips.
 type SignalsSessionDialogue struct {
 	SignalsDialogue
-	SegmentID  string            `json:"segment_id"`
-	SegmentSeq int               `json:"segment_seq"`
-	Signals    []SignalsInstance `json:"signals,omitempty"`
+	Signals []SignalsInstance `json:"signals,omitempty"`
 }
 
 // SignalsSessionDialogueEdge is one edge in a session dialogue list.
