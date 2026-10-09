@@ -150,7 +150,10 @@ type SignalsListConsentsResponse struct {
 
 // SignalsCreateExportRequest is the body for POST /v1/signals/exports.
 type SignalsCreateExportRequest struct {
-	AgentID    string   `json:"agent_id"`
+	AgentID string `json:"agent_id"`
+	// SessionIDs optionally narrows the export to a session cohort (OR within
+	// the list). Omit or leave empty to export all sessions owned by the team.
+	SessionIDs []string `json:"session_ids,omitempty"`
 	SignalType []string `json:"signal_type,omitempty"`
 	StartTime  *int64   `json:"start_time,omitempty"`
 	EndTime    *int64   `json:"end_time,omitempty"`
