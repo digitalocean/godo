@@ -242,6 +242,129 @@ func TestSignals_ListConsents_Empty(t *testing.T) {
 	}
 }
 
+func TestSignals_ListConsentsWithOptions_Source(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if got := r.URL.Query().Get("source"); got != "inference" {
+			t.Errorf("source=%q, want inference", got)
+		}
+		fmt.Fprint(w, `{
+			"team_id":123,
+			"source":"inference",
+			"consents":[
+				{"id":7,"team_id":123,"source":"inference","agent_id":"","enabled":true,"updated_at":"2026-10-09T13:28:22Z"}
+			]
+		}`)
+	})
+
+	got, _, err := client.Signals.ListConsentsWithOptions(ctx, &SignalsListConsentsOptions{Source: SignalsConsentSourceInference})
+	if err != nil {
+		t.Fatalf("ListConsentsWithOptions: %v", err)
+	}
+	if got.Source != "inference" || len(got.Consents) != 1 {
+		t.Fatalf("unexpected response: %+v", got)
+	}
+	want := SignalsConsentRecord{ID: 7, TeamID: 123, Source: "inference", AgentID: "", Enabled: true, UpdatedAt: "2026-10-09T13:28:22Z"}
+	if !reflect.DeepEqual(got.Consents[0], want) {
+		t.Errorf("got %+v want %+v", got.Consents[0], want)
+	}
+}
+
+func TestSignals_ListConsents_NoSourceParam(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if r.URL.RawQuery != "" {
+			t.Errorf("unexpected query %q", r.URL.RawQuery)
+		}
+		fmt.Fprint(w, `{"team_id":123,"consents":[{"id":1,"team_id":123,"source":"agent","agent_id":"agent-1","enabled":true}]}`)
+	})
+
+	got, _, err := client.Signals.ListConsents(ctx)
+	if err != nil {
+		t.Fatalf("ListConsents: %v", err)
+	}
+	if len(got.Consents) != 1 || got.Consents[0].Source != SignalsConsentSourceAgent {
+		t.Errorf("unexpected consents: %+v", got.Consents)
+	}
+}
+
+func TestSignals_GetInferenceConsent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if got := r.URL.Query().Get("source"); got != "inference" {
+			t.Errorf("source=%q, want inference", got)
+		}
+		fmt.Fprint(w, `{"team_id":123,"source":"inference","consents":[
+			{"id":7,"team_id":123,"source":"inference","agent_id":"","enabled":true,"updated_at":"2026-10-09T13:28:22Z"}
+		]}`)
+	})
+
+	got, _, err := client.Signals.GetInferenceConsent(ctx)
+	if err != nil {
+		t.Fatalf("GetInferenceConsent: %v", err)
+	}
+	want := &SignalsConsentRecord{ID: 7, TeamID: 123, Source: "inference", Enabled: true, UpdatedAt: "2026-10-09T13:28:22Z"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v want %+v", got, want)
+	}
+}
+
+func TestSignals_GetInferenceConsent_DefaultDeny(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"team_id":123,"source":"inference","consents":[]}`)
+	})
+
+	got, _, err := client.Signals.GetInferenceConsent(ctx)
+	if err != nil {
+		t.Fatalf("GetInferenceConsent: %v", err)
+	}
+	want := &SignalsConsentRecord{TeamID: 123, Source: "inference", Enabled: false}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v want %+v", got, want)
+	}
+}
+
+func TestSignals_SetInferenceConsent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		if got := r.URL.Query().Get("source"); got != "inference" {
+			t.Errorf("source=%q, want inference", got)
+		}
+		var req signalsSetConsentRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if req.Enabled {
+			t.Errorf("enabled=%v, want false", req.Enabled)
+		}
+		fmt.Fprint(w, `{"consent":{"id":7,"team_id":123,"source":"inference","agent_id":"","enabled":false,"updated_at":"2026-10-09T14:00:00Z"}}`)
+	})
+
+	got, _, err := client.Signals.SetInferenceConsent(ctx, false)
+	if err != nil {
+		t.Fatalf("SetInferenceConsent: %v", err)
+	}
+	if got == nil || got.ID != 7 || got.Source != SignalsConsentSourceInference || got.AgentID != "" || got.Enabled {
+		t.Errorf("unexpected consent: %+v", got)
+	}
+}
+
 func TestSignals_CreateExport(t *testing.T) {
 	setup()
 	defer teardown()
