@@ -115,11 +115,12 @@ type SignalsPageInfo struct {
 }
 
 // SignalsAgentConsent is GET /v1/consent/{agent_id} (consent-gateway).
+// enabled is the only customer-facing consent toggle; allowed is an internal
+// check-endpoint concept and is not returned on this public route.
 type SignalsAgentConsent struct {
 	TeamID    int64  `json:"team_id"`
 	AgentID   string `json:"agent_id"`
 	Enabled   bool   `json:"enabled"`
-	Allowed   bool   `json:"allowed"`
 	ID        int64  `json:"id,omitempty"`
 	UpdatedAt string `json:"updated_at,omitempty"`
 }

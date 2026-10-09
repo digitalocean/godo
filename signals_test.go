@@ -16,14 +16,14 @@ func TestSignals_GetAgentConsent(t *testing.T) {
 
 	mux.HandleFunc("/v1/consent/agent-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"team_id":123,"agent_id":"agent-1","enabled":true,"allowed":true}`)
+		fmt.Fprint(w, `{"team_id":123,"agent_id":"agent-1","enabled":true}`)
 	})
 
 	got, _, err := client.Signals.GetAgentConsent(ctx, "agent-1")
 	if err != nil {
 		t.Fatalf("GetAgentConsent: %v", err)
 	}
-	want := &SignalsAgentConsent{TeamID: 123, AgentID: "agent-1", Enabled: true, Allowed: true}
+	want := &SignalsAgentConsent{TeamID: 123, AgentID: "agent-1", Enabled: true}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v want %+v", got, want)
 	}
