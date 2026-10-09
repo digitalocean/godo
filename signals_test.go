@@ -143,49 +143,6 @@ func TestSignals_ListSessionDialogues(t *testing.T) {
 	}
 }
 
-func TestSignals_GetSegment(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/signals/segments/seg-1", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{
-			"segment_id":"seg-1","session_id":"sess-1",
-			"edges":[{"cursor":"c","node":{"id":901,"run_id":"run-1","created_at":"2026-10-01T12:00:01Z","sequence":1,"user_message":"resize","steps":[],"run_status":"completed"}}],
-			"page_info":{"has_next_page":false}
-		}`)
-	})
-
-	got, _, err := client.Signals.GetSegment(ctx, "seg-1", &SignalsCursorPageOptions{Limit: 20})
-	if err != nil {
-		t.Fatalf("GetSegment: %v", err)
-	}
-	if got.SegmentID != "seg-1" || got.Edges[0].Node.ID != 901 {
-		t.Errorf("unexpected detail: %+v", got)
-	}
-}
-
-func TestSignals_GetSegmentSignalReport(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/signals/segments/seg-1/signal-report", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{
-			"segment_id":"seg-1","session_id":"sess-1","quality_score":0.82,"concerning":false,
-			"total_turns":8,"user_turns":4,"assistant_turns":4,"is_dragging":false,"groups":[]
-		}`)
-	})
-
-	got, _, err := client.Signals.GetSegmentSignalReport(ctx, "seg-1")
-	if err != nil {
-		t.Fatalf("GetSegmentSignalReport: %v", err)
-	}
-	if got.QualityScore != 0.82 || got.TotalTurns != 8 {
-		t.Errorf("unexpected report: %+v", got)
-	}
-}
-
 func TestSignals_Exports(t *testing.T) {
 	setup()
 	defer teardown()

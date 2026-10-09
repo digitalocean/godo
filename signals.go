@@ -24,8 +24,6 @@ type SignalsService interface {
 	ListAgentSessions(context.Context, string, *SignalsListAgentSessionsOptions) (*SignalsListAgentSessionsResponse, *Response, error)
 	ListSessionSegments(context.Context, string, *SignalsListSegmentsOptions) (*SignalsListSegmentsResponse, *Response, error)
 	ListSessionDialogues(context.Context, string, *SignalsListDialoguesOptions) (*SignalsSessionDialoguesResponse, *Response, error)
-	GetSegment(context.Context, string, *SignalsCursorPageOptions) (*SignalsSegmentDetailResponse, *Response, error)
-	GetSegmentSignalReport(context.Context, string) (*SignalsReport, *Response, error)
 	CreateExport(context.Context, *SignalsCreateExportRequest) (*SignalsExportJob, *Response, error)
 	ListExports(context.Context, *SignalsListExportsOptions) (*SignalsListExportsResponse, *Response, error)
 	GetExport(context.Context, string) (*SignalsExportJob, *Response, error)
@@ -311,46 +309,6 @@ type SignalsSessionDialoguesResponse struct {
 	PageInfo  SignalsPageInfo              `json:"page_info"`
 }
 
-// SignalsDialogueEdge is one edge in a segment detail list.
-type SignalsDialogueEdge struct {
-	Cursor string          `json:"cursor"`
-	Node   SignalsDialogue `json:"node"`
-}
-
-// SignalsSegmentDetailResponse is GET /segments/{segment_id}.
-type SignalsSegmentDetailResponse struct {
-	SegmentID string                `json:"segment_id"`
-	SessionID string                `json:"session_id"`
-	Edges     []SignalsDialogueEdge `json:"edges"`
-	PageInfo  SignalsPageInfo       `json:"page_info"`
-}
-
-// SignalsGroup is a grouped set of instances on a report.
-type SignalsGroup struct {
-	ID        int64             `json:"id"`
-	Layer     string            `json:"layer"`
-	Category  string            `json:"category"`
-	HitCount  int               `json:"hit_count"`
-	Severity  int               `json:"severity"`
-	Instances []SignalsInstance `json:"instances"`
-}
-
-// SignalsReport is GET /segments/{segment_id}/signal-report.
-type SignalsReport struct {
-	SegmentID       string         `json:"segment_id"`
-	SessionID       string         `json:"session_id"`
-	OverallQuality  *string        `json:"overall_quality,omitempty"`
-	QualityScore    float64        `json:"quality_score"`
-	Concerning      bool           `json:"concerning"`
-	Summary         *string        `json:"summary,omitempty"`
-	TotalTurns      int            `json:"total_turns"`
-	UserTurns       int            `json:"user_turns"`
-	AssistantTurns  int            `json:"assistant_turns"`
-	IsDragging      bool           `json:"is_dragging"`
-	EfficiencyScore *float64       `json:"efficiency_score,omitempty"`
-	Groups          []SignalsGroup `json:"groups"`
-}
-
 // SignalsExportFilters is the snapshot stored on an export job.
 type SignalsExportFilters struct {
 	SessionIDs     []string `json:"session_ids,omitempty"`
@@ -487,32 +445,6 @@ func (s *SignalsServiceOp) ListSessionDialogues(ctx context.Context, sessionID s
 		return nil, nil, err
 	}
 	root := new(SignalsSessionDialoguesResponse)
-	resp, err := s.get(ctx, path, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root, resp, nil
-}
-
-// GetSegment lists dialogues for one segment.
-func (s *SignalsServiceOp) GetSegment(ctx context.Context, segmentID string, opts *SignalsCursorPageOptions) (*SignalsSegmentDetailResponse, *Response, error) {
-	path := fmt.Sprintf("%s/segments/%s", signalsBasePath, segmentID)
-	path, err := addOptions(path, opts)
-	if err != nil {
-		return nil, nil, err
-	}
-	root := new(SignalsSegmentDetailResponse)
-	resp, err := s.get(ctx, path, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root, resp, nil
-}
-
-// GetSegmentSignalReport returns the stored report (404 if none).
-func (s *SignalsServiceOp) GetSegmentSignalReport(ctx context.Context, segmentID string) (*SignalsReport, *Response, error) {
-	path := fmt.Sprintf("%s/segments/%s/signal-report", signalsBasePath, segmentID)
-	root := new(SignalsReport)
 	resp, err := s.get(ctx, path, root)
 	if err != nil {
 		return nil, resp, err
