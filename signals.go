@@ -156,31 +156,35 @@ type SignalsCreateExportRequest struct {
 }
 
 // SignalsCreateDeletionRequest is the body for POST /v1/signals/deletions.
+// JSON keys match CreateDeletionRequest in signals-api OpenAPI:
+// required type + team_id; agent_id only for managed_agent (omit for inference).
 type SignalsCreateDeletionRequest struct {
 	// Type is SignalsDeletionTypeManagedAgent or SignalsDeletionTypeInference.
-	// The server can infer it when omitted (agent_id present means managed_agent,
-	// otherwise a team-wide inference deletion), but godo requires it so a missing
-	// AgentID can never turn into a team-wide deletion by accident.
+	// Required by the server (omitting type is 400). godo also requires it so a
+	// missing AgentID can never be mistaken for a team-wide inference deletion.
 	Type string `json:"type"`
 	// TeamID is the numeric team id; it must match the authenticated team.
 	TeamID int64 `json:"team_id"`
 	// AgentID is required for managed_agent and must be empty for inference.
+	// Omitted from the JSON body when empty.
 	AgentID string `json:"agent_id,omitempty"`
 }
 
 // SignalsDeletionJob is one deletion job (POST/GET /v1/signals/deletions...).
-// Timestamps are Unix seconds. Status is a plain string so new server-side
-// statuses keep decoding.
+// Wire shape matches DeletionJob: team_id, deletion_id, type, agent_id
+// (omitted for inference), status, error_message, created_at, started_at,
+// completed_at. Timestamps are Unix seconds UTC. Status/Type are plain strings
+// so new server-side values keep decoding.
 type SignalsDeletionJob struct {
 	TeamID       int64   `json:"team_id"`
 	DeletionID   string  `json:"deletion_id"`
 	Type         string  `json:"type"`
 	AgentID      string  `json:"agent_id,omitempty"`
 	Status       string  `json:"status"`
-	ErrorMessage *string `json:"error_message,omitempty"`
+	ErrorMessage *string `json:"error_message"`
 	CreatedAt    int64   `json:"created_at"`
-	StartedAt    *int64  `json:"started_at,omitempty"`
-	CompletedAt  *int64  `json:"completed_at,omitempty"`
+	StartedAt    *int64  `json:"started_at"`
+	CompletedAt  *int64  `json:"completed_at"`
 }
 
 // SignalsListDeletionsOptions are query params for GET /v1/signals/deletions.
@@ -585,10 +589,19 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 
 // CreateDeletion starts an on-demand data deletion job (POST /v1/signals/deletions).
 //
-// The server answers 202 when a new job is created and 200 when an active
-// (queued or running) job for the same target already exists; check
-// Response.StatusCode to tell them apart. For SignalsDeletionTypeManagedAgent
-// AgentID is required; for SignalsDeletionTypeInference it must be empty.
+// Status codes from the server:
+//   - 202 — new job created (queued)
+//   - 200 — active job for the same fingerprint reused (queued/running)
+//   - 400 — invalid body (type/agent_id rules, unknown fields, bad UUID)
+//   - 401 — missing team auth
+//   - 403 — body team_id does not match authenticated team
+//   - 404 — managed_agent unknown for this team
+//   - 429 — too many active deletion jobs for this team (inflight cap)
+//   - 500 — internal error
+//
+// Check Response.StatusCode to tell 200 vs 202 apart. For
+// SignalsDeletionTypeManagedAgent AgentID is required; for
+// SignalsDeletionTypeInference it must be empty (and is omitted from JSON).
 //
 // If the client retries requests (for example one built with
 // WithRetryAndBackoffs), a repeated POST while the first job is still active
@@ -601,19 +614,26 @@ func (s *SignalsServiceOp) CreateDeletion(ctx context.Context, body *SignalsCrea
 	if body.TeamID <= 0 {
 		return nil, nil, fmt.Errorf("signals: team_id is required")
 	}
-	switch body.Type {
+	typ := strings.TrimSpace(body.Type)
+	agentID := strings.TrimSpace(body.AgentID)
+	switch typ {
 	case SignalsDeletionTypeManagedAgent:
-		if body.AgentID == "" {
+		if agentID == "" {
 			return nil, nil, fmt.Errorf("signals: agent_id is required for managed_agent")
 		}
 	case SignalsDeletionTypeInference:
-		if body.AgentID != "" {
+		if agentID != "" {
 			return nil, nil, fmt.Errorf("signals: agent_id must not be set for inference")
 		}
 	default:
 		return nil, nil, fmt.Errorf("signals: type must be managed_agent or inference")
 	}
-	req, err := s.client.NewRequest(ctx, http.MethodPost, signalsBasePath+"/deletions", body)
+	reqBody := &SignalsCreateDeletionRequest{
+		Type:    typ,
+		TeamID:  body.TeamID,
+		AgentID: agentID,
+	}
+	req, err := s.client.NewRequest(ctx, http.MethodPost, signalsBasePath+"/deletions", reqBody)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -626,7 +646,8 @@ func (s *SignalsServiceOp) CreateDeletion(ctx context.Context, body *SignalsCrea
 }
 
 // GetDeletion returns one deletion job (GET /v1/signals/deletions/{deletion_id}).
-// The server returns 404 both for unknown ids and for jobs owned by another team.
+// The server returns 404 both for unknown ids and for jobs owned by another team
+// (and for path values that are not storable, e.g. "." / "..").
 func (s *SignalsServiceOp) GetDeletion(ctx context.Context, deletionID string) (*SignalsDeletionJob, *Response, error) {
 	trimmed := strings.TrimSpace(deletionID)
 	if trimmed == "" {
@@ -637,7 +658,7 @@ func (s *SignalsServiceOp) GetDeletion(ctx context.Context, deletionID string) (
 	if trimmed == "." || trimmed == ".." {
 		return nil, nil, fmt.Errorf("signals: deletion_id is invalid")
 	}
-	path := signalsBasePath + "/deletions/" + url.PathEscape(deletionID)
+	path := signalsBasePath + "/deletions/" + url.PathEscape(trimmed)
 	root := new(SignalsDeletionJob)
 	resp, err := s.get(ctx, path, root)
 	if err != nil {
@@ -648,7 +669,8 @@ func (s *SignalsServiceOp) GetDeletion(ctx context.Context, deletionID string) (
 
 // ListDeletions lists deletion jobs for the team, newest first
 // (GET /v1/signals/deletions). Limit and After are passed through. When Limit
-// is 0 the server uses its default page size (5) and it caps larger values at 100.
+// is 0 the server uses its default page size (20) and it caps larger values at 100.
+// Invalid After cursors return 400.
 func (s *SignalsServiceOp) ListDeletions(ctx context.Context, opts *SignalsListDeletionsOptions) (*SignalsListDeletionsResponse, *Response, error) {
 	path, err := addOptions(signalsBasePath+"/deletions", opts)
 	if err != nil {
