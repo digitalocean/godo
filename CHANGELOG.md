@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.221.0] - 2026-10-09
+
+- #1149 - @sauravk-digitalocean - Remove Allowed from SignalsAgentConsent
+- #1144 - @satyambhalla - feat(FI-609): add data deletion methods to SignalsService
+
 ## [1.220.0] - 2026-10-08
 
 - #1138 - @sanpj2292 - feat(MARSOHS-1935): add persistent workspaces to the hosted agents client
