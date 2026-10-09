@@ -815,7 +815,8 @@ func TestSignals_GetDeletion_EscapesID(t *testing.T) {
 	}{
 		{"a/b", "/v1/signals/deletions/a%2Fb"},
 		{"a?x=1", "/v1/signals/deletions/a%3Fx=1"},
-		{" abc ", "/v1/signals/deletions/%20abc%20"},
+		// Leading/trailing spaces are trimmed before escape (ULIDs have none).
+		{" abc ", "/v1/signals/deletions/abc"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.id, func(t *testing.T) {
