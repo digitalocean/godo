@@ -881,8 +881,8 @@ func TestGetSimulationRun(t *testing.T) {
 				"name": "sim-run-1",
 				"status": "SIMULATION_RUN_STATUS_SUCCEEDED",
 				"scenario_set_uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-				"total_journeys": 2,
-				"journeys_finished": 2,
+				"total_episodes": 2,
+				"episodes_finished": 2,
 				"result_summary": {
 					"verdict_counts": {"success_count": 2},
 					"total_duration_sec": "42"
@@ -890,8 +890,8 @@ func TestGetSimulationRun(t *testing.T) {
 			},
 			"scenario_results": [{
 				"scenario_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-				"total_journeys": 2,
-				"journeys_finished": 2,
+				"total_episodes": 2,
+				"episodes_finished": 2,
 				"verdict_counts": {"success_count": 2}
 			}]
 		}`)
@@ -908,7 +908,7 @@ func TestGetSimulationRun(t *testing.T) {
 	assert.Equal(t, "42", out.SimulationRun.ResultSummary.TotalDurationSec)
 	assert.Len(t, out.ScenarioResults, 1)
 	assert.Equal(t, testJourneyUUID, out.ScenarioResults[0].ScenarioUUID)
-	assert.Equal(t, uint32(2), out.ScenarioResults[0].TotalJourneys)
+	assert.Equal(t, uint32(2), out.ScenarioResults[0].TotalEpisodes)
 }
 
 func TestGetSimulationRunMissingUUID(t *testing.T) {
@@ -1041,53 +1041,53 @@ func TestDeleteSimulationRunMissingUUID(t *testing.T) {
 	assert.Nil(t, resp)
 }
 
-func TestListSimulationJourneys(t *testing.T) {
+func TestListSimulationEpisodes(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/gen-ai/simulation_runs/"+testRunUUID+"/journeys", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/gen-ai/simulation_runs/"+testRunUUID+"/episodes", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		q := r.URL.Query()
 		assert.Equal(t, testJourneyUUID, q.Get("scenario_uuid"))
 		assert.Equal(t, []string{
-			string(SimulationJourneyStatusFinished),
-			string(SimulationJourneyStatusFailed),
+			string(SimulationEpisodeStatusFinished),
+			string(SimulationEpisodeStatusFailed),
 		}, q["statuses"])
 		assert.Equal(t, []string{
-			string(SimulationJourneyVerdictSuccess),
-			string(SimulationJourneyVerdictFailure),
+			string(SimulationEpisodeVerdictSuccess),
+			string(SimulationEpisodeVerdictFailure),
 		}, q["verdicts"])
 		assert.Equal(t, "billing", q.Get("search"))
-		assert.Equal(t, string(SimulationJourneySortFieldCreatedAt), q.Get("sort_by"))
+		assert.Equal(t, string(SimulationEpisodeSortFieldCreatedAt), q.Get("sort_by"))
 		assert.Equal(t, string(GenAISortDirectionDesc), q.Get("sort_direction"))
 		assert.Equal(t, "1", q.Get("page"))
 		assert.Equal(t, "50", q.Get("per_page"))
 
 		fmt.Fprint(w, `{
-			"journeys": [{
-				"journey_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+			"episodes": [{
+				"episode_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 				"run_uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 				"scenario_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-				"status": "SIMULATION_JOURNEY_STATUS_FINISHED",
-				"verdict": "SIMULATION_JOURNEY_VERDICT_SUCCESS",
+				"status": "SIMULATION_EPISODE_STATUS_FINISHED",
+				"verdict": "SIMULATION_EPISODE_VERDICT_SUCCESS",
 				"duration_sec": "12"
 			}],
 			"meta": {"total": 1}
 		}`)
 	})
 
-	out, resp, err := client.AgentPlatform.ListSimulationJourneys(ctx, testRunUUID, &SimulationJourneyListOptions{
+	out, resp, err := client.AgentPlatform.ListSimulationEpisodes(ctx, testRunUUID, &SimulationEpisodeListOptions{
 		ScenarioUUID: testJourneyUUID,
-		Statuses: []SimulationJourneyStatus{
-			SimulationJourneyStatusFinished,
-			SimulationJourneyStatusFailed,
+		Statuses: []SimulationEpisodeStatus{
+			SimulationEpisodeStatusFinished,
+			SimulationEpisodeStatusFailed,
 		},
-		Verdicts: []SimulationJourneyVerdict{
-			SimulationJourneyVerdictSuccess,
-			SimulationJourneyVerdictFailure,
+		Verdicts: []SimulationEpisodeVerdict{
+			SimulationEpisodeVerdictSuccess,
+			SimulationEpisodeVerdictFailure,
 		},
 		Search:        "billing",
-		SortBy:        SimulationJourneySortFieldCreatedAt,
+		SortBy:        SimulationEpisodeSortFieldCreatedAt,
 		SortDirection: GenAISortDirectionDesc,
 		ListOptions: ListOptions{
 			Page:    1,
@@ -1097,77 +1097,77 @@ func TestListSimulationJourneys(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
-	assert.Len(t, out.Journeys, 1)
-	assert.Equal(t, testJourneyUUID, out.Journeys[0].JourneyUUID)
-	assert.Equal(t, SimulationJourneyStatusFinished, out.Journeys[0].Status)
-	assert.Equal(t, SimulationJourneyVerdictSuccess, out.Journeys[0].Verdict)
+	assert.Len(t, out.Episodes, 1)
+	assert.Equal(t, testJourneyUUID, out.Episodes[0].EpisodeUUID)
+	assert.Equal(t, SimulationEpisodeStatusFinished, out.Episodes[0].Status)
+	assert.Equal(t, SimulationEpisodeVerdictSuccess, out.Episodes[0].Verdict)
 }
 
-func TestListSimulationJourneysMissingUUID(t *testing.T) {
+func TestListSimulationEpisodesMissingUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.AgentPlatform.ListSimulationJourneys(ctx, "", nil)
+	out, resp, err := client.AgentPlatform.ListSimulationEpisodes(ctx, "", nil)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
 }
 
-func TestGetSimulationJourney(t *testing.T) {
+func TestGetSimulationEpisode(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/simulation_runs/%s/journeys/%s", testRunUUID, testJourneyUUID), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/simulation_runs/%s/episodes/%s", testRunUUID, testJourneyUUID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
-			"journey": {
-				"journey_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+			"episode": {
+				"episode_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 				"run_uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 				"scenario_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
-				"status": "SIMULATION_JOURNEY_STATUS_FINISHED",
-				"verdict": "SIMULATION_JOURNEY_VERDICT_SUCCESS",
+				"status": "SIMULATION_EPISODE_STATUS_FINISHED",
+				"verdict": "SIMULATION_EPISODE_VERDICT_SUCCESS",
 				"judge_reasoning": "criteria met",
 				"token_usage": {"total_tokens": "100"}
 			}
 		}`)
 	})
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourney(ctx, testRunUUID, testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationEpisode(ctx, testRunUUID, testJourneyUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
-	assert.Equal(t, testJourneyUUID, out.JourneyUUID)
-	assert.Equal(t, SimulationJourneyVerdictSuccess, out.Verdict)
+	assert.Equal(t, testJourneyUUID, out.EpisodeUUID)
+	assert.Equal(t, SimulationEpisodeVerdictSuccess, out.Verdict)
 	assert.Equal(t, "criteria met", out.JudgeReasoning)
 	assert.NotNil(t, out.TokenUsage)
 	assert.Equal(t, "100", out.TokenUsage.TotalTokens)
 }
 
-func TestGetSimulationJourneyMissingRunUUID(t *testing.T) {
+func TestGetSimulationEpisodeMissingRunUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourney(ctx, "", testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationEpisode(ctx, "", testJourneyUUID)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
 }
 
-func TestGetSimulationJourneyMissingJourneyUUID(t *testing.T) {
+func TestGetSimulationEpisodeMissingEpisodeUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourney(ctx, testRunUUID, "")
+	out, resp, err := client.AgentPlatform.GetSimulationEpisode(ctx, testRunUUID, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
 }
 
-func TestGetSimulationJourneyTrajectoryURL(t *testing.T) {
+func TestGetSimulationEpisodeTrajectoryURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/simulation_runs/%s/journeys/%s/trajectory_url", testRunUUID, testJourneyUUID), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/simulation_runs/%s/episodes/%s/trajectory_url", testRunUUID, testJourneyUUID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"download_url": "https://example.com/trajectory.json",
@@ -1175,7 +1175,7 @@ func TestGetSimulationJourneyTrajectoryURL(t *testing.T) {
 		}`)
 	})
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectoryURL(ctx, testRunUUID, testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationEpisodeTrajectoryURL(ctx, testRunUUID, testJourneyUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
@@ -1183,59 +1183,59 @@ func TestGetSimulationJourneyTrajectoryURL(t *testing.T) {
 	assert.NotNil(t, out.ExpiresAt)
 }
 
-func TestGetSimulationJourneyTrajectoryURLMissingRunUUID(t *testing.T) {
+func TestGetSimulationEpisodeTrajectoryURLMissingRunUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectoryURL(ctx, "", testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationEpisodeTrajectoryURL(ctx, "", testJourneyUUID)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
 }
 
-func TestGetSimulationJourneyTrajectoryURLMissingJourneyUUID(t *testing.T) {
+func TestGetSimulationEpisodeTrajectoryURLMissingEpisodeUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectoryURL(ctx, testRunUUID, "")
+	out, resp, err := client.AgentPlatform.GetSimulationEpisodeTrajectoryURL(ctx, testRunUUID, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
 }
 
-func TestGetSimulationJourneyTrajectory(t *testing.T) {
+func TestGetSimulationEpisodeTrajectory(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/simulation_runs/%s/journeys/%s/trajectory", testRunUUID, testJourneyUUID), func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(fmt.Sprintf("/v2/gen-ai/simulation_runs/%s/episodes/%s/trajectory", testRunUUID, testJourneyUUID), func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"trajectory": {
-				"journey_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+				"episode_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 				"run_uuid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 				"scenario_uuid": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 				"status": "SIMULATION_TRAJECTORY_STATUS_COMPLETED",
-				"verdict": "SIMULATION_JOURNEY_VERDICT_SUCCESS",
+				"verdict": "SIMULATION_EPISODE_VERDICT_SUCCESS",
 				"turn_count": 2,
 				"messages": [
 					{"turn_index": 0, "role": "user", "content": "hello"},
 					{"turn_index": 1, "role": "assistant", "content": "hi"}
 				],
 				"judge": {
-					"verdict": "SIMULATION_JOURNEY_VERDICT_SUCCESS",
+					"verdict": "SIMULATION_EPISODE_VERDICT_SUCCESS",
 					"reasoning": "ok"
 				}
 			}
 		}`)
 	})
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectory(ctx, testRunUUID, testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationEpisodeTrajectory(ctx, testRunUUID, testJourneyUUID)
 	assert.NoError(t, err)
 	assert.NotNil(t, out)
 	assert.Equal(t, 200, resp.Response.StatusCode)
-	assert.Equal(t, testJourneyUUID, out.JourneyUUID)
+	assert.Equal(t, testJourneyUUID, out.EpisodeUUID)
 	assert.Equal(t, SimulationTrajectoryStatusCompleted, out.Status)
-	assert.Equal(t, SimulationJourneyVerdictSuccess, out.Verdict)
+	assert.Equal(t, SimulationEpisodeVerdictSuccess, out.Verdict)
 	assert.Equal(t, uint32(2), out.TurnCount)
 	assert.Len(t, out.Messages, 2)
 	assert.Equal(t, "user", out.Messages[0].Role)
@@ -1243,21 +1243,21 @@ func TestGetSimulationJourneyTrajectory(t *testing.T) {
 	assert.Equal(t, "ok", out.Judge.Reasoning)
 }
 
-func TestGetSimulationJourneyTrajectoryMissingRunUUID(t *testing.T) {
+func TestGetSimulationEpisodeTrajectoryMissingRunUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectory(ctx, "", testJourneyUUID)
+	out, resp, err := client.AgentPlatform.GetSimulationEpisodeTrajectory(ctx, "", testJourneyUUID)
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
 }
 
-func TestGetSimulationJourneyTrajectoryMissingJourneyUUID(t *testing.T) {
+func TestGetSimulationEpisodeTrajectoryMissingEpisodeUUID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	out, resp, err := client.AgentPlatform.GetSimulationJourneyTrajectory(ctx, testRunUUID, "")
+	out, resp, err := client.AgentPlatform.GetSimulationEpisodeTrajectory(ctx, testRunUUID, "")
 	assert.Error(t, err)
 	assert.Nil(t, out)
 	assert.Nil(t, resp)
