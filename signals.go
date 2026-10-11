@@ -52,7 +52,7 @@ const (
 	SignalsDeletionTypeAgent = "agent"
 	// SignalsDeletionTypeManagedAgent is deprecated; use SignalsDeletionTypeAgent.
 	SignalsDeletionTypeManagedAgent = SignalsDeletionTypeAgent
-	// SignalsDeletionTypeInference deletes all Serverless Inference Signals conversations for the team.
+	// SignalsDeletionTypeInference deletes Serverless Inference Signals conversations for the whole team.
 	SignalsDeletionTypeInference = "inference"
 
 	// SignalsDeletionStatusQueued means the job is waiting to be picked up.
@@ -531,13 +531,19 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 
 // CreateDeletion starts an on-demand data deletion job (POST /v1/signals/deletions).
 //
-// Deletion is permanent. On create, in-scope conversations are hidden from
-// Signals reads immediately and collection for that scope is turned off
-// (per-agent consent for SignalsDeletionTypeAgent; team-wide inference
-// consent for SignalsDeletionTypeInference, which deletes all Serverless
-// Inference Signals data for the team). For agent deletions, AgentID is the
-// Harness Runtime Environment Config ID. Purge continues asynchronously.
-// Aggregated Insights/metrics summaries may still remain after deletion.
+// Deletion is permanent and cannot be undone. On create, matching
+// conversations are hidden from Signals reads immediately and collection for
+// that scope is turned off (per-agent consent for SignalsDeletionTypeAgent;
+// team-wide inference consent for SignalsDeletionTypeInference). Inference
+// deletions remove Serverless Inference Signals conversations for the whole
+// team that were collected at or before the deletion request. For agent
+// deletions, AgentID is the Harness Runtime Environment Config ID (agent
+// UUID). Deletion continues asynchronously. Earlier export files are not
+// deleted. Aggregated Insights/metrics summaries may still remain and are
+// not the same as recoverable conversation content.
+//
+// For agent deletions, wait until the job is complete before enabling Signals
+// for that agent again.
 //
 // Status codes from the server:
 //   - 202 — new job created (queued)
@@ -556,8 +562,8 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 // If the client retries requests (for example one built with
 // WithRetryAndBackoffs), a repeated POST while the first job is still active
 // returns that same job, but a repeat after the first job has finished starts
-// a new job. A terminal failed job keeps data hidden and collection off;
-// create again to retry.
+// a new job. A terminal failed job keeps matching conversations hidden and
+// collection off; create again to retry.
 func (s *SignalsServiceOp) CreateDeletion(ctx context.Context, body *SignalsCreateDeletionRequest) (*SignalsDeletionJob, *Response, error) {
 	if body == nil {
 		return nil, nil, fmt.Errorf("signals: create deletion request is required")
