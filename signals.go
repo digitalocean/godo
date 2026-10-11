@@ -48,11 +48,11 @@ const (
 
 // Deletion types and job statuses used by the Signals deletion API.
 const (
-	// SignalsDeletionTypeAgent deletes all Signals data for one agent.
+	// SignalsDeletionTypeAgent deletes Signals data for one Harness Runtime agent.
 	SignalsDeletionTypeAgent = "agent"
 	// SignalsDeletionTypeManagedAgent is deprecated; use SignalsDeletionTypeAgent.
 	SignalsDeletionTypeManagedAgent = SignalsDeletionTypeAgent
-	// SignalsDeletionTypeInference deletes all Signals data for team-wide inference traffic.
+	// SignalsDeletionTypeInference deletes Signals data for team-wide Serverless Inference usage.
 	SignalsDeletionTypeInference = "inference"
 
 	// SignalsDeletionStatusQueued means the job is waiting to be picked up.
@@ -530,6 +530,12 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 
 // CreateDeletion starts an on-demand data deletion job (POST /v1/signals/deletions).
 //
+// Deletion is permanent. On create, in-scope sessions/dialogues/signal reports
+// are hidden from Signals reads immediately and collection for that scope is
+// turned off (agent consent for SignalsDeletionTypeAgent; team inference
+// consent for SignalsDeletionTypeInference). Purge continues asynchronously.
+// Aggregated Insights/metrics summaries may still remain after deletion.
+//
 // Status codes from the server:
 //   - 202 — new job created (queued)
 //   - 200 — active job for the same fingerprint reused (queued/running)
@@ -547,7 +553,8 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 // If the client retries requests (for example one built with
 // WithRetryAndBackoffs), a repeated POST while the first job is still active
 // returns that same job, but a repeat after the first job has finished starts
-// a new job.
+// a new job. A terminal failed job keeps data hidden and collection off;
+// create again to retry.
 func (s *SignalsServiceOp) CreateDeletion(ctx context.Context, body *SignalsCreateDeletionRequest) (*SignalsDeletionJob, *Response, error) {
 	if body == nil {
 		return nil, nil, fmt.Errorf("signals: create deletion request is required")
