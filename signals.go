@@ -48,11 +48,11 @@ const (
 
 // Deletion types and job statuses used by the Signals deletion API.
 const (
-	// SignalsDeletionTypeAgent deletes Signals data for one Harness Runtime agent.
+	// SignalsDeletionTypeAgent deletes Signals conversations for one Harness Runtime agent.
 	SignalsDeletionTypeAgent = "agent"
 	// SignalsDeletionTypeManagedAgent is deprecated; use SignalsDeletionTypeAgent.
 	SignalsDeletionTypeManagedAgent = SignalsDeletionTypeAgent
-	// SignalsDeletionTypeInference deletes Signals data for team-wide Serverless Inference usage.
+	// SignalsDeletionTypeInference deletes all Serverless Inference Signals conversations for the team.
 	SignalsDeletionTypeInference = "inference"
 
 	// SignalsDeletionStatusQueued means the job is waiting to be picked up.
@@ -178,7 +178,8 @@ type SignalsCreateDeletionRequest struct {
 	Type string `json:"type"`
 	// TeamID is the numeric team id; it must match the authenticated team.
 	TeamID int64 `json:"team_id"`
-	// AgentID is required for agent and must be empty for inference.
+	// AgentID is the Harness Runtime Environment Config ID (agent UUID).
+	// Required for agent and must be empty for inference (team-wide only).
 	// Omitted from the JSON body when empty.
 	AgentID string `json:"agent_id,omitempty"`
 }
@@ -530,10 +531,12 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 
 // CreateDeletion starts an on-demand data deletion job (POST /v1/signals/deletions).
 //
-// Deletion is permanent. On create, in-scope sessions/dialogues/signal reports
-// are hidden from Signals reads immediately and collection for that scope is
-// turned off (agent consent for SignalsDeletionTypeAgent; team inference
-// consent for SignalsDeletionTypeInference). Purge continues asynchronously.
+// Deletion is permanent. On create, in-scope conversations are hidden from
+// Signals reads immediately and collection for that scope is turned off
+// (per-agent consent for SignalsDeletionTypeAgent; team-wide inference
+// consent for SignalsDeletionTypeInference, which deletes all Serverless
+// Inference Signals data for the team). For agent deletions, AgentID is the
+// Harness Runtime Environment Config ID. Purge continues asynchronously.
 // Aggregated Insights/metrics summaries may still remain after deletion.
 //
 // Status codes from the server:
