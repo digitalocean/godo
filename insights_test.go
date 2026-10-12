@@ -735,3 +735,234 @@ func TestInsights_SearchLogsError(t *testing.T) {
 		t.Errorf("error = %#v", err)
 	}
 }
+
+func TestInsights_SearchSpans(t *testing.T) {
+	search := &SpansSearchRequest{
+		TimeRange: SpansTimeRange{
+			From: SpansTimeBound{Absolute: "2026-09-30T00:00:00Z"},
+			To:   SpansTimeBound{Relative: "now"},
+		},
+		Filter: &SpansFilterExpression{
+			Type: InsightsSpansFilterTypeAnd,
+			Expressions: []SpansFilterExpression{
+				{
+					Type:     InsightsSpansFilterTypeCondition,
+					Field:    &SpansFilterField{Name: "serviceName"},
+					Operator: InsightsSpansFilterOperatorEqual,
+					Value:    &SpansFilterValue{String: String("api-gateway")},
+				},
+				{
+					Type: InsightsSpansFilterTypeOr,
+					Expressions: []SpansFilterExpression{
+						{
+							Type:     InsightsSpansFilterTypeCondition,
+							Field:    &SpansFilterField{Name: "statusCode"},
+							Operator: InsightsSpansFilterOperatorEqual,
+							Value:    &SpansFilterValue{String: String("Error")},
+						},
+						{
+							Type:     InsightsSpansFilterTypeCondition,
+							Field:    &SpansFilterField{Name: "durationNs"},
+							Operator: InsightsSpansFilterOperatorGreaterThanOrEqual,
+							Value:    &SpansFilterValue{Number: PtrTo(1000000.0)},
+						},
+						{
+							Type:     InsightsSpansFilterTypeCondition,
+							Field:    &SpansFilterField{Name: "http.method", Scope: InsightsSpansFieldScopeAttributes},
+							Operator: InsightsSpansFilterOperatorIn,
+							Value:    &SpansFilterValue{StringArray: []string{"GET", "POST"}},
+						},
+					},
+				},
+				{
+					Type: InsightsSpansFilterTypeNot,
+					Expressions: []SpansFilterExpression{
+						{Type: InsightsSpansFilterTypeTextSearch, Query: "healthcheck"},
+					},
+				},
+			},
+		},
+		OrderBy: []SpansOrderBy{
+			{
+				Field:     SpansFilterField{Name: "startTime"},
+				Direction: InsightsSpansSortDirectionDescending,
+			},
+		},
+		Pagination: &SpansPaginationRequest{Limit: 100},
+	}
+
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/insights/query/nyc3/spans/search", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		if got := r.Header.Get("Content-Type"); got != "application/json" {
+			t.Errorf("Content-Type = %q", got)
+		}
+
+		var got SpansSearchRequest
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		if !reflect.DeepEqual(got, *search) {
+			t.Errorf("request = %#v, want %#v", got, *search)
+		}
+
+		fmt.Fprint(w, `{
+			"data": [{
+				"traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
+				"spanId": "00f067aa0ba902b7",
+				"parentSpanId": "00f067aa0ba902b6",
+				"startTime": "2026-09-30T00:00:00Z",
+				"endTime": "2026-09-30T00:00:01Z",
+				"durationNs": 1000000,
+				"name": "GET /v2/droplets",
+				"kind": "Server",
+				"statusCode": "Ok",
+				"serviceName": "api-gateway",
+				"resource": {"service.name": "api-gateway", "service.version": "1.4.2"},
+				"attributes": {"http.method": "GET", "http.status_code": "200"},
+				"region": "nyc3"
+			}],
+			"pagination": {"hasMore": true}
+		}`)
+	})
+
+	got, resp, err := client.Insights.SearchSpans(ctx, "nyc3", search)
+	if err != nil {
+		t.Fatalf("SearchSpans: %v", err)
+	}
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		t.Fatalf("response = %#v", resp)
+	}
+
+	want := &SpansSearchResponse{
+		Data: []SpanRecord{
+			{
+				TraceID:      "4bf92f3577b34da6a3ce929d0e0e4736",
+				SpanID:       "00f067aa0ba902b7",
+				ParentSpanID: "00f067aa0ba902b6",
+				StartTime:    time.Date(2026, 9, 30, 0, 0, 0, 0, time.UTC),
+				EndTime:      time.Date(2026, 9, 30, 0, 0, 1, 0, time.UTC),
+				DurationNs:   1000000,
+				Name:         "GET /v2/droplets",
+				Kind:         "Server",
+				StatusCode:   "Ok",
+				ServiceName:  "api-gateway",
+				Resource:     map[string]string{"service.name": "api-gateway", "service.version": "1.4.2"},
+				Attributes:   map[string]string{"http.method": "GET", "http.status_code": "200"},
+				Region:       "nyc3",
+			},
+		},
+		Pagination: &SpansPaginationResponse{HasMore: true},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("SearchSpans = %#v, want %#v", got, want)
+	}
+}
+
+func TestSpansFilterValueMarshal(t *testing.T) {
+	tests := []struct {
+		name  string
+		value SpansFilterValue
+		want  string
+	}{
+		{"string", SpansFilterValue{String: String("api-gateway")}, `{"type":"string","value":"api-gateway"}`},
+		{"number", SpansFilterValue{Number: PtrTo(503.0)}, `{"type":"number","value":503}`},
+		{"bool", SpansFilterValue{Bool: PtrTo(false)}, `{"type":"bool","value":false}`},
+		{"string_array", SpansFilterValue{StringArray: []string{"GET", "POST"}}, `{"type":"string_array","value":["GET","POST"]}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := json.Marshal(tt.value)
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+			if string(got) != tt.want {
+				t.Errorf("JSON = %s, want %s", got, tt.want)
+			}
+		})
+	}
+
+	if _, err := json.Marshal(SpansFilterValue{}); err == nil {
+		t.Error("expected error marshaling empty SpansFilterValue")
+	}
+	if _, err := json.Marshal(SpansFilterValue{String: String("x"), Bool: PtrTo(true)}); err == nil {
+		t.Error("expected error marshaling multi-field SpansFilterValue")
+	}
+}
+
+func TestSpansFilterValueUnmarshal(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+		want SpansFilterValue
+	}{
+		{"typed string", `{"type":"string","value":"api-gateway"}`, SpansFilterValue{String: String("api-gateway")}},
+		{"bare string", `"api-gateway"`, SpansFilterValue{String: String("api-gateway")}},
+		{"typed number", `{"type":"number","value":503}`, SpansFilterValue{Number: PtrTo(503.0)}},
+		{"bare number", `503`, SpansFilterValue{Number: PtrTo(503.0)}},
+		{"typed bool", `{"type":"bool","value":true}`, SpansFilterValue{Bool: PtrTo(true)}},
+		{"bare bool", `false`, SpansFilterValue{Bool: PtrTo(false)}},
+		{"typed string_array", `{"type":"string_array","value":["GET","POST"]}`, SpansFilterValue{StringArray: []string{"GET", "POST"}}},
+		{"bare string_array", `["GET","POST"]`, SpansFilterValue{StringArray: []string{"GET", "POST"}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got SpansFilterValue
+			if err := json.Unmarshal([]byte(tt.data), &got); err != nil {
+				t.Fatalf("unmarshal: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("got %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInsights_SearchSpansEscapesRegion(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if got, want := r.URL.EscapedPath(), "/v2/insights/query/nyc3%2Fother/spans/search"; got != want {
+			t.Errorf("escaped path = %q, want %q", got, want)
+		}
+		fmt.Fprint(w, `{}`)
+	})
+
+	_, _, err := client.Insights.SearchSpans(ctx, "nyc3/other", &SpansSearchRequest{
+		TimeRange: SpansTimeRange{
+			From: SpansTimeBound{Relative: "1h"},
+			To:   SpansTimeBound{Relative: "now"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SearchSpans: %v", err)
+	}
+}
+
+func TestInsights_SearchSpansError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/insights/query/nyc3/spans/search", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, `{"message":"time range must not exceed 7 days"}`)
+	})
+
+	got, resp, err := client.Insights.SearchSpans(ctx, "nyc3", &SpansSearchRequest{})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if got != nil {
+		t.Errorf("result = %#v, want nil", got)
+	}
+	if resp == nil || resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("response = %#v", resp)
+	}
+	var apiErr *ErrorResponse
+	if !errors.As(err, &apiErr) || apiErr.Message != "time range must not exceed 7 days" {
+		t.Errorf("error = %#v", err)
+	}
+}
