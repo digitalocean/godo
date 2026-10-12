@@ -966,3 +966,420 @@ func TestInsights_SearchSpansError(t *testing.T) {
 		t.Errorf("error = %#v", err)
 	}
 }
+
+func TestInsights_SearchTraces(t *testing.T) {
+	search := &TracesSearchRequest{
+		TimeRange: TracesTimeRange{
+			From: TracesTimeBound{Absolute: "2026-10-09T00:00:00Z"},
+			To:   TracesTimeBound{Relative: "now"},
+		},
+		Filter: &TracesFilterExpression{
+			Type: InsightsTracesFilterTypeAnd,
+			Expressions: []TracesFilterExpression{
+				{
+					Type:     InsightsTracesFilterTypeCondition,
+					Field:    &TracesFilterField{Name: "service.name"},
+					Operator: InsightsTracesFilterOperatorEqual,
+					Value:    &TracesFilterValue{String: String("checkout-api")},
+				},
+				{
+					Type: InsightsTracesFilterTypeOr,
+					Expressions: []TracesFilterExpression{
+						{
+							Type:     InsightsTracesFilterTypeCondition,
+							Field:    &TracesFilterField{Name: "statusCode"},
+							Operator: InsightsTracesFilterOperatorEqual,
+							Value:    &TracesFilterValue{String: String("Error")},
+						},
+						{
+							Type:     InsightsTracesFilterTypeCondition,
+							Field:    &TracesFilterField{Name: "durationNs"},
+							Operator: InsightsTracesFilterOperatorGreaterThanOrEqual,
+							Value:    &TracesFilterValue{Number: PtrTo(500000000.0)},
+						},
+						{
+							Type:     InsightsTracesFilterTypeCondition,
+							Field:    &TracesFilterField{Name: "host.name", Scope: InsightsTracesFieldScopeResource},
+							Operator: InsightsTracesFilterOperatorIn,
+							Value:    &TracesFilterValue{StringArray: []string{"web-01", "web-02"}},
+						},
+					},
+				},
+				{
+					Type: InsightsTracesFilterTypeNot,
+					Expressions: []TracesFilterExpression{
+						{Type: InsightsTracesFilterTypeTextSearch, Query: "healthcheck"},
+					},
+				},
+			},
+		},
+		OrderBy: []TracesOrderBy{
+			{Field: TracesFilterField{Name: "durationNs"}, Direction: InsightsTracesSortDirectionDescending},
+			{Field: TracesFilterField{Name: "started"}, Direction: InsightsTracesSortDirectionAscending},
+		},
+		Pagination: &TracesPaginationRequest{Limit: 50},
+	}
+
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/insights/query/nyc3/traces/search", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		if got := r.Header.Get("Content-Type"); got != "application/json" {
+			t.Errorf("Content-Type = %q", got)
+		}
+
+		var got TracesSearchRequest
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		if !reflect.DeepEqual(got, *search) {
+			t.Errorf("request = %#v, want %#v", got, *search)
+		}
+
+		fmt.Fprint(w, `{
+			"data": [{
+				"traceId": "112419ad0cdd6a78f20c44a173c594d5",
+				"started": "2026-10-09T09:36:32.95Z",
+				"serviceName": "checkout-api",
+				"durationNs": 50000000,
+				"spanCount": 3,
+				"errorCount": 1,
+				"status": "Error",
+				"spanNames": ["GET /checkout", "SELECT orders"]
+			}],
+			"pagination": {"hasMore": true}
+		}`)
+	})
+
+	got, resp, err := client.Insights.SearchTraces(ctx, "nyc3", search)
+	if err != nil {
+		t.Fatalf("SearchTraces: %v", err)
+	}
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		t.Fatalf("response = %#v", resp)
+	}
+
+	want := &TracesSearchResponse{
+		Data: []TraceSummary{
+			{
+				TraceID:     "112419ad0cdd6a78f20c44a173c594d5",
+				Started:     time.Date(2026, 10, 9, 9, 36, 32, 950000000, time.UTC),
+				ServiceName: "checkout-api",
+				DurationNs:  50000000,
+				SpanCount:   3,
+				ErrorCount:  1,
+				Status:      InsightsTraceStatusError,
+				SpanNames:   []string{"GET /checkout", "SELECT orders"},
+			},
+		},
+		Pagination: &TracesPaginationResponse{HasMore: true},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("SearchTraces = %#v, want %#v", got, want)
+	}
+}
+
+func TestInsights_SearchTracesMinimalRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/insights/query/nyc3/traces/search", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read body: %v", err)
+		}
+		want := `{"timeRange":{"from":{"relative":"15m"},"to":{"relative":"now"}}}` + "\n"
+		if string(body) != want {
+			t.Errorf("body = %s, want %s", body, want)
+		}
+		fmt.Fprint(w, `{"data":[],"pagination":{"hasMore":false}}`)
+	})
+
+	got, _, err := client.Insights.SearchTraces(ctx, "nyc3", &TracesSearchRequest{
+		TimeRange: TracesTimeRange{
+			From: TracesTimeBound{Relative: "15m"},
+			To:   TracesTimeBound{Relative: "now"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SearchTraces: %v", err)
+	}
+	if len(got.Data) != 0 || got.Pagination == nil || got.Pagination.HasMore {
+		t.Errorf("SearchTraces = %#v", got)
+	}
+}
+
+func TestTracesFilterValueMarshal(t *testing.T) {
+	tests := []struct {
+		name  string
+		value TracesFilterValue
+		want  string
+	}{
+		{"string", TracesFilterValue{String: String("checkout-api")}, `{"type":"string","value":"checkout-api"}`},
+		{"empty string", TracesFilterValue{String: String("")}, `{"type":"string","value":""}`},
+		{"number", TracesFilterValue{Number: PtrTo(0.0)}, `{"type":"number","value":0}`},
+		{"bool", TracesFilterValue{Bool: PtrTo(false)}, `{"type":"bool","value":false}`},
+		{"string_array", TracesFilterValue{StringArray: []string{"web-01", "web-02"}}, `{"type":"string_array","value":["web-01","web-02"]}`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := json.Marshal(tt.value)
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+			if string(got) != tt.want {
+				t.Errorf("JSON = %s, want %s", got, tt.want)
+			}
+		})
+	}
+
+	if _, err := json.Marshal(TracesFilterValue{}); err == nil {
+		t.Error("expected error marshaling empty TracesFilterValue")
+	}
+	if _, err := json.Marshal(TracesFilterValue{String: String("x"), Bool: PtrTo(true)}); err == nil {
+		t.Error("expected error marshaling multi-field TracesFilterValue")
+	}
+}
+
+func TestTracesFilterValueUnmarshal(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+		want TracesFilterValue
+	}{
+		{"typed string", `{"type":"string","value":"checkout-api"}`, TracesFilterValue{String: String("checkout-api")}},
+		{"bare string", `"checkout-api"`, TracesFilterValue{String: String("checkout-api")}},
+		{"typed number", `{"type":"number","value":500000000}`, TracesFilterValue{Number: PtrTo(500000000.0)}},
+		{"bare number", `500000000`, TracesFilterValue{Number: PtrTo(500000000.0)}},
+		{"typed bool", `{"type":"bool","value":true}`, TracesFilterValue{Bool: PtrTo(true)}},
+		{"bare bool", `false`, TracesFilterValue{Bool: PtrTo(false)}},
+		{"typed string_array", `{"type":"string_array","value":["web-01","web-02"]}`, TracesFilterValue{StringArray: []string{"web-01", "web-02"}}},
+		{"bare string_array", `["web-01","web-02"]`, TracesFilterValue{StringArray: []string{"web-01", "web-02"}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got TracesFilterValue
+			if err := json.Unmarshal([]byte(tt.data), &got); err != nil {
+				t.Fatalf("unmarshal: %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("got %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+
+	var v TracesFilterValue
+	if err := json.Unmarshal([]byte(`{"type":"date","value":"x"}`), &v); err == nil {
+		t.Error("expected error for unknown value type")
+	}
+	if err := json.Unmarshal([]byte(`["a",1]`), &v); err == nil {
+		t.Error("expected error for non-string array element")
+	}
+}
+
+func TestInsights_SearchTracesEscapesRegion(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if got, want := r.URL.EscapedPath(), "/v2/insights/query/nyc3%2Fother/traces/search"; got != want {
+			t.Errorf("escaped path = %q, want %q", got, want)
+		}
+		fmt.Fprint(w, `{}`)
+	})
+
+	_, _, err := client.Insights.SearchTraces(ctx, "nyc3/other", &TracesSearchRequest{
+		TimeRange: TracesTimeRange{
+			From: TracesTimeBound{Relative: "1h"},
+			To:   TracesTimeBound{Relative: "now"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SearchTraces: %v", err)
+	}
+}
+
+func TestInsights_SearchTracesError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/insights/query/nyc3/traces/search", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprint(w, "pagination.limit exceeds maximum of 1000")
+	})
+
+	got, resp, err := client.Insights.SearchTraces(ctx, "nyc3", &TracesSearchRequest{
+		Pagination: &TracesPaginationRequest{Limit: 1001},
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if got != nil {
+		t.Errorf("result = %#v, want nil", got)
+	}
+	if resp == nil || resp.StatusCode != http.StatusBadRequest {
+		t.Fatalf("response = %#v", resp)
+	}
+	var apiErr *ErrorResponse
+	if !errors.As(err, &apiErr) || apiErr.Message != "pagination.limit exceeds maximum of 1000" {
+		t.Errorf("error = %#v", err)
+	}
+}
+
+func TestInsights_GetTrace(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/insights/query/nyc3/traces/05928fa10bbc6bb65b33405ea4d6c403", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{"from": "24h", "to": "now"})
+
+		fmt.Fprint(w, `{
+			"traceId": "05928fa10bbc6bb65b33405ea4d6c403",
+			"spans": [
+				{
+					"traceId": "05928fa10bbc6bb65b33405ea4d6c403",
+					"spanId": "1367b0627cbd1f04",
+					"startTime": "2026-10-09T09:36:32Z",
+					"endTime": "2026-10-09T09:36:33Z",
+					"durationNs": 1000000000,
+					"name": "GET /checkout",
+					"kind": "Server",
+					"statusCode": "Error",
+					"statusMessage": "upstream timeout",
+					"serviceName": "checkout-api",
+					"resource": {"service.name": "checkout-api"},
+					"attributes": {"http.method": "GET"}
+				},
+				{
+					"traceId": "05928fa10bbc6bb65b33405ea4d6c403",
+					"spanId": "a2fb4a1d1a96d312",
+					"parentSpanId": "1367b0627cbd1f04",
+					"startTime": "2026-10-09T09:36:32.5Z",
+					"endTime": "2026-10-09T09:36:32.7Z",
+					"durationNs": 200000000,
+					"name": "SELECT orders",
+					"kind": "Client",
+					"statusCode": "Ok",
+					"serviceName": "checkout-api",
+					"resource": {"service.name": "checkout-api"}
+				}
+			],
+			"truncated": true
+		}`)
+	})
+
+	got, resp, err := client.Insights.GetTrace(ctx, "nyc3", "05928fa10bbc6bb65b33405ea4d6c403", &TraceGetOptions{From: "24h", To: "now"})
+	if err != nil {
+		t.Fatalf("GetTrace: %v", err)
+	}
+	if resp == nil || resp.StatusCode != http.StatusOK {
+		t.Fatalf("response = %#v", resp)
+	}
+
+	want := &Trace{
+		TraceID: "05928fa10bbc6bb65b33405ea4d6c403",
+		Spans: []TraceSpan{
+			{
+				TraceID:       "05928fa10bbc6bb65b33405ea4d6c403",
+				SpanID:        "1367b0627cbd1f04",
+				StartTime:     time.Date(2026, 10, 9, 9, 36, 32, 0, time.UTC),
+				EndTime:       time.Date(2026, 10, 9, 9, 36, 33, 0, time.UTC),
+				DurationNs:    1000000000,
+				Name:          "GET /checkout",
+				Kind:          "Server",
+				StatusCode:    "Error",
+				StatusMessage: "upstream timeout",
+				ServiceName:   "checkout-api",
+				Resource:      map[string]string{"service.name": "checkout-api"},
+				Attributes:    map[string]string{"http.method": "GET"},
+			},
+			{
+				TraceID:      "05928fa10bbc6bb65b33405ea4d6c403",
+				SpanID:       "a2fb4a1d1a96d312",
+				ParentSpanID: "1367b0627cbd1f04",
+				StartTime:    time.Date(2026, 10, 9, 9, 36, 32, 500000000, time.UTC),
+				EndTime:      time.Date(2026, 10, 9, 9, 36, 32, 700000000, time.UTC),
+				DurationNs:   200000000,
+				Name:         "SELECT orders",
+				Kind:         "Client",
+				StatusCode:   "Ok",
+				ServiceName:  "checkout-api",
+				Resource:     map[string]string{"service.name": "checkout-api"},
+			},
+		},
+		Truncated: true,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("GetTrace = %#v, want %#v", got, want)
+	}
+}
+
+func TestInsights_GetTraceNilOptions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/insights/query/nyc3/traces/05928fa10bbc6bb65b33405ea4d6c403", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if r.URL.RawQuery != "" {
+			t.Errorf("query = %q, want empty", r.URL.RawQuery)
+		}
+		fmt.Fprint(w, `{"traceId":"05928fa10bbc6bb65b33405ea4d6c403","spans":[]}`)
+	})
+
+	got, _, err := client.Insights.GetTrace(ctx, "nyc3", "05928fa10bbc6bb65b33405ea4d6c403", nil)
+	if err != nil {
+		t.Fatalf("GetTrace: %v", err)
+	}
+	if got.TraceID != "05928fa10bbc6bb65b33405ea4d6c403" || got.Truncated {
+		t.Errorf("GetTrace = %#v", got)
+	}
+}
+
+func TestInsights_GetTraceEscapesPath(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if got, want := r.URL.EscapedPath(), "/v2/insights/query/nyc3%2Fother/traces/abc%2F..%2Fdef"; got != want {
+			t.Errorf("escaped path = %q, want %q", got, want)
+		}
+		if got, want := r.URL.Query().Get("from"), "now-2h"; got != want {
+			t.Errorf("from = %q, want %q", got, want)
+		}
+		fmt.Fprint(w, `{}`)
+	})
+
+	_, _, err := client.Insights.GetTrace(ctx, "nyc3/other", "abc/../def", &TraceGetOptions{From: "now-2h"})
+	if err != nil {
+		t.Fatalf("GetTrace: %v", err)
+	}
+}
+
+func TestInsights_GetTraceNotFound(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/insights/query/nyc3/traces/0000000000000000000000000000dead", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprint(w, "trace not found")
+	})
+
+	got, resp, err := client.Insights.GetTrace(ctx, "nyc3", "0000000000000000000000000000dead", nil)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if got != nil {
+		t.Errorf("result = %#v, want nil", got)
+	}
+	if resp == nil || resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("response = %#v", resp)
+	}
+	var apiErr *ErrorResponse
+	if !errors.As(err, &apiErr) || apiErr.Message != "trace not found" {
+		t.Errorf("error = %#v", err)
+	}
+}
