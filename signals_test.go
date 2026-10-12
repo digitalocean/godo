@@ -89,27 +89,6 @@ func TestSignals_ListAgentSessions(t *testing.T) {
 	}
 }
 
-func TestSignals_ListSessionSegments(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/signals/sessions/sess-1/segments", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{
-			"edges":[{"cursor":"c","node":{"segment_id":"seg-1","session_id":"sess-1","segment_seq":1,"started_at":"2026-10-01T12:00:00Z","status":"closed","annotation_status":"done","total_turns":8,"duration_seconds":300,"signals":[{"signal_type":"Looping"}]}}],
-			"page_info":{"has_next_page":false}
-		}`)
-	})
-
-	got, _, err := client.Signals.ListSessionSegments(ctx, "sess-1", nil)
-	if err != nil {
-		t.Fatalf("ListSessionSegments: %v", err)
-	}
-	if got.Edges[0].Node.SegmentID != "seg-1" {
-		t.Errorf("unexpected segment: %+v", got.Edges[0].Node)
-	}
-}
-
 func TestSignals_ListSessionDialogues(t *testing.T) {
 	setup()
 	defer teardown()
@@ -120,7 +99,7 @@ func TestSignals_ListSessionDialogues(t *testing.T) {
 			"session_id":"sess-1",
 			"edges":[{"cursor":"c","node":{
 				"id":901,"run_id":"run-1","created_at":"2026-10-01T12:00:01Z","sequence":1,
-				"segment_id":"seg-1","segment_seq":1,"user_message":"resize",
+				"user_message":"resize",
 				"steps":[{"type":"tool_call"}],"run_status":"completed",
 				"signals":[{"signal_type":"Looping","label":"loop","run_uuid":"run-1","step_index":0,"confidence":0.9,"layer":"observation","category":"execution"}]
 			}}],
@@ -132,7 +111,7 @@ func TestSignals_ListSessionDialogues(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListSessionDialogues: %v", err)
 	}
-	if got.SessionID != "sess-1" || got.Edges[0].Node.SegmentID != "seg-1" {
+	if got.SessionID != "sess-1" || len(got.Edges) != 1 {
 		t.Errorf("unexpected dialogue: %+v", got.Edges[0].Node)
 	}
 	if len(got.Edges[0].Node.Steps) != 1 {
@@ -140,49 +119,6 @@ func TestSignals_ListSessionDialogues(t *testing.T) {
 	}
 	if got.Edges[0].Node.Signals[0].SignalType != "Looping" {
 		t.Errorf("unexpected signal: %+v", got.Edges[0].Node.Signals[0])
-	}
-}
-
-func TestSignals_GetSegment(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/signals/segments/seg-1", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{
-			"segment_id":"seg-1","session_id":"sess-1",
-			"edges":[{"cursor":"c","node":{"id":901,"run_id":"run-1","created_at":"2026-10-01T12:00:01Z","sequence":1,"user_message":"resize","steps":[],"run_status":"completed"}}],
-			"page_info":{"has_next_page":false}
-		}`)
-	})
-
-	got, _, err := client.Signals.GetSegment(ctx, "seg-1", &SignalsCursorPageOptions{Limit: 20})
-	if err != nil {
-		t.Fatalf("GetSegment: %v", err)
-	}
-	if got.SegmentID != "seg-1" || got.Edges[0].Node.ID != 901 {
-		t.Errorf("unexpected detail: %+v", got)
-	}
-}
-
-func TestSignals_GetSegmentSignalReport(t *testing.T) {
-	setup()
-	defer teardown()
-
-	mux.HandleFunc("/v1/signals/segments/seg-1/signal-report", func(w http.ResponseWriter, r *http.Request) {
-		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{
-			"segment_id":"seg-1","session_id":"sess-1","quality_score":0.82,"concerning":false,
-			"total_turns":8,"user_turns":4,"assistant_turns":4,"is_dragging":false,"groups":[]
-		}`)
-	})
-
-	got, _, err := client.Signals.GetSegmentSignalReport(ctx, "seg-1")
-	if err != nil {
-		t.Fatalf("GetSegmentSignalReport: %v", err)
-	}
-	if got.QualityScore != 0.82 || got.TotalTurns != 8 {
-		t.Errorf("unexpected report: %+v", got)
 	}
 }
 
@@ -306,6 +242,129 @@ func TestSignals_ListConsents_Empty(t *testing.T) {
 	}
 }
 
+func TestSignals_ListConsentsWithOptions_Source(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if got := r.URL.Query().Get("source"); got != "inference" {
+			t.Errorf("source=%q, want inference", got)
+		}
+		fmt.Fprint(w, `{
+			"team_id":123,
+			"source":"inference",
+			"consents":[
+				{"id":7,"team_id":123,"source":"inference","agent_id":"","enabled":true,"updated_at":"2026-10-09T13:28:22Z"}
+			]
+		}`)
+	})
+
+	got, _, err := client.Signals.ListConsentsWithOptions(ctx, &SignalsListConsentsOptions{Source: SignalsConsentSourceInference})
+	if err != nil {
+		t.Fatalf("ListConsentsWithOptions: %v", err)
+	}
+	if got.Source != "inference" || len(got.Consents) != 1 {
+		t.Fatalf("unexpected response: %+v", got)
+	}
+	want := SignalsConsentRecord{ID: 7, TeamID: 123, Source: "inference", AgentID: "", Enabled: true, UpdatedAt: "2026-10-09T13:28:22Z"}
+	if !reflect.DeepEqual(got.Consents[0], want) {
+		t.Errorf("got %+v want %+v", got.Consents[0], want)
+	}
+}
+
+func TestSignals_ListConsents_NoSourceParam(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if r.URL.RawQuery != "" {
+			t.Errorf("unexpected query %q", r.URL.RawQuery)
+		}
+		fmt.Fprint(w, `{"team_id":123,"consents":[{"id":1,"team_id":123,"source":"agent","agent_id":"agent-1","enabled":true}]}`)
+	})
+
+	got, _, err := client.Signals.ListConsents(ctx)
+	if err != nil {
+		t.Fatalf("ListConsents: %v", err)
+	}
+	if len(got.Consents) != 1 || got.Consents[0].Source != SignalsConsentSourceAgent {
+		t.Errorf("unexpected consents: %+v", got.Consents)
+	}
+}
+
+func TestSignals_GetInferenceConsent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if got := r.URL.Query().Get("source"); got != "inference" {
+			t.Errorf("source=%q, want inference", got)
+		}
+		fmt.Fprint(w, `{"team_id":123,"source":"inference","consents":[
+			{"id":7,"team_id":123,"source":"inference","agent_id":"","enabled":true,"updated_at":"2026-10-09T13:28:22Z"}
+		]}`)
+	})
+
+	got, _, err := client.Signals.GetInferenceConsent(ctx)
+	if err != nil {
+		t.Fatalf("GetInferenceConsent: %v", err)
+	}
+	want := &SignalsConsentRecord{ID: 7, TeamID: 123, Source: "inference", Enabled: true, UpdatedAt: "2026-10-09T13:28:22Z"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v want %+v", got, want)
+	}
+}
+
+func TestSignals_GetInferenceConsent_DefaultDeny(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"team_id":123,"source":"inference","consents":[]}`)
+	})
+
+	got, _, err := client.Signals.GetInferenceConsent(ctx)
+	if err != nil {
+		t.Fatalf("GetInferenceConsent: %v", err)
+	}
+	want := &SignalsConsentRecord{TeamID: 123, Source: "inference", Enabled: false}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v want %+v", got, want)
+	}
+}
+
+func TestSignals_SetInferenceConsent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/consent", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		if got := r.URL.Query().Get("source"); got != "inference" {
+			t.Errorf("source=%q, want inference", got)
+		}
+		var req signalsSetConsentRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if req.Enabled {
+			t.Errorf("enabled=%v, want false", req.Enabled)
+		}
+		fmt.Fprint(w, `{"consent":{"id":7,"team_id":123,"source":"inference","agent_id":"","enabled":false,"updated_at":"2026-10-09T14:00:00Z"}}`)
+	})
+
+	got, _, err := client.Signals.SetInferenceConsent(ctx, false)
+	if err != nil {
+		t.Fatalf("SetInferenceConsent: %v", err)
+	}
+	if got == nil || got.ID != 7 || got.Source != SignalsConsentSourceInference || got.AgentID != "" || got.Enabled {
+		t.Errorf("unexpected consent: %+v", got)
+	}
+}
+
 func TestSignals_CreateExport(t *testing.T) {
 	setup()
 	defer teardown()
@@ -380,6 +439,43 @@ func TestSignals_CreateExport_WithTimeRange(t *testing.T) {
 	}
 }
 
+func TestSignals_CreateExport_WithSessionIDs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	sessionIDs := []string{"sess-1", "sess-2"}
+
+	mux.HandleFunc("/v1/signals/exports", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body SignalsCreateExportRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if body.AgentID != "agent-1" {
+			t.Errorf("agent_id=%s, want agent-1", body.AgentID)
+		}
+		if !reflect.DeepEqual(body.SessionIDs, sessionIDs) {
+			t.Errorf("session_ids=%v, want %v", body.SessionIDs, sessionIDs)
+		}
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"export_id":"exp-sess","agent_id":"agent-1","status":"queued","created_at":1728000000,"filters":{"session_ids":["sess-1","sess-2"]}}`)
+	})
+
+	got, _, err := client.Signals.CreateExport(ctx, &SignalsCreateExportRequest{
+		AgentID:    "agent-1",
+		SessionIDs: sessionIDs,
+	})
+	if err != nil {
+		t.Fatalf("CreateExport: %v", err)
+	}
+	if got.ExportID != "exp-sess" {
+		t.Errorf("unexpected export: %+v", got)
+	}
+	if !reflect.DeepEqual(got.Filters.SessionIDs, sessionIDs) {
+		t.Errorf("filters.session_ids=%v, want %v", got.Filters.SessionIDs, sessionIDs)
+	}
+}
+
 func TestSignals_CreateExport_NilRequest(t *testing.T) {
 	setup()
 	defer teardown()
@@ -431,7 +527,7 @@ func assertErrStatus(t *testing.T, err error, resp *Response, want int) {
 	}
 }
 
-func TestSignals_CreateDeletion_ManagedAgent(t *testing.T) {
+func TestSignals_CreateDeletion_Agent(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -442,12 +538,12 @@ func TestSignals_CreateDeletion_ManagedAgent(t *testing.T) {
 			t.Errorf("decode: %v", err)
 			return
 		}
-		want := SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 12345, AgentID: "agt-uuid"}
+		want := SignalsCreateDeletionRequest{Type: "agent", TeamID: 12345, AgentID: "agt-uuid"}
 		if body != want {
 			t.Errorf("body=%+v, want %+v", body, want)
 		}
 		w.WriteHeader(http.StatusAccepted)
-		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null}`)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null}`)
 	})
 
 	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
@@ -460,7 +556,7 @@ func TestSignals_CreateDeletion_ManagedAgent(t *testing.T) {
 		t.Errorf("status=%d, want 202", resp.StatusCode)
 	}
 	want := &SignalsDeletionJob{
-		TeamID: 12345, DeletionID: testDeletionID, Type: "managed_agent", AgentID: "agt-uuid",
+		TeamID: 12345, DeletionID: testDeletionID, Type: "agent", AgentID: "agt-uuid",
 		Status: SignalsDeletionStatusQueued, CreatedAt: 1728324000,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -513,7 +609,7 @@ func TestSignals_CreateDeletion_ExistingActiveJob(t *testing.T) {
 	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"running","created_at":1728324000,"started_at":1728324010}`)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"agt-uuid","status":"running","created_at":1728324000,"started_at":1728324010}`)
 	})
 
 	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
@@ -542,10 +638,10 @@ func TestSignals_CreateDeletion_Validation(t *testing.T) {
 		{"NilRequest", nil, "signals: create deletion request is required"},
 		{"ZeroTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 0}, "signals: team_id is required"},
 		{"NegativeTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: -1}, "signals: team_id is required"},
-		{"EmptyType", &SignalsCreateDeletionRequest{TeamID: 1}, "signals: type must be managed_agent or inference"},
-		{"UnknownType", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1, AgentID: "a"}, "signals: type must be managed_agent or inference"},
+		{"EmptyType", &SignalsCreateDeletionRequest{TeamID: 1}, "signals: type must be agent or inference"},
+		{"UnknownType", &SignalsCreateDeletionRequest{Type: "bogus", TeamID: 1, AgentID: "a"}, "signals: type must be agent or inference"},
 		{"BadTypeAndBadTeamReportsTeamFirst", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 0}, "signals: team_id is required"},
-		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 1}, "signals: agent_id is required for managed_agent"},
+		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1}, "signals: agent_id is required for agent"},
 		{"InferenceWithAgentID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1, AgentID: "a"}, "signals: agent_id must not be set for inference"},
 	}
 	for _, tt := range tests {
@@ -579,7 +675,7 @@ func TestSignals_CreateDeletion_DoesNotMutateRequest(t *testing.T) {
 		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprint(w, `{"deletion_id":"x","status":"queued"}`)
 	})
-	req := &SignalsCreateDeletionRequest{Type: "managed_agent", TeamID: 7, AgentID: " agt "}
+	req := &SignalsCreateDeletionRequest{Type: "agent", TeamID: 7, AgentID: " agt "}
 	orig := *req
 	if _, _, err := client.Signals.CreateDeletion(ctx, req); err != nil {
 		t.Fatalf("CreateDeletion: %v", err)
@@ -689,7 +785,7 @@ func TestSignals_GetDeletion_Queued(t *testing.T) {
 
 	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null,"extra_future_field":true}`)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"agt-uuid","status":"queued","error_message":null,"created_at":1728324000,"started_at":null,"completed_at":null,"extra_future_field":true}`)
 	})
 
 	got, resp, err := client.Signals.GetDeletion(ctx, testDeletionID)
@@ -732,7 +828,7 @@ func TestSignals_GetDeletion_Complete(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/v1/signals/deletions/"+testDeletionID, func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"a","status":"complete","created_at":10,"started_at":20,"completed_at":30}`)
+		fmt.Fprint(w, `{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"a","status":"complete","created_at":10,"started_at":20,"completed_at":30}`)
 	})
 
 	got, _, err := client.Signals.GetDeletion(ctx, testDeletionID)
@@ -870,7 +966,7 @@ func TestSignals_ListDeletions(t *testing.T) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"edges":[
-				{"cursor":"c1","node":{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"managed_agent","agent_id":"a","status":"running","created_at":2}},
+				{"cursor":"c1","node":{"team_id":1,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"a","status":"running","created_at":2}},
 				{"cursor":"c2","node":{"team_id":1,"deletion_id":"01JABCDEFGHJKMNPQRSTVWXYZ1","type":"inference","status":"complete","created_at":1,"completed_at":5}}
 			],
 			"page_info":{"has_next_page":true,"end_cursor":"c2"}
