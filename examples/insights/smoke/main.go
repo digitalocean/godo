@@ -5,7 +5,7 @@
 // Optional:
 //
 //	DIGITALOCEAN_API_URL   API base override, including trailing slash (staging)
-//	INSIGHTS_REGION        run PromQL and logs calls in this region, for example nyc3
+//	INSIGHTS_REGION        run PromQL, logs, spans, and traces calls in this region, for example nyc3
 //	INSIGHTS_QUERY         PromQL expression (default do.droplets.cpu_time)
 //	INSIGHTS_SMOKE_WRITE=1 create, then delete, an email channel and a paused alert rule
 //	INSIGHTS_EMAIL         verified team email, required with INSIGHTS_SMOKE_WRITE=1
@@ -136,6 +136,40 @@ func main() {
 			fmt.Printf("       → %d span(s)\n", len(out.Data))
 			return nil
 		})
+		var traceID string
+		check("SearchTraces", func() error {
+			out, _, err := client.Insights.SearchTraces(ctx, region, &godo.TracesSearchRequest{
+				TimeRange: godo.TracesTimeRange{
+					From: godo.TracesTimeBound{Relative: "1h"},
+					To:   godo.TracesTimeBound{Relative: "now"},
+				},
+				OrderBy: []godo.TracesOrderBy{{
+					Field:     godo.TracesFilterField{Name: "started"},
+					Direction: godo.InsightsTracesSortDirectionDescending,
+				}},
+				Pagination: &godo.TracesPaginationRequest{Limit: 10},
+			})
+			if err != nil {
+				return err
+			}
+			if len(out.Data) > 0 {
+				traceID = out.Data[0].TraceID
+			}
+			fmt.Printf("       → %d trace(s)\n", len(out.Data))
+			return nil
+		})
+		if traceID == "" {
+			fmt.Println("SKIP GetTrace (no traces in the last hour)")
+		} else {
+			check("GetTrace", func() error {
+				out, _, err := client.Insights.GetTrace(ctx, region, traceID, &godo.TraceGetOptions{From: "1h", To: "now"})
+				if err != nil {
+					return err
+				}
+				fmt.Printf("       → %d span(s), truncated=%t\n", len(out.Spans), out.Truncated)
+				return nil
+			})
+		}
 		check("PostQuery", func() error {
 			_, _, err := client.Insights.PostQuery(ctx, region, &godo.PromQueryOptions{Query: query, Timeout: "30s"})
 			return err
