@@ -170,18 +170,18 @@ type SignalsCreateExportRequest struct {
 
 // SignalsCreateDeletionRequest is the body for POST /v1/signals/deletions.
 // JSON keys match CreateDeletionRequest in signals-api OpenAPI:
-// required type + team_id; agent_id only for agent (omit for inference).
+// required type; optional team_id (defaults to the token's team); agent_id
+// only for agent (omit for inference).
 type SignalsCreateDeletionRequest struct {
 	// Type is SignalsDeletionTypeAgent or SignalsDeletionTypeInference.
 	// Required by the server (omitting type is 400). godo also requires it so a
 	// missing AgentID can never be mistaken for a team-wide inference deletion.
 	Type string `json:"type"`
-	// TeamID is required for both agent and inference. It must equal the
-	// numeric team ID of the team authenticated by the client's API token.
-	// The API does not infer team_id from the token when this field is
-	// omitted or zero (omit/zero → client or server error; mismatch → 403).
-	// doctl resolves TeamID automatically when --team-id is omitted.
-	TeamID int64 `json:"team_id"`
+	// TeamID is optional for both agent and inference. When zero/omitted, the
+	// API uses the team authenticated by the client's API token. When set, it
+	// must match that team (mismatch → 403). doctl also defaults --team-id
+	// from the token when the flag is omitted.
+	TeamID int64 `json:"team_id,omitempty"`
 	// AgentID is the Harness Runtime Environment Config ID (agent UUID).
 	// Required for agent and must be empty for inference (team-wide only).
 	// Omitted from the JSON body when empty.
@@ -546,18 +546,17 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 // deleted. Aggregated Insights/metrics summaries may still remain and are
 // not the same as recoverable conversation content.
 //
-// For agent deletions, wait until the job is complete before enabling Signals
-// for that agent again.
+// We recommend waiting until the job is complete before enabling Signals again
+// for that scope. Re-enable mid-job is allowed; new post-re-enable data is kept.
 //
-// TeamID is required on every create (agent and inference). Send the numeric
-// team ID for the team your API token belongs to. The server authenticates
-// the team from the token and rejects a missing/zero TeamID or a mismatch
-// (403). It does not fill TeamID from the token for you.
+// TeamID is optional on create (agent and inference). When zero/omitted, the
+// API uses the team from the caller's API token. When set, it must match that
+// authenticated team (mismatch → 403).
 //
 // Status codes from the server:
 //   - 202 — new job created (queued)
 //   - 200 — active job for the same fingerprint reused (queued/running)
-//   - 400 — invalid body (type/agent_id rules, unknown fields, bad UUID, missing team_id at the edge)
+//   - 400 — invalid body (type/agent_id rules, unknown fields, bad UUID)
 //   - 401 — missing team auth
 //   - 403 — body team_id does not match authenticated team
 //   - 404 — agent unknown for this team
@@ -577,8 +576,8 @@ func (s *SignalsServiceOp) CreateDeletion(ctx context.Context, body *SignalsCrea
 	if body == nil {
 		return nil, nil, fmt.Errorf("signals: create deletion request is required")
 	}
-	if body.TeamID <= 0 {
-		return nil, nil, fmt.Errorf("signals: team_id is required")
+	if body.TeamID < 0 {
+		return nil, nil, fmt.Errorf("signals: team_id must not be negative")
 	}
 	typ := strings.TrimSpace(body.Type)
 	agentID := strings.TrimSpace(body.AgentID)
