@@ -176,7 +176,11 @@ type SignalsCreateDeletionRequest struct {
 	// Required by the server (omitting type is 400). godo also requires it so a
 	// missing AgentID can never be mistaken for a team-wide inference deletion.
 	Type string `json:"type"`
-	// TeamID is the numeric team id; it must match the authenticated team.
+	// TeamID is required for both agent and inference. It must equal the
+	// numeric team ID of the team authenticated by the client's API token.
+	// The API does not infer team_id from the token when this field is
+	// omitted or zero (omit/zero → client or server error; mismatch → 403).
+	// doctl resolves TeamID automatically when --team-id is omitted.
 	TeamID int64 `json:"team_id"`
 	// AgentID is the Harness Runtime Environment Config ID (agent UUID).
 	// Required for agent and must be empty for inference (team-wide only).
@@ -545,10 +549,15 @@ func (s *SignalsServiceOp) GetExportOptions(ctx context.Context) (*SignalsExport
 // For agent deletions, wait until the job is complete before enabling Signals
 // for that agent again.
 //
+// TeamID is required on every create (agent and inference). Send the numeric
+// team ID for the team your API token belongs to. The server authenticates
+// the team from the token and rejects a missing/zero TeamID or a mismatch
+// (403). It does not fill TeamID from the token for you.
+//
 // Status codes from the server:
 //   - 202 — new job created (queued)
 //   - 200 — active job for the same fingerprint reused (queued/running)
-//   - 400 — invalid body (type/agent_id rules, unknown fields, bad UUID)
+//   - 400 — invalid body (type/agent_id rules, unknown fields, bad UUID, missing team_id at the edge)
 //   - 401 — missing team auth
 //   - 403 — body team_id does not match authenticated team
 //   - 404 — agent unknown for this team
