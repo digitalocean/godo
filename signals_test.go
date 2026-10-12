@@ -602,6 +602,41 @@ func TestSignals_CreateDeletion_Inference(t *testing.T) {
 	}
 }
 
+func TestSignals_CreateDeletion_OmitsZeroTeamID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var m map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
+			t.Errorf("decode: %v", err)
+			return
+		}
+		if m["type"] != "inference" {
+			t.Errorf("type=%v, want inference", m["type"])
+		}
+		if _, has := m["team_id"]; has {
+			t.Errorf("team_id must be omitted when zero: %v", m)
+		}
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{"team_id":99,"deletion_id":"`+testDeletionID+`","type":"inference","status":"queued","created_at":1728324000}`)
+	})
+
+	got, resp, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
+		Type: SignalsDeletionTypeInference,
+	})
+	if err != nil {
+		t.Fatalf("CreateDeletion: %v", err)
+	}
+	if resp.StatusCode != http.StatusAccepted {
+		t.Errorf("status=%d, want 202", resp.StatusCode)
+	}
+	if got.TeamID != 99 || got.Type != "inference" {
+		t.Errorf("unexpected job: %+v", got)
+	}
+}
+
 func TestSignals_CreateDeletion_ExistingActiveJob(t *testing.T) {
 	setup()
 	defer teardown()
@@ -636,11 +671,10 @@ func TestSignals_CreateDeletion_Validation(t *testing.T) {
 		wantMsg string
 	}{
 		{"NilRequest", nil, "signals: create deletion request is required"},
-		{"ZeroTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 0}, "signals: team_id is required"},
-		{"NegativeTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: -1}, "signals: team_id is required"},
+		{"NegativeTeamID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: -1}, "signals: team_id must not be negative"},
 		{"EmptyType", &SignalsCreateDeletionRequest{TeamID: 1}, "signals: type must be agent or inference"},
 		{"UnknownType", &SignalsCreateDeletionRequest{Type: "bogus", TeamID: 1, AgentID: "a"}, "signals: type must be agent or inference"},
-		{"BadTypeAndBadTeamReportsTeamFirst", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 0}, "signals: team_id is required"},
+		{"ZeroTeamIDManagedMissingAgentID", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 0}, "signals: agent_id is required for agent"},
 		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1}, "signals: agent_id is required for agent"},
 		{"InferenceWithAgentID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1, AgentID: "a"}, "signals: agent_id must not be set for inference"},
 	}
