@@ -1383,3 +1383,167 @@ func TestInsights_GetTraceNotFound(t *testing.T) {
 		t.Errorf("error = %#v", err)
 	}
 }
+
+func TestInsights_Resources(t *testing.T) {
+	effectiveAt := time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
+	resource := &InsightsResource{
+		ResourceURN: "do:droplet:12345",
+		ProductType: "droplet",
+		Region:      "nyc3",
+		Metrics:     &InsightsResourceSignalState{Enabled: true, EffectiveAt: effectiveAt},
+		Logs:        &InsightsResourceSignalState{Enabled: true, EffectiveAt: effectiveAt},
+		Traces:      &InsightsResourceSignalState{Enabled: false, EffectiveAt: effectiveAt},
+	}
+
+	t.Run("list", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/resources", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			q := r.URL.Query()
+			if got := q["filter.product_types"]; !reflect.DeepEqual(got, []string{"droplet", "kubernetes"}) {
+				t.Errorf("filter.product_types = %v", got)
+			}
+			if q.Get("filter.regions") != "nyc3" || q.Get("pagination.page") != "2" || q.Get("pagination.per_page") != "50" {
+				t.Errorf("query = %s", r.URL.RawQuery)
+			}
+			if q.Get("pagination.sort") != InsightsResourceSortEffectiveAt || q.Get("pagination.sort_direction") != InsightsResourceSortDescending {
+				t.Errorf("sort query = %s", r.URL.RawQuery)
+			}
+			fmt.Fprintf(w, `{"resources":[%s],"pagination":{"page":2,"pages":3,"per_page":50,"total":120}}`, mustJSON(resource))
+		})
+		got, _, err := client.Insights.ListResources(ctx, &InsightsResourceListOptions{
+			ProductTypes:  []string{"droplet", "kubernetes"},
+			Regions:       []string{"nyc3"},
+			Page:          2,
+			PerPage:       50,
+			Sort:          InsightsResourceSortEffectiveAt,
+			SortDirection: InsightsResourceSortDescending,
+		})
+		if err != nil {
+			t.Fatalf("ListResources: %v", err)
+		}
+		want := &InsightsResourceList{
+			Resources:  []InsightsResource{*resource},
+			Pagination: &InsightsResourcesPagination{Page: 2, Pages: 3, PerPage: 50, Total: 120},
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %+v, want %+v", got, want)
+		}
+	})
+
+	t.Run("list empty omits resources", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/resources", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			fmt.Fprint(w, `{"pagination":{"page":1,"pages":0,"per_page":20,"total":0}}`)
+		})
+		got, _, err := client.Insights.ListResources(ctx, nil)
+		if err != nil {
+			t.Fatalf("ListResources: %v", err)
+		}
+		if len(got.Resources) != 0 || got.Pagination == nil || got.Pagination.Total != 0 {
+			t.Errorf("got %+v", got)
+		}
+	})
+
+	t.Run("get", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/resources/do:droplet:12345", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			fmt.Fprintf(w, `{"resource":%s}`, mustJSON(resource))
+		})
+		got, _, err := client.Insights.GetResource(ctx, "do:droplet:12345")
+		if err != nil {
+			t.Fatalf("GetResource: %v", err)
+		}
+		if !reflect.DeepEqual(got, resource) {
+			t.Errorf("got %+v, want %+v", got, resource)
+		}
+	})
+
+	t.Run("get unset signals are nil", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/resources/do:droplet:12345", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprint(w, `{"resource":{"resource_urn":"do:droplet:12345","product_type":"droplet","metrics":{"enabled":true,"effective_at":"2026-10-01T12:00:00Z"}}}`)
+		})
+		got, _, err := client.Insights.GetResource(ctx, "do:droplet:12345")
+		if err != nil {
+			t.Fatalf("GetResource: %v", err)
+		}
+		if got.Metrics == nil || !got.Metrics.Enabled || got.Logs != nil || got.Traces != nil || got.Region != "" {
+			t.Errorf("got %+v", got)
+		}
+	})
+
+	t.Run("get not found", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/resources/do:droplet:404", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, `{"id":"not_found","message":"resource not found"}`)
+		})
+		got, resp, err := client.Insights.GetResource(ctx, "do:droplet:404")
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if got != nil {
+			t.Errorf("result = %#v, want nil", got)
+		}
+		if resp == nil || resp.StatusCode != http.StatusNotFound {
+			t.Fatalf("response = %#v", resp)
+		}
+	})
+
+	t.Run("update sends only set signals", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/resources/do:droplet:12345/signals", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodPut)
+			raw, _ := io.ReadAll(r.Body)
+			var body map[string]any
+			if err := json.Unmarshal(raw, &body); err != nil {
+				t.Fatalf("decode: %v", err)
+			}
+			if body["region"] != "nyc3" || body["metrics"] != true || body["logs"] != false {
+				t.Errorf("body = %s", raw)
+			}
+			if _, ok := body["traces"]; ok {
+				t.Errorf("traces should be omitted: %s", raw)
+			}
+			fmt.Fprintf(w, `{"resource":%s}`, mustJSON(resource))
+		})
+		got, _, err := client.Insights.UpdateResourceSignals(ctx, "do:droplet:12345", &InsightsResourceSignalsRequest{
+			Region:  "nyc3",
+			Metrics: Bool(true),
+			Logs:    Bool(false),
+		})
+		if err != nil {
+			t.Fatalf("UpdateResourceSignals: %v", err)
+		}
+		if !reflect.DeepEqual(got, resource) {
+			t.Errorf("got %+v, want %+v", got, resource)
+		}
+	})
+
+	t.Run("paths escape the resource urn", func(t *testing.T) {
+		setup()
+		defer teardown()
+		urn := "do:app/with space"
+		mux.HandleFunc("/v2/insights/resources/do:app%2Fwith%20space", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `{"resource":%s}`, mustJSON(resource))
+		})
+		mux.HandleFunc("/v2/insights/resources/do:app%2Fwith%20space/signals", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `{"resource":%s}`, mustJSON(resource))
+		})
+		if _, _, err := client.Insights.GetResource(ctx, urn); err != nil {
+			t.Fatalf("GetResource: %v", err)
+		}
+		if _, _, err := client.Insights.UpdateResourceSignals(ctx, urn, &InsightsResourceSignalsRequest{Metrics: Bool(true)}); err != nil {
+			t.Fatalf("UpdateResourceSignals: %v", err)
+		}
+	})
+}
