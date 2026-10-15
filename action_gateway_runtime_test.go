@@ -197,7 +197,7 @@ func TestActionGatewayInferenceAdapters(t *testing.T) {
 	}
 	chat := &ChatCompletion{Choices: []ChatCompletionChoice{{Message: ChatCompletionMessage{ToolCalls: []ChatCompletionToolCall{{ID: "chat-1", Function: ChatCompletionToolCallFunc{Name: "fetch", Arguments: `{}`}}, {ID: "chat-2", Function: ChatCompletionToolCallFunc{Name: "bad", Arguments: `{}`}}}}}}}
 	chatResults, _, err := session.HandleChatToolCalls(ctx, chat)
-	if err != nil || len(chatResults) != 2 || chatResults[0].Role != "tool" || !strings.Contains(*chatResults[1].Content, "permission denied") || !strings.Contains(*chatResults[1].Content, "approval-1") {
+	if err != nil || len(chatResults) != 2 || chatResults[0].Role != "tool" || !strings.Contains(chatResults[1].Content.Text(), "permission denied") || !strings.Contains(chatResults[1].Content.Text(), "approval-1") {
 		t.Fatalf("chat results = %+v, %v", chatResults, err)
 	}
 	message := &Message{Content: []MessageContentBlock{{Type: "tool_use", ID: "msg-1", Name: "fetch", Input: map[string]interface{}{}}}}

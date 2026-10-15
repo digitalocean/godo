@@ -47,6 +47,6 @@ func main() {
 	}
 
 	if msg := completion.Choices[0].Message.Content; msg != nil {
-		println(*msg)
+		println(msg.Text())
 	}
 }
