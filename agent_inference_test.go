@@ -64,7 +64,7 @@ func TestAgentInferenceClient_NewAndStreaming(t *testing.T) {
 					FinishReason: "stop",
 					Message: ChatCompletionMessage{
 						Role:    "assistant",
-						Content: PtrTo("Hello world"),
+						Content: StringContent("Hello world"),
 					},
 				},
 			},
@@ -97,7 +97,7 @@ func TestAgentInferenceClient_NewAndStreaming(t *testing.T) {
 		if resp.ID != "chatcmpl-abc123" {
 			t.Fatalf("ID = %q, want chatcmpl-abc123", resp.ID)
 		}
-		if got := resp.Choices[0].Message.Content; got == nil || *got != "Hello world" {
+		if got := resp.Choices[0].Message.Content; got == nil || got.Text() != "Hello world" {
 			t.Fatalf("Content = %v, want %q", got, "Hello world")
 		}
 	})
