@@ -104,6 +104,7 @@ type KubernetesClusterCreateRequest struct {
 	// 422. This can only be set at creation time.
 	IsolatedWorkers bool `json:"isolated_workers,omitempty"`
 	// GPUOperatorReady controls whether to launch GPU nodes in the cluster with images without GPU drivers.
+	// Mutually exclusive with other GPU-related cluster options, such as NvidiaGpuDraDriver and AmdGpuDraDriver.
 	GPUOperatorReady bool `json:"gpu_operator_ready,omitempty"`
 }
 
@@ -130,6 +131,7 @@ type KubernetesClusterUpdateRequest struct {
 	// Convert cluster to run highly available control plane
 	HA *bool `json:"ha,omitempty"`
 	// GPUOperatorReady controls whether to launch GPU nodes in the cluster with images without GPU drivers.
+	// Mutually exclusive with other GPU-related cluster options, such as NvidiaGpuDraDriver and AmdGpuDraDriver.
 	GPUOperatorReady *bool `json:"gpu_operator_ready,omitempty"`
 }
 
