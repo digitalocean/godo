@@ -461,6 +461,155 @@ func TestMicroVMs_Delete_EmptyID(t *testing.T) {
 	}
 }
 
+func TestMicroVMs_Create_IngressFalse(t *testing.T) {
+	setup()
+	defer teardown()
+
+	ingress := false
+	createRequest := &MicroVMCreateRequest{
+		Name:    "no-ingress",
+		Source:  &MicroVMSource{OCIRef: "docker.io/library/nginx:1.27"},
+		Ingress: &ingress,
+	}
+
+	mux.HandleFunc("/v2/microvms", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		expected := map[string]interface{}{
+			"name": "no-ingress",
+			"source": map[string]interface{}{
+				"oci_ref": "docker.io/library/nginx:1.27",
+			},
+			"ingress": false,
+		}
+
+		var got map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if !reflect.DeepEqual(got, expected) {
+			t.Errorf("Create (ingress) body\n got=%#v\nwant=%#v", got, expected)
+		}
+
+		fmt.Fprint(w, `{"microvm": {"id": "ccc-333", "name": "no-ingress"}}`)
+	})
+
+	if _, _, err := client.MicroVMs.Create(ctx, createRequest); err != nil {
+		t.Fatalf("MicroVMs.Create returned error: %v", err)
+	}
+}
+
+func TestMicroVMs_AddURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/urls", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		expected := map[string]interface{}{
+			"port": float64(9090),
+		}
+
+		var got map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if !reflect.DeepEqual(got, expected) {
+			t.Errorf("AddURL body\n got=%#v\nwant=%#v", got, expected)
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"url": {"id": "url-1", "hostname": "foo.nyc3.microdroplet.ondigitalocean.com", "port": 9090, "status": "PENDING"}}`)
+	})
+
+	url, _, err := client.MicroVMs.AddURL(ctx, "aaa-111", &MicroVMURLCreateRequest{Port: 9090})
+	if err != nil {
+		t.Fatalf("MicroVMs.AddURL returned error: %v", err)
+	}
+
+	if url.ID != "url-1" {
+		t.Errorf("MicroVMs.AddURL returned ID %q, expected %q", url.ID, "url-1")
+	}
+	if url.Port != 9090 {
+		t.Errorf("MicroVMs.AddURL returned Port %d, expected %d", url.Port, 9090)
+	}
+	if url.Status != MicroVMURLStatusPending {
+		t.Errorf("MicroVMs.AddURL returned Status %q, expected %q", url.Status, MicroVMURLStatusPending)
+	}
+}
+
+func TestMicroVMs_AddURL_NilRequest(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/urls", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		var got map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if len(got) != 0 {
+			t.Errorf("AddURL nil-request body got=%#v, want empty object", got)
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"url": {"id": "url-2", "status": "ACTIVE"}}`)
+	})
+
+	url, _, err := client.MicroVMs.AddURL(ctx, "aaa-111", nil)
+	if err != nil {
+		t.Fatalf("MicroVMs.AddURL returned error: %v", err)
+	}
+	if url.Status != MicroVMURLStatusActive {
+		t.Errorf("MicroVMs.AddURL returned Status %q, expected %q", url.Status, MicroVMURLStatusActive)
+	}
+}
+
+func TestMicroVMs_AddURL_EmptyID(t *testing.T) {
+	_, _, err := (&MicroVMsServiceOp{}).AddURL(ctx, "", &MicroVMURLCreateRequest{})
+	if err == nil {
+		t.Fatal("expected error for empty microVMID")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroVMs_RemoveURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/urls/url-1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	if _, err := client.MicroVMs.RemoveURL(ctx, "aaa-111", "url-1"); err != nil {
+		t.Fatalf("MicroVMs.RemoveURL returned error: %v", err)
+	}
+}
+
+func TestMicroVMs_RemoveURL_EmptyID(t *testing.T) {
+	_, err := (&MicroVMsServiceOp{}).RemoveURL(ctx, "", "url-1")
+	if err == nil {
+		t.Fatal("expected error for empty microVMID")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
+func TestMicroVMs_RemoveURL_EmptyURLID(t *testing.T) {
+	_, err := (&MicroVMsServiceOp{}).RemoveURL(ctx, "aaa-111", "")
+	if err == nil {
+		t.Fatal("expected error for empty urlID")
+	}
+	if _, ok := err.(*ArgError); !ok {
+		t.Errorf("expected *ArgError, got %T: %v", err, err)
+	}
+}
+
 func TestMicroVMs_ListCheckpoints(t *testing.T) {
 	setup()
 	defer teardown()
