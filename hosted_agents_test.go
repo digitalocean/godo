@@ -1989,6 +1989,7 @@ func TestHostedAgents_ListConnections(t *testing.T) {
 					"user_id": "alice",
 					"status": "active",
 					"owning_user_id": "419299d4-273a-43b6-a6c9-d52d1a53bd42",
+					"deletion_protected": true,
 					"created_at": "2026-10-07T20:13:40Z",
 					"updated_at": "2026-10-07T20:13:40Z",
 					"oauth": {"scopes": ["repo", "read:org"], "granted_at": "2026-10-07T20:13:40Z"}
@@ -2015,6 +2016,7 @@ func TestHostedAgents_ListConnections(t *testing.T) {
 				ActorID:             "alice",
 				Status:              "active",
 				OwningUserID:        "419299d4-273a-43b6-a6c9-d52d1a53bd42",
+				DeletionProtected:   true,
 				CreatedAt:           &Timestamp{Time: time.Date(2026, 10, 7, 20, 13, 40, 0, time.UTC)},
 				UpdatedAt:           &Timestamp{Time: time.Date(2026, 10, 7, 20, 13, 40, 0, time.UTC)},
 				OAuth: &HostedAgentConnectionOAuth{
@@ -2082,7 +2084,7 @@ func TestHostedAgents_GetConnection(t *testing.T) {
 
 	mux.HandleFunc("/v2/agents/auth/github/connections/c1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"active"}}`)
+		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"active","deletion_protected":true}}`)
 	})
 
 	got, resp, err := client.HostedAgents.GetConnection(ctx, "github", "c1")
@@ -2090,6 +2092,9 @@ func TestHostedAgents_GetConnection(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "c1", got.Connection.ID)
 	assert.Equal(t, "alice", got.Connection.ActorID)
+	// deletion_protected is the only signal that an ordinary delete will be
+	// refused, so it has to survive unmarshalling rather than be discarded.
+	assert.True(t, got.Connection.DeletionProtected)
 }
 
 func TestHostedAgents_DeleteConnection(t *testing.T) {
@@ -2105,6 +2110,7 @@ func TestHostedAgents_DeleteConnection(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Equal(t, "revoked", got.Connection.Status)
+	assert.False(t, got.Connection.DeletionProtected)
 }
 
 func TestHostedAgents_Connections_RequiredArgs(t *testing.T) {
