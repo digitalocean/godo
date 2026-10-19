@@ -3,6 +3,8 @@
 ## [1.228.0] - 2026-10-19
 
 - #1173 - @potturu-vamsi - agent platform: remove MaxTokens from CandidateInferenceConfig
+- #1166 - @kishlay-singh-DO - Add Insights enablement endpoints
+- #1171 - @BadhriDO - hosted agents: carry deletion_protected on connections (MARSOHS-2173)
 
 ## [1.227.0] - 2026-10-16
 
