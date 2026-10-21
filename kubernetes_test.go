@@ -337,6 +337,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		IPv4:             "1.2.3.4",
 		VPCUUID:          "880b7f98-f062-404d-b33c-458d545696f6",
 		WorkerSubnetUUID: "1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+		GPUOperatorReady: true,
 		Status: &KubernetesClusterStatus{
 			State: KubernetesClusterStatusRunning,
 		},
@@ -436,6 +437,7 @@ func TestKubernetesClusters_Get(t *testing.T) {
 		"nfs_csi_plugin": {
 			"enabled": true
 		},
+		"gpu_operator_ready": true,
 		"amd_gpu_device_plugin": {
 			"enabled": true
 		},
@@ -1174,6 +1176,75 @@ func TestKubernetesClusters_Create_AutoScalePool(t *testing.T) {
 	got, _, err := kubeSvc.Create(ctx, createRequest)
 	require.NoError(t, err)
 	require.Equal(t, want, got)
+}
+
+func TestKubernetesClusterCreateRequest_GPUOperatorReady_JsonMarshal(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      *KubernetesClusterCreateRequest
+		contains string // substring that must be in JSON
+		omits    string // substring that must NOT be in JSON
+	}{
+		{
+			name:  "GPUOperatorReady false - field omitted",
+			req:   &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36"},
+			omits: `"gpu_operator_ready"`,
+		},
+		{
+			name:     "GPUOperatorReady true - field present",
+			req:      &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36", GPUOperatorReady: true},
+			contains: `"gpu_operator_ready":true`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+			if tt.contains != "" {
+				require.Contains(t, string(data), tt.contains)
+			}
+			if tt.omits != "" {
+				require.NotContains(t, string(data), tt.omits)
+			}
+		})
+	}
+}
+
+func TestKubernetesClusterUpdateRequest_GPUOperatorReady_JsonMarshal(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      *KubernetesClusterUpdateRequest
+		contains string // substring that must be in JSON
+		omits    string // substring that must NOT be in JSON
+	}{
+		{
+			name:  "GPUOperatorReady nil - field omitted",
+			req:   &KubernetesClusterUpdateRequest{Name: "test"},
+			omits: `"gpu_operator_ready"`,
+		},
+		{
+			name:     "GPUOperatorReady true - field present",
+			req:      &KubernetesClusterUpdateRequest{Name: "test", GPUOperatorReady: PtrTo(true)},
+			contains: `"gpu_operator_ready":true`,
+		},
+		{
+			name:     "GPUOperatorReady false - field present",
+			req:      &KubernetesClusterUpdateRequest{Name: "test", GPUOperatorReady: PtrTo(false)},
+			contains: `"gpu_operator_ready":false`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+			if tt.contains != "" {
+				require.Contains(t, string(data), tt.contains)
+			}
+			if tt.omits != "" {
+				require.NotContains(t, string(data), tt.omits)
+			}
+		})
+	}
 }
 
 func TestKubernetesClusters_Create_IsolatedWorkers(t *testing.T) {
