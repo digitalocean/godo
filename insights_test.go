@@ -743,48 +743,41 @@ func TestInsights_SearchSpans(t *testing.T) {
 			To:   SpansTimeBound{Relative: "now"},
 		},
 		Filter: &SpansFilterExpression{
-			Type: InsightsSpansFilterTypeAnd,
-			Expressions: []SpansFilterExpression{
-				{
-					Type:     InsightsSpansFilterTypeCondition,
-					Field:    &SpansFilterField{Name: "serviceName"},
+			And: &SpansFilterGroup{Expressions: []SpansFilterExpression{
+				{Condition: &SpansFilterCondition{
+					Field:    SpansFilterField{Name: "service_name"},
 					Operator: InsightsSpansFilterOperatorEqual,
-					Value:    &SpansFilterValue{String: String("api-gateway")},
-				},
+					Value:    &SpansFilterValue{StringValue: String("api-gateway")},
+				}},
 				{
-					Type: InsightsSpansFilterTypeOr,
-					Expressions: []SpansFilterExpression{
-						{
-							Type:     InsightsSpansFilterTypeCondition,
-							Field:    &SpansFilterField{Name: "statusCode"},
+					Or: &SpansFilterGroup{Expressions: []SpansFilterExpression{
+						{Condition: &SpansFilterCondition{
+							Field:    SpansFilterField{Name: "status_code"},
 							Operator: InsightsSpansFilterOperatorEqual,
-							Value:    &SpansFilterValue{String: String("Error")},
-						},
-						{
-							Type:     InsightsSpansFilterTypeCondition,
-							Field:    &SpansFilterField{Name: "durationNs"},
+							Value:    &SpansFilterValue{StringValue: String("Error")},
+						}},
+						{Condition: &SpansFilterCondition{
+							Field:    SpansFilterField{Name: "duration_ns"},
 							Operator: InsightsSpansFilterOperatorGreaterThanOrEqual,
-							Value:    &SpansFilterValue{Number: PtrTo(1000000.0)},
-						},
-						{
-							Type:     InsightsSpansFilterTypeCondition,
-							Field:    &SpansFilterField{Name: "http.method", Scope: InsightsSpansFieldScopeAttributes},
+							Value:    &SpansFilterValue{NumberValue: PtrTo(1000000.0)},
+						}},
+						{Condition: &SpansFilterCondition{
+							Field:    SpansFilterField{Name: "http.method", Scope: InsightsSpansFieldScopeAttributes},
 							Operator: InsightsSpansFilterOperatorIn,
-							Value:    &SpansFilterValue{StringArray: []string{"GET", "POST"}},
-						},
-					},
+							Value:    &SpansFilterValue{StringArrayValue: &SpansStringArrayValue{Values: []string{"GET", "POST"}}},
+						}},
+					}},
 				},
 				{
-					Type: InsightsSpansFilterTypeNot,
-					Expressions: []SpansFilterExpression{
-						{Type: InsightsSpansFilterTypeTextSearch, Query: "healthcheck"},
+					Not: &SpansFilterExpression{
+						TextSearch: &SpansTextSearch{Query: "healthcheck"},
 					},
 				},
-			},
+			}},
 		},
 		OrderBy: []SpansOrderBy{
 			{
-				Field:     SpansFilterField{Name: "startTime"},
+				Field:     SpansFilterField{Name: "start_time"},
 				Direction: InsightsSpansSortDirectionDescending,
 			},
 		},
@@ -800,31 +793,31 @@ func TestInsights_SearchSpans(t *testing.T) {
 			t.Errorf("Content-Type = %q", got)
 		}
 
-		var got SpansSearchRequest
-		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
-			t.Fatalf("decode request: %v", err)
+		raw, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read request: %v", err)
 		}
-		if !reflect.DeepEqual(got, *search) {
-			t.Errorf("request = %#v, want %#v", got, *search)
+		if got, want := string(raw), mustJSON(search)+"\n"; got != want {
+			t.Errorf("request = %s, want %s", got, want)
 		}
 
 		fmt.Fprint(w, `{
 			"data": [{
-				"traceId": "4bf92f3577b34da6a3ce929d0e0e4736",
-				"spanId": "00f067aa0ba902b7",
-				"parentSpanId": "00f067aa0ba902b6",
-				"startTime": "2026-09-30T00:00:00Z",
-				"endTime": "2026-09-30T00:00:01Z",
-				"durationNs": 1000000,
+				"trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
+				"span_id": "00f067aa0ba902b7",
+				"parent_span_id": "00f067aa0ba902b6",
+				"start_time": "2026-09-30T00:00:00Z",
+				"end_time": "2026-09-30T00:00:01Z",
+				"duration_ns": 1000000,
 				"name": "GET /v2/droplets",
 				"kind": "Server",
-				"statusCode": "Ok",
-				"serviceName": "api-gateway",
+				"status_code": "Ok",
+				"service_name": "api-gateway",
 				"resource": {"service.name": "api-gateway", "service.version": "1.4.2"},
 				"attributes": {"http.method": "GET", "http.status_code": "200"},
 				"region": "nyc3"
 			}],
-			"pagination": {"hasMore": true}
+			"pagination": {"has_more": true}
 		}`)
 	})
 
@@ -867,10 +860,11 @@ func TestSpansFilterValueMarshal(t *testing.T) {
 		value SpansFilterValue
 		want  string
 	}{
-		{"string", SpansFilterValue{String: String("api-gateway")}, `{"type":"string","value":"api-gateway"}`},
-		{"number", SpansFilterValue{Number: PtrTo(503.0)}, `{"type":"number","value":503}`},
-		{"bool", SpansFilterValue{Bool: PtrTo(false)}, `{"type":"bool","value":false}`},
-		{"string_array", SpansFilterValue{StringArray: []string{"GET", "POST"}}, `{"type":"string_array","value":["GET","POST"]}`},
+		{"legacy string", SpansFilterValue{String: String("api-gateway")}, `{"string_value":"api-gateway"}`},
+		{"number", SpansFilterValue{NumberValue: PtrTo(503.0)}, `{"number_value":503}`},
+		{"exact integer", SpansFilterValue{NumberValueInt64: PtrTo(int64(1700000000123456789))}, `{"number_value":1700000000123456789}`},
+		{"string_array", SpansFilterValue{StringArrayValue: &SpansStringArrayValue{Values: []string{"GET", "POST"}}}, `{"string_array_value":{"values":["GET","POST"]}}`},
+		{"number_array", SpansFilterValue{NumberArrayValue: &SpansNumberArrayValue{Values: []float64{200, 503}}}, `{"number_array_value":{"values":[200,503]}}`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -890,6 +884,12 @@ func TestSpansFilterValueMarshal(t *testing.T) {
 	if _, err := json.Marshal(SpansFilterValue{String: String("x"), Bool: PtrTo(true)}); err == nil {
 		t.Error("expected error marshaling multi-field SpansFilterValue")
 	}
+	if _, err := json.Marshal(SpansFilterValue{Bool: PtrTo(true)}); err == nil {
+		t.Error("expected error marshaling unsupported boolean SpansFilterValue")
+	}
+	if _, err := json.Marshal(SpansFilterValue{NumberValue: PtrTo(1.0), NumberValueInt64: PtrTo(int64(1))}); err == nil {
+		t.Error("expected error marshaling ambiguous numeric SpansFilterValue")
+	}
 }
 
 func TestSpansFilterValueUnmarshal(t *testing.T) {
@@ -898,14 +898,13 @@ func TestSpansFilterValueUnmarshal(t *testing.T) {
 		data string
 		want SpansFilterValue
 	}{
-		{"typed string", `{"type":"string","value":"api-gateway"}`, SpansFilterValue{String: String("api-gateway")}},
-		{"bare string", `"api-gateway"`, SpansFilterValue{String: String("api-gateway")}},
-		{"typed number", `{"type":"number","value":503}`, SpansFilterValue{Number: PtrTo(503.0)}},
-		{"bare number", `503`, SpansFilterValue{Number: PtrTo(503.0)}},
-		{"typed bool", `{"type":"bool","value":true}`, SpansFilterValue{Bool: PtrTo(true)}},
-		{"bare bool", `false`, SpansFilterValue{Bool: PtrTo(false)}},
-		{"typed string_array", `{"type":"string_array","value":["GET","POST"]}`, SpansFilterValue{StringArray: []string{"GET", "POST"}}},
-		{"bare string_array", `["GET","POST"]`, SpansFilterValue{StringArray: []string{"GET", "POST"}}},
+		{"string", `{"string_value":"api-gateway"}`, SpansFilterValue{StringValue: String("api-gateway")}},
+		{"integer", `{"number_value":503}`, SpansFilterValue{NumberValueInt64: PtrTo(int64(503))}},
+		{"exact integer", `{"number_value":1700000000123456789}`, SpansFilterValue{NumberValueInt64: PtrTo(int64(1700000000123456789))}},
+		{"decimal", `{"number_value":50.3}`, SpansFilterValue{NumberValue: PtrTo(50.3)}},
+		{"string_array", `{"string_array_value":{"values":["GET","POST"]}}`, SpansFilterValue{StringArrayValue: &SpansStringArrayValue{Values: []string{"GET", "POST"}}}},
+		{"number_array", `{"number_array_value":{"values":[200,503]}}`, SpansFilterValue{NumberArrayValue: &SpansNumberArrayValue{Values: []float64{200, 503}}}},
+		{"deprecated wrapper", `{"type":"string","value":"api-gateway"}`, SpansFilterValue{String: String("api-gateway")}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -917,6 +916,84 @@ func TestSpansFilterValueUnmarshal(t *testing.T) {
 				t.Errorf("got %#v, want %#v", got, tt.want)
 			}
 		})
+	}
+
+	var v SpansFilterValue
+	if err := json.Unmarshal([]byte(`{"bool_value":true}`), &v); err == nil {
+		t.Error("expected error for unsupported boolean SpansFilterValue")
+	}
+}
+
+func TestSpansSearchRequestWireContract(t *testing.T) {
+	request := SpansSearchRequest{
+		TimeRange: SpansTimeRange{
+			From: SpansTimeBound{Relative: "15m"},
+			To:   SpansTimeBound{Relative: "now"},
+		},
+		Filter: &SpansFilterExpression{
+			And: &SpansFilterGroup{Expressions: []SpansFilterExpression{
+				{Condition: &SpansFilterCondition{
+					Field:    SpansFilterField{Name: "service_name"},
+					Operator: InsightsSpansFilterOperatorEqual,
+					Value:    &SpansFilterValue{StringValue: String("api")},
+				}},
+				{Not: &SpansFilterExpression{TextSearch: &SpansTextSearch{Query: "healthcheck"}}},
+			}},
+		},
+		OrderBy: []SpansOrderBy{{
+			Field:     SpansFilterField{Name: "start_time"},
+			Direction: InsightsSpansSortDirectionDescending,
+		}},
+		Pagination: &SpansPaginationRequest{Limit: 10},
+	}
+
+	got, err := json.Marshal(request)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	want := `{"time_range":{"from":{"relative":"15m"},"to":{"relative":"now"}},"filter":{"and":{"expressions":[{"condition":{"field":{"name":"service_name"},"operator":"FILTER_OPERATOR_EQ","value":{"string_value":"api"}}},{"not":{"text_search":{"query":"healthcheck"}}}]}},"order_by":[{"field":{"name":"start_time"},"direction":"desc"}],"pagination":{"limit":10}}`
+	if string(got) != want {
+		t.Errorf("wire JSON = %s, want %s", got, want)
+	}
+}
+
+func TestTracingFilterExpressionRejectsMixedRepresentations(t *testing.T) {
+	spans := SpansFilterExpression{
+		Condition: &SpansFilterCondition{Field: SpansFilterField{Name: "name"}},
+		Type:      InsightsSpansFilterTypeTextSearch,
+		Query:     "legacy",
+	}
+	if _, err := json.Marshal(spans); err == nil {
+		t.Fatal("expected spans mixed-representation error")
+	}
+
+	traces := TracesFilterExpression{
+		TextSearch: &TracesTextSearch{Query: "current"},
+		Type:       InsightsTracesFilterTypeTextSearch,
+		Query:      "legacy",
+	}
+	if _, err := json.Marshal(traces); err == nil {
+		t.Fatal("expected traces mixed-representation error")
+	}
+
+	var decoded TracesFilterExpression
+	err := json.Unmarshal([]byte(`{"condition":{"field":{"name":"name"},"operator":"FILTER_OPERATOR_EQ"},"type":"condition"}`), &decoded)
+	if err == nil {
+		t.Fatal("expected mixed wire-representation error")
+	}
+
+	var deprecated SpansFilterExpression
+	err = json.Unmarshal([]byte(`{"type":"condition","field":{"name":"serviceName"},"operator":"eq","value":{"type":"string","value":"api"}}`), &deprecated)
+	if err != nil {
+		t.Fatalf("unmarshal deprecated expression: %v", err)
+	}
+	got, err := json.Marshal(deprecated)
+	if err != nil {
+		t.Fatalf("remarshal deprecated expression: %v", err)
+	}
+	want := `{"condition":{"field":{"name":"serviceName"},"operator":"eq","value":{"string_value":"api"}}}`
+	if string(got) != want {
+		t.Errorf("translated deprecated expression = %s, want %s", got, want)
 	}
 }
 
@@ -974,47 +1051,40 @@ func TestInsights_SearchTraces(t *testing.T) {
 			To:   TracesTimeBound{Relative: "now"},
 		},
 		Filter: &TracesFilterExpression{
-			Type: InsightsTracesFilterTypeAnd,
-			Expressions: []TracesFilterExpression{
-				{
-					Type:     InsightsTracesFilterTypeCondition,
-					Field:    &TracesFilterField{Name: "service.name"},
+			And: &TracesFilterGroup{Expressions: []TracesFilterExpression{
+				{Condition: &TracesFilterCondition{
+					Field:    TracesFilterField{Name: "service.name"},
 					Operator: InsightsTracesFilterOperatorEqual,
-					Value:    &TracesFilterValue{String: String("checkout-api")},
-				},
+					Value:    &TracesFilterValue{StringValue: String("checkout-api")},
+				}},
 				{
-					Type: InsightsTracesFilterTypeOr,
-					Expressions: []TracesFilterExpression{
-						{
-							Type:     InsightsTracesFilterTypeCondition,
-							Field:    &TracesFilterField{Name: "statusCode"},
+					Or: &TracesFilterGroup{Expressions: []TracesFilterExpression{
+						{Condition: &TracesFilterCondition{
+							Field:    TracesFilterField{Name: "status_code"},
 							Operator: InsightsTracesFilterOperatorEqual,
-							Value:    &TracesFilterValue{String: String("Error")},
-						},
-						{
-							Type:     InsightsTracesFilterTypeCondition,
-							Field:    &TracesFilterField{Name: "durationNs"},
+							Value:    &TracesFilterValue{StringValue: String("Error")},
+						}},
+						{Condition: &TracesFilterCondition{
+							Field:    TracesFilterField{Name: "duration_ns"},
 							Operator: InsightsTracesFilterOperatorGreaterThanOrEqual,
-							Value:    &TracesFilterValue{Number: PtrTo(500000000.0)},
-						},
-						{
-							Type:     InsightsTracesFilterTypeCondition,
-							Field:    &TracesFilterField{Name: "host.name", Scope: InsightsTracesFieldScopeResource},
+							Value:    &TracesFilterValue{NumberValue: PtrTo(500000000.0)},
+						}},
+						{Condition: &TracesFilterCondition{
+							Field:    TracesFilterField{Name: "host.name", Scope: InsightsTracesFieldScopeResource},
 							Operator: InsightsTracesFilterOperatorIn,
-							Value:    &TracesFilterValue{StringArray: []string{"web-01", "web-02"}},
-						},
-					},
+							Value:    &TracesFilterValue{StringArrayValue: &TracesStringArrayValue{Values: []string{"web-01", "web-02"}}},
+						}},
+					}},
 				},
 				{
-					Type: InsightsTracesFilterTypeNot,
-					Expressions: []TracesFilterExpression{
-						{Type: InsightsTracesFilterTypeTextSearch, Query: "healthcheck"},
+					Not: &TracesFilterExpression{
+						TextSearch: &TracesTextSearch{Query: "healthcheck"},
 					},
 				},
-			},
+			}},
 		},
 		OrderBy: []TracesOrderBy{
-			{Field: TracesFilterField{Name: "durationNs"}, Direction: InsightsTracesSortDirectionDescending},
+			{Field: TracesFilterField{Name: "duration_ns"}, Direction: InsightsTracesSortDirectionDescending},
 			{Field: TracesFilterField{Name: "started"}, Direction: InsightsTracesSortDirectionAscending},
 		},
 		Pagination: &TracesPaginationRequest{Limit: 50},
@@ -1029,26 +1099,26 @@ func TestInsights_SearchTraces(t *testing.T) {
 			t.Errorf("Content-Type = %q", got)
 		}
 
-		var got TracesSearchRequest
-		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
-			t.Fatalf("decode request: %v", err)
+		raw, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("read request: %v", err)
 		}
-		if !reflect.DeepEqual(got, *search) {
-			t.Errorf("request = %#v, want %#v", got, *search)
+		if got, want := string(raw), mustJSON(search)+"\n"; got != want {
+			t.Errorf("request = %s, want %s", got, want)
 		}
 
 		fmt.Fprint(w, `{
 			"data": [{
-				"traceId": "112419ad0cdd6a78f20c44a173c594d5",
+				"trace_id": "112419ad0cdd6a78f20c44a173c594d5",
 				"started": "2026-10-09T09:36:32.95Z",
-				"serviceName": "checkout-api",
-				"durationNs": 50000000,
-				"spanCount": 3,
-				"errorCount": 1,
+				"service_name": "checkout-api",
+				"duration_ns": 50000000,
+				"span_count": 3,
+				"error_count": 1,
 				"status": "Error",
-				"spanNames": ["GET /checkout", "SELECT orders"]
+				"span_names": ["GET /checkout", "SELECT orders"]
 			}],
-			"pagination": {"hasMore": true}
+			"pagination": {"has_more": true}
 		}`)
 	})
 
@@ -1089,11 +1159,11 @@ func TestInsights_SearchTracesMinimalRequest(t *testing.T) {
 		if err != nil {
 			t.Fatalf("read body: %v", err)
 		}
-		want := `{"timeRange":{"from":{"relative":"15m"},"to":{"relative":"now"}}}` + "\n"
+		want := `{"time_range":{"from":{"relative":"15m"},"to":{"relative":"now"}}}` + "\n"
 		if string(body) != want {
 			t.Errorf("body = %s, want %s", body, want)
 		}
-		fmt.Fprint(w, `{"data":[],"pagination":{"hasMore":false}}`)
+		fmt.Fprint(w, `{"data":[],"pagination":{"has_more":false}}`)
 	})
 
 	got, _, err := client.Insights.SearchTraces(ctx, "nyc3", &TracesSearchRequest{
@@ -1116,11 +1186,12 @@ func TestTracesFilterValueMarshal(t *testing.T) {
 		value TracesFilterValue
 		want  string
 	}{
-		{"string", TracesFilterValue{String: String("checkout-api")}, `{"type":"string","value":"checkout-api"}`},
-		{"empty string", TracesFilterValue{String: String("")}, `{"type":"string","value":""}`},
-		{"number", TracesFilterValue{Number: PtrTo(0.0)}, `{"type":"number","value":0}`},
-		{"bool", TracesFilterValue{Bool: PtrTo(false)}, `{"type":"bool","value":false}`},
-		{"string_array", TracesFilterValue{StringArray: []string{"web-01", "web-02"}}, `{"type":"string_array","value":["web-01","web-02"]}`},
+		{"legacy string", TracesFilterValue{String: String("checkout-api")}, `{"string_value":"checkout-api"}`},
+		{"empty string", TracesFilterValue{StringValue: String("")}, `{"string_value":""}`},
+		{"number", TracesFilterValue{NumberValue: PtrTo(0.0)}, `{"number_value":0}`},
+		{"exact integer", TracesFilterValue{NumberValueInt64: PtrTo(int64(1700000000123456789))}, `{"number_value":1700000000123456789}`},
+		{"string_array", TracesFilterValue{StringArrayValue: &TracesStringArrayValue{Values: []string{"web-01", "web-02"}}}, `{"string_array_value":{"values":["web-01","web-02"]}}`},
+		{"number_array", TracesFilterValue{NumberArrayValue: &TracesNumberArrayValue{Values: []float64{0, 1}}}, `{"number_array_value":{"values":[0,1]}}`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1140,6 +1211,12 @@ func TestTracesFilterValueMarshal(t *testing.T) {
 	if _, err := json.Marshal(TracesFilterValue{String: String("x"), Bool: PtrTo(true)}); err == nil {
 		t.Error("expected error marshaling multi-field TracesFilterValue")
 	}
+	if _, err := json.Marshal(TracesFilterValue{Bool: PtrTo(true)}); err == nil {
+		t.Error("expected error marshaling unsupported boolean TracesFilterValue")
+	}
+	if _, err := json.Marshal(TracesFilterValue{NumberValue: PtrTo(1.0), NumberValueInt64: PtrTo(int64(1))}); err == nil {
+		t.Error("expected error marshaling ambiguous numeric TracesFilterValue")
+	}
 }
 
 func TestTracesFilterValueUnmarshal(t *testing.T) {
@@ -1148,14 +1225,13 @@ func TestTracesFilterValueUnmarshal(t *testing.T) {
 		data string
 		want TracesFilterValue
 	}{
-		{"typed string", `{"type":"string","value":"checkout-api"}`, TracesFilterValue{String: String("checkout-api")}},
-		{"bare string", `"checkout-api"`, TracesFilterValue{String: String("checkout-api")}},
-		{"typed number", `{"type":"number","value":500000000}`, TracesFilterValue{Number: PtrTo(500000000.0)}},
-		{"bare number", `500000000`, TracesFilterValue{Number: PtrTo(500000000.0)}},
-		{"typed bool", `{"type":"bool","value":true}`, TracesFilterValue{Bool: PtrTo(true)}},
-		{"bare bool", `false`, TracesFilterValue{Bool: PtrTo(false)}},
-		{"typed string_array", `{"type":"string_array","value":["web-01","web-02"]}`, TracesFilterValue{StringArray: []string{"web-01", "web-02"}}},
-		{"bare string_array", `["web-01","web-02"]`, TracesFilterValue{StringArray: []string{"web-01", "web-02"}}},
+		{"string", `{"string_value":"checkout-api"}`, TracesFilterValue{StringValue: String("checkout-api")}},
+		{"integer", `{"number_value":500000000}`, TracesFilterValue{NumberValueInt64: PtrTo(int64(500000000))}},
+		{"exact integer", `{"number_value":1700000000123456789}`, TracesFilterValue{NumberValueInt64: PtrTo(int64(1700000000123456789))}},
+		{"decimal", `{"number_value":0.5}`, TracesFilterValue{NumberValue: PtrTo(0.5)}},
+		{"string_array", `{"string_array_value":{"values":["web-01","web-02"]}}`, TracesFilterValue{StringArrayValue: &TracesStringArrayValue{Values: []string{"web-01", "web-02"}}}},
+		{"number_array", `{"number_array_value":{"values":[0,1]}}`, TracesFilterValue{NumberArrayValue: &TracesNumberArrayValue{Values: []float64{0, 1}}}},
+		{"deprecated bare", `"checkout-api"`, TracesFilterValue{String: String("checkout-api")}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1170,11 +1246,37 @@ func TestTracesFilterValueUnmarshal(t *testing.T) {
 	}
 
 	var v TracesFilterValue
-	if err := json.Unmarshal([]byte(`{"type":"date","value":"x"}`), &v); err == nil {
-		t.Error("expected error for unknown value type")
+	if err := json.Unmarshal([]byte(`{"string_value":"x","bool_value":true}`), &v); err == nil {
+		t.Error("expected error for unsupported boolean TracesFilterValue")
 	}
-	if err := json.Unmarshal([]byte(`["a",1]`), &v); err == nil {
-		t.Error("expected error for non-string array element")
+}
+
+func TestTracesDeprecatedFilterWireTranslation(t *testing.T) {
+	request := TracesSearchRequest{
+		TimeRange: TracesTimeRange{
+			From: TracesTimeBound{Relative: "1h"},
+			To:   TracesTimeBound{Relative: "now"},
+		},
+		Filter: &TracesFilterExpression{
+			Type: InsightsTracesFilterTypeCondition,
+			Field: &TracesFilterField{
+				Name:  "http.status_code",
+				Scope: InsightsTracesFieldScopeAttributes,
+			},
+			Operator: InsightsTracesFilterOperatorIn,
+			Value: &TracesFilterValue{
+				NumberArray: []float64{500, 503},
+			},
+		},
+	}
+
+	got, err := json.Marshal(request)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	want := `{"time_range":{"from":{"relative":"1h"},"to":{"relative":"now"}},"filter":{"condition":{"field":{"name":"http.status_code","scope":"FIELD_SCOPE_ATTRIBUTES"},"operator":"FILTER_OPERATOR_IN","value":{"number_array_value":{"values":[500,503]}}}}}`
+	if string(got) != want {
+		t.Errorf("wire JSON = %s, want %s", got, want)
 	}
 }
 
@@ -1237,33 +1339,33 @@ func TestInsights_GetTrace(t *testing.T) {
 		testFormValues(t, r, values{"from": "24h", "to": "now"})
 
 		fmt.Fprint(w, `{
-			"traceId": "05928fa10bbc6bb65b33405ea4d6c403",
+			"trace_id": "05928fa10bbc6bb65b33405ea4d6c403",
 			"spans": [
 				{
-					"traceId": "05928fa10bbc6bb65b33405ea4d6c403",
-					"spanId": "1367b0627cbd1f04",
-					"startTime": "2026-10-09T09:36:32Z",
-					"endTime": "2026-10-09T09:36:33Z",
-					"durationNs": 1000000000,
+					"trace_id": "05928fa10bbc6bb65b33405ea4d6c403",
+					"span_id": "1367b0627cbd1f04",
+					"start_time": "2026-10-09T09:36:32Z",
+					"end_time": "2026-10-09T09:36:33Z",
+					"duration_ns": 1000000000,
 					"name": "GET /checkout",
 					"kind": "Server",
-					"statusCode": "Error",
-					"statusMessage": "upstream timeout",
-					"serviceName": "checkout-api",
+					"status_code": "Error",
+					"status_message": "upstream timeout",
+					"service_name": "checkout-api",
 					"resource": {"service.name": "checkout-api"},
 					"attributes": {"http.method": "GET"}
 				},
 				{
-					"traceId": "05928fa10bbc6bb65b33405ea4d6c403",
-					"spanId": "a2fb4a1d1a96d312",
-					"parentSpanId": "1367b0627cbd1f04",
-					"startTime": "2026-10-09T09:36:32.5Z",
-					"endTime": "2026-10-09T09:36:32.7Z",
-					"durationNs": 200000000,
+					"trace_id": "05928fa10bbc6bb65b33405ea4d6c403",
+					"span_id": "a2fb4a1d1a96d312",
+					"parent_span_id": "1367b0627cbd1f04",
+					"start_time": "2026-10-09T09:36:32.5Z",
+					"end_time": "2026-10-09T09:36:32.7Z",
+					"duration_ns": 200000000,
 					"name": "SELECT orders",
 					"kind": "Client",
-					"statusCode": "Ok",
-					"serviceName": "checkout-api",
+					"status_code": "Ok",
+					"service_name": "checkout-api",
 					"resource": {"service.name": "checkout-api"}
 				}
 			],
@@ -1326,7 +1428,7 @@ func TestInsights_GetTraceNilOptions(t *testing.T) {
 		if r.URL.RawQuery != "" {
 			t.Errorf("query = %q, want empty", r.URL.RawQuery)
 		}
-		fmt.Fprint(w, `{"traceId":"05928fa10bbc6bb65b33405ea4d6c403","spans":[]}`)
+		fmt.Fprint(w, `{"trace_id":"05928fa10bbc6bb65b33405ea4d6c403","spans":[]}`)
 	})
 
 	got, _, err := client.Insights.GetTrace(ctx, "nyc3", "05928fa10bbc6bb65b33405ea4d6c403", nil)
