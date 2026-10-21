@@ -125,7 +125,7 @@ func main() {
 					To:   godo.SpansTimeBound{Relative: "now"},
 				},
 				OrderBy: []godo.SpansOrderBy{{
-					Field:     godo.SpansFilterField{Name: "startTime"},
+					Field:     godo.SpansFilterField{Name: "start_time"},
 					Direction: godo.InsightsSpansSortDirectionDescending,
 				}},
 				Pagination: &godo.SpansPaginationRequest{Limit: 10},
