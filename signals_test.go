@@ -641,7 +641,7 @@ func TestSignals_CreateDeletion_Validation(t *testing.T) {
 		{"EmptyType", &SignalsCreateDeletionRequest{TeamID: 1}, "signals: type must be agent or inference"},
 		{"UnknownType", &SignalsCreateDeletionRequest{Type: "bogus", TeamID: 1, AgentID: "a"}, "signals: type must be agent or inference"},
 		{"BadTypeAndBadTeamReportsTeamFirst", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 0}, "signals: team_id is required"},
-		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1}, "signals: agent_id is required for agent"},
+		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1}, "signals: environment_id is required for agent"},
 		{"InferenceWithAgentID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1, AgentID: "a"}, "signals: agent_id must not be set for inference"},
 	}
 	for _, tt := range tests {
