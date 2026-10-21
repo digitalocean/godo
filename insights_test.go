@@ -862,7 +862,6 @@ func TestSpansFilterValueMarshal(t *testing.T) {
 	}{
 		{"legacy string", SpansFilterValue{String: String("api-gateway")}, `{"string_value":"api-gateway"}`},
 		{"number", SpansFilterValue{NumberValue: PtrTo(503.0)}, `{"number_value":503}`},
-		{"bool", SpansFilterValue{BoolValue: PtrTo(false)}, `{"bool_value":false}`},
 		{"string_array", SpansFilterValue{StringArrayValue: &SpansStringArrayValue{Values: []string{"GET", "POST"}}}, `{"string_array_value":{"values":["GET","POST"]}}`},
 		{"number_array", SpansFilterValue{NumberArrayValue: &SpansNumberArrayValue{Values: []float64{200, 503}}}, `{"number_array_value":{"values":[200,503]}}`},
 	}
@@ -884,6 +883,9 @@ func TestSpansFilterValueMarshal(t *testing.T) {
 	if _, err := json.Marshal(SpansFilterValue{String: String("x"), Bool: PtrTo(true)}); err == nil {
 		t.Error("expected error marshaling multi-field SpansFilterValue")
 	}
+	if _, err := json.Marshal(SpansFilterValue{Bool: PtrTo(true)}); err == nil {
+		t.Error("expected error marshaling unsupported boolean SpansFilterValue")
+	}
 }
 
 func TestSpansFilterValueUnmarshal(t *testing.T) {
@@ -894,7 +896,6 @@ func TestSpansFilterValueUnmarshal(t *testing.T) {
 	}{
 		{"string", `{"string_value":"api-gateway"}`, SpansFilterValue{StringValue: String("api-gateway")}},
 		{"number", `{"number_value":503}`, SpansFilterValue{NumberValue: PtrTo(503.0)}},
-		{"bool", `{"bool_value":true}`, SpansFilterValue{BoolValue: PtrTo(true)}},
 		{"string_array", `{"string_array_value":{"values":["GET","POST"]}}`, SpansFilterValue{StringArrayValue: &SpansStringArrayValue{Values: []string{"GET", "POST"}}}},
 		{"number_array", `{"number_array_value":{"values":[200,503]}}`, SpansFilterValue{NumberArrayValue: &SpansNumberArrayValue{Values: []float64{200, 503}}}},
 		{"deprecated wrapper", `{"type":"string","value":"api-gateway"}`, SpansFilterValue{String: String("api-gateway")}},
@@ -909,6 +910,11 @@ func TestSpansFilterValueUnmarshal(t *testing.T) {
 				t.Errorf("got %#v, want %#v", got, tt.want)
 			}
 		})
+	}
+
+	var v SpansFilterValue
+	if err := json.Unmarshal([]byte(`{"bool_value":true}`), &v); err == nil {
+		t.Error("expected error for unsupported boolean SpansFilterValue")
 	}
 }
 
@@ -939,7 +945,7 @@ func TestSpansSearchRequestWireContract(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal: %v", err)
 	}
-	want := `{"time_range":{"from":{"relative":"15m"},"to":{"relative":"now"}},"filter":{"and":{"expressions":[{"condition":{"field":{"name":"service_name"},"operator":"FILTER_OPERATOR_EQ","value":{"string_value":"api"}}},{"not":{"text_search":{"query":"healthcheck"}}}]}},"order_by":[{"field":{"name":"start_time"},"direction":"SORT_DIRECTION_DESC"}],"pagination":{"limit":10}}`
+	want := `{"time_range":{"from":{"relative":"15m"},"to":{"relative":"now"}},"filter":{"and":{"expressions":[{"condition":{"field":{"name":"service_name"},"operator":"FILTER_OPERATOR_EQ","value":{"string_value":"api"}}},{"not":{"text_search":{"query":"healthcheck"}}}]}},"order_by":[{"field":{"name":"start_time"},"direction":"desc"}],"pagination":{"limit":10}}`
 	if string(got) != want {
 		t.Errorf("wire JSON = %s, want %s", got, want)
 	}
@@ -1177,7 +1183,6 @@ func TestTracesFilterValueMarshal(t *testing.T) {
 		{"legacy string", TracesFilterValue{String: String("checkout-api")}, `{"string_value":"checkout-api"}`},
 		{"empty string", TracesFilterValue{StringValue: String("")}, `{"string_value":""}`},
 		{"number", TracesFilterValue{NumberValue: PtrTo(0.0)}, `{"number_value":0}`},
-		{"bool", TracesFilterValue{BoolValue: PtrTo(false)}, `{"bool_value":false}`},
 		{"string_array", TracesFilterValue{StringArrayValue: &TracesStringArrayValue{Values: []string{"web-01", "web-02"}}}, `{"string_array_value":{"values":["web-01","web-02"]}}`},
 		{"number_array", TracesFilterValue{NumberArrayValue: &TracesNumberArrayValue{Values: []float64{0, 1}}}, `{"number_array_value":{"values":[0,1]}}`},
 	}
@@ -1199,6 +1204,9 @@ func TestTracesFilterValueMarshal(t *testing.T) {
 	if _, err := json.Marshal(TracesFilterValue{String: String("x"), Bool: PtrTo(true)}); err == nil {
 		t.Error("expected error marshaling multi-field TracesFilterValue")
 	}
+	if _, err := json.Marshal(TracesFilterValue{Bool: PtrTo(true)}); err == nil {
+		t.Error("expected error marshaling unsupported boolean TracesFilterValue")
+	}
 }
 
 func TestTracesFilterValueUnmarshal(t *testing.T) {
@@ -1209,7 +1217,6 @@ func TestTracesFilterValueUnmarshal(t *testing.T) {
 	}{
 		{"string", `{"string_value":"checkout-api"}`, TracesFilterValue{StringValue: String("checkout-api")}},
 		{"number", `{"number_value":500000000}`, TracesFilterValue{NumberValue: PtrTo(500000000.0)}},
-		{"bool", `{"bool_value":true}`, TracesFilterValue{BoolValue: PtrTo(true)}},
 		{"string_array", `{"string_array_value":{"values":["web-01","web-02"]}}`, TracesFilterValue{StringArrayValue: &TracesStringArrayValue{Values: []string{"web-01", "web-02"}}}},
 		{"number_array", `{"number_array_value":{"values":[0,1]}}`, TracesFilterValue{NumberArrayValue: &TracesNumberArrayValue{Values: []float64{0, 1}}}},
 		{"deprecated bare", `"checkout-api"`, TracesFilterValue{String: String("checkout-api")}},
@@ -1228,7 +1235,7 @@ func TestTracesFilterValueUnmarshal(t *testing.T) {
 
 	var v TracesFilterValue
 	if err := json.Unmarshal([]byte(`{"string_value":"x","bool_value":true}`), &v); err == nil {
-		t.Error("expected error for ambiguous typed value")
+		t.Error("expected error for unsupported boolean TracesFilterValue")
 	}
 }
 

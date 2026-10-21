@@ -141,13 +141,19 @@ const (
 const (
 	InsightsSpansFilterOperatorEqual              = "FILTER_OPERATOR_EQ"
 	InsightsSpansFilterOperatorNotEqual           = "FILTER_OPERATOR_NEQ"
-	InsightsSpansFilterOperatorGreaterThan        = "FILTER_OPERATOR_GT"
 	InsightsSpansFilterOperatorGreaterThanOrEqual = "FILTER_OPERATOR_GTE"
-	InsightsSpansFilterOperatorLessThan           = "FILTER_OPERATOR_LT"
 	InsightsSpansFilterOperatorLessThanOrEqual    = "FILTER_OPERATOR_LTE"
 	InsightsSpansFilterOperatorIn                 = "FILTER_OPERATOR_IN"
 	InsightsSpansFilterOperatorExists             = "FILTER_OPERATOR_EXISTS"
 )
+
+// InsightsSpansFilterOperatorGreaterThan is retained for source compatibility.
+// Deprecated: the spans API does not support a strict greater-than operator.
+const InsightsSpansFilterOperatorGreaterThan = "gt"
+
+// InsightsSpansFilterOperatorLessThan is retained for source compatibility.
+// Deprecated: the spans API does not support a strict less-than operator.
+const InsightsSpansFilterOperatorLessThan = "lt"
 
 // Insights spans field scopes. Omit the scope for well-known span fields or to
 // search both attribute maps.
@@ -158,8 +164,8 @@ const (
 
 // Insights spans sort directions.
 const (
-	InsightsSpansSortDirectionAscending  = "SORT_DIRECTION_ASC"
-	InsightsSpansSortDirectionDescending = "SORT_DIRECTION_DESC"
+	InsightsSpansSortDirectionAscending  = "asc"
+	InsightsSpansSortDirectionDescending = "desc"
 )
 
 // Insights spans filter value types.
@@ -188,13 +194,19 @@ const (
 const (
 	InsightsTracesFilterOperatorEqual              = "FILTER_OPERATOR_EQ"
 	InsightsTracesFilterOperatorNotEqual           = "FILTER_OPERATOR_NEQ"
-	InsightsTracesFilterOperatorGreaterThan        = "FILTER_OPERATOR_GT"
 	InsightsTracesFilterOperatorGreaterThanOrEqual = "FILTER_OPERATOR_GTE"
-	InsightsTracesFilterOperatorLessThan           = "FILTER_OPERATOR_LT"
 	InsightsTracesFilterOperatorLessThanOrEqual    = "FILTER_OPERATOR_LTE"
 	InsightsTracesFilterOperatorIn                 = "FILTER_OPERATOR_IN"
 	InsightsTracesFilterOperatorExists             = "FILTER_OPERATOR_EXISTS"
 )
+
+// InsightsTracesFilterOperatorGreaterThan is retained for source compatibility.
+// Deprecated: the traces API does not support a strict greater-than operator.
+const InsightsTracesFilterOperatorGreaterThan = "gt"
+
+// InsightsTracesFilterOperatorLessThan is retained for source compatibility.
+// Deprecated: the traces API does not support a strict less-than operator.
+const InsightsTracesFilterOperatorLessThan = "lt"
 
 // Insights traces field scopes. Omit the scope for well-known span fields or to
 // look up a span attribute with a resource attribute fallback.
@@ -205,8 +217,8 @@ const (
 
 // Insights traces sort directions.
 const (
-	InsightsTracesSortDirectionAscending  = "SORT_DIRECTION_ASC"
-	InsightsTracesSortDirectionDescending = "SORT_DIRECTION_DESC"
+	InsightsTracesSortDirectionAscending  = "asc"
+	InsightsTracesSortDirectionDescending = "desc"
 )
 
 // Insights traces filter value types.
@@ -1150,11 +1162,11 @@ type SpansFilterField struct {
 type SpansFilterValue struct {
 	StringValue      *string                `json:"string_value,omitempty"`
 	NumberValue      *float64               `json:"number_value,omitempty"`
-	BoolValue        *bool                  `json:"bool_value,omitempty"`
 	StringArrayValue *SpansStringArrayValue `json:"string_array_value,omitempty"`
 	NumberArrayValue *SpansNumberArrayValue `json:"number_array_value,omitempty"`
 
-	// Deprecated: use the corresponding *Value field.
+	// Deprecated: use the corresponding *Value field. Bool is retained only
+	// for source compatibility; the spans API does not support boolean values.
 	String      *string   `json:"-"`
 	Number      *float64  `json:"-"`
 	Bool        *bool     `json:"-"`
@@ -1179,7 +1191,7 @@ type SpansOrderBy struct {
 }
 
 // SpansPaginationRequest limits the number of spans returned. Limit defaults to
-// 100 and is clamped to 1000 by the API.
+// 100 and must be between 1 and 1000.
 type SpansPaginationRequest struct {
 	Limit int `json:"limit,omitempty"`
 }
@@ -1218,7 +1230,7 @@ type SpansPaginationResponse struct {
 // fields for source compatibility.
 func (v SpansFilterValue) MarshalJSON() ([]byte, error) {
 	type wire SpansFilterValue
-	canonical := countSet(v.StringValue != nil, v.NumberValue != nil, v.BoolValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil)
+	canonical := countSet(v.StringValue != nil, v.NumberValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil)
 	legacy := countSet(v.String != nil, v.Number != nil, v.Bool != nil, v.StringArray != nil, v.NumberArray != nil)
 	if canonical > 0 && legacy > 0 {
 		return nil, fmt.Errorf("godo: SpansFilterValue mixes current and deprecated fields")
@@ -1229,10 +1241,12 @@ func (v SpansFilterValue) MarshalJSON() ([]byte, error) {
 	if canonical != 0 || legacy != 1 {
 		return nil, fmt.Errorf("godo: SpansFilterValue must set exactly one field")
 	}
+	if v.Bool != nil {
+		return nil, fmt.Errorf("godo: SpansFilterValue boolean values are not supported")
+	}
 	translated := SpansFilterValue{
 		StringValue: v.String,
 		NumberValue: v.Number,
-		BoolValue:   v.Bool,
 	}
 	if v.StringArray != nil {
 		translated.StringArrayValue = &SpansStringArrayValue{Values: v.StringArray}
@@ -1248,7 +1262,10 @@ func (v *SpansFilterValue) UnmarshalJSON(data []byte) error {
 	*v = SpansFilterValue{}
 	var keys map[string]json.RawMessage
 	if err := json.Unmarshal(data, &keys); err == nil {
-		current := countSet(keys["string_value"] != nil, keys["number_value"] != nil, keys["bool_value"] != nil, keys["string_array_value"] != nil, keys["number_array_value"] != nil)
+		if keys["bool_value"] != nil {
+			return fmt.Errorf("godo: SpansFilterValue boolean values are not supported")
+		}
+		current := countSet(keys["string_value"] != nil, keys["number_value"] != nil, keys["string_array_value"] != nil, keys["number_array_value"] != nil)
 		deprecated := keys["type"] != nil || keys["value"] != nil
 		if current > 0 && deprecated {
 			return fmt.Errorf("godo: SpansFilterValue mixes current and deprecated wire shapes")
@@ -1270,7 +1287,7 @@ func (v *SpansFilterValue) UnmarshalJSON(data []byte) error {
 		return v.setDeprecatedBare(data)
 	}
 	*v = SpansFilterValue(decoded)
-	if countSet(v.StringValue != nil, v.NumberValue != nil, v.BoolValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil) != 1 {
+	if countSet(v.StringValue != nil, v.NumberValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil) != 1 {
 		return v.setDeprecatedBare(data)
 	}
 	return nil
@@ -1521,11 +1538,11 @@ type TracesFilterField struct {
 type TracesFilterValue struct {
 	StringValue      *string                 `json:"string_value,omitempty"`
 	NumberValue      *float64                `json:"number_value,omitempty"`
-	BoolValue        *bool                   `json:"bool_value,omitempty"`
 	StringArrayValue *TracesStringArrayValue `json:"string_array_value,omitempty"`
 	NumberArrayValue *TracesNumberArrayValue `json:"number_array_value,omitempty"`
 
-	// Deprecated: use the corresponding *Value field.
+	// Deprecated: use the corresponding *Value field. Bool is retained only
+	// for source compatibility; the traces API does not support boolean values.
 	String      *string   `json:"-"`
 	Number      *float64  `json:"-"`
 	Bool        *bool     `json:"-"`
@@ -1617,7 +1634,7 @@ type TraceSpan struct {
 // fields for source compatibility.
 func (v TracesFilterValue) MarshalJSON() ([]byte, error) {
 	type wire TracesFilterValue
-	canonical := countSet(v.StringValue != nil, v.NumberValue != nil, v.BoolValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil)
+	canonical := countSet(v.StringValue != nil, v.NumberValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil)
 	legacy := countSet(v.String != nil, v.Number != nil, v.Bool != nil, v.StringArray != nil, v.NumberArray != nil)
 	if canonical > 0 && legacy > 0 {
 		return nil, fmt.Errorf("godo: TracesFilterValue mixes current and deprecated fields")
@@ -1628,10 +1645,12 @@ func (v TracesFilterValue) MarshalJSON() ([]byte, error) {
 	if canonical != 0 || legacy != 1 {
 		return nil, fmt.Errorf("godo: TracesFilterValue must set exactly one field")
 	}
+	if v.Bool != nil {
+		return nil, fmt.Errorf("godo: TracesFilterValue boolean values are not supported")
+	}
 	translated := TracesFilterValue{
 		StringValue: v.String,
 		NumberValue: v.Number,
-		BoolValue:   v.Bool,
 	}
 	if v.StringArray != nil {
 		translated.StringArrayValue = &TracesStringArrayValue{Values: v.StringArray}
@@ -1647,7 +1666,10 @@ func (v *TracesFilterValue) UnmarshalJSON(data []byte) error {
 	*v = TracesFilterValue{}
 	var keys map[string]json.RawMessage
 	if err := json.Unmarshal(data, &keys); err == nil {
-		current := countSet(keys["string_value"] != nil, keys["number_value"] != nil, keys["bool_value"] != nil, keys["string_array_value"] != nil, keys["number_array_value"] != nil)
+		if keys["bool_value"] != nil {
+			return fmt.Errorf("godo: TracesFilterValue boolean values are not supported")
+		}
+		current := countSet(keys["string_value"] != nil, keys["number_value"] != nil, keys["string_array_value"] != nil, keys["number_array_value"] != nil)
 		deprecated := keys["type"] != nil || keys["value"] != nil
 		if current > 0 && deprecated {
 			return fmt.Errorf("godo: TracesFilterValue mixes current and deprecated wire shapes")
@@ -1669,7 +1691,7 @@ func (v *TracesFilterValue) UnmarshalJSON(data []byte) error {
 		return v.setDeprecatedBare(data)
 	}
 	*v = TracesFilterValue(decoded)
-	if countSet(v.StringValue != nil, v.NumberValue != nil, v.BoolValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil) != 1 {
+	if countSet(v.StringValue != nil, v.NumberValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil) != 1 {
 		return v.setDeprecatedBare(data)
 	}
 	return nil
