@@ -30,8 +30,6 @@ routine API updates.
    `digitalocean/godo`).
 3. Optional godo secret `WORKFLOW_TOKEN` — PAT for richer PR metadata; otherwise
    `GITHUB_TOKEN` is used.
-4. Until the openapi trigger is installed, a **6-hour schedule** on godo still
-   checks whether `openapi` main moved past `DO_OPENAPI_COMMIT_SHA.txt` and opens a PR.
 
 **Manual / local:**
 

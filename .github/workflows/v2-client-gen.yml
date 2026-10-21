@@ -7,7 +7,6 @@
 #
 # Also supports:
 #   - Manual: Actions → "V2 Client Generation" → Run workflow (pass short SHA)
-#   - Schedule: every 6h, if openapi main moved past DO_OPENAPI_COMMIT_SHA.txt
 #
 # Secrets:
 #   WORKFLOW_TOKEN (optional) — PAT with repo scope; falls back to GITHUB_TOKEN
@@ -20,9 +19,6 @@ on:
         description: "Short commit SHA from digitalocean/openapi (leave empty to use latest main)"
         required: false
         type: string
-  schedule:
-    # Backup if the openapi→godo trigger is not wired yet
-    - cron: "0 */6 * * *"
 
 env:
   SPEC_URL_BASE: https://api-engineering.nyc3.digitaloceanspaces.com/spec-ci
