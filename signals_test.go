@@ -1088,7 +1088,7 @@ func TestSignalsCreateExportRequest_resolveAgentID(t *testing.T) {
 		{"OnlyAgentID", SignalsCreateExportRequest{AgentID: "agt-1"}, "agt-1", ""},
 		{"OnlyEnvironmentID", SignalsCreateExportRequest{EnvironmentID: "agt-1"}, "agt-1", ""},
 		{"BothEqual", SignalsCreateExportRequest{AgentID: "agt-1", EnvironmentID: "agt-1"}, "agt-1", ""},
-		{"BothDifferent", SignalsCreateExportRequest{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: agent_id and environment_id must match when both are set"},
+		{"BothDifferent", SignalsCreateExportRequest{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: environment_id and agent_id must match when both are set"},
 		{"Neither", SignalsCreateExportRequest{}, "", ""},
 	}
 	for _, tt := range tests {
@@ -1120,7 +1120,7 @@ func TestSignalsCreateDeletionRequest_resolveAgentID(t *testing.T) {
 		{"OnlyAgentID", SignalsCreateDeletionRequest{AgentID: "agt-1"}, "agt-1", ""},
 		{"OnlyEnvironmentID", SignalsCreateDeletionRequest{EnvironmentID: "agt-1"}, "agt-1", ""},
 		{"BothEqual", SignalsCreateDeletionRequest{AgentID: "agt-1", EnvironmentID: "agt-1"}, "agt-1", ""},
-		{"BothDifferent", SignalsCreateDeletionRequest{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: agent_id and environment_id must match when both are set"},
+		{"BothDifferent", SignalsCreateDeletionRequest{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: environment_id and agent_id must match when both are set"},
 		{"Neither", SignalsCreateDeletionRequest{}, "", ""},
 	}
 	for _, tt := range tests {
@@ -1152,7 +1152,7 @@ func TestSignalsListExportsOptions_resolveAgentID(t *testing.T) {
 		{"OnlyAgentID", SignalsListExportsOptions{AgentID: "agt-1"}, "agt-1", ""},
 		{"OnlyEnvironmentID", SignalsListExportsOptions{EnvironmentID: "agt-1"}, "agt-1", ""},
 		{"BothEqual", SignalsListExportsOptions{AgentID: "agt-1", EnvironmentID: "agt-1"}, "agt-1", ""},
-		{"BothDifferent", SignalsListExportsOptions{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: agent_id and environment_id must match when both are set"},
+		{"BothDifferent", SignalsListExportsOptions{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: environment_id and agent_id must match when both are set"},
 		{"Neither", SignalsListExportsOptions{}, "", ""},
 	}
 	for _, tt := range tests {
