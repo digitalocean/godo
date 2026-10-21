@@ -862,6 +862,7 @@ func TestSpansFilterValueMarshal(t *testing.T) {
 	}{
 		{"legacy string", SpansFilterValue{String: String("api-gateway")}, `{"string_value":"api-gateway"}`},
 		{"number", SpansFilterValue{NumberValue: PtrTo(503.0)}, `{"number_value":503}`},
+		{"exact integer", SpansFilterValue{NumberValueInt64: PtrTo(int64(1700000000123456789))}, `{"number_value":1700000000123456789}`},
 		{"string_array", SpansFilterValue{StringArrayValue: &SpansStringArrayValue{Values: []string{"GET", "POST"}}}, `{"string_array_value":{"values":["GET","POST"]}}`},
 		{"number_array", SpansFilterValue{NumberArrayValue: &SpansNumberArrayValue{Values: []float64{200, 503}}}, `{"number_array_value":{"values":[200,503]}}`},
 	}
@@ -886,6 +887,9 @@ func TestSpansFilterValueMarshal(t *testing.T) {
 	if _, err := json.Marshal(SpansFilterValue{Bool: PtrTo(true)}); err == nil {
 		t.Error("expected error marshaling unsupported boolean SpansFilterValue")
 	}
+	if _, err := json.Marshal(SpansFilterValue{NumberValue: PtrTo(1.0), NumberValueInt64: PtrTo(int64(1))}); err == nil {
+		t.Error("expected error marshaling ambiguous numeric SpansFilterValue")
+	}
 }
 
 func TestSpansFilterValueUnmarshal(t *testing.T) {
@@ -895,7 +899,9 @@ func TestSpansFilterValueUnmarshal(t *testing.T) {
 		want SpansFilterValue
 	}{
 		{"string", `{"string_value":"api-gateway"}`, SpansFilterValue{StringValue: String("api-gateway")}},
-		{"number", `{"number_value":503}`, SpansFilterValue{NumberValue: PtrTo(503.0)}},
+		{"integer", `{"number_value":503}`, SpansFilterValue{NumberValueInt64: PtrTo(int64(503))}},
+		{"exact integer", `{"number_value":1700000000123456789}`, SpansFilterValue{NumberValueInt64: PtrTo(int64(1700000000123456789))}},
+		{"decimal", `{"number_value":50.3}`, SpansFilterValue{NumberValue: PtrTo(50.3)}},
 		{"string_array", `{"string_array_value":{"values":["GET","POST"]}}`, SpansFilterValue{StringArrayValue: &SpansStringArrayValue{Values: []string{"GET", "POST"}}}},
 		{"number_array", `{"number_array_value":{"values":[200,503]}}`, SpansFilterValue{NumberArrayValue: &SpansNumberArrayValue{Values: []float64{200, 503}}}},
 		{"deprecated wrapper", `{"type":"string","value":"api-gateway"}`, SpansFilterValue{String: String("api-gateway")}},
@@ -1183,6 +1189,7 @@ func TestTracesFilterValueMarshal(t *testing.T) {
 		{"legacy string", TracesFilterValue{String: String("checkout-api")}, `{"string_value":"checkout-api"}`},
 		{"empty string", TracesFilterValue{StringValue: String("")}, `{"string_value":""}`},
 		{"number", TracesFilterValue{NumberValue: PtrTo(0.0)}, `{"number_value":0}`},
+		{"exact integer", TracesFilterValue{NumberValueInt64: PtrTo(int64(1700000000123456789))}, `{"number_value":1700000000123456789}`},
 		{"string_array", TracesFilterValue{StringArrayValue: &TracesStringArrayValue{Values: []string{"web-01", "web-02"}}}, `{"string_array_value":{"values":["web-01","web-02"]}}`},
 		{"number_array", TracesFilterValue{NumberArrayValue: &TracesNumberArrayValue{Values: []float64{0, 1}}}, `{"number_array_value":{"values":[0,1]}}`},
 	}
@@ -1207,6 +1214,9 @@ func TestTracesFilterValueMarshal(t *testing.T) {
 	if _, err := json.Marshal(TracesFilterValue{Bool: PtrTo(true)}); err == nil {
 		t.Error("expected error marshaling unsupported boolean TracesFilterValue")
 	}
+	if _, err := json.Marshal(TracesFilterValue{NumberValue: PtrTo(1.0), NumberValueInt64: PtrTo(int64(1))}); err == nil {
+		t.Error("expected error marshaling ambiguous numeric TracesFilterValue")
+	}
 }
 
 func TestTracesFilterValueUnmarshal(t *testing.T) {
@@ -1216,7 +1226,9 @@ func TestTracesFilterValueUnmarshal(t *testing.T) {
 		want TracesFilterValue
 	}{
 		{"string", `{"string_value":"checkout-api"}`, TracesFilterValue{StringValue: String("checkout-api")}},
-		{"number", `{"number_value":500000000}`, TracesFilterValue{NumberValue: PtrTo(500000000.0)}},
+		{"integer", `{"number_value":500000000}`, TracesFilterValue{NumberValueInt64: PtrTo(int64(500000000))}},
+		{"exact integer", `{"number_value":1700000000123456789}`, TracesFilterValue{NumberValueInt64: PtrTo(int64(1700000000123456789))}},
+		{"decimal", `{"number_value":0.5}`, TracesFilterValue{NumberValue: PtrTo(0.5)}},
 		{"string_array", `{"string_array_value":{"values":["web-01","web-02"]}}`, TracesFilterValue{StringArrayValue: &TracesStringArrayValue{Values: []string{"web-01", "web-02"}}}},
 		{"number_array", `{"number_array_value":{"values":[0,1]}}`, TracesFilterValue{NumberArrayValue: &TracesNumberArrayValue{Values: []float64{0, 1}}}},
 		{"deprecated bare", `"checkout-api"`, TracesFilterValue{String: String("checkout-api")}},

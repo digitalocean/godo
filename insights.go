@@ -1160,8 +1160,12 @@ type SpansFilterField struct {
 
 // SpansFilterValue is a typed filter literal. Set exactly one value.
 type SpansFilterValue struct {
-	StringValue      *string                `json:"string_value,omitempty"`
-	NumberValue      *float64               `json:"number_value,omitempty"`
+	StringValue *string  `json:"string_value,omitempty"`
+	NumberValue *float64 `json:"number_value,omitempty"`
+
+	// NumberValueInt64 emits number_value without float64 precision loss. Use
+	// it for Unix timestamps represented as integer seconds through nanoseconds.
+	NumberValueInt64 *int64                 `json:"-"`
 	StringArrayValue *SpansStringArrayValue `json:"string_array_value,omitempty"`
 	NumberArrayValue *SpansNumberArrayValue `json:"number_array_value,omitempty"`
 
@@ -1230,10 +1234,15 @@ type SpansPaginationResponse struct {
 // fields for source compatibility.
 func (v SpansFilterValue) MarshalJSON() ([]byte, error) {
 	type wire SpansFilterValue
-	canonical := countSet(v.StringValue != nil, v.NumberValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil)
+	canonical := countSet(v.StringValue != nil, v.NumberValue != nil, v.NumberValueInt64 != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil)
 	legacy := countSet(v.String != nil, v.Number != nil, v.Bool != nil, v.StringArray != nil, v.NumberArray != nil)
 	if canonical > 0 && legacy > 0 {
 		return nil, fmt.Errorf("godo: SpansFilterValue mixes current and deprecated fields")
+	}
+	if canonical == 1 && v.NumberValueInt64 != nil {
+		return json.Marshal(struct {
+			NumberValue int64 `json:"number_value"`
+		}{NumberValue: *v.NumberValueInt64})
 	}
 	if canonical == 1 {
 		return json.Marshal(wire(v))
@@ -1279,6 +1288,13 @@ func (v *SpansFilterValue) UnmarshalJSON(data []byte) error {
 				return err
 			}
 			return v.setDeprecated(old.Type, old.Value)
+		}
+		if current == 1 && keys["number_value"] != nil {
+			var exact int64
+			if err := json.Unmarshal(keys["number_value"], &exact); err == nil {
+				v.NumberValueInt64 = &exact
+				return nil
+			}
 		}
 	}
 	type wire SpansFilterValue
@@ -1536,8 +1552,12 @@ type TracesFilterField struct {
 
 // TracesFilterValue is a typed filter literal. Set exactly one value.
 type TracesFilterValue struct {
-	StringValue      *string                 `json:"string_value,omitempty"`
-	NumberValue      *float64                `json:"number_value,omitempty"`
+	StringValue *string  `json:"string_value,omitempty"`
+	NumberValue *float64 `json:"number_value,omitempty"`
+
+	// NumberValueInt64 emits number_value without float64 precision loss. Use
+	// it for Unix timestamps represented as integer seconds through nanoseconds.
+	NumberValueInt64 *int64                  `json:"-"`
 	StringArrayValue *TracesStringArrayValue `json:"string_array_value,omitempty"`
 	NumberArrayValue *TracesNumberArrayValue `json:"number_array_value,omitempty"`
 
@@ -1634,10 +1654,15 @@ type TraceSpan struct {
 // fields for source compatibility.
 func (v TracesFilterValue) MarshalJSON() ([]byte, error) {
 	type wire TracesFilterValue
-	canonical := countSet(v.StringValue != nil, v.NumberValue != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil)
+	canonical := countSet(v.StringValue != nil, v.NumberValue != nil, v.NumberValueInt64 != nil, v.StringArrayValue != nil, v.NumberArrayValue != nil)
 	legacy := countSet(v.String != nil, v.Number != nil, v.Bool != nil, v.StringArray != nil, v.NumberArray != nil)
 	if canonical > 0 && legacy > 0 {
 		return nil, fmt.Errorf("godo: TracesFilterValue mixes current and deprecated fields")
+	}
+	if canonical == 1 && v.NumberValueInt64 != nil {
+		return json.Marshal(struct {
+			NumberValue int64 `json:"number_value"`
+		}{NumberValue: *v.NumberValueInt64})
 	}
 	if canonical == 1 {
 		return json.Marshal(wire(v))
@@ -1683,6 +1708,13 @@ func (v *TracesFilterValue) UnmarshalJSON(data []byte) error {
 				return err
 			}
 			return v.setDeprecated(old.Type, old.Value)
+		}
+		if current == 1 && keys["number_value"] != nil {
+			var exact int64
+			if err := json.Unmarshal(keys["number_value"], &exact); err == nil {
+				v.NumberValueInt64 = &exact
+				return nil
+			}
 		}
 	}
 	type wire TracesFilterValue
