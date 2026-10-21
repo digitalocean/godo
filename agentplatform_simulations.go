@@ -19,7 +19,6 @@ const (
 	scenarioLibraryCreateScenarioSetPath = scenarioLibraryByIDPath + "/create_scenario_set"
 	simulationRunsBasePath               = "/v2/gen-ai/simulation_runs"
 	simulationRunByIDPath                = simulationRunsBasePath + "/%s"
-	simulationRunCancelPath              = simulationRunByIDPath + "/cancel"
 	simulationRunEpisodesPath            = simulationRunByIDPath + "/episodes"
 	simulationEpisodeByIDPath            = simulationRunEpisodesPath + "/%s"
 	simulationEpisodeTrajectoryPath      = simulationEpisodeByIDPath + "/trajectory"
@@ -109,17 +108,6 @@ const (
 	SimulationRunStatusCancelled           SimulationRunStatus = "SIMULATION_RUN_STATUS_CANCELLED"
 	SimulationRunStatusEvaluating          SimulationRunStatus = "SIMULATION_RUN_STATUS_EVALUATING"
 	SimulationRunStatusPartiallySuccessful SimulationRunStatus = "SIMULATION_RUN_STATUS_PARTIALLY_SUCCESSFUL"
-)
-
-// SimulationRunSortField is a sortable field for ListSimulationRuns.
-type SimulationRunSortField string
-
-const (
-	SimulationRunSortFieldUnspecified SimulationRunSortField = "SIMULATION_RUN_SORT_FIELD_UNSPECIFIED"
-	SimulationRunSortFieldCreatedAt   SimulationRunSortField = "SIMULATION_RUN_SORT_FIELD_CREATED_AT"
-	SimulationRunSortFieldName        SimulationRunSortField = "SIMULATION_RUN_SORT_FIELD_NAME"
-	SimulationRunSortFieldStatus      SimulationRunSortField = "SIMULATION_RUN_SORT_FIELD_STATUS"
-	SimulationRunSortFieldUpdatedAt   SimulationRunSortField = "SIMULATION_RUN_SORT_FIELD_UPDATED_AT"
 )
 
 // SimulationEpisodeStatus is the lifecycle status of a simulation episode.
@@ -245,14 +233,6 @@ type SimulationRunResultSummary struct {
 	VerdictCounts    *SimulationEpisodeCounts `json:"verdict_counts,omitempty"`
 	TokenUsage       *SimulationTokenUsage    `json:"token_usage,omitempty"`
 	TotalDurationSec string                   `json:"total_duration_sec,omitempty"`
-}
-
-// SimulationScenarioResult is a per-scenario rollup of episode outcomes within a run.
-type SimulationScenarioResult struct {
-	ScenarioUUID     string                   `json:"scenario_uuid,omitempty"`
-	TotalEpisodes    uint32                   `json:"total_episodes,omitempty"`
-	EpisodesFinished uint32                   `json:"episodes_finished,omitempty"`
-	VerdictCounts    *SimulationEpisodeCounts `json:"verdict_counts,omitempty"`
 }
 
 // SimulationRun is one execution of a scenario set against a candidate agent.
@@ -442,12 +422,6 @@ type CreateSimulationRunRequest struct {
 	EvaluationConfig       *SimulationEvaluationConfig `json:"evaluation_config,omitempty"`
 }
 
-// UpdateSimulationRunRequest renames a simulation run.
-type UpdateSimulationRunRequest struct {
-	RunUUID string `json:"run_uuid,omitempty"`
-	Name    string `json:"name,omitempty"`
-}
-
 // ScenarioSetListOptions specifies optional parameters for listing scenario sets.
 type ScenarioSetListOptions struct {
 	Statuses      []ScenarioSetStatus     `url:"statuses,omitempty"`
@@ -472,16 +446,6 @@ type ScenarioLibraryListOptions struct {
 	Search        string                   `url:"search,omitempty"`
 	SortBy        ScenarioLibrarySortField `url:"sort_by,omitempty"`
 	SortDirection GenAISortDirection       `url:"sort_direction,omitempty"`
-	ListOptions
-}
-
-// SimulationRunListOptions specifies optional parameters for listing simulation runs.
-type SimulationRunListOptions struct {
-	ScenarioSetUUID string                 `url:"scenario_set_uuid,omitempty"`
-	Statuses        []SimulationRunStatus  `url:"statuses,omitempty"`
-	Search          string                 `url:"search,omitempty"`
-	SortBy          SimulationRunSortField `url:"sort_by,omitempty"`
-	SortDirection   GenAISortDirection     `url:"sort_direction,omitempty"`
 	ListOptions
 }
 
@@ -535,27 +499,6 @@ type ScenarioSetDownloadURLResponse struct {
 // ScenarioSetDeleteResponse is returned by DeleteScenarioSet.
 type ScenarioSetDeleteResponse struct {
 	ScenarioSetUUID string `json:"scenario_set_uuid,omitempty"`
-}
-
-// SimulationRunListResponse is returned by ListSimulationRuns.
-type SimulationRunListResponse struct {
-	SimulationRuns          []*SimulationRun         `json:"simulation_runs,omitempty"`
-	Links                   *Links                   `json:"links,omitempty"`
-	Meta                    *Meta                    `json:"meta,omitempty"`
-	AvailableStatuses       []SimulationRunStatus    `json:"available_statuses,omitempty"`
-	AvailableSortBy         []SimulationRunSortField `json:"available_sort_by,omitempty"`
-	AvailableSortDirections []GenAISortDirection     `json:"available_sort_directions,omitempty"`
-}
-
-// SimulationRunGetResponse is returned by GetSimulationRun.
-type SimulationRunGetResponse struct {
-	SimulationRun   *SimulationRun              `json:"simulation_run,omitempty"`
-	ScenarioResults []*SimulationScenarioResult `json:"scenario_results,omitempty"`
-}
-
-// SimulationRunDeleteResponse is returned by DeleteSimulationRun.
-type SimulationRunDeleteResponse struct {
-	RunUUID string `json:"run_uuid,omitempty"`
 }
 
 // SimulationEpisodeListResponse is returned by ListSimulationEpisodes.
@@ -921,119 +864,6 @@ func (s *AgentPlatformServiceOp) CreateSimulationRun(ctx context.Context, create
 		return nil, resp, err
 	}
 	return root.SimulationRun, resp, nil
-}
-
-// ListSimulationRuns lists simulation runs for the team.
-func (s *AgentPlatformServiceOp) ListSimulationRuns(ctx context.Context, opt *SimulationRunListOptions) (*SimulationRunListResponse, *Response, error) {
-	path, err := addOptions(simulationRunsBasePath, opt)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(SimulationRunListResponse)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	if l := root.Links; l != nil {
-		resp.Links = l
-	}
-	if m := root.Meta; m != nil {
-		resp.Meta = m
-	}
-	return root, resp, nil
-}
-
-// GetSimulationRun retrieves a simulation run by UUID, including per-scenario
-// result rollups when available.
-func (s *AgentPlatformServiceOp) GetSimulationRun(ctx context.Context, runUUID string) (*SimulationRunGetResponse, *Response, error) {
-	if runUUID == "" {
-		return nil, nil, fmt.Errorf("run uuid is required")
-	}
-	path := fmt.Sprintf(simulationRunByIDPath, runUUID)
-
-	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(SimulationRunGetResponse)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root, resp, nil
-}
-
-// UpdateSimulationRun updates mutable fields on a simulation run.
-func (s *AgentPlatformServiceOp) UpdateSimulationRun(ctx context.Context, runUUID string, updateRequest *UpdateSimulationRunRequest) (*SimulationRun, *Response, error) {
-	if runUUID == "" {
-		return nil, nil, fmt.Errorf("run uuid is required")
-	}
-	if updateRequest == nil {
-		return nil, nil, fmt.Errorf("update request is required")
-	}
-	if updateRequest.Name == "" {
-		return nil, nil, fmt.Errorf("name is required")
-	}
-	path := fmt.Sprintf(simulationRunByIDPath, runUUID)
-
-	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(simulationRunRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root.SimulationRun, resp, nil
-}
-
-// CancelSimulationRun cancels an in-progress simulation run.
-func (s *AgentPlatformServiceOp) CancelSimulationRun(ctx context.Context, runUUID string) (*SimulationRun, *Response, error) {
-	if runUUID == "" {
-		return nil, nil, fmt.Errorf("run uuid is required")
-	}
-	path := fmt.Sprintf(simulationRunCancelPath, runUUID)
-
-	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(simulationRunRoot)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root.SimulationRun, resp, nil
-}
-
-// DeleteSimulationRun deletes a simulation run by UUID.
-func (s *AgentPlatformServiceOp) DeleteSimulationRun(ctx context.Context, runUUID string) (*SimulationRunDeleteResponse, *Response, error) {
-	if runUUID == "" {
-		return nil, nil, fmt.Errorf("run uuid is required")
-	}
-	path := fmt.Sprintf(simulationRunByIDPath, runUUID)
-
-	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	root := new(SimulationRunDeleteResponse)
-	resp, err := s.client.Do(ctx, req, root)
-	if err != nil {
-		return nil, resp, err
-	}
-	return root, resp, nil
 }
 
 // ListSimulationEpisodes lists episodes for a simulation run.
