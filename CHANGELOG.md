@@ -1,5 +1,9 @@
 # Change Log
 
+## Unreleased
+
+- Remove Agent Platform SimulationRun List/Get/Update/Cancel/Delete client APIs in favor of ModelEvaluationRun equivalents
+
 ## [1.229.0] - 2026-10-19
 
 - #1173 - @potturu-vamsi - agent platform: remove MaxTokens from CandidateInferenceConfig
