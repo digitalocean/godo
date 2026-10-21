@@ -9,14 +9,16 @@
 #   - Manual: Actions → "V2 Client Generation" → Run workflow (pass short SHA)
 #
 # Secrets:
-#   WORKFLOW_TOKEN (optional) — PAT with repo scope; falls back to GITHUB_TOKEN
+#   WORKFLOW_TOKEN — PAT with repo scope on digitalocean/godo. Required to push
+#   the regen branch and open the pull request. GITHUB_TOKEN cannot open PRs
+#   unless the repo allows Actions to create them.
 name: V2 Client Generation
 
 on:
   workflow_dispatch:
     inputs:
       openapi_short_sha:
-        description: "Short commit SHA from digitalocean/openapi (leave empty to use latest main)"
+        description: "Short commit SHA from digitalocean/openapi, as git rev-parse --short in Spec Main (leave empty to use latest main)"
         required: false
         type: string
 
@@ -30,20 +32,35 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: Require WORKFLOW_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        run: |
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "WORKFLOW_TOKEN secret is required (PAT with repo scope on digitalocean/godo)." >&2
+            exit 1
+          fi
+
       - name: Checkout godo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN }}
 
       - name: Resolve OpenAPI short SHA
         id: sha
-        env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           input="${{ github.event.inputs.openapi_short_sha || '' }}"
           if [[ -n "$input" ]]; then
             target="$input"
           else
-            target="$(gh api repos/digitalocean/openapi/commits/main --jq '.sha[0:7]')"
+            # Spec Main names the Spaces object with `git rev-parse --short`
+            # inside a depth-1 checkout. A fixed 7-character slice of the full
+            # SHA does not match once git's abbrev grows.
+            tmp="$(mktemp -d)"
+            git -C "$tmp" init -q
+            git -C "$tmp" fetch --depth 1 https://github.com/digitalocean/openapi.git main
+            target="$(git -C "$tmp" rev-parse --short FETCH_HEAD)"
           fi
           current="$(tr -d '[:space:]' < DO_OPENAPI_COMMIT_SHA.txt || true)"
           echo "target=$target" >> "$GITHUB_OUTPUT"
@@ -63,7 +80,7 @@ jobs:
       - name: OpenAPI changelist
         if: steps.skip.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
         run: |
           chmod +x scripts/openapi_changelist.sh
           scripts/openapi_changelist.sh "${{ steps.sha.outputs.current }}" "${{ steps.sha.outputs.target }}" > changelist.md
@@ -85,12 +102,6 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Install Node (for npx fallback; SPEC_FILE path skips redocly)
-        if: steps.skip.outputs.skip != 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
       - name: Generate package v2
         if: steps.skip.outputs.skip != 'true'
         run: |
@@ -104,7 +115,7 @@ jobs:
       - name: Create branch, commit, open PR
         if: steps.skip.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
           TARGET: ${{ steps.sha.outputs.target }}
           CURRENT: ${{ steps.sha.outputs.current }}
         run: |

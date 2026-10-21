@@ -28,8 +28,8 @@ routine API updates.
    (same pattern as the pydo/dots triggers). It reuses secret
    `WORKFLOW_TRIGGER_TOKEN` (ensure the PAT can also dispatch workflows on
    `digitalocean/godo`).
-3. Optional godo secret `WORKFLOW_TOKEN` — PAT for richer PR metadata; otherwise
-   `GITHUB_TOKEN` is used.
+3. godo secret `WORKFLOW_TOKEN` — PAT with `repo` scope. The workflow uses it to
+   push the regen branch and open the pull request.
 
 **Manual / local:**
 
