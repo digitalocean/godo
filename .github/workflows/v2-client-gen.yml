@@ -1,0 +1,152 @@
+# Regenerates package v2 (Client.V2) from digitalocean/openapi and opens a PR.
+#
+# Fully automatic path (same pattern as pydo):
+#   digitalocean/openapi "Spec Main" succeeds
+#     → openapi workflow runs: gh workflow run v2-client-gen.yml -f openapi_short_sha=...
+#     → this workflow downloads the published bundled spec, regenerates, opens a godo PR
+#
+# Also supports:
+#   - Manual: Actions → "V2 Client Generation" → Run workflow (pass short SHA)
+#   - Schedule: every 6h, if openapi main moved past DO_OPENAPI_COMMIT_SHA.txt
+#
+# Secrets:
+#   WORKFLOW_TOKEN (optional) — PAT with repo scope; falls back to GITHUB_TOKEN
+name: V2 Client Generation
+
+on:
+  workflow_dispatch:
+    inputs:
+      openapi_short_sha:
+        description: "Short commit SHA from digitalocean/openapi (leave empty to use latest main)"
+        required: false
+        type: string
+  schedule:
+    # Backup if the openapi→godo trigger is not wired yet
+    - cron: "0 */6 * * *"
+
+env:
+  SPEC_URL_BASE: https://api-engineering.nyc3.digitaloceanspaces.com/spec-ci
+
+jobs:
+  generate-v2-client:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout godo
+        uses: actions/checkout@v4
+
+      - name: Resolve OpenAPI short SHA
+        id: sha
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          input="${{ github.event.inputs.openapi_short_sha || '' }}"
+          if [[ -n "$input" ]]; then
+            target="$input"
+          else
+            target="$(gh api repos/digitalocean/openapi/commits/main --jq '.sha[0:7]')"
+          fi
+          current="$(tr -d '[:space:]' < DO_OPENAPI_COMMIT_SHA.txt || true)"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "Resolved openapi@$target (current pin: $current)"
+
+      - name: Skip if already up to date
+        id: skip
+        run: |
+          if [[ "${{ steps.sha.outputs.current }}" == "${{ steps.sha.outputs.target }}" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Already pinned to ${{ steps.sha.outputs.target }}; nothing to do."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: OpenAPI changelist
+        if: steps.skip.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/openapi_changelist.sh
+          scripts/openapi_changelist.sh "${{ steps.sha.outputs.current }}" "${{ steps.sha.outputs.target }}" > changelist.md
+          cat changelist.md
+
+      - name: Download published bundled OpenAPI
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          sha="${{ steps.sha.outputs.target }}"
+          url="${SPEC_URL_BASE}/DigitalOcean-public-${sha}.v2.yaml"
+          echo "Downloading $url"
+          curl --fail -L "$url" -o DigitalOcean-public.v2.yaml
+          echo "$sha" > DO_OPENAPI_COMMIT_SHA.txt
+
+      - name: Install Go
+        if: steps.skip.outputs.skip != 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install Node (for npx fallback; SPEC_FILE path skips redocly)
+        if: steps.skip.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Generate package v2
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          make clean-generate
+          SPEC_FILE="$PWD/DigitalOcean-public.v2.yaml" make generate
+
+      - name: Run tests
+        if: steps.skip.outputs.skip != 'true'
+        run: go test ./...
+
+      - name: Create branch, commit, open PR
+        if: steps.skip.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN || secrets.GITHUB_TOKEN }}
+          TARGET: ${{ steps.sha.outputs.target }}
+          CURRENT: ${{ steps.sha.outputs.current }}
+        run: |
+          set -euo pipefail
+          BRANCH="openapi-${TARGET}/v2-clientgen"
+
+          git config user.email "api-engineering@digitalocean.com"
+          git config user.name "API Engineering"
+
+          git checkout -B "$BRANCH"
+
+          # Do not commit the downloaded YAML blob; pin + generated Go only.
+          git add DO_OPENAPI_COMMIT_SHA.txt v2/*.gen.go
+          # Stub client.go is removed by generate; ensure it is gone from the tree.
+          git add -u v2/client.go || true
+
+          if git diff --cached --quiet; then
+            echo "No file changes after generate; exiting."
+            exit 0
+          fi
+
+          git commit -m "[bot] Regenerate Client.V2 from digitalocean/openapi@${TARGET}"
+          git push -u origin "$BRANCH" --force
+
+          TITLE="$(gh pr list --search "$TARGET" --json title --jq '.[0].title // empty' \
+            --repo digitalocean/openapi --state merged 2>/dev/null || true)"
+          export TITLE CURRENT TARGET
+          envsubst < scripts/pr_body.md_tmpl > pr_body.md
+          cat changelist.md >> pr_body.md
+
+          existing="$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            echo "Updating existing PR #$existing"
+            gh pr edit "$existing" --title "[bot] Re-Generated Client.V2 from digitalocean/openapi@${TARGET}" --body-file pr_body.md
+          else
+            gh pr create \
+              --title "[bot] Re-Generated Client.V2 from digitalocean/openapi@${TARGET}" \
+              --body-file pr_body.md \
+              --head "$BRANCH" \
+              --base main
+          fi

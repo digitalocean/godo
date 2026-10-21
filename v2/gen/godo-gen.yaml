@@ -1,0 +1,9 @@
+# Generate Client.V2 from the full bundled DigitalOcean OpenAPI spec.
+# The bundle is produced by scripts/generate.sh from digitalocean/openapi.
+package: v2
+output_dir: v2
+
+spec: v2/gen/openapi/openapi.bundled.yaml
+
+# Empty tags = generate every tag that has supported operations.
+tags: []

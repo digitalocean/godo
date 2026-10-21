@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/digitalocean/godo/v2"
 	"github.com/google/go-querystring/query"
 	"github.com/hashicorp/go-retryablehttp"
 	"golang.org/x/oauth2"
@@ -113,6 +114,11 @@ type Client struct {
 	BatchInference      BatchInferenceService
 	Signals             SignalsService
 	BYOIPPrefixes       BYOIPPrefixesService
+
+	// V2 is the experimental OpenAPI-generated API surface (package v2).
+	// It is additive and non-breaking; existing fields on Client remain the
+	// stable hand-written API. See v2/ and scripts/generate.sh.
+	V2 *v2.Client
 
 	// Serverless Inference resources at https://inference.do-ai.run.
 	Chat             *ChatService
@@ -386,6 +392,8 @@ func NewClient(httpClient *http.Client) *Client {
 	c.Models = &ModelService{inferenceTransport: t}
 	c.Responses = &ResponseService{inferenceTransport: t}
 	c.AsyncInvocations = &AsyncInvocationService{inferenceTransport: t}
+
+	c.V2 = newV2Client(c)
 
 	c.headers = make(map[string]string)
 

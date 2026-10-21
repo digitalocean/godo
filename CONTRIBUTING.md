@@ -13,6 +13,39 @@ Once you are ready to open a PR, please keep the following guidelines in mind:
 
 `godo` uses go modules. Just fork this repo, clone your fork and off you go!
 
+## Client.V2 OpenAPI regeneration
+
+`Client.V2` is generated from [digitalocean/openapi](https://github.com/digitalocean/openapi).
+
+**Automated (preferred):** when OpenAPI merges to `main`, a bot workflow regenerates
+`v2/*.gen.go` and opens a godo PR. You do **not** need to run `make generate` for
+routine API updates.
+
+1. In **godo**, workflow [`.github/workflows/v2-client-gen.yml`](.github/workflows/v2-client-gen.yml)
+   downloads the published bundled spec, runs the generator, and opens a PR.
+2. In **openapi**, merge
+   `.github/workflows/trigger-godo-client-gen.yml`
+   (same pattern as the pydo/dots triggers). It reuses secret
+   `WORKFLOW_TRIGGER_TOKEN` (ensure the PAT can also dispatch workflows on
+   `digitalocean/godo`).
+3. Optional godo secret `WORKFLOW_TOKEN` — PAT for richer PR metadata; otherwise
+   `GITHUB_TOKEN` is used.
+4. Until the openapi trigger is installed, a **6-hour schedule** on godo still
+   checks whether `openapi` main moved past `DO_OPENAPI_COMMIT_SHA.txt` and opens a PR.
+
+**Manual / local:**
+
+```sh
+# sibling checkout of digitalocean/openapi
+make generate
+
+# or use a pre-bundled YAML (same path CI uses)
+SPEC_FILE=/path/to/DigitalOcean-public.v2.yaml make generate
+```
+
+Pin file: `DO_OPENAPI_COMMIT_SHA.txt` records which OpenAPI commit the checked-in
+`v2/*.gen.go` files came from.
+
 ## Running tests
 
 When working on code in this repository, tests can be run via:
