@@ -19,7 +19,7 @@ var hostedAgentWorkspace = HostedAgentWorkspace{
 	Name:              "scratch",
 	State:             HostedAgentWorkspaceStateAttached,
 	AttachedSessionID: "sess-abc123",
-	SizeGibibytes:     20,
+	SizeLimitGiB:      20,
 	BytesUsed:         734003200,
 	LastSavedAt:       &Timestamp{Time: time.Date(2026, 10, 5, 9, 30, 0, 0, time.UTC)},
 	CreatedAt:         Timestamp{Time: time.Date(2026, 10, 1, 8, 0, 0, 0, time.UTC)},
@@ -34,7 +34,7 @@ var hostedAgentWorkspaceJSON = `
 	"name": "scratch",
 	"state": "ATTACHED",
 	"attached_session_id": "sess-abc123",
-	"size_gibibytes": 20,
+	"size_limit_gib": 20,
 	"bytes_used": 734003200,
 	"last_saved_at": "2026-10-05T09:30:00Z",
 	"created_at": "2026-10-01T08:00:00Z",
@@ -56,14 +56,14 @@ func TestHostedAgents_CreateWorkspace(t *testing.T) {
 				assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 				raw, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
-				assert.JSONEq(t, `{"size_gibibytes":20,"name":"scratch"}`, string(raw))
+				assert.JSONEq(t, `{"size_limit_gib":20,"name":"scratch"}`, string(raw))
 				w.WriteHeader(status)
 				fmt.Fprintf(w, `{"workspace":%s}`, hostedAgentWorkspaceJSON)
 			})
 
 			got, resp, err := client.HostedAgents.CreateWorkspace(ctx, &HostedAgentWorkspaceCreateRequest{
-				SizeGibibytes: 20,
-				Name:          "scratch",
+				SizeLimitGiB: 20,
+				Name:         "scratch",
 			})
 			require.NoError(t, err)
 			require.NotNil(t, resp)
@@ -81,12 +81,12 @@ func TestHostedAgents_CreateWorkspace_OmitsEmptyName(t *testing.T) {
 		testMethod(t, r, http.MethodPost)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
-		assert.JSONEq(t, `{"size_gibibytes":5}`, string(raw))
+		assert.JSONEq(t, `{"size_limit_gib":5}`, string(raw))
 		w.WriteHeader(http.StatusCreated)
 		fmt.Fprintf(w, `{"workspace":%s}`, hostedAgentWorkspaceJSON)
 	})
 
-	_, _, err := client.HostedAgents.CreateWorkspace(ctx, &HostedAgentWorkspaceCreateRequest{SizeGibibytes: 5})
+	_, _, err := client.HostedAgents.CreateWorkspace(ctx, &HostedAgentWorkspaceCreateRequest{SizeLimitGiB: 5})
 	require.NoError(t, err)
 }
 
@@ -117,7 +117,7 @@ func TestHostedAgents_CreateWorkspace_IdempotencyKey(t *testing.T) {
 				require.NoError(t, err)
 				var fields map[string]json.RawMessage
 				require.NoError(t, json.Unmarshal(raw, &fields))
-				assert.Contains(t, fields, "size_gibibytes")
+				assert.Contains(t, fields, "size_limit_gib")
 				assert.Contains(t, fields, "name")
 				assert.NotContains(t, fields, "idempotency_key")
 				assert.NotContains(t, fields, "IdempotencyKey")
@@ -130,7 +130,7 @@ func TestHostedAgents_CreateWorkspace_IdempotencyKey(t *testing.T) {
 			})
 
 			got, _, err := client.HostedAgents.CreateWorkspace(ctx, &HostedAgentWorkspaceCreateRequest{
-				SizeGibibytes:  20,
+				SizeLimitGiB:   20,
 				Name:           "scratch",
 				IdempotencyKey: tt.key,
 			})
@@ -157,7 +157,7 @@ func TestHostedAgents_CreateWorkspace_NoWorkspaceInResponse(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	got, _, err := client.HostedAgents.CreateWorkspace(ctx, &HostedAgentWorkspaceCreateRequest{SizeGibibytes: 20})
+	got, _, err := client.HostedAgents.CreateWorkspace(ctx, &HostedAgentWorkspaceCreateRequest{SizeLimitGiB: 20})
 	require.Error(t, err)
 	assert.Nil(t, got)
 }
@@ -167,7 +167,7 @@ func TestHostedAgents_CreateWorkspace_APIErrors(t *testing.T) {
 		status  int
 		message string
 	}{
-		{status: http.StatusBadRequest, message: "size_gibibytes must be between 1 and 100"},
+		{status: http.StatusBadRequest, message: "size_limit_gib must be between 1 and 100"},
 		{status: http.StatusConflict, message: "workspace limit reached"},
 		{status: http.StatusUnprocessableEntity, message: "idempotency key reused with a different request"},
 		{status: http.StatusNotImplemented, message: "workspaces are not enabled"},
@@ -183,7 +183,7 @@ func TestHostedAgents_CreateWorkspace_APIErrors(t *testing.T) {
 				fmt.Fprintf(w, `{"id":"err","message":%q}`, tt.message)
 			})
 
-			got, resp, err := client.HostedAgents.CreateWorkspace(ctx, &HostedAgentWorkspaceCreateRequest{SizeGibibytes: 20})
+			got, resp, err := client.HostedAgents.CreateWorkspace(ctx, &HostedAgentWorkspaceCreateRequest{SizeLimitGiB: 20})
 			require.Error(t, err)
 			assert.Nil(t, got)
 			var errResp *ErrorResponse
@@ -212,7 +212,7 @@ func TestHostedAgents_GetWorkspace(t *testing.T) {
 	assert.Equal(t, hostedAgentWorkspace, *got)
 	assert.Equal(t, HostedAgentWorkspaceStateAttached, got.State)
 	assert.Equal(t, "sess-abc123", got.AttachedSessionID)
-	assert.Equal(t, int32(20), got.SizeGibibytes)
+	assert.Equal(t, int32(20), got.SizeLimitGiB)
 	assert.Equal(t, int64(734003200), got.BytesUsed)
 	require.NotNil(t, got.LastSavedAt)
 }
@@ -226,7 +226,7 @@ func TestHostedAgents_GetWorkspace_OptionalFieldsAbsent(t *testing.T) {
 		fmt.Fprint(w, `{"workspace":{
 			"workspace_id": "019fb39c-14d9-7080-933e-b9b90e25acda",
 			"state": "AVAILABLE",
-			"size_gibibytes": 5,
+			"size_limit_gib": 5,
 			"bytes_used": 0,
 			"created_at": "2026-10-01T08:00:00Z",
 			"updated_at": "2026-10-01T08:00:00Z"
@@ -239,7 +239,7 @@ func TestHostedAgents_GetWorkspace_OptionalFieldsAbsent(t *testing.T) {
 	assert.Empty(t, got.Name)
 	assert.Empty(t, got.AttachedSessionID)
 	assert.Nil(t, got.LastSavedAt)
-	assert.Equal(t, int32(5), got.SizeGibibytes)
+	assert.Equal(t, int32(5), got.SizeLimitGiB)
 	assert.Equal(t, int64(0), got.BytesUsed)
 }
 
