@@ -98,7 +98,7 @@ func TestSignals_ListSessionDialogues(t *testing.T) {
 		fmt.Fprint(w, `{
 			"session_id":"sess-1",
 			"edges":[{"cursor":"c","node":{
-				"id":901,"run_id":"run-1","created_at":"2026-10-01T12:00:01Z","sequence":1,
+				"id":"901","run_id":"run-1","created_at":"2026-10-01T12:00:01Z","sequence":1,
 				"user_message":"resize",
 				"steps":[{"type":"tool_call"}],"run_status":"completed",
 				"signals":[{"signal_type":"Looping","label":"loop","run_uuid":"run-1","step_index":0,"confidence":0.9,"layer":"observation","category":"execution"}]
