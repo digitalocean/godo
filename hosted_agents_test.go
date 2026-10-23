@@ -77,7 +77,7 @@ func TestHostedAgents_CreateSession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentSessionCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -108,7 +108,7 @@ func TestHostedAgents_CreateSession_WithOrigin(t *testing.T) {
 		},
 	}
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
 
 		var got HostedAgentSessionCreateRequest
@@ -155,7 +155,7 @@ func TestHostedAgents_CreateSession_DirectOmitsOrigin(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		var raw map[string]json.RawMessage
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&raw))
 		_, hasOrigin := raw["origin"]
@@ -191,7 +191,7 @@ func TestHostedAgents_GetSession_WithOrigin(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-eval", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-eval", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{
@@ -383,7 +383,7 @@ spec:
     template: coding
 `
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
 		assert.Empty(t, r.URL.Query().Get("openai_session_id"))
@@ -412,7 +412,7 @@ func TestHostedAgents_CreateSessionFromConfig(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		// The config-backed path is selected by a JSON body carrying only
 		// name + config_id.
@@ -452,7 +452,7 @@ func TestHostedAgents_CreateSessionFromEnvironment(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 		var body HostedAgentSessionFromEnvironmentRequest
@@ -489,7 +489,7 @@ func TestHostedAgents_CreateSessionFromConfig_ResumeOnTopoff(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 		assert.Empty(t, r.URL.Query().Get("resume_on_topoff"), "config create sends consent in the JSON body, not as a query param")
@@ -541,7 +541,7 @@ func TestHostedAgents_UpdateSession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-patch", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-patch", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPatch)
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 		raw, err := io.ReadAll(r.Body)
@@ -580,7 +580,7 @@ func TestHostedAgents_UpdateSession_RevokesExplicitly(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-patch", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-patch", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPatch)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -676,7 +676,7 @@ spec:
       workspace_directory: /workspace
 `
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
 		assert.Equal(t, "sess_a91f3", r.URL.Query().Get("openai_session_id"))
@@ -707,7 +707,7 @@ func TestHostedAgents_CreateSessionFromManifest_ResumeOnTopoff(t *testing.T) {
 agent: opencode
 `
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
 		assert.Equal(t, "true", r.URL.Query().Get("resume_on_topoff"))
@@ -728,7 +728,7 @@ func TestHostedAgents_GetSession_OpenAIFields(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-openai-1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-openai-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"session":%s}`, hostedAgentOpenAISessionJSON)
 	})
@@ -745,7 +745,7 @@ func TestHostedAgents_ListSessions(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "SESSION_STATUS_READY", r.URL.Query().Get("status"))
 		assert.Equal(t, "25", r.URL.Query().Get("page_size"))
@@ -766,7 +766,7 @@ func TestHostedAgents_GetSession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"session":%s}`, hostedAgentSessionJSON)
 	})
@@ -781,7 +781,7 @@ func TestHostedAgents_DestroySession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -795,7 +795,7 @@ func TestHostedAgents_PauseSession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/pause", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/pause", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -812,7 +812,7 @@ func TestHostedAgents_ResumeSession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/resume", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/resume", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		body, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -829,7 +829,7 @@ func TestHostedAgents_SendInput(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/input", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/input", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentSendInputRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -849,7 +849,7 @@ func TestHostedAgents_ResolveHITL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/hitl/req-001", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/hitl/req-001", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentResolveHITLRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -874,7 +874,7 @@ func TestHostedAgents_SendInput_CarriesNativeFrame(t *testing.T) {
 
 	const frame = `{"jsonrpc":"2.0","method":"turn/start","params":{"model":"gpt-5","input":[{"type":"text","text":"fix the failing test"}]}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/input", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/input", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -902,7 +902,7 @@ func TestHostedAgents_SendInput_OmitsNativeFrameWhenUnset(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/input", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/input", func(w http.ResponseWriter, r *http.Request) {
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
 		assert.NotContains(t, string(raw), "source_raw")
@@ -924,7 +924,7 @@ func TestHostedAgents_ResolveHITL_CarriesNativeReply(t *testing.T) {
 
 	const reply = `{"id":7,"result":{"action":"accept","content":{"answer":"yes"}}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/hitl/req-001", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/hitl/req-001", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentResolveHITLRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -951,7 +951,7 @@ func TestHostedAgents_RelayRequest(t *testing.T) {
 		reply   = `{"jsonrpc":"2.0","id":3,"result":{}}`
 	)
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentRelayRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -977,7 +977,7 @@ func TestHostedAgents_RelayRequest_ProtocolErrorIsANormalReply(t *testing.T) {
 
 	const rpcErr = `{"jsonrpc":"2.0","id":4,"error":{"code":-32601,"message":"method not found"}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `{"source_raw":%q}`, base64.StdEncoding.EncodeToString([]byte(rpcErr)))
 	})
 
@@ -995,7 +995,7 @@ func TestHostedAgents_RelayRequest_DeclinedMethodYieldsEmptyReply(t *testing.T) 
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/request", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{}`)
 	})
 
@@ -1019,7 +1019,7 @@ func TestHostedAgents_StreamSession(t *testing.T) {
 	// The live stream is served by the data plane at .../events, and the resume
 	// cursor rides in the standard Last-Event-ID header rather than a query
 	// parameter.
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "text/event-stream", r.Header.Get("Accept"))
 		assert.Equal(t, "ev-0", r.Header.Get("Last-Event-ID"))
@@ -1096,7 +1096,7 @@ func TestHostedAgents_StreamSession_IncludeRaw(t *testing.T) {
 
 	const native = `{"jsonrpc":"2.0","method":"item/agentMessage/delta","params":{"delta":"hello"}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "true", r.URL.Query().Get("include_raw"))
 		w.Header().Set("Content-Type", "text/event-stream")
@@ -1135,7 +1135,7 @@ func TestHostedAgents_ListSessions_PageToken(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "cursor-abc", r.URL.Query().Get("page_token"))
 		fmt.Fprintf(w, `{"sessions":[],"next_page_token":"cursor-def"}`)
@@ -1154,7 +1154,7 @@ func TestHostedAgents_ListSessions_ByName(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "godo-fixture", r.URL.Query().Get("name"))
 		fmt.Fprintf(w, `{"sessions":[%s]}`, hostedAgentSessionJSON)
@@ -1174,7 +1174,7 @@ func TestHostedAgents_ExecInSandbox(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/sandbox/exec", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/sandbox/exec", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentSandboxExecRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -1195,7 +1195,7 @@ func TestHostedAgents_ListSandboxSizes(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sandbox/sizes", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sandbox/sizes", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Empty(t, r.URL.RawQuery)
 		fmt.Fprint(w, `{
@@ -1229,7 +1229,7 @@ func TestHostedAgents_StreamSession_ReplayOnly(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "true", r.URL.Query().Get("replay_only"))
 		assert.Equal(t, "ev-0", r.URL.Query().Get("replay_from"))
@@ -1262,7 +1262,7 @@ func TestHostedAgents_StreamSession_ReplayOnly_HistoryThenEOF(t *testing.T) {
 		second     = `{"event_id":"ev-2","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:02:00Z","seq":2,"type":"run.completed","data":{}}`
 	)
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "true", r.URL.Query().Get("replay_only"))
 		w.Header().Set("Content-Type", "text/event-stream")
@@ -1302,7 +1302,7 @@ func TestHostedAgents_StreamSession_HistoryPage(t *testing.T) {
 
 	const eventJSON = `{"event_id":"ev-7","run_id":"run-1","tenant_id":"42","session_id":"sess-abc123","timestamp":"2026-03-01T12:01:00Z","seq":7,"type":"run.token_delta","data":{"text":"older"}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		q := r.URL.Query()
 		assert.Equal(t, "true", q.Get("replay_only"))
@@ -1337,7 +1337,7 @@ func TestHostedAgents_StreamSession_HistoryPageHasMoreFalse(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprint(w, ": has_more=false\n\n")
 	})
@@ -1358,7 +1358,7 @@ func TestHostedAgents_StreamSession_NoPagingParamsWhenUnset(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		assert.False(t, q.Has("before"))
 		assert.False(t, q.Has("limit"))
@@ -1387,7 +1387,7 @@ func TestHostedAgents_StreamSession_StreamState(t *testing.T) {
 
 	const frame = `{"event_id":"","run_id":"","tenant_id":"0","session_id":"sess-abc123","timestamp":"2026-03-01T12:00:00Z","seq":0,"type":"stream.state","data":{"state":"live","cursor":""}}`
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		w.Header().Set("Content-Type", "text/event-stream")
 		fmt.Fprintf(w, "event: stream.state\ndata: %s\n\n", frame)
@@ -1478,7 +1478,7 @@ func TestHostedAgents_UploadWorkspace(t *testing.T) {
 
 	const payload = "hello world"
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/upload", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/upload", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/octet-stream", r.Header.Get("Content-Type"))
 		assert.Equal(t, "src/main.go", r.URL.Query().Get("path"))
@@ -1514,7 +1514,7 @@ func TestHostedAgents_DownloadWorkspace(t *testing.T) {
 	const payload = "the quick brown fox"
 	footer := workspaceDownloadFooter(payload)
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "notes.txt", r.URL.Query().Get("path"))
 		assert.Equal(t, "true", r.URL.Query().Get("as_archive"))
@@ -1549,7 +1549,7 @@ func TestHostedAgents_DownloadWorkspace_ChecksumMismatch(t *testing.T) {
 	const payload = "the quick brown fox"
 	badFooter := workspaceDownloadFooterPrefix + strings.Repeat("0", 64) + "\n"
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(payload + badFooter))
@@ -1572,7 +1572,7 @@ func TestHostedAgents_DownloadWorkspace_MissingFooter(t *testing.T) {
 
 	const payload = "partial data"
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(payload))
@@ -1596,7 +1596,7 @@ func TestHostedAgents_DownloadWorkspace_InvalidFooter(t *testing.T) {
 	const payload = "the quick brown fox"
 	invalidFooter := "NOTASHA1" + strings.Repeat("a", 64) + "\n"
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(payload + invalidFooter))
@@ -1620,7 +1620,7 @@ func TestHostedAgents_DownloadWorkspace_EmptyPayload(t *testing.T) {
 	const payload = ""
 	footer := workspaceDownloadFooter(payload)
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/download", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/octet-stream")
 		w.Header().Set("X-Workspace-Size-Bytes", "0")
 		w.WriteHeader(http.StatusOK)
@@ -1669,7 +1669,7 @@ func TestHostedAgents_CreateWorkspaceTransfer_Upload(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/transfers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var got HostedAgentWorkspaceTransferCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
@@ -1711,7 +1711,7 @@ func TestHostedAgents_CreateWorkspaceTransfer_Download(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/transfers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var got HostedAgentWorkspaceTransferCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
@@ -1742,7 +1742,7 @@ func TestHostedAgents_CreateWorkspaceTransferPartUploadURLs(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1/part-upload-urls", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/transfers/xfer-1/part-upload-urls", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var got HostedAgentWorkspaceTransferPartUploadURLsRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
@@ -1769,7 +1769,7 @@ func TestHostedAgents_CommitWorkspaceTransfer(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1/commit", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/transfers/xfer-1/commit", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var got HostedAgentWorkspaceTransferCommitRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
@@ -1796,7 +1796,7 @@ func TestHostedAgents_GetWorkspaceTransfer(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/transfers/xfer-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"transfer_id": "xfer-1",
@@ -1827,7 +1827,7 @@ func TestHostedAgents_CancelWorkspaceTransfer(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/workspace/transfers/xfer-1/cancel", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/workspace/transfers/xfer-1/cancel", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var got HostedAgentWorkspaceTransferCancelRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
@@ -1882,7 +1882,7 @@ func TestHostedAgents_GetSession_EmptyBody(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{}`)
 	})
 
@@ -1895,7 +1895,7 @@ func TestHostedAgents_StartProviderAuth(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/auth/github", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/auth/github", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		fmt.Fprint(w, `{
 			"provider": "github",
@@ -1924,7 +1924,7 @@ func TestHostedAgents_StartProviderAuth_AlreadyConnected(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/auth/github", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/auth/github", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		fmt.Fprint(w, `{"provider":"github","status":"success"}`)
 	})
@@ -1940,7 +1940,7 @@ func TestHostedAgents_PollProviderAuth(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/auth/github/poll", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/auth/github/poll", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "https://cloud.digitalocean.com/api/v1/security/connectlinks/poll?token=def", r.URL.Query().Get("poll_url"))
 		fmt.Fprint(w, `{"provider":"github","status":"success","expires_at":"2036-08-10T10:44:32Z"}`)
@@ -1974,7 +1974,7 @@ func TestHostedAgents_ListConnections(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "alice", r.URL.Query().Get("user_id"))
 		assert.Equal(t, "active", r.URL.Query().Get("status"))
@@ -2033,7 +2033,7 @@ func TestHostedAgents_CreateConnection_Pending(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentConnectionCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -2067,7 +2067,7 @@ func TestHostedAgents_CreateConnection_Active(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/auth/github/connections", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"active"}}`)
 	})
@@ -2082,7 +2082,7 @@ func TestHostedAgents_GetConnection(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/auth/github/connections/c1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/auth/github/connections/c1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"active","deletion_protected":true}}`)
 	})
@@ -2101,7 +2101,7 @@ func TestHostedAgents_DeleteConnection(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/auth/github/connections/c1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/auth/github/connections/c1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"revoked"}}`)
 	})
@@ -2131,4 +2131,23 @@ func TestHostedAgents_Connections_RequiredArgs(t *testing.T) {
 
 	_, _, err = client.HostedAgents.DeleteConnection(ctx, "", "c1")
 	require.EqualError(t, err, "hosted agents: provider is required")
+}
+
+// The Harness Runtime API is served under /v2/harness-runtime. /v2/agents is
+// still accepted by the edge but is no longer what the client sends.
+func TestHostedAgentsAPIPrefix(t *testing.T) {
+	assert.Equal(t, "/v2/harness-runtime", hostedAgentsAPIPrefix)
+
+	for name, got := range map[string]string{
+		"sessions":          hostedAgentsSessionsBasePath,
+		"workspaces":        hostedAgentWorkspacesBasePath,
+		"templates":         hostedAgentsTemplatesBasePath,
+		"configs":           hostedAgentsConfigsBasePath,
+		"triggers":          hostedAgentTriggersBasePath,
+		"webhook-providers": hostedAgentWebhookProvidersPath,
+		"auth":              hostedAgentProviderAuthPath,
+	} {
+		assert.True(t, strings.HasPrefix(got, "/v2/harness-runtime/"+name), "%s: %s", name, got)
+		assert.NotContains(t, got, "/v2/agents", name)
+	}
 }

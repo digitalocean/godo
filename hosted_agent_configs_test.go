@@ -45,7 +45,7 @@ func TestHostedAgents_ListAgentConfigs(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "10", r.URL.Query().Get("page_size"))
 		fmt.Fprint(w, `{"configs":[{"id":"019fb39c-14d9-7080-933e-b9b90e25acda","name":"support-agent","agentspec_schema_version":"agents.digitalocean.com/v1alpha1","content_hash":"75803fef24dc731824ecd4a1853c76153c7d8503534092b94da3ca3f31a882f4","created_by":"user-1","created_at":"2026-08-01T12:00:00Z","updated_at":"2026-08-01T12:00:00Z"}],"next_page_token":"abc"}`)
@@ -63,7 +63,7 @@ func TestHostedAgents_GetAgentConfig(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"config":%s}`, hostedAgentConfigJSON)
 	})
@@ -84,7 +84,7 @@ func TestHostedAgents_CreateEnvironment(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedEnvironmentCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -110,7 +110,7 @@ func TestHostedAgents_ListEnvironments(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"configs":[{"id":"019fb39c-14d9-7080-933e-b9b90e25acda","name":"support-agent","agentspec_schema_version":"agents.digitalocean.com/v1alpha1","content_hash":"75803fef24dc731824ecd4a1853c76153c7d8503534092b94da3ca3f31a882f4","created_by":"user-1","created_at":"2026-08-01T12:00:00Z","updated_at":"2026-08-01T12:00:00Z"}],"next_page_token":""}`)
 	})
@@ -126,7 +126,7 @@ func TestHostedAgents_GetEnvironment(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"config":%s}`, hostedAgentConfigJSON)
 	})
@@ -141,7 +141,7 @@ func TestHostedAgents_DeleteEnvironment(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -155,7 +155,7 @@ func TestHostedAgents_CreateAgentConfig(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentConfigCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -187,7 +187,7 @@ func TestHostedAgents_DeleteAgentConfig(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -201,7 +201,7 @@ func TestHostedAgents_ListAgentConfigSessions(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/configs/019fb39c-14d9-7080-933e-b9b90e25acda/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "SESSION_STATUS_READY", r.URL.Query().Get("status"))
 		fmt.Fprintf(w, `{"sessions":[%s],"next_page_token":""}`, hostedAgentSessionJSON)
