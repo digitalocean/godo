@@ -341,6 +341,58 @@ func TestMicroVMs_Create(t *testing.T) {
 	}
 }
 
+func TestMicroVMs_Create_EgressPolicy(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &MicroVMCreateRequest{
+		Name:   "locked-down",
+		Source: &MicroVMSource{OCIRef: "docker.io/library/nginx:1.27"},
+		EgressPolicy: &MicroVMEgressPolicy{
+			DefaultAction: MicroVMEgressActionDeny,
+			Rules: []MicroVMEgressRule{
+				{Domain: "*.example.com"},
+				{IP: "203.0.113.5"},
+			},
+		},
+	}
+
+	mux.HandleFunc("/v2/microvms", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		expected := map[string]interface{}{
+			"name":   "locked-down",
+			"source": map[string]interface{}{"oci_ref": "docker.io/library/nginx:1.27"},
+			"egress_policy": map[string]interface{}{
+				"default_action": "deny",
+				"rules": []interface{}{
+					map[string]interface{}{"domain": "*.example.com"},
+					map[string]interface{}{"ip": "203.0.113.5"},
+				},
+			},
+		}
+
+		var got map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if !reflect.DeepEqual(got, expected) {
+			t.Errorf("Create body\n got=%#v\nwant=%#v", got, expected)
+		}
+
+		fmt.Fprint(w, `{"microvm": {"id": "ccc-333", "egress_policy": {"default_action": "deny", "rules": [{"domain": "*.example.com"}, {"ip": "203.0.113.5"}]}}}`)
+	})
+
+	microVM, _, err := client.MicroVMs.Create(ctx, createRequest)
+	if err != nil {
+		t.Fatalf("MicroVMs.Create returned error: %v", err)
+	}
+
+	if !reflect.DeepEqual(microVM.EgressPolicy, createRequest.EgressPolicy) {
+		t.Errorf("MicroVMs.Create returned EgressPolicy %+v, expected %+v", microVM.EgressPolicy, createRequest.EgressPolicy)
+	}
+}
+
 func TestMicroVMs_Create_FromCheckpoint(t *testing.T) {
 	setup()
 	defer teardown()
