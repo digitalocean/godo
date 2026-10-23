@@ -51,7 +51,7 @@ func TestHostedAgents_CreateWorkspace(t *testing.T) {
 			setup()
 			defer teardown()
 
-			mux.HandleFunc("/v2/agents/workspaces", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v2/harness-runtime/workspaces", func(w http.ResponseWriter, r *http.Request) {
 				testMethod(t, r, http.MethodPost)
 				assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 				raw, err := io.ReadAll(r.Body)
@@ -77,7 +77,7 @@ func TestHostedAgents_CreateWorkspace_OmitsEmptyName(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/workspaces", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/workspaces", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestHostedAgents_CreateWorkspace_IdempotencyKey(t *testing.T) {
 			setup()
 			defer teardown()
 
-			mux.HandleFunc("/v2/agents/workspaces", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v2/harness-runtime/workspaces", func(w http.ResponseWriter, r *http.Request) {
 				testMethod(t, r, http.MethodPost)
 				values, present := r.Header["Idempotency-Key"]
 				assert.Equal(t, tt.wantHeader, present)
@@ -151,7 +151,7 @@ func TestHostedAgents_CreateWorkspace_NoWorkspaceInResponse(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/workspaces", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/workspaces", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		w.WriteHeader(http.StatusCreated)
 		fmt.Fprint(w, `{}`)
@@ -177,7 +177,7 @@ func TestHostedAgents_CreateWorkspace_APIErrors(t *testing.T) {
 			setup()
 			defer teardown()
 
-			mux.HandleFunc("/v2/agents/workspaces", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v2/harness-runtime/workspaces", func(w http.ResponseWriter, r *http.Request) {
 				testMethod(t, r, http.MethodPost)
 				w.WriteHeader(tt.status)
 				fmt.Fprintf(w, `{"id":"err","message":%q}`, tt.message)
@@ -200,9 +200,9 @@ func TestHostedAgents_GetWorkspace(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		assert.Equal(t, "/v2/agents/workspaces/"+hostedAgentWorkspaceTestID, r.URL.Path)
+		assert.Equal(t, "/v2/harness-runtime/workspaces/"+hostedAgentWorkspaceTestID, r.URL.Path)
 		fmt.Fprintf(w, `{"workspace":%s}`, hostedAgentWorkspaceJSON)
 	})
 
@@ -221,7 +221,7 @@ func TestHostedAgents_GetWorkspace_OptionalFieldsAbsent(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"workspace":{
 			"workspace_id": "019fb39c-14d9-7080-933e-b9b90e25acda",
@@ -269,7 +269,7 @@ func TestHostedAgents_GetWorkspace_NoWorkspaceInResponse(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{}`)
 	})
 
@@ -289,7 +289,7 @@ func TestHostedAgents_GetWorkspace_NotFound(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"id":"not_found","message":"workspace not found"}`)
 	})
@@ -323,7 +323,7 @@ func TestHostedAgents_ListWorkspaces(t *testing.T) {
 			setup()
 			defer teardown()
 
-			mux.HandleFunc("/v2/agents/workspaces", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v2/harness-runtime/workspaces", func(w http.ResponseWriter, r *http.Request) {
 				testMethod(t, r, http.MethodGet)
 				q := r.URL.Query()
 				assert.Equal(t, tt.wantSize != "", q.Has("page_size"))
@@ -349,7 +349,7 @@ func TestHostedAgents_ListWorkspaces_Empty(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/workspaces", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/workspaces", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"workspaces":[],"next_page_token":""}`)
 	})
@@ -365,9 +365,9 @@ func TestHostedAgents_DeleteWorkspace(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
-		assert.Equal(t, "/v2/agents/workspaces/"+hostedAgentWorkspaceTestID, r.URL.Path)
+		assert.Equal(t, "/v2/harness-runtime/workspaces/"+hostedAgentWorkspaceTestID, r.URL.Path)
 		w.WriteHeader(http.StatusNoContent)
 	})
 
@@ -396,7 +396,7 @@ func TestHostedAgents_DeleteWorkspace_APIErrors(t *testing.T) {
 			setup()
 			defer teardown()
 
-			mux.HandleFunc("/v2/agents/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v2/harness-runtime/workspaces/"+hostedAgentWorkspaceTestID, func(w http.ResponseWriter, r *http.Request) {
 				testMethod(t, r, http.MethodDelete)
 				w.WriteHeader(tt.status)
 				fmt.Fprintf(w, `{"id":"err","message":%q}`, tt.message)
@@ -454,7 +454,7 @@ func TestHostedAgents_GetSession_WorkspaceID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-ws", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-ws", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"session":{"session_id":"sess-ws","workspace_id":"019fb39c-14d9-7080-933e-b9b90e25acda"}}`)
 	})
@@ -478,7 +478,7 @@ func TestHostedAgents_CreateSessionFromConfig_WorkspaceID(t *testing.T) {
 			setup()
 			defer teardown()
 
-			mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 				testMethod(t, r, http.MethodPost)
 				assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 				assert.False(t, r.URL.Query().Has("workspace_id"), "config create sends the workspace in the JSON body, not as a query param")
@@ -515,7 +515,7 @@ agent: opencode
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
 		// A workspace cannot be attached from a manifest, so no workspace_id is sent.
