@@ -140,8 +140,11 @@ func TestSignals_Exports(t *testing.T) {
 	})
 	mux.HandleFunc("/v1/signals/exports", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		if got := r.URL.Query().Get("agent_id"); got != "agent-1" {
-			t.Errorf("agent_id=%s", got)
+		if got := r.URL.Query().Get("environment_id"); got != "agent-1" {
+			t.Errorf("environment_id=%s", got)
+		}
+		if r.URL.Query().Get("agent_id") != "" {
+			t.Errorf("agent_id query must be empty")
 		}
 		fmt.Fprint(w, `{"edges":[{"cursor":"c","node":{"export_id":"exp-1","status":"complete","created_at":1,"filters":{}}}],"page_info":{"has_next_page":false}}`)
 	})
@@ -375,8 +378,11 @@ func TestSignals_CreateExport(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatalf("decode: %v", err)
 		}
-		if body.AgentID != "agent-1" {
-			t.Errorf("agent_id=%s, want agent-1", body.AgentID)
+		if body.EnvironmentID != "agent-1" {
+			t.Errorf("environment_id=%s, want agent-1", body.EnvironmentID)
+		}
+		if body.AgentID != "" {
+			t.Errorf("agent_id=%s, want empty", body.AgentID)
 		}
 		if !reflect.DeepEqual(body.SignalType, []string{"Looping"}) {
 			t.Errorf("signal_type=%v, want [Looping]", body.SignalType)
@@ -413,8 +419,11 @@ func TestSignals_CreateExport_WithTimeRange(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatalf("decode: %v", err)
 		}
-		if body.AgentID != "agent-1" {
-			t.Errorf("agent_id=%s", body.AgentID)
+		if body.EnvironmentID != "agent-1" {
+			t.Errorf("environment_id=%s", body.EnvironmentID)
+		}
+		if body.AgentID != "" {
+			t.Errorf("agent_id=%s, want empty", body.AgentID)
 		}
 		if body.StartTime == nil || *body.StartTime != start {
 			t.Errorf("start_time=%v, want %d", body.StartTime, start)
@@ -451,8 +460,11 @@ func TestSignals_CreateExport_WithSessionIDs(t *testing.T) {
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			t.Fatalf("decode: %v", err)
 		}
-		if body.AgentID != "agent-1" {
-			t.Errorf("agent_id=%s, want agent-1", body.AgentID)
+		if body.EnvironmentID != "agent-1" {
+			t.Errorf("environment_id=%s, want agent-1", body.EnvironmentID)
+		}
+		if body.AgentID != "" {
+			t.Errorf("agent_id=%s, want empty", body.AgentID)
 		}
 		if !reflect.DeepEqual(body.SessionIDs, sessionIDs) {
 			t.Errorf("session_ids=%v, want %v", body.SessionIDs, sessionIDs)
@@ -538,7 +550,7 @@ func TestSignals_CreateDeletion_Agent(t *testing.T) {
 			t.Errorf("decode: %v", err)
 			return
 		}
-		want := SignalsCreateDeletionRequest{Type: "agent", TeamID: 12345, AgentID: "agt-uuid"}
+		want := SignalsCreateDeletionRequest{Type: "agent", TeamID: 12345, EnvironmentID: "agt-uuid"}
 		if body != want {
 			t.Errorf("body=%+v, want %+v", body, want)
 		}
@@ -583,6 +595,9 @@ func TestSignals_CreateDeletion_Inference(t *testing.T) {
 		}
 		if _, has := m["agent_id"]; has {
 			t.Errorf("agent_id must not be sent for inference: %v", m)
+		}
+		if _, has := m["environment_id"]; has {
+			t.Errorf("environment_id must not be sent for inference: %v", m)
 		}
 		w.WriteHeader(http.StatusAccepted)
 		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"inference","status":"queued","created_at":1728324000}`)
@@ -641,8 +656,8 @@ func TestSignals_CreateDeletion_Validation(t *testing.T) {
 		{"EmptyType", &SignalsCreateDeletionRequest{TeamID: 1}, "signals: type must be agent or inference"},
 		{"UnknownType", &SignalsCreateDeletionRequest{Type: "bogus", TeamID: 1, AgentID: "a"}, "signals: type must be agent or inference"},
 		{"BadTypeAndBadTeamReportsTeamFirst", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 0}, "signals: team_id is required"},
-		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1}, "signals: agent_id is required for agent"},
-		{"InferenceWithAgentID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1, AgentID: "a"}, "signals: agent_id must not be set for inference"},
+		{"ManagedAgentMissingAgentID", &SignalsCreateDeletionRequest{Type: "agent", TeamID: 1}, "signals: environment_id is required for agent"},
+		{"InferenceWithAgentID", &SignalsCreateDeletionRequest{Type: "inference", TeamID: 1, AgentID: "a"}, "signals: environment_id must not be set for inference"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1076,4 +1091,214 @@ func TestSignals_ListDeletions_BadCursor(t *testing.T) {
 		t.Errorf("expected nil response body, got %+v", got)
 	}
 	assertErrStatus(t, err, resp, http.StatusBadRequest)
+}
+
+func TestSignalsCreateExportRequest_resolveAgentID(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     SignalsCreateExportRequest
+		want    string
+		wantErr string
+	}{
+		{"OnlyAgentID", SignalsCreateExportRequest{AgentID: "agt-1"}, "agt-1", ""},
+		{"OnlyEnvironmentID", SignalsCreateExportRequest{EnvironmentID: "agt-1"}, "agt-1", ""},
+		{"BothEqual", SignalsCreateExportRequest{AgentID: "agt-1", EnvironmentID: "agt-1"}, "agt-1", ""},
+		{"BothDifferent", SignalsCreateExportRequest{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: environment_id and agent_id must match when both are set"},
+		{"Neither", SignalsCreateExportRequest{}, "", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.req.resolveAgentID()
+			if tt.wantErr != "" {
+				if err == nil || err.Error() != tt.wantErr {
+					t.Fatalf("error=%v, want %q", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("resolveAgentID: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSignalsCreateDeletionRequest_resolveAgentID(t *testing.T) {
+	tests := []struct {
+		name    string
+		req     SignalsCreateDeletionRequest
+		want    string
+		wantErr string
+	}{
+		{"OnlyAgentID", SignalsCreateDeletionRequest{AgentID: "agt-1"}, "agt-1", ""},
+		{"OnlyEnvironmentID", SignalsCreateDeletionRequest{EnvironmentID: "agt-1"}, "agt-1", ""},
+		{"BothEqual", SignalsCreateDeletionRequest{AgentID: "agt-1", EnvironmentID: "agt-1"}, "agt-1", ""},
+		{"BothDifferent", SignalsCreateDeletionRequest{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: environment_id and agent_id must match when both are set"},
+		{"Neither", SignalsCreateDeletionRequest{}, "", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.req.resolveAgentID()
+			if tt.wantErr != "" {
+				if err == nil || err.Error() != tt.wantErr {
+					t.Fatalf("error=%v, want %q", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("resolveAgentID: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSignalsListExportsOptions_resolveAgentID(t *testing.T) {
+	tests := []struct {
+		name    string
+		opts    SignalsListExportsOptions
+		want    string
+		wantErr string
+	}{
+		{"OnlyAgentID", SignalsListExportsOptions{AgentID: "agt-1"}, "agt-1", ""},
+		{"OnlyEnvironmentID", SignalsListExportsOptions{EnvironmentID: "agt-1"}, "agt-1", ""},
+		{"BothEqual", SignalsListExportsOptions{AgentID: "agt-1", EnvironmentID: "agt-1"}, "agt-1", ""},
+		{"BothDifferent", SignalsListExportsOptions{AgentID: "agt-1", EnvironmentID: "agt-2"}, "", "signals: environment_id and agent_id must match when both are set"},
+		{"Neither", SignalsListExportsOptions{}, "", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.opts.resolveAgentID()
+			if tt.wantErr != "" {
+				if err == nil || err.Error() != tt.wantErr {
+					t.Fatalf("error=%v, want %q", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("resolveAgentID: %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSignals_ResponseDecode_EnvironmentID(t *testing.T) {
+	var consent SignalsAgentConsent
+	if err := json.Unmarshal([]byte(`{"team_id":1,"agent_id":"agt-1","environment_id":"agt-1","enabled":true}`), &consent); err != nil {
+		t.Fatal(err)
+	}
+	if consent.AgentID != "agt-1" || consent.EnvironmentID != "agt-1" {
+		t.Errorf("SignalsAgentConsent: %+v", consent)
+	}
+
+	var record SignalsConsentRecord
+	if err := json.Unmarshal([]byte(`{"id":1,"team_id":1,"agent_id":"agt-1","environment_id":"agt-1","enabled":true}`), &record); err != nil {
+		t.Fatal(err)
+	}
+	if record.AgentID != "agt-1" || record.EnvironmentID != "agt-1" {
+		t.Errorf("SignalsConsentRecord: %+v", record)
+	}
+
+	var export SignalsExportJob
+	if err := json.Unmarshal([]byte(`{"export_id":"e1","agent_id":"agt-1","environment_id":"agt-1","status":"complete","created_at":1,"filters":{}}`), &export); err != nil {
+		t.Fatal(err)
+	}
+	if export.AgentID != "agt-1" || export.EnvironmentID != "agt-1" {
+		t.Errorf("SignalsExportJob: %+v", export)
+	}
+
+	var deletion SignalsDeletionJob
+	if err := json.Unmarshal([]byte(`{"team_id":1,"deletion_id":"d1","type":"agent","agent_id":"agt-1","environment_id":"agt-1","status":"queued","created_at":1}`), &deletion); err != nil {
+		t.Fatal(err)
+	}
+	if deletion.AgentID != "agt-1" || deletion.EnvironmentID != "agt-1" {
+		t.Errorf("SignalsDeletionJob: %+v", deletion)
+	}
+}
+
+func TestSignals_CreateExport_AgentIDOnly_SendsEnvironmentID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/exports", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if body["environment_id"] != "agt-1" {
+			t.Errorf("environment_id=%v, want agt-1", body["environment_id"])
+		}
+		if _, has := body["agent_id"]; has {
+			t.Errorf("agent_id must not be sent: %v", body)
+		}
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"export_id":"exp-env","agent_id":"agt-1","environment_id":"agt-1","status":"pending","created_at":1,"filters":{}}`)
+	})
+
+	got, _, err := client.Signals.CreateExport(ctx, &SignalsCreateExportRequest{AgentID: "agt-1"})
+	if err != nil {
+		t.Fatalf("CreateExport: %v", err)
+	}
+	if got.ExportID != "exp-env" {
+		t.Errorf("unexpected export: %+v", got)
+	}
+}
+
+func TestSignals_ListExports_AgentIDOnly_SendsEnvironmentID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/exports", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if got := r.URL.Query().Get("environment_id"); got != "agt-1" {
+			t.Errorf("environment_id=%s", got)
+		}
+		if r.URL.Query().Get("agent_id") != "" {
+			t.Errorf("agent_id query must be empty")
+		}
+		fmt.Fprint(w, `{"edges":[],"page_info":{"has_next_page":false}}`)
+	})
+
+	if _, _, err := client.Signals.ListExports(ctx, &SignalsListExportsOptions{AgentID: "agt-1"}); err != nil {
+		t.Fatalf("ListExports: %v", err)
+	}
+}
+
+func TestSignals_CreateDeletion_AgentIDOnly_SendsEnvironmentID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v1/signals/deletions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if body["environment_id"] != "agt-uuid" {
+			t.Errorf("environment_id=%v", body["environment_id"])
+		}
+		if _, has := body["agent_id"]; has {
+			t.Errorf("agent_id must not be sent: %v", body)
+		}
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{"team_id":12345,"deletion_id":"`+testDeletionID+`","type":"agent","agent_id":"agt-uuid","environment_id":"agt-uuid","status":"queued","created_at":1}`)
+	})
+
+	got, _, err := client.Signals.CreateDeletion(ctx, &SignalsCreateDeletionRequest{
+		Type: SignalsDeletionTypeAgent, TeamID: 12345, AgentID: "agt-uuid",
+	})
+	if err != nil {
+		t.Fatalf("CreateDeletion: %v", err)
+	}
+	if got.AgentID != "agt-uuid" {
+		t.Errorf("unexpected job: %+v", got)
+	}
 }
