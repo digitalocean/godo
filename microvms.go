@@ -166,6 +166,34 @@ type MicroVM struct {
 	HTTPProtocol  MicroVMHTTPProtocol `json:"http_protocol,omitempty"`
 	Created       string              `json:"created_at,omitempty"`
 	Tags          []string            `json:"tags,omitempty"`
+	// EgressPolicy is the outbound allow list set at create, as supplied.
+	// Nil when the MicroVM has no policy and egress is unrestricted.
+	EgressPolicy *MicroVMEgressPolicy `json:"egress_policy,omitempty"`
+}
+
+// MicroVMEgressAction is what happens to a destination no egress rule matches.
+type MicroVMEgressAction string
+
+const (
+	// MicroVMEgressActionDeny refuses unmatched destinations. It is the API default.
+	MicroVMEgressActionDeny = MicroVMEgressAction("deny")
+	// MicroVMEgressActionAllow permits unmatched destinations.
+	MicroVMEgressActionAllow = MicroVMEgressAction("allow")
+)
+
+// MicroVMEgressPolicy is an outbound allow list for a MicroVM. A destination
+// that matches any rule is allowed; DefaultAction decides every other one.
+type MicroVMEgressPolicy struct {
+	DefaultAction MicroVMEgressAction `json:"default_action,omitempty"`
+	Rules         []MicroVMEgressRule `json:"rules,omitempty"`
+}
+
+// MicroVMEgressRule is one allowed destination. Set exactly one of Domain
+// (an exact host or a `*.example.com` wildcard) or IP (an exact address;
+// CIDR ranges are not supported).
+type MicroVMEgressRule struct {
+	Domain string `json:"domain,omitempty"`
+	IP     string `json:"ip,omitempty"`
 }
 
 // AutoPauseConfig configures MicroVM auto-pause behavior. IdleTimeout is
@@ -215,6 +243,10 @@ type MicroVMCreateRequest struct {
 	// the MicroVM without a default URL; URLs can be added later with
 	// MicroVMsService.AddURL.
 	Ingress *bool `json:"ingress,omitempty"`
+	// EgressPolicy restricts where code in the MicroVM can connect. Nil leaves
+	// egress unrestricted, or inherits the origin's policy on a checkpoint
+	// restore. Only valid with public networking and fixed at create.
+	EgressPolicy *MicroVMEgressPolicy `json:"egress_policy,omitempty"`
 }
 
 // MicroVMCheckpointCreateRequest represents a request to create a checkpoint.
