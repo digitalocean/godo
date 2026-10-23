@@ -1,1 +1,5 @@
 vendor/
+# Bundled OpenAPI is regenerated in CI / make generate; do not commit the blob.
+v2/gen/openapi/openapi.bundled.yaml
+# Local copy downloaded by the regen workflow (if any).
+DigitalOcean-public.v2.yaml
