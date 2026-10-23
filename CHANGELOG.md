@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.233.0] - 2026-10-23
+
+- #1188 - @sgupta832 - microvm: add egress policy to MicroVM and create request (MDROP-608)
+
 ## [1.232.0] - 2026-10-23
 
 - #1184 - @sauravk-digitalocean - fix(FI-649): change SignalsDialogue.ID from int64 to string
