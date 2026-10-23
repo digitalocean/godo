@@ -28,7 +28,7 @@ var hostedAgentTrigger = HostedAgentTrigger{
 	SessionTemplate: "apiVersion: agents.digitalocean.com/v1alpha1\nkind: Agent\n",
 	Webhook: &HostedAgentWebhookConfig{
 		Provider:   HostedAgentWebhookProviderGitHub,
-		WebhookURL: "https://api.digitalocean.com/v2/agents/triggers/trig-abc123/webhook",
+		WebhookURL: "https://api.digitalocean.com/v2/harness-runtime/triggers/trig-abc123/webhook",
 	},
 	CreatedAt: Timestamp{Time: time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC)},
 	UpdatedAt: Timestamp{Time: time.Date(2026, 7, 1, 12, 5, 0, 0, time.UTC)},
@@ -52,7 +52,7 @@ var hostedAgentTriggerJSON = `
 	"session_template": "apiVersion: agents.digitalocean.com/v1alpha1\nkind: Agent\n",
 	"webhook": {
 		"provider": "github",
-		"webhook_url": "https://api.digitalocean.com/v2/agents/triggers/trig-abc123/webhook"
+		"webhook_url": "https://api.digitalocean.com/v2/harness-runtime/triggers/trig-abc123/webhook"
 	},
 	"created_at": "2026-07-01T12:00:00Z",
 	"updated_at": "2026-07-01T12:05:00Z"
@@ -107,7 +107,7 @@ func TestHostedAgentTriggers_List(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "webhook", r.URL.Query().Get("kind"))
 		assert.Equal(t, "active", r.URL.Query().Get("status"))
@@ -131,7 +131,7 @@ func TestHostedAgentTriggers_CreateWebhook(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentTriggerCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -170,7 +170,7 @@ func TestHostedAgentTriggers_CreateWithSlackOutput(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentTriggerCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -238,7 +238,7 @@ func TestHostedAgentTriggers_CreateCron(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentTriggerCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -281,7 +281,7 @@ func TestHostedAgentTriggers_Get(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"trigger":%s}`, hostedAgentTriggerJSON)
 	})
@@ -304,7 +304,7 @@ func TestHostedAgentTriggers_Update(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPatch)
 		var body HostedAgentTriggerUpdateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -328,7 +328,7 @@ func TestHostedAgentTriggers_Delete(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -342,7 +342,7 @@ func TestHostedAgentTriggers_RotateSecret(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Empty(t, r.URL.Query().Get("grace_period_seconds"), "the default rotate must omit grace_period_seconds")
 		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_expires_at":"2026-07-01T12:05:00Z"}`)
@@ -365,7 +365,7 @@ func TestHostedAgentTriggers_RotateSecret_NilGraceOmitsParam(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Empty(t, r.URL.RawQuery, "a nil GracePeriodSeconds must put nothing on the wire")
 		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_expires_at":"2026-07-01T12:05:00Z"}`)
@@ -389,7 +389,7 @@ func TestHostedAgentTriggers_RotateSecret_ZeroGraceRevokes(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "0", r.URL.Query().Get("grace_period_seconds"))
 		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_revoked":true}`)
@@ -408,7 +408,7 @@ func TestHostedAgentTriggers_RotateSecret_CustomGrace(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "90", r.URL.Query().Get("grace_period_seconds"))
 		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated","previous_secret_expires_at":"2026-07-01T12:01:30Z"}`)
@@ -433,7 +433,7 @@ func TestHostedAgentTriggers_RotateSecret_NeitherOutcomeField(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/rotate-secret", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		fmt.Fprint(w, `{"webhook_secret":"whsec_rotated"}`)
 	})
@@ -449,7 +449,7 @@ func TestHostedAgentTriggers_ListExecutions(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/executions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/executions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "failed", r.URL.Query().Get("status"))
 		fmt.Fprint(w, `{
@@ -481,7 +481,7 @@ func TestHostedAgentTriggers_GetExecution(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/executions/exec-1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/executions/exec-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"execution": {
@@ -513,7 +513,7 @@ func TestHostedAgentTriggers_Cancel(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/executions/exec-1/cancel", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/executions/exec-1/cancel", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Empty(t, r.URL.RawQuery, "a nil options struct must put nothing on the wire")
 		fmt.Fprint(w, `{
@@ -542,7 +542,7 @@ func TestHostedAgentTriggers_Cancel_Force(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/trig-abc123/executions/exec-1/cancel", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/executions/exec-1/cancel", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "true", r.URL.Query().Get("force"))
 		fmt.Fprint(w, `{
@@ -580,7 +580,7 @@ func TestHostedAgentTriggers_GetBySession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/by-session/sess-paused-1", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/by-session/sess-paused-1", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"trigger":%s}`, hostedAgentCronTriggerJSON)
 	})
@@ -595,7 +595,7 @@ func TestHostedAgentTriggers_ListReusableSessions(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/triggers/reusable-sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/triggers/reusable-sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "10", r.URL.Query().Get("page_size"))
 		fmt.Fprint(w, `{
@@ -625,7 +625,7 @@ func TestHostedAgentTriggers_ListWebhookProviders(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/webhook-providers", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/webhook-providers", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{
 			"providers": [{
