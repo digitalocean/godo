@@ -1,10 +1,17 @@
 package godo
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -331,6 +338,58 @@ func TestMicroVMs_Create(t *testing.T) {
 	}
 	if microVM.State != MicroVMStateCreating {
 		t.Errorf("MicroVMs.Create returned State %q, expected %q", microVM.State, MicroVMStateCreating)
+	}
+}
+
+func TestMicroVMs_Create_EgressPolicy(t *testing.T) {
+	setup()
+	defer teardown()
+
+	createRequest := &MicroVMCreateRequest{
+		Name:   "locked-down",
+		Source: &MicroVMSource{OCIRef: "docker.io/library/nginx:1.27"},
+		EgressPolicy: &MicroVMEgressPolicy{
+			DefaultAction: MicroVMEgressActionDeny,
+			Rules: []MicroVMEgressRule{
+				{Domain: "*.example.com"},
+				{IP: "203.0.113.5"},
+			},
+		},
+	}
+
+	mux.HandleFunc("/v2/microvms", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		expected := map[string]interface{}{
+			"name":   "locked-down",
+			"source": map[string]interface{}{"oci_ref": "docker.io/library/nginx:1.27"},
+			"egress_policy": map[string]interface{}{
+				"default_action": "deny",
+				"rules": []interface{}{
+					map[string]interface{}{"domain": "*.example.com"},
+					map[string]interface{}{"ip": "203.0.113.5"},
+				},
+			},
+		}
+
+		var got map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if !reflect.DeepEqual(got, expected) {
+			t.Errorf("Create body\n got=%#v\nwant=%#v", got, expected)
+		}
+
+		fmt.Fprint(w, `{"microvm": {"id": "ccc-333", "egress_policy": {"default_action": "deny", "rules": [{"domain": "*.example.com"}, {"ip": "203.0.113.5"}]}}}`)
+	})
+
+	microVM, _, err := client.MicroVMs.Create(ctx, createRequest)
+	if err != nil {
+		t.Fatalf("MicroVMs.Create returned error: %v", err)
+	}
+
+	if !reflect.DeepEqual(microVM.EgressPolicy, createRequest.EgressPolicy) {
+		t.Errorf("MicroVMs.Create returned EgressPolicy %+v, expected %+v", microVM.EgressPolicy, createRequest.EgressPolicy)
 	}
 }
 
@@ -1066,5 +1125,243 @@ func TestParseMicroVMConsoleControl_Unrecognized(t *testing.T) {
 	_, err := ParseMicroVMConsoleControl([]byte(`{"resize":{"rows":1,"cols":1}}`))
 	if err == nil {
 		t.Fatal("expected error for unrecognized control frame")
+	}
+}
+
+func TestMicroVMs_UploadFile(t *testing.T) {
+	setup()
+	defer teardown()
+
+	content := []byte("hello, microvm")
+	sum := sha256.Sum256(content)
+	digest := hex.EncodeToString(sum[:])
+
+	mux.HandleFunc("/v2/microvms/aaa-111/files", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		q := r.URL.Query()
+		for k, want := range map[string]string{"path": "/app/config.json", "mode": "0600", "uid": "1000", "gid": "1000", "sha256": digest} {
+			if got := q.Get(k); got != want {
+				t.Errorf("query %s = %q, expected %q", k, got, want)
+			}
+		}
+		if got := r.Header.Get("Content-Type"); got != "application/octet-stream" {
+			t.Errorf("Content-Type = %q", got)
+		}
+		if r.ContentLength != int64(len(content)) {
+			t.Errorf("Content-Length = %d, expected %d", r.ContentLength, len(content))
+		}
+		body, _ := io.ReadAll(r.Body)
+		if !bytes.Equal(body, content) {
+			t.Errorf("body = %q, expected %q", body, content)
+		}
+		w.Header().Set("X-Checksum-Sha256", digest)
+		fmt.Fprintf(w, `{"path":"/app/config.json","size_bytes":%d,"sha256":%q,"mode":"0600","uid":1000,"gid":1000}`, len(content), digest)
+	})
+
+	uid, gid := uint32(1000), uint32(1000)
+	// A non-seekable reader: Size is what sets Content-Length.
+	body := io.MultiReader(bytes.NewReader(content[:5]), bytes.NewReader(content[5:]))
+	info, _, err := client.MicroVMs.UploadFile(ctx, "aaa-111", &MicroVMFileUploadRequest{
+		Path:   "/app/config.json",
+		Body:   body,
+		Size:   int64(len(content)),
+		Mode:   "0600",
+		UID:    &uid,
+		GID:    &gid,
+		SHA256: digest,
+	})
+	if err != nil {
+		t.Fatalf("MicroVMs.UploadFile returned error: %v", err)
+	}
+	expected := &MicroVMFileInfo{Path: "/app/config.json", SizeBytes: uint64(len(content)), SHA256: digest, Mode: "0600", UID: 1000, GID: 1000}
+	if !reflect.DeepEqual(info, expected) {
+		t.Errorf("MicroVMs.UploadFile returned %+v, expected %+v", info, expected)
+	}
+}
+
+func TestMicroVMs_UploadFile_InMemoryBodyNeedsNoSize(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/files", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		if r.ContentLength != 3 {
+			t.Errorf("Content-Length = %d, expected 3", r.ContentLength)
+		}
+		if q := r.URL.Query(); q.Has("mode") || q.Has("uid") || q.Has("gid") || q.Has("sha256") {
+			t.Errorf("unexpected optional query params: %v", q)
+		}
+		fmt.Fprint(w, `{"path":"/tmp/x","size_bytes":3,"sha256":"abc","mode":"0644","uid":0,"gid":0}`)
+	})
+
+	info, _, err := client.MicroVMs.UploadFile(ctx, "aaa-111", &MicroVMFileUploadRequest{
+		Path: "/tmp/x",
+		Body: bytes.NewReader([]byte("abc")),
+	})
+	if err != nil {
+		t.Fatalf("MicroVMs.UploadFile returned error: %v", err)
+	}
+	if info.Mode != "0644" || info.SizeBytes != 3 {
+		t.Errorf("MicroVMs.UploadFile returned %+v", info)
+	}
+}
+
+func TestMicroVMs_UploadFile_EmptyBody(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/files", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		if r.ContentLength != 0 {
+			t.Errorf("Content-Length = %d, expected 0", r.ContentLength)
+		}
+		if r.TransferEncoding != nil {
+			t.Errorf("unexpected Transfer-Encoding %v", r.TransferEncoding)
+		}
+		fmt.Fprint(w, `{"path":"/tmp/empty","size_bytes":0,"sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","mode":"0644","uid":0,"gid":0}`)
+	})
+
+	info, _, err := client.MicroVMs.UploadFile(ctx, "aaa-111", &MicroVMFileUploadRequest{Path: "/tmp/empty"})
+	if err != nil {
+		t.Fatalf("MicroVMs.UploadFile returned error: %v", err)
+	}
+	if info.SizeBytes != 0 {
+		t.Errorf("SizeBytes = %d, expected 0", info.SizeBytes)
+	}
+}
+
+func TestMicroVMs_UploadFile_ArgErrors(t *testing.T) {
+	setup()
+	defer teardown()
+
+	uid := uint32(1)
+	cases := map[string]struct {
+		id  string
+		req *MicroVMFileUploadRequest
+	}{
+		"empty id":        {"", &MicroVMFileUploadRequest{Path: "/x", Body: bytes.NewReader([]byte("a"))}},
+		"nil request":     {"aaa-111", nil},
+		"empty path":      {"aaa-111", &MicroVMFileUploadRequest{Body: bytes.NewReader([]byte("a"))}},
+		"negative size":   {"aaa-111", &MicroVMFileUploadRequest{Path: "/x", Body: bytes.NewReader([]byte("a")), Size: -1}},
+		"uid without gid": {"aaa-111", &MicroVMFileUploadRequest{Path: "/x", Body: bytes.NewReader([]byte("a")), UID: &uid}},
+		"unsized stream":  {"aaa-111", &MicroVMFileUploadRequest{Path: "/x", Body: io.MultiReader(bytes.NewReader([]byte("a")))}},
+	}
+	for name, tc := range cases {
+		if _, _, err := client.MicroVMs.UploadFile(ctx, tc.id, tc.req); err == nil {
+			t.Errorf("%s: expected an argument error", name)
+		} else if _, ok := err.(*ArgError); !ok {
+			t.Errorf("%s: expected *ArgError, got %T: %v", name, err, err)
+		}
+	}
+}
+
+func TestMicroVMs_UploadFile_ChecksumMismatch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/files", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		fmt.Fprint(w, `{"id":"CHECKSUM_MISMATCH","message":"body sha256 does not match"}`)
+	})
+
+	_, resp, err := client.MicroVMs.UploadFile(ctx, "aaa-111", &MicroVMFileUploadRequest{
+		Path: "/tmp/x", Body: bytes.NewReader([]byte("abc")), SHA256: "0000",
+	})
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if resp == nil || resp.StatusCode != http.StatusUnprocessableEntity {
+		t.Fatalf("expected a 422 response, got %+v", resp)
+	}
+	if !strings.Contains(err.Error(), "body sha256 does not match") {
+		t.Errorf("error = %v", err)
+	}
+}
+
+func TestMicroVMs_DownloadFile(t *testing.T) {
+	setup()
+	defer teardown()
+
+	content := []byte("downloaded bytes")
+	sum := sha256.Sum256(content)
+	digest := hex.EncodeToString(sum[:])
+
+	mux.HandleFunc("/v2/microvms/aaa-111/files", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		if got := r.URL.Query().Get("path"); got != "/etc/hostname" {
+			t.Errorf("query path = %q", got)
+		}
+		if got := r.Header.Get("Accept"); got != "application/octet-stream" {
+			t.Errorf("Accept = %q", got)
+		}
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("Content-Length", strconv.Itoa(len(content)))
+		w.Header().Set("X-Checksum-Sha256", digest)
+		w.Write(content)
+	})
+
+	dl, _, err := client.MicroVMs.DownloadFile(ctx, "aaa-111", "/etc/hostname")
+	if err != nil {
+		t.Fatalf("MicroVMs.DownloadFile returned error: %v", err)
+	}
+	defer dl.Body.Close()
+	if dl.SizeBytes != int64(len(content)) || dl.SHA256 != digest {
+		t.Errorf("download meta = %+v", dl)
+	}
+	got, err := io.ReadAll(dl.Body)
+	if err != nil {
+		t.Fatalf("read body: %v", err)
+	}
+	if !bytes.Equal(got, content) {
+		t.Errorf("body = %q, expected %q", got, content)
+	}
+}
+
+func TestMicroVMs_DownloadFile_ChecksumMismatch(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/files", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Checksum-Sha256", strings.Repeat("0", 64))
+		w.Write([]byte("not what was announced"))
+	})
+
+	dl, _, err := client.MicroVMs.DownloadFile(ctx, "aaa-111", "/etc/hostname")
+	if err != nil {
+		t.Fatalf("MicroVMs.DownloadFile returned error: %v", err)
+	}
+	defer dl.Body.Close()
+	_, err = io.ReadAll(dl.Body)
+	if !errors.Is(err, ErrMicroVMFileChecksum) {
+		t.Fatalf("expected ErrMicroVMFileChecksum, got %v", err)
+	}
+}
+
+func TestMicroVMs_DownloadFile_APIError(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/files", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		fmt.Fprint(w, `{"id":"NOT_A_REGULAR_FILE","message":"path is a directory"}`)
+	})
+
+	dl, resp, err := client.MicroVMs.DownloadFile(ctx, "aaa-111", "/etc")
+	if err == nil {
+		dl.Body.Close()
+		t.Fatal("expected an error")
+	}
+	if resp == nil || resp.StatusCode != http.StatusConflict {
+		t.Fatalf("expected a 409 response, got %+v", resp)
+	}
+	if dl != nil {
+		t.Errorf("expected nil download on error, got %+v", dl)
+	}
+
+	for name, args := range map[string][2]string{"empty id": {"", "/x"}, "empty path": {"aaa-111", ""}} {
+		if _, _, err := client.MicroVMs.DownloadFile(ctx, args[0], args[1]); err == nil {
+			t.Errorf("%s: expected an argument error", name)
+		}
 	}
 }
