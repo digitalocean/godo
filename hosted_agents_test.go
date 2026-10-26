@@ -2185,3 +2185,94 @@ func TestHostedAgentsAPIPrefix(t *testing.T) {
 		assert.NotContains(t, got, "/v2/agents", name)
 	}
 }
+
+func TestHostedAgents_CreateSessionFromEnvironment_RegionAndLocation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		// The body region is a placement check: it must name the region of the
+		// host called, and is sent exactly as given.
+		assert.Equal(t, "mem1", body["region"])
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Location", "https://api-mem1.digitalocean.com/v2/agents/sessions/sess-mem1")
+		w.Header().Set("X-DO-Region", "mem1")
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-mem1",
+				"name": "session-mem1",
+				"agent_kind": "AGENT_KIND_OPENCODE",
+				"status": "SESSION_STATUS_PROVISIONING",
+				"created_at": "2026-10-23T12:00:00Z",
+				"last_event_at": "2026-10-23T12:00:00Z",
+				"config_id": "019fb39c-14d9-7080-933e-b9b90e25acda",
+				"region": "mem1"
+			}
+		}`)
+	})
+
+	session, resp, err := client.HostedAgents.CreateSessionFromEnvironment(ctx, &HostedAgentSessionFromEnvironmentRequest{
+		Name:     "session-mem1",
+		ConfigID: "019fb39c-14d9-7080-933e-b9b90e25acda",
+		Region:   "mem1",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, session)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.Equal(t, "mem1", session.Region)
+	assert.Equal(t, "https://api-mem1.digitalocean.com/v2/agents/sessions/sess-mem1", session.Location,
+		"Location is lifted off the create response so callers follow up on the owning region's host")
+	assert.Equal(t, "mem1", resp.Header.Get("X-DO-Region"), "the serving region header stays reachable on the Response")
+}
+
+func TestHostedAgents_CreateSessionFromEnvironment_NoRegionIsOmitted(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		// No region given: the key is absent, so a server that rejects unknown
+		// or empty fields, and a team not on the regional rollout, see today's
+		// body byte for byte.
+		_, present := body["region"]
+		assert.False(t, present, "an empty Region must not be sent")
+
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-default",
+				"name": "session-default",
+				"agent_kind": "AGENT_KIND_OPENCODE",
+				"status": "SESSION_STATUS_PROVISIONING",
+				"created_at": "2026-10-23T12:00:00Z",
+				"last_event_at": "2026-10-23T12:00:00Z"
+			}
+		}`)
+	})
+
+	session, resp, err := client.HostedAgents.CreateSessionFromEnvironment(ctx, &HostedAgentSessionFromEnvironmentRequest{
+		Name:     "session-default",
+		ConfigID: "019fb39c-14d9-7080-933e-b9b90e25acda",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Empty(t, session.Region, "the region-less path returns no region")
+	assert.Empty(t, session.Location, "no Location header, no Location")
+}
+
+func TestHostedAgentsRegionalBaseURL(t *testing.T) {
+	assert.Equal(t, "https://api-mem1.digitalocean.com/", HostedAgentsRegionalBaseURL("mem1"))
+	assert.Equal(t, "https://api-ric1.digitalocean.com/", HostedAgentsRegionalBaseURL(" RIC1 "))
+	assert.Equal(t, defaultBaseURL, HostedAgentsRegionalBaseURL(""), "no region means the region-less default host")
+
+	c, err := New(nil, SetBaseURL(HostedAgentsRegionalBaseURL("mem1")))
+	require.NoError(t, err)
+	assert.Equal(t, "https://api-mem1.digitalocean.com/", c.BaseURL.String(), "the helper returns what SetBaseURL accepts")
+}

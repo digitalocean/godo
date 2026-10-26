@@ -222,3 +222,48 @@ func mustMarshal(t *testing.T, v any) []byte {
 	require.NoError(t, err)
 	return b
 }
+
+func TestHostedAgents_CreateEnvironment_RegionAndLocation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/configs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		// An Environment has no body region: placement is the host called, and
+		// the server rejects unknown fields, so the request must not grow one.
+		_, present := body["region"]
+		assert.False(t, present)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Location", "https://api-ric1.digitalocean.com/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda")
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprintf(w, `{"config":{"id":"019fb39c-14d9-7080-933e-b9b90e25acda","name":"support-agent","agentspec_schema_version":"agents.digitalocean.com/flat.v1","manifest":{},"content_hash":"sha256:abc","created_by":"user","created_at":"2026-10-23T12:00:00Z","updated_at":"2026-10-23T12:00:00Z","region":"ric1"}}`)
+	})
+
+	got, resp, err := client.HostedAgents.CreateEnvironment(ctx, &HostedEnvironmentCreateRequest{
+		Name:         "support-agent",
+		ManifestYAML: "agent: claude-code\n",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.Equal(t, "ric1", got.Region)
+	assert.Equal(t, "https://api-ric1.digitalocean.com/v2/agents/configs/019fb39c-14d9-7080-933e-b9b90e25acda", got.Location)
+}
+
+func TestHostedAgents_ListEnvironments_Region(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/configs", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"configs":[{"id":"a","name":"one","agentspec_schema_version":"agents.digitalocean.com/flat.v1","content_hash":"sha256:a","created_by":"u","created_at":"2026-10-23T12:00:00Z","updated_at":"2026-10-23T12:00:00Z","region":"mem1"}],"next_page_token":""}`)
+	})
+
+	list, _, err := client.HostedAgents.ListEnvironments(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, list.Configs, 1)
+	assert.Equal(t, "mem1", list.Configs[0].Region, "lists are single-region and each row says which")
+}
