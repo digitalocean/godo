@@ -151,8 +151,9 @@ type Client struct {
 //
 // to explicitly set the RetryWaitMin and RetryWaitMax values.
 //
-// Note: Opting to use the go-retryablehttp client will overwrite any custom HTTP client passed into New().
-// Only the oauth2.TokenSource and Timeout will be maintained.
+// Note: Opting to use the go-retryablehttp client replaces the HTTP client passed into New().
+// Its Timeout is kept, and so is its Transport, unless it is an *oauth2.Transport,
+// in which case only its oauth2.TokenSource is kept.
 type RetryConfig struct {
 	RetryMax     int
 	RetryWaitMin *float64    // Minimum time to wait
@@ -449,14 +450,18 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 			return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
 		}
 
-		var source *oauth2.Transport
-		if _, ok := c.HTTPClient.Transport.(*oauth2.Transport); ok {
-			source = c.HTTPClient.Transport.(*oauth2.Transport)
+		source, isOAuth := c.HTTPClient.Transport.(*oauth2.Transport)
+		if !isOAuth && c.HTTPClient.Transport != nil {
+			// Keep a custom transport (e.g. one that adds auth headers) for
+			// every attempt instead of replacing it.
+			retryableClient.HTTPClient.Transport = c.HTTPClient.Transport
 		}
 		c.HTTPClient = retryableClient.StandardClient()
-		c.HTTPClient.Transport = &oauth2.Transport{
-			Base:   c.HTTPClient.Transport,
-			Source: source.Source,
+		if isOAuth {
+			c.HTTPClient.Transport = &oauth2.Transport{
+				Base:   c.HTTPClient.Transport,
+				Source: source.Source,
+			}
 		}
 
 	}

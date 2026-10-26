@@ -769,6 +769,64 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 	}
 }
 
+// TestWithRetryAndBackoffsCustomTransport tests that retries work with an
+// http.Client whose transport is not an *oauth2.Transport, and that the
+// transport is still used for each request.
+func TestWithRetryAndBackoffsCustomTransport(t *testing.T) {
+	setup()
+	defer teardown()
+
+	url, _ := url.Parse(server.URL)
+	mux.HandleFunc("/foo", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer custom" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, `{"id": "bad_request", "message": "broken"}`)
+	})
+
+	httpClient := &http.Client{Transport: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		r = r.Clone(r.Context())
+		r.Header.Set("Authorization", "Bearer custom")
+		return http.DefaultTransport.RoundTrip(r)
+	})}
+
+	client, err := New(httpClient, WithRetryAndBackoffs(RetryConfig{
+		RetryMax:     1,
+		RetryWaitMin: PtrTo(0.001),
+		RetryWaitMax: PtrTo(0.002),
+	}))
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	client.BaseURL = url
+
+	req, err := client.NewRequest(ctx, http.MethodGet, "/foo", nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+
+	// A 500 rather than a 401 shows that the custom transport set the header.
+	expectingErr := fmt.Sprintf("GET %s/foo: 500 broken; giving up after 2 attempt(s)", url)
+	_, err = client.Do(context.Background(), req, nil)
+	if err == nil || (err.Error() != expectingErr) {
+		t.Fatalf("expected giving up error, got: %#v", err)
+	}
+}
+
+// TestWithRetryAndBackoffsDefaultClient tests that retries can be enabled
+// without passing an HTTP client.
+func TestWithRetryAndBackoffsDefaultClient(t *testing.T) {
+	client, err := New(nil, WithRetryAndBackoffs(RetryConfig{RetryMax: 1}))
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	if client.HTTPClient == http.DefaultClient {
+		t.Fatal("expected the retrying client to replace http.DefaultClient")
+	}
+}
+
 func TestWithRetryAndBackoffsLogger(t *testing.T) {
 	// Mock server which always responds 500.
 	setup()
