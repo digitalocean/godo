@@ -1411,6 +1411,40 @@ func TestHostedAgents_StreamSession_StreamState(t *testing.T) {
 	require.NoError(t, json.Unmarshal(ev.Payload, &state))
 	assert.Equal(t, HostedAgentStreamStateLive, state.State)
 	assert.Empty(t, state.Cursor)
+	// The common case carries no marker at all, which is what makes the field
+	// safe to add: it decodes to the zero value on every frame written before
+	// the server set it.
+	assert.False(t, state.Truncated)
+}
+
+// TestHostedAgents_StreamSession_StreamStateTruncated pins the truncated marker
+// on a catching_up frame. The server omits it when false, so a replayed window
+// that skipped events is distinguishable from a complete one only by this
+// field; a renderer that drops it shows a transcript with a silent hole.
+func TestHostedAgents_StreamSession_StreamStateTruncated(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const frame = `{"event_id":"","run_id":"","tenant_id":"0","session_id":"sess-abc123","timestamp":"2026-03-01T12:00:00Z","seq":0,"type":"stream.state","data":{"state":"catching_up","cursor":"","truncated":true}}`
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/events", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprintf(w, "event: stream.state\ndata: %s\n\n", frame)
+	})
+
+	stream, _, err := client.HostedAgents.StreamSession(ctx, "sess-abc123", nil)
+	require.NoError(t, err)
+	defer stream.Close()
+
+	require.True(t, stream.Next())
+	ev := stream.Current()
+	assert.Equal(t, HostedAgentEventKindStreamState, ev.Kind)
+
+	var state HostedAgentStreamState
+	require.NoError(t, json.Unmarshal(ev.Payload, &state))
+	assert.Equal(t, HostedAgentStreamStateCatchingUp, state.State)
+	assert.True(t, state.Truncated)
 }
 
 func TestHostedAgents_ValidationErrors(t *testing.T) {
