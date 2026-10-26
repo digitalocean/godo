@@ -2749,9 +2749,11 @@ var customEvaluationMetricResponse = `
 		"metric_name": "My domain tone metric",
 		"description": "Scores adherence to our support macros",
 		"source": "EVALUATION_METRIC_SOURCE_CUSTOM",
+		"turn_type": "EVALUATION_METRIC_TURN_TYPE_SINGLE_TURN",
 		"custom_eval_config": {
 			"requires_ground_truth": true,
-			"scoring_prompt": "Grade for brand tone and factuality."
+			"scoring_prompt": "Grade for brand tone and factuality.",
+			"turn_type": "EVALUATION_METRIC_TURN_TYPE_SINGLE_TURN"
 		},
 		"associated_presets": [
 			{
@@ -3316,6 +3318,7 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 		assert.NotNil(t, got.Config)
 		assert.True(t, got.Config.RequiresGroundTruth)
 		assert.Equal(t, "Grade for brand tone and factuality.", got.Config.ScoringPrompt)
+		assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, got.Config.TurnType)
 
 		fmt.Fprint(w, customEvaluationMetricResponse)
 	})
@@ -3326,6 +3329,7 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 		Config: &CustomEvaluationMetricConfig{
 			RequiresGroundTruth: true,
 			ScoringPrompt:       "Grade for brand tone and factuality.",
+			TurnType:            EvaluationMetricTurnTypeSingleTurn,
 		},
 	}
 
@@ -3337,8 +3341,10 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 	assert.Equal(t, "My domain tone metric", metric.MetricName)
 	assert.Equal(t, "Scores adherence to our support macros", metric.Description)
 	assert.Equal(t, EvaluationMetricSourceCustom, metric.Source)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, metric.TurnType)
 	assert.NotNil(t, metric.CustomEvalConfig)
 	assert.Equal(t, "Grade for brand tone and factuality.", metric.CustomEvalConfig.ScoringPrompt)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, metric.CustomEvalConfig.TurnType)
 	assert.Equal(t, 1, len(metric.AssociatedPresets))
 	assert.Equal(t, "Support preset", metric.AssociatedPresets[0].Name)
 }
@@ -3387,8 +3393,10 @@ func TestUpdateCustomEvaluationMetric(t *testing.T) {
 	assert.NotNil(t, metric)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", metric.MetricUUID)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, metric.TurnType)
 	assert.NotNil(t, metric.CustomEvalConfig)
 	assert.True(t, metric.CustomEvalConfig.RequiresGroundTruth)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, metric.CustomEvalConfig.TurnType)
 }
 
 func TestDeleteCustomEvaluationMetric(t *testing.T) {
@@ -4323,7 +4331,8 @@ var listModelEvaluationMetricsResponse = `
 			"category": "METRIC_CATEGORY_CORRECTNESS",
 			"range_min": 0,
 			"range_max": 1,
-			"inverted": false
+			"inverted": false,
+			"turn_type": "EVALUATION_METRIC_TURN_TYPE_SINGLE_TURN"
 		},
 		{
 			"metric_uuid": "22222222-2222-2222-2222-222222222222",
@@ -4332,7 +4341,8 @@ var listModelEvaluationMetricsResponse = `
 			"metric_type": "METRIC_TYPE_GENERAL_QUALITY",
 			"metric_value_type": "METRIC_VALUE_TYPE_NUMBER",
 			"category": "METRIC_CATEGORY_SAFETY_AND_SECURITY",
-			"inverted": true
+			"inverted": true,
+			"turn_type": "EVALUATION_METRIC_TURN_TYPE_SINGLE_TURN"
 		}
 	]
 }
@@ -4356,8 +4366,30 @@ func TestListModelEvaluationMetrics(t *testing.T) {
 	assert.Equal(t, MetricTypeGeneralQuality, out.Metrics[0].MetricType)
 	assert.Equal(t, MetricValueTypePercentage, out.Metrics[0].MetricValueType)
 	assert.Equal(t, MetricCategoryCorrectness, out.Metrics[0].Category)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, out.Metrics[0].TurnType)
 	assert.Equal(t, "toxicity", out.Metrics[1].MetricName)
 	assert.True(t, out.Metrics[1].Inverted)
+}
+
+func TestListModelEvaluationMetricsByTurnType(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_metrics", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"turn_type": "EVALUATION_METRIC_TURN_TYPE_MULTI_TURN",
+		})
+		fmt.Fprint(w, listModelEvaluationMetricsResponse)
+	})
+
+	out, resp, err := client.AgentPlatform.ListModelEvaluationMetricsWithOptions(ctx, &ModelEvaluationMetricListOptions{
+		TurnType: EvaluationMetricTurnTypeMultiTurn,
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Len(t, out.Metrics, 2)
 }
 
 func TestListModelEvaluationMetricsServerError(t *testing.T) {
