@@ -724,6 +724,35 @@ agent: opencode
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func TestHostedAgents_CreateSessionFromManifest_InsightsOptIn(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const manifest = `name: probe
+agent: opencode
+`
+
+	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		q := r.URL.Query()
+		assert.Equal(t, "true", q.Get("insights_metrics"))
+		assert.Equal(t, "false", q.Get("insights_logs"))
+		// An unset signal must not be sent at all, so the server applies its
+		// default rather than reading an explicit value.
+		_, hasTraces := q["insights_traces"]
+		assert.False(t, hasTraces)
+		fmt.Fprintf(w, `{"session":%s}`, hostedAgentSessionJSON)
+	})
+
+	metrics, logs := true, false
+	_, resp, err := client.HostedAgents.CreateSessionFromManifest(ctx, []byte(manifest), &HostedAgentManifestCreateOptions{
+		InsightsMetrics: &metrics,
+		InsightsLogs:    &logs,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
 func TestHostedAgents_GetSession_OpenAIFields(t *testing.T) {
 	setup()
 	defer teardown()
