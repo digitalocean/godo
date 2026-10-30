@@ -1359,6 +1359,69 @@ func TestKubernetesClusters_Create_IsolatedWorkers(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestKubernetesClusters_Create_InsightsTelemetryOptIn(t *testing.T) {
+	tests := []struct {
+		name     string
+		insights *KubernetesInsightsTelemetryOptIn
+		want     string
+	}{
+		{
+			name:     "omitted",
+			insights: nil,
+			want:     "",
+		},
+		{
+			name:     "no logs choice",
+			insights: &KubernetesInsightsTelemetryOptIn{},
+			want:     `{}`,
+		},
+		{
+			name:     "logs opt-in",
+			insights: &KubernetesInsightsTelemetryOptIn{Logs: PtrTo(true)},
+			want:     `{"logs":true}`,
+		},
+		{
+			name:     "logs explicit opt-out",
+			insights: &KubernetesInsightsTelemetryOptIn{Logs: PtrTo(false)},
+			want:     `{"logs":false}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			createRequest := &KubernetesClusterCreateRequest{
+				Name:       "insights-cluster",
+				RegionSlug: "nyc1",
+				Insights:   tt.insights,
+			}
+
+			mux.HandleFunc("/v2/kubernetes/clusters", func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, http.MethodPost)
+
+				var body map[string]json.RawMessage
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+
+				got, ok := body["insights"]
+				if tt.want == "" {
+					require.False(t, ok, "insights key should be omitted")
+				} else {
+					require.True(t, ok, "insights key should be present")
+					require.JSONEq(t, tt.want, string(got))
+				}
+
+				fmt.Fprint(w, `{"kubernetes_cluster": {"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f", "name": "insights-cluster"}}`)
+			})
+
+			got, _, err := client.Kubernetes.Create(ctx, createRequest)
+			require.NoError(t, err)
+			require.Equal(t, "insights-cluster", got.Name)
+		})
+	}
+}
+
 func TestKubernetesClusters_Update(t *testing.T) {
 	setup()
 	defer teardown()
