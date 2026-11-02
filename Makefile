@@ -45,6 +45,33 @@ lint: install ## Run linting
 	@go fmt ./...
 	@go vet ./...
 
+# Local checkout of github.com/digitalocean/openapi (default: ../openapi).
+# In CI, pass SPEC_FILE=... to skip bundling and use a pre-published YAML.
+OPENAPI ?= ../openapi
+SPEC_FILE ?=
+
+.PHONY: generate
+generate: ## Bundle full OpenAPI + regenerate package v2 (Client.V2)
+	@OPENAPI=$(OPENAPI) SPEC_FILE=$(SPEC_FILE) bash scripts/generate.sh
+
+.PHONY: clean-generate
+clean-generate: ## Remove files produced by make generate
+	@rm -f v2/*.gen.go v2/gen/openapi/openapi.bundled.yaml
+	@printf '%s\n' \
+		'package v2' \
+		'' \
+		'// Client is the OpenAPI-generated API surface.' \
+		'// Populate with: make generate' \
+		'type Client struct{}' \
+		'' \
+		'// New returns a v2 Client backed by inv.' \
+		'func New(inv Invoker) *Client {' \
+		'	_ = inv' \
+		'	return &Client{}' \
+		'}' \
+		> v2/client.go
+	@echo "removed generated v2 outputs"
+
 .PHONY: _install_github_release_notes
 _install_github_release_notes:
 	@go install github.com/digitalocean/github-changelog-generator@latest
