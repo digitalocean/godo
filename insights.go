@@ -2050,14 +2050,20 @@ func (s *InsightsServiceOp) UpdateResourceSignals(ctx context.Context, resourceU
 
 // DashboardListOptions are pagination and sort parameters for listing
 // dashboards. PerPage defaults to 20; the API rejects values above 200.
+//
+// When Sort is empty, results are ordered by created_at descending and
+// SortDirection is ignored. When Sort is set, SortDirection defaults to
+// ascending.
 type DashboardListOptions struct {
 	Page    int `url:"pagination.page,omitempty"`
 	PerPage int `url:"pagination.per_page,omitempty"`
-	// Sort is one of the InsightsDashboardSort* field constants. Defaults to
-	// created_at. Any other value is rejected by the API.
+	// Sort is one of the InsightsDashboardSort* field constants. Any other
+	// value is rejected by the API.
 	Sort string `url:"pagination.sort,omitempty"`
 	// SortDirection is InsightsDashboardSortAscending or
-	// InsightsDashboardSortDescending. Defaults to descending.
+	// InsightsDashboardSortDescending. Only applied when Sort is set, in
+	// which case it defaults to ascending. Any other value is rejected by
+	// the API.
 	SortDirection string `url:"pagination.sort_direction,omitempty"`
 }
 
@@ -2166,8 +2172,10 @@ func (r *DashboardRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// ListDashboards lists the team's dashboards, newest first by default. The
-// API returns 400 for a PerPage above 200 or an unknown Sort field.
+// ListDashboards lists the team's dashboards. Without a Sort, results are
+// newest first; see DashboardListOptions for how Sort and SortDirection
+// interact. The API returns 400 for a PerPage above 200, an unknown Sort
+// field, or an unknown SortDirection.
 func (s *InsightsServiceOp) ListDashboards(ctx context.Context, opt *DashboardListOptions) (*DashboardList, *Response, error) {
 	path, err := addOptions(insightsDashboardsPath, opt)
 	if err != nil {
