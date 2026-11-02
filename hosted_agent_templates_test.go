@@ -83,7 +83,7 @@ func TestHostedAgents_ListTemplates(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "25", r.URL.Query().Get("page_size"))
 		assert.Equal(t, "tok-1", r.URL.Query().Get("page_token"))
@@ -105,7 +105,7 @@ func TestHostedAgents_CreateTemplate(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentTemplateCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -130,7 +130,7 @@ func TestHostedAgents_GetTemplate(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"template":%s}`, hostedAgentTemplateJSON)
 	})
@@ -145,7 +145,7 @@ func TestHostedAgents_UpdateTemplate(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPut)
 		var body HostedAgentTemplateUpdateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -167,7 +167,7 @@ func TestHostedAgents_DeleteTemplate(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates/019fb39c-14d9-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		fmt.Fprint(w, `{"template_id":"019fb39c-14d9-7080-933e-b9b90e25acda","deleted":true}`)
 	})
@@ -183,7 +183,7 @@ func TestHostedAgents_ListTemplateBuilds(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates/019fb39c-14d9-7080-933e-b9b90e25acda/builds", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates/019fb39c-14d9-7080-933e-b9b90e25acda/builds", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "10", r.URL.Query().Get("page_size"))
 		fmt.Fprintf(w, `{"builds":[%s],"next_page_token":"tok-b"}`, hostedAgentTemplateBuildJSON)
@@ -203,7 +203,7 @@ func TestHostedAgents_GetTemplateBuild(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates/019fb39c-14d9-7080-933e-b9b90e25acda/builds/019fb39c-aaaa-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates/019fb39c-14d9-7080-933e-b9b90e25acda/builds/019fb39c-aaaa-7080-933e-b9b90e25acda", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"build":%s}`, hostedAgentTemplateBuildJSON)
 	})
@@ -218,7 +218,7 @@ func TestHostedAgents_GetTemplateBuildLogs(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates/019fb39c-14d9-7080-933e-b9b90e25acda/builds/019fb39c-aaaa-7080-933e-b9b90e25acda/logs", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates/019fb39c-14d9-7080-933e-b9b90e25acda/builds/019fb39c-aaaa-7080-933e-b9b90e25acda/logs", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprint(w, `{"signed_url":"https://spaces.example/logs?sig=abc"}`)
 	})
@@ -271,7 +271,7 @@ func TestHostedAgents_CreateTemplate_EmptyBody(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/templates", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/templates", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{}`)
 	})
 

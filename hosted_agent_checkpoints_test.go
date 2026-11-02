@@ -39,7 +39,7 @@ func TestHostedAgents_CreateCheckpoint(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/checkpoints", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/checkpoints", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentCheckpointCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -59,7 +59,7 @@ func TestHostedAgents_CreateCheckpoint_NilBody(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/checkpoints", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/checkpoints", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentCheckpointCreateRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -81,7 +81,7 @@ func TestHostedAgents_ListCheckpoints(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/checkpoints", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/checkpoints", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "25", r.URL.Query().Get("page_size"))
 		assert.Equal(t, "tok-1", r.URL.Query().Get("page_token"))
@@ -103,7 +103,7 @@ func TestHostedAgents_GetCheckpoint(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/checkpoints/cp_9f2c1a4b", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/checkpoints/cp_9f2c1a4b", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		fmt.Fprintf(w, `{"checkpoint":%s}`, hostedAgentCheckpointJSON)
 	})
@@ -117,7 +117,7 @@ func TestHostedAgents_DeleteCheckpoint(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/checkpoints/cp_9f2c1a4b", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/checkpoints/cp_9f2c1a4b", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		fmt.Fprint(w, `{"checkpoint_id":"cp_9f2c1a4b","deleted":true}`)
 	})
@@ -132,7 +132,7 @@ func TestHostedAgents_ForkSession(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/fork", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/fork", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		var body HostedAgentForkSessionRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
@@ -186,7 +186,7 @@ func TestHostedAgents_RollbackToCheckpoint(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/sess-abc123/checkpoints/cp_9f2c1a4b/rollback", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/checkpoints/cp_9f2c1a4b/rollback", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		fmt.Fprintf(w, `{"session":%s}`, hostedAgentSessionJSON)
 	})
@@ -200,7 +200,7 @@ func TestHostedAgents_ListSessions_ParentSessionID(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Equal(t, "sess-abc123", r.URL.Query().Get("parent_session_id"))
 		fmt.Fprint(w, `{

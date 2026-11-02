@@ -54,7 +54,7 @@ func TestHostedAgents_ValidatePolicy(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/policy/validate", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/policy/validate", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		assert.Equal(t, "application/x-yaml", r.Header.Get("Content-Type"))
 		body, err := io.ReadAll(r.Body)
@@ -92,7 +92,7 @@ func TestHostedAgents_ValidatePolicy_NotOK(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/agents/sessions/policy/validate", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/harness-runtime/sessions/policy/validate", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, `{
 			"agent": "codex",
 			"version": "0.38",
