@@ -2147,6 +2147,52 @@ func TestHostedAgents_DeleteConnection(t *testing.T) {
 	assert.False(t, got.Connection.DeletionProtected)
 }
 
+func TestHostedAgents_ReconnectConnection(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/auth/github/connections/c1/reconnect", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		// The API takes an empty JSON object; an empty body is not the same thing.
+		body, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{}`, string(body))
+		fmt.Fprint(w, `{
+			"connection": {"id": "c1", "provider": "github", "user_id": "alice", "status": "pending"},
+			"authorization": {
+				"status": "pending",
+				"connect_url": "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc",
+				"verification_code": "k5r2cprq",
+				"expires_at": "2036-08-10T10:44:32Z"
+			}
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.ReconnectConnection(ctx, "github", "c1")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, "c1", got.Connection.ID)
+	assert.Equal(t, "pending", got.Connection.Status)
+	require.NotNil(t, got.Authorization)
+	assert.Equal(t, "https://cloud.digitalocean.com/security/connectlinks/confirm?token=abc", got.Authorization.ConnectURL)
+	assert.Equal(t, "k5r2cprq", got.Authorization.VerificationCode)
+}
+
+func TestHostedAgents_ReconnectConnection_Active(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/auth/github/connections/c1/reconnect", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		fmt.Fprint(w, `{"connection":{"id":"c1","provider":"github","user_id":"alice","status":"active"}}`)
+	})
+
+	got, _, err := client.HostedAgents.ReconnectConnection(ctx, "github", "c1")
+	require.NoError(t, err)
+	assert.Equal(t, "active", got.Connection.Status)
+	assert.Nil(t, got.Authorization)
+}
+
 func TestHostedAgents_Connections_RequiredArgs(t *testing.T) {
 	setup()
 	defer teardown()
@@ -2165,6 +2211,12 @@ func TestHostedAgents_Connections_RequiredArgs(t *testing.T) {
 
 	_, _, err = client.HostedAgents.DeleteConnection(ctx, "", "c1")
 	require.EqualError(t, err, "hosted agents: provider is required")
+
+	_, _, err = client.HostedAgents.ReconnectConnection(ctx, "", "c1")
+	require.EqualError(t, err, "hosted agents: provider is required")
+
+	_, _, err = client.HostedAgents.ReconnectConnection(ctx, "github", "")
+	require.EqualError(t, err, "hosted agents: connection id is required")
 }
 
 // The Harness Runtime API is served under /v2/harness-runtime. /v2/agents is
