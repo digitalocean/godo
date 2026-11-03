@@ -825,6 +825,38 @@ func TestKubernetesClusterCreateRequest_IsolatedWorkers_JsonMarshal(t *testing.T
 	}
 }
 
+func TestKubernetesClusterCreateRequest_MaxPodsPerNode_JsonMarshal(t *testing.T) {
+	tests := []struct {
+		name     string
+		req      *KubernetesClusterCreateRequest
+		contains string // substring that must be in JSON
+		omits    string // substring that must NOT be in JSON
+	}{
+		{
+			name:  "MaxPodsPerNode unset - field omitted",
+			req:   &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36"},
+			omits: `"max_pods_per_node"`,
+		},
+		{
+			name:     "MaxPodsPerNode set - field present",
+			req:      &KubernetesClusterCreateRequest{Name: "test", VersionSlug: "1.36", MaxPodsPerNode: 450},
+			contains: `"max_pods_per_node":450`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.req)
+			require.NoError(t, err)
+			if tt.contains != "" {
+				require.Contains(t, string(data), tt.contains)
+			}
+			if tt.omits != "" {
+				require.NotContains(t, string(data), tt.omits)
+			}
+		})
+	}
+}
+
 func TestKubernetesClusters_Create(t *testing.T) {
 	setup()
 	defer teardown()
@@ -1337,6 +1369,87 @@ func TestKubernetesClusters_Create_IsolatedWorkers(t *testing.T) {
 			"start_time": "00:00",
 			"day": "Monday"
 		},
+		"created_at": "2018-06-21T08:44:38Z",
+		"updated_at": "2018-06-21T08:44:38Z"
+	}
+}`
+
+	mux.HandleFunc("/v2/kubernetes/clusters", func(w http.ResponseWriter, r *http.Request) {
+		v := new(KubernetesClusterCreateRequest)
+		err := json.NewDecoder(r.Body).Decode(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		testMethod(t, r, http.MethodPost)
+		require.Equal(t, v, createRequest)
+		fmt.Fprint(w, jBlob)
+	})
+
+	got, _, err := kubeSvc.Create(ctx, createRequest)
+	require.NoError(t, err)
+	require.Equal(t, want, got)
+}
+
+func TestKubernetesClusters_Create_MaxPodsPerNode(t *testing.T) {
+	setup()
+	defer teardown()
+
+	kubeSvc := client.Kubernetes
+
+	want := &KubernetesCluster{
+		ID:             "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		Name:           "max-pods-cluster",
+		RegionSlug:     "s2r1",
+		VersionSlug:    "1.36.0-gen0",
+		MaxPodsPerNode: 450,
+		NodePools: []*KubernetesNodePool{
+			{
+				ID:    "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+				Size:  "s-1vcpu-1gb",
+				Count: 2,
+				Name:  "pool-a",
+			},
+		},
+		Status: &KubernetesClusterStatus{
+			State: KubernetesClusterStatusRunning,
+		},
+		CreatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
+		UpdatedAt: time.Date(2018, 6, 21, 8, 44, 38, 0, time.UTC),
+	}
+	createRequest := &KubernetesClusterCreateRequest{
+		Name:           want.Name,
+		RegionSlug:     want.RegionSlug,
+		VersionSlug:    want.VersionSlug,
+		MaxPodsPerNode: 450,
+		NodePools: []*KubernetesNodePoolCreateRequest{
+			{
+				Size:  want.NodePools[0].Size,
+				Count: want.NodePools[0].Count,
+				Name:  want.NodePools[0].Name,
+			},
+		},
+	}
+
+	jBlob := `
+{
+	"kubernetes_cluster": {
+		"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8f",
+		"name": "max-pods-cluster",
+		"region": "s2r1",
+		"version": "1.36.0-gen0",
+		"max_pods_per_node": 450,
+		"status": {
+			"state": "running"
+		},
+		"node_pools": [
+			{
+				"id": "8d91899c-0739-4a1a-acc5-deadbeefbb8a",
+				"size": "s-1vcpu-1gb",
+				"count": 2,
+				"name": "pool-a"
+			}
+		],
 		"created_at": "2018-06-21T08:44:38Z",
 		"updated_at": "2018-06-21T08:44:38Z"
 	}
