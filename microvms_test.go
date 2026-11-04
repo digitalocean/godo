@@ -669,6 +669,151 @@ func TestMicroVMs_RemoveURL_EmptyURLID(t *testing.T) {
 	}
 }
 
+func TestMicroVMs_CreateAccessToken(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/access_tokens", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+
+		expected := map[string]interface{}{
+			"name":               "alice-workspace",
+			"expires_in_seconds": float64(2592000),
+		}
+
+		var got map[string]interface{}
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Fatalf("decode request body: %v", err)
+		}
+		if !reflect.DeepEqual(got, expected) {
+			t.Errorf("CreateAccessToken body\n got=%#v\nwant=%#v", got, expected)
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"access_token": {"id": "tok-1", "micro_vm_id": "aaa-111", "name": "alice-workspace", "created_at": "2026-10-21T14:02:11Z", "expires_at": "2026-11-20T14:02:11Z", "token": "dop_v1_test"}}`)
+	})
+
+	created, _, err := client.MicroVMs.CreateAccessToken(ctx, "aaa-111", &MicroVMAccessTokenCreateRequest{Name: "alice-workspace", ExpiresInSeconds: 2592000})
+	if err != nil {
+		t.Fatalf("MicroVMs.CreateAccessToken returned error: %v", err)
+	}
+
+	if created.ID != "tok-1" {
+		t.Errorf("MicroVMs.CreateAccessToken returned ID %q, expected %q", created.ID, "tok-1")
+	}
+	if created.MicroVMID != "aaa-111" {
+		t.Errorf("MicroVMs.CreateAccessToken returned MicroVMID %q, expected %q", created.MicroVMID, "aaa-111")
+	}
+	if created.Name != "alice-workspace" {
+		t.Errorf("MicroVMs.CreateAccessToken returned Name %q, expected %q", created.Name, "alice-workspace")
+	}
+	if created.Token != "dop_v1_test" {
+		t.Errorf("MicroVMs.CreateAccessToken returned Token %q, expected %q", created.Token, "dop_v1_test")
+	}
+	if created.ExpiresAt != "2026-11-20T14:02:11Z" {
+		t.Errorf("MicroVMs.CreateAccessToken returned ExpiresAt %q, expected %q", created.ExpiresAt, "2026-11-20T14:02:11Z")
+	}
+}
+
+func TestMicroVMs_ListAccessTokens(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/access_tokens", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"access_tokens": [
+			{"id": "tok-1", "micro_vm_id": "aaa-111", "name": "alice-workspace", "created_at": "2026-10-21T14:02:11Z"},
+			{"id": "tok-2", "micro_vm_id": "aaa-111", "name": "bob-workspace", "created_at": "2026-10-22T14:02:11Z", "expires_at": "2026-11-21T14:02:11Z"}
+		]}`)
+	})
+
+	tokens, _, err := client.MicroVMs.ListAccessTokens(ctx, "aaa-111")
+	if err != nil {
+		t.Fatalf("MicroVMs.ListAccessTokens returned error: %v", err)
+	}
+
+	if len(tokens) != 2 {
+		t.Fatalf("MicroVMs.ListAccessTokens returned %d tokens, expected 2", len(tokens))
+	}
+	if tokens[0].ID != "tok-1" || tokens[1].ID != "tok-2" {
+		t.Errorf("MicroVMs.ListAccessTokens returned IDs %q, %q, expected tok-1, tok-2", tokens[0].ID, tokens[1].ID)
+	}
+	if tokens[1].ExpiresAt != "2026-11-21T14:02:11Z" {
+		t.Errorf("MicroVMs.ListAccessTokens returned ExpiresAt %q, expected %q", tokens[1].ExpiresAt, "2026-11-21T14:02:11Z")
+	}
+}
+
+func TestMicroVMs_RevokeAccessToken(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/microvms/aaa-111/access_tokens/tok-1", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodDelete)
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	if _, err := client.MicroVMs.RevokeAccessToken(ctx, "aaa-111", "tok-1"); err != nil {
+		t.Fatalf("MicroVMs.RevokeAccessToken returned error: %v", err)
+	}
+}
+
+func TestMicroVMs_AccessTokens_ArgErrors(t *testing.T) {
+	svc := &MicroVMsServiceOp{}
+
+	tests := []struct {
+		name string
+		call func() error
+	}{
+		{
+			name: "create empty microVMID",
+			call: func() error {
+				_, _, err := svc.CreateAccessToken(ctx, "", &MicroVMAccessTokenCreateRequest{Name: "x"})
+				return err
+			},
+		},
+		{
+			name: "create nil request",
+			call: func() error {
+				_, _, err := svc.CreateAccessToken(ctx, "aaa-111", nil)
+				return err
+			},
+		},
+		{
+			name: "list empty microVMID",
+			call: func() error {
+				_, _, err := svc.ListAccessTokens(ctx, "")
+				return err
+			},
+		},
+		{
+			name: "revoke empty microVMID",
+			call: func() error {
+				_, err := svc.RevokeAccessToken(ctx, "", "tok-1")
+				return err
+			},
+		},
+		{
+			name: "revoke empty tokenID",
+			call: func() error {
+				_, err := svc.RevokeAccessToken(ctx, "aaa-111", "")
+				return err
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.call()
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if _, ok := err.(*ArgError); !ok {
+				t.Errorf("expected *ArgError, got %T: %v", err, err)
+			}
+		})
+	}
+}
+
 func TestMicroVMs_ListCheckpoints(t *testing.T) {
 	setup()
 	defer teardown()
