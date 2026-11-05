@@ -1649,3 +1649,282 @@ func TestInsights_Resources(t *testing.T) {
 		}
 	})
 }
+
+func TestInsights_Dashboards(t *testing.T) {
+	const uuid = "7c9e6679-7425-40de-944b-e07fc1f90ae7"
+	// Deliberately non-compact so tests can assert the spec is sent and
+	// returned byte-for-byte rather than re-encoded.
+	const spec = `{"kind": "Dashboard","apiVersion":"perses.dev/v1alpha1","spec":{"display":{"name":"Droplet CPU","description":"CPU utilization across production Droplets."},"duration":"1h","variables":[],"layouts":[],"panels":{}}}`
+	createdAt := time.Date(2026, 10, 29, 10, 21, 44, 0, time.UTC)
+	dashboard := &Dashboard{
+		UUID:        uuid,
+		Name:        "Droplet CPU",
+		Description: "CPU utilization across production Droplets.",
+		Spec:        json.RawMessage(spec),
+		CreatedAt:   createdAt,
+		UpdatedAt:   createdAt,
+	}
+	// wireDashboard is the API body written by hand so decoding is tested
+	// against the documented contract, not against Dashboard.MarshalJSON.
+	wireDashboard := fmt.Sprintf(`{"uuid":%q,"name":"Droplet CPU","description":"CPU utilization across production Droplets.","spec":%s,"created_at":"2026-10-29T10:21:44Z","updated_at":"2026-10-29T10:21:44Z"}`, uuid, mustJSON(spec))
+
+	// assertRequestSpec checks the body is {"spec": "<document>"} with the
+	// document sent as given, and that it decodes back through DashboardRequest.
+	assertRequestSpec := func(t *testing.T, raw []byte) {
+		t.Helper()
+		var body map[string]any
+		if err := json.Unmarshal(raw, &body); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if len(body) != 1 {
+			t.Errorf("body has extra keys: %s", raw)
+		}
+		if got, _ := body["spec"].(string); got != spec {
+			t.Errorf("spec = %q, want %q", got, spec)
+		}
+		var decoded DashboardRequest
+		if err := json.Unmarshal(raw, &decoded); err != nil {
+			t.Fatalf("decode DashboardRequest: %v", err)
+		}
+		if string(decoded.Spec) != spec {
+			t.Errorf("DashboardRequest.Spec = %s", decoded.Spec)
+		}
+	}
+
+	t.Run("list", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			q := r.URL.Query()
+			if q.Get("pagination.page") != "2" || q.Get("pagination.per_page") != "50" {
+				t.Errorf("query = %s", r.URL.RawQuery)
+			}
+			if q.Get("pagination.sort") != InsightsDashboardSortUpdatedAt || q.Get("pagination.sort_direction") != InsightsDashboardSortDescending {
+				t.Errorf("sort query = %s", r.URL.RawQuery)
+			}
+			second := `{"uuid":"3f2504e0-4f89-41d3-9a0c-0305e82c3301","name":"LB traffic","spec":"{}","created_at":"2026-10-27T16:09:31Z","updated_at":"2026-10-28T09:12:05Z"}`
+			fmt.Fprintf(w, `{"dashboards":[%s,%s],"pagination":{"page":2,"pages":3,"per_page":50,"total":120}}`, wireDashboard, second)
+		})
+		got, _, err := client.Insights.ListDashboards(ctx, &DashboardListOptions{
+			Page:          2,
+			PerPage:       50,
+			Sort:          InsightsDashboardSortUpdatedAt,
+			SortDirection: InsightsDashboardSortDescending,
+		})
+		if err != nil {
+			t.Fatalf("ListDashboards: %v", err)
+		}
+		want := &DashboardList{
+			Dashboards: []Dashboard{
+				*dashboard,
+				{
+					UUID:      "3f2504e0-4f89-41d3-9a0c-0305e82c3301",
+					Name:      "LB traffic",
+					Spec:      json.RawMessage(`{}`),
+					CreatedAt: time.Date(2026, 10, 27, 16, 9, 31, 0, time.UTC),
+					UpdatedAt: time.Date(2026, 10, 28, 9, 12, 5, 0, time.UTC),
+				},
+			},
+			Pagination: &DashboardsPagination{Page: 2, Pages: 3, PerPage: 50, Total: 120},
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %+v, want %+v", got, want)
+		}
+	})
+
+	t.Run("list empty omits dashboards", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			if r.URL.RawQuery != "" {
+				t.Errorf("query = %s, want none", r.URL.RawQuery)
+			}
+			fmt.Fprint(w, `{"pagination":{"page":1,"per_page":20}}`)
+		})
+		got, _, err := client.Insights.ListDashboards(ctx, nil)
+		if err != nil {
+			t.Fatalf("ListDashboards: %v", err)
+		}
+		want := &DashboardList{Pagination: &DashboardsPagination{Page: 1, PerPage: 20}}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %+v, want %+v", got, want)
+		}
+	})
+
+	t.Run("get", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards/"+uuid, func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			fmt.Fprintf(w, `{"dashboard":%s}`, wireDashboard)
+		})
+		got, _, err := client.Insights.GetDashboard(ctx, uuid)
+		if err != nil {
+			t.Fatalf("GetDashboard: %v", err)
+		}
+		if !reflect.DeepEqual(got, dashboard) {
+			t.Errorf("got %+v, want %+v", got, dashboard)
+		}
+		if !json.Valid(got.Spec) || got.Spec[0] != '{' {
+			t.Errorf("Spec should be the decoded JSON object, got %s", got.Spec)
+		}
+	})
+
+	t.Run("get not found", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards/"+uuid, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, `{"error":"dashboard not found","message":"dashboard not found","code":5}`)
+		})
+		got, resp, err := client.Insights.GetDashboard(ctx, uuid)
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if got != nil {
+			t.Errorf("result = %#v, want nil", got)
+		}
+		if resp == nil || resp.StatusCode != http.StatusNotFound {
+			t.Fatalf("response = %#v", resp)
+		}
+		var apiErr *ErrorResponse
+		if !errors.As(err, &apiErr) {
+			t.Errorf("error = %#v, want *ErrorResponse", err)
+		}
+	})
+
+	t.Run("create", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodPost)
+			raw, _ := io.ReadAll(r.Body)
+			assertRequestSpec(t, raw)
+			fmt.Fprintf(w, `{"dashboard":%s}`, wireDashboard)
+		})
+		got, resp, err := client.Insights.CreateDashboard(ctx, &DashboardRequest{Spec: json.RawMessage(spec)})
+		if err != nil {
+			t.Fatalf("CreateDashboard: %v", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("status = %d, want 200", resp.StatusCode)
+		}
+		if !reflect.DeepEqual(got, dashboard) {
+			t.Errorf("got %+v, want %+v", got, dashboard)
+		}
+	})
+
+	t.Run("create rejects bad specs before sending", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards", func(w http.ResponseWriter, r *http.Request) {
+			t.Errorf("request should not have been sent")
+		})
+		for name, bad := range map[string]json.RawMessage{
+			"empty":          nil,
+			"whitespace":     json.RawMessage("  \n"),
+			"invalid JSON":   json.RawMessage(`{"kind":`),
+			"double encoded": json.RawMessage(mustJSON(spec)),
+			"array":          json.RawMessage(`[]`),
+		} {
+			got, resp, err := client.Insights.CreateDashboard(ctx, &DashboardRequest{Spec: bad})
+			if err == nil {
+				t.Errorf("%s: expected error", name)
+			}
+			if got != nil || resp != nil {
+				t.Errorf("%s: got %v, resp %v, want both nil", name, got, resp)
+			}
+		}
+	})
+
+	t.Run("update", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards/"+uuid, func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodPut)
+			raw, _ := io.ReadAll(r.Body)
+			assertRequestSpec(t, raw)
+			fmt.Fprintf(w, `{"dashboard":%s}`, wireDashboard)
+		})
+		got, _, err := client.Insights.UpdateDashboard(ctx, uuid, &DashboardRequest{Spec: json.RawMessage(spec)})
+		if err != nil {
+			t.Fatalf("UpdateDashboard: %v", err)
+		}
+		if !reflect.DeepEqual(got, dashboard) {
+			t.Errorf("got %+v, want %+v", got, dashboard)
+		}
+	})
+
+	t.Run("delete", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards/"+uuid, func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodDelete)
+			fmt.Fprint(w, `{}`)
+		})
+		resp, err := client.Insights.DeleteDashboard(ctx, uuid)
+		if err != nil {
+			t.Fatalf("DeleteDashboard: %v", err)
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("status = %d, want 200", resp.StatusCode)
+		}
+	})
+
+	t.Run("schema", func(t *testing.T) {
+		setup()
+		defer teardown()
+		const schema = `{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"Dashboard","type":"object","required":["kind","spec"]}`
+		mux.HandleFunc("/v2/insights/dashboards/schema", func(w http.ResponseWriter, r *http.Request) {
+			testMethod(t, r, http.MethodGet)
+			fmt.Fprint(w, schema)
+		})
+		got, _, err := client.Insights.GetDashboardSchema(ctx)
+		if err != nil {
+			t.Fatalf("GetDashboardSchema: %v", err)
+		}
+		if string(got) != schema {
+			t.Errorf("schema = %s, want %s", got, schema)
+		}
+	})
+
+	t.Run("paths escape the uuid", func(t *testing.T) {
+		setup()
+		defer teardown()
+		mux.HandleFunc("/v2/insights/dashboards/not%2Fa%20uuid", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `{"dashboard":%s}`, wireDashboard)
+		})
+		if _, _, err := client.Insights.GetDashboard(ctx, "not/a uuid"); err != nil {
+			t.Fatalf("GetDashboard: %v", err)
+		}
+		if _, _, err := client.Insights.UpdateDashboard(ctx, "not/a uuid", &DashboardRequest{Spec: json.RawMessage(spec)}); err != nil {
+			t.Fatalf("UpdateDashboard: %v", err)
+		}
+		if _, err := client.Insights.DeleteDashboard(ctx, "not/a uuid"); err != nil {
+			t.Fatalf("DeleteDashboard: %v", err)
+		}
+	})
+
+	t.Run("dashboard JSON round trip", func(t *testing.T) {
+		encoded, err := json.Marshal(dashboard)
+		if err != nil {
+			t.Fatalf("Marshal: %v", err)
+		}
+		var onWire map[string]any
+		if err := json.Unmarshal(encoded, &onWire); err != nil {
+			t.Fatalf("decode: %v", err)
+		}
+		if got, _ := onWire["spec"].(string); got != spec {
+			t.Errorf("wire spec = %#v, want the document as a string", onWire["spec"])
+		}
+		var decoded Dashboard
+		if err := json.Unmarshal(encoded, &decoded); err != nil {
+			t.Fatalf("Unmarshal: %v", err)
+		}
+		if !reflect.DeepEqual(&decoded, dashboard) {
+			t.Errorf("round trip = %+v, want %+v", decoded, dashboard)
+		}
+	})
+}
