@@ -183,6 +183,12 @@ type ListOptions struct {
 
 	// This parameter is used to include models according to the use cases.
 	Usecases []string `url:"usecases,omitempty"`
+
+	// This parameter is used to sort the results.
+	Sort string `url:"sort,omitempty"`
+
+	// This provide the direction of the sort.
+	SortDirection string `url:"sort_direction,omitempty"`
 }
 
 // TokenListOptions specifies the optional parameters to various List methods that support token pagination.
