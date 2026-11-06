@@ -3574,7 +3574,28 @@ func TestDatabases_GetConfigMySQL(t *testing.T) {
     "slow_query_log": false,
     "long_query_time": 10,
     "backup_hour": 21,
-    "backup_minute": 59
+    "backup_minute": 59,
+    "automatic_sp_privileges": true,
+    "div_precision_increment": 4,
+    "end_markers_in_json": false,
+    "eq_range_index_dive_limit": 200,
+    "innodb_adaptive_hash_index": true,
+    "innodb_ft_enable_stopword": true,
+    "innodb_ft_max_token_size": 20,
+    "innodb_ft_num_word_optimize": 2000,
+    "innodb_ft_result_cache_limit": 2000000000,
+    "innodb_ft_user_stopword_table": "db_name/table_name",
+    "innodb_optimize_fulltext_only": false,
+    "max_execution_time": 0,
+    "max_seeks_for_key": 1000,
+    "mysql_incremental_backup": {
+      "enabled": true,
+      "full_backup_week_schedule": "mon,thu"
+    },
+    "optimizer_prune_level": 1,
+    "optimizer_search_depth": 62,
+    "optimizer_switch": "batched_key_access=on,hash_join=off",
+    "windowing_use_high_precision": true
   }
 }`
 
@@ -3589,6 +3610,27 @@ func TestDatabases_GetConfigMySQL(t *testing.T) {
 			LongQueryTime:               PtrTo(float32(10)),
 			BackupHour:                  PtrTo(21),
 			BackupMinute:                PtrTo(59),
+			AutomaticSPPrivileges:       PtrTo(true),
+			DivPrecisionIncrement:       PtrTo(4),
+			EndMarkersInJSON:            PtrTo(false),
+			EqRangeIndexDiveLimit:       PtrTo(200),
+			InnodbAdaptiveHashIndex:     PtrTo(true),
+			InnodbFtEnableStopword:      PtrTo(true),
+			InnodbFtMaxTokenSize:        PtrTo(20),
+			InnodbFtNumWordOptimize:     PtrTo(2000),
+			InnodbFtResultCacheLimit:    PtrTo(2000000000),
+			InnodbFtUserStopwordTable:   PtrTo("db_name/table_name"),
+			InnodbOptimizeFulltextOnly:  PtrTo(false),
+			MaxExecutionTime:            PtrTo(0),
+			MaxSeeksForKey:              PtrTo(1000),
+			MySQLIncrementalBackup: &MySQLIncrementalBackupConfig{
+				Enabled:                PtrTo(true),
+				FullBackupWeekSchedule: PtrTo("mon,thu"),
+			},
+			OptimizerPruneLevel:       PtrTo(1),
+			OptimizerSearchDepth:      PtrTo(62),
+			OptimizerSwitch:           PtrTo("batched_key_access=on,hash_join=off"),
+			WindowingUseHighPrecision: PtrTo(true),
 		}
 	)
 
