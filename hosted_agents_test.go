@@ -354,17 +354,23 @@ func TestHostedAgentSession_JSONOmitsEmptyPauseReason(t *testing.T) {
 	assert.NotContains(t, fields, "pause_reason")
 }
 
-func TestHostedAgentSession_JSONOmitsFalseResumeOnTopoff(t *testing.T) {
-	body, err := json.Marshal(&HostedAgentSession{
-		SessionID: "sess-no-topoff",
-		AgentKind: HostedAgentKindOpenCode,
-		Status:    HostedAgentSessionStatusReady,
-	})
+// MARSOHS-2563: a session whose consent was never granted, or was revoked,
+// must re-encode with resume_on_topoff: false rather than drop the key, even
+// though the server omits it.
+func TestHostedAgentSession_JSONEmitsFalseResumeOnTopoff(t *testing.T) {
+	var session HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(`{
+		"session_id": "sess-no-topoff",
+		"agent_kind": "AGENT_KIND_OPENCODE",
+		"status": "SESSION_STATUS_READY"
+	}`), &session))
+
+	body, err := json.Marshal(&session)
 	require.NoError(t, err)
 
 	var fields map[string]json.RawMessage
 	require.NoError(t, json.Unmarshal(body, &fields))
-	assert.NotContains(t, fields, "resume_on_topoff")
+	assert.JSONEq(t, "false", string(fields["resume_on_topoff"]))
 	assert.NotContains(t, fields, "sandbox_id")
 }
 
