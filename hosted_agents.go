@@ -33,6 +33,7 @@ const (
 	hostedAgentSessionRequestPath                   = hostedAgentSessionByIDPath + "/request"
 	hostedAgentSessionHITLPath                      = hostedAgentSessionByIDPath + "/hitl/%s"
 	hostedAgentSessionSandboxExecPath               = hostedAgentSessionByIDPath + "/sandbox/exec"
+	hostedAgentSessionSandboxExecStdinPath          = hostedAgentSessionSandboxExecPath + "/%s/stdin"
 	hostedAgentSandboxSizesPath                     = hostedAgentsSessionsBasePath + "/sandbox/sizes"
 	hostedAgentRegionsPath                          = hostedAgentsAPIPrefix + "/regions"
 	hostedAgentSessionPausePath                     = hostedAgentSessionByIDPath + "/pause"
@@ -162,7 +163,18 @@ type HostedAgentsService interface {
 	// back with an Authorization, as from CreateConnection; an active one is
 	// returned unchanged. Only the connection's owner can reconnect it.
 	ReconnectConnection(context.Context, string, string) (*HostedAgentConnectionEnvelope, *Response, error)
+	// ExecInSandbox runs a command inside the session sandbox and returns the
+	// buffered result. For live stdout/stderr, or keep_stdin_open, use
+	// StreamExecInSandbox instead.
 	ExecInSandbox(context.Context, string, *HostedAgentSandboxExecRequest) (*HostedAgentSandboxExecResponse, *Response, error)
+	// StreamExecInSandbox runs a command and returns an SSE iterator over
+	// started / stdout / stderr / exit (or error) frames. Callers MUST Close
+	// the stream. With KeepStdinOpen the first frame is started and carries
+	// the exec id for WriteExecStdin.
+	StreamExecInSandbox(context.Context, string, *HostedAgentSandboxExecRequest) (*HostedAgentSandboxExecStream, *Response, error)
+	// WriteExecStdin appends bytes to a command started with KeepStdinOpen.
+	// Offset is the count of stdin bytes already accepted; EOF closes stdin.
+	WriteExecStdin(context.Context, string, string, *HostedAgentWriteExecStdinRequest) (*HostedAgentWriteExecStdinResponse, *Response, error)
 	// ListSandboxSizes returns the customer-selectable sandbox (microVM) size
 	// catalog (GET /v2/harness-runtime/sessions/sandbox/sizes). Every slug is accepted by
 	// CreateSession as spec.sandbox.sizeSlug. Ordered smallest-to-largest; no
@@ -964,14 +976,82 @@ type HostedAgentConnectionCreateRequest struct {
 type HostedAgentSandboxExecRequest struct {
 	Argv           []string `json:"argv"`
 	Workdir        string   `json:"workdir,omitempty"`
-	TimeoutSeconds int64    `json:"timeout_seconds,omitempty"`
+	// Stdin is optional one-shot stdin. Without KeepStdinOpen it is delivered
+	// in full and then closed so the process sees EOF. With KeepStdinOpen it
+	// is the optional first chunk; later bytes use WriteExecStdin. Encoded as
+	// base64 on the wire.
+	Stdin []byte `json:"stdin,omitempty"`
+	// KeepStdinOpen leaves process stdin open for WriteExecStdin. SSE only
+	// (StreamExecInSandbox); a buffered ExecInSandbox call with this set is
+	// rejected client-side. Requires the team to be enrolled in live stdin.
+	KeepStdinOpen  bool  `json:"keep_stdin_open,omitempty"`
+	TimeoutSeconds int64 `json:"timeout_seconds,omitempty"`
 }
 
-// HostedAgentSandboxExecResponse is returned by POST .../sandbox/exec.
+// HostedAgentSandboxExecResponse is returned by the buffered POST .../sandbox/exec.
 type HostedAgentSandboxExecResponse struct {
-	ExitCode int    `json:"exit_code"`
-	Stdout   string `json:"stdout,omitempty"`
-	Stderr   string `json:"stderr,omitempty"`
+	ExitCode   int    `json:"exit_code"`
+	Stdout     string `json:"stdout,omitempty"`
+	Stderr     string `json:"stderr,omitempty"`
+	DurationMS int64  `json:"duration_ms,omitempty"`
+}
+
+// HostedAgentWriteExecStdinRequest is the body for POST .../sandbox/exec/{exec_id}/stdin.
+// Offset is required and is the count of stdin bytes already accepted: equal
+// appends, lower retries and trims overlap, higher is 409. Data may be empty
+// on an eof-only write; at least one of Data or EOF must be set.
+type HostedAgentWriteExecStdinRequest struct {
+	Data   []byte `json:"data,omitempty"`
+	Offset int64  `json:"offset"`
+	EOF    bool   `json:"eof,omitempty"`
+}
+
+// HostedAgentWriteExecStdinResponse is returned by WriteExecStdin.
+type HostedAgentWriteExecStdinResponse struct {
+	// Offset is the count of stdin bytes accepted after this write.
+	Offset int64 `json:"offset"`
+}
+
+// HostedAgentSandboxExecEventKind is the SSE event name for a streaming exec.
+type HostedAgentSandboxExecEventKind string
+
+const (
+	// HostedAgentSandboxExecEventStarted is emitted only when KeepStdinOpen is
+	// set, once the guest has registered the exec. ExecID is then set.
+	HostedAgentSandboxExecEventStarted HostedAgentSandboxExecEventKind = "started"
+	HostedAgentSandboxExecEventStdout  HostedAgentSandboxExecEventKind = "stdout"
+	HostedAgentSandboxExecEventStderr  HostedAgentSandboxExecEventKind = "stderr"
+	HostedAgentSandboxExecEventExit    HostedAgentSandboxExecEventKind = "exit"
+	HostedAgentSandboxExecEventError   HostedAgentSandboxExecEventKind = "error"
+)
+
+// HostedAgentSandboxExecEvent is one frame from StreamExecInSandbox.
+type HostedAgentSandboxExecEvent struct {
+	Kind HostedAgentSandboxExecEventKind
+
+	// ExecID is set on a started frame; use it with WriteExecStdin.
+	ExecID string
+
+	// Data is decoded stdout or stderr bytes (base64 on the wire).
+	Data []byte
+
+	// ExitCode and DurationMS are set on an exit frame.
+	ExitCode   int32
+	DurationMS int64
+
+	// Message is set on an error frame.
+	Message string
+}
+
+// HostedAgentSandboxExecStream is a typed iterator over a streaming sandbox
+// exec. Callers MUST Close the stream.
+type HostedAgentSandboxExecStream struct {
+	raw     *SSEReader
+	body    io.ReadCloser
+	current HostedAgentSandboxExecEvent
+	err     error
+	done    bool
+	execID  string
 }
 
 // HostedAgentSandboxSize is a customer-selectable sandbox (microVM) size from
@@ -1624,8 +1704,38 @@ func (s *HostedAgentsServiceOp) ReconnectConnection(ctx context.Context, provide
 	return root, resp, nil
 }
 
-// ExecInSandbox runs a command inside the session sandbox.
+// ExecInSandbox runs a command inside the session sandbox and returns the
+// buffered result. KeepStdinOpen is not supported here; use StreamExecInSandbox.
 func (s *HostedAgentsServiceOp) ExecInSandbox(ctx context.Context, sessionID string, body *HostedAgentSandboxExecRequest) (*HostedAgentSandboxExecResponse, *Response, error) {
+	if sessionID == "" {
+		return nil, nil, errors.New("hosted agents: session id is required")
+	}
+	if body == nil {
+		return nil, nil, errors.New("hosted agents: exec request is required")
+	}
+	if len(body.Argv) == 0 {
+		return nil, nil, errors.New("hosted agents: argv is required")
+	}
+	if body.KeepStdinOpen {
+		return nil, nil, errors.New("hosted agents: keep_stdin_open requires StreamExecInSandbox")
+	}
+	path := fmt.Sprintf(hostedAgentSessionSandboxExecPath, sessionID)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, body)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(HostedAgentSandboxExecResponse)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root, resp, nil
+}
+
+// StreamExecInSandbox runs a command and streams stdout/stderr over SSE.
+// Callers MUST Close the returned stream. With KeepStdinOpen the first event
+// is started and ExecID() then names the id for WriteExecStdin.
+func (s *HostedAgentsServiceOp) StreamExecInSandbox(ctx context.Context, sessionID string, body *HostedAgentSandboxExecRequest) (*HostedAgentSandboxExecStream, *Response, error) {
 	if sessionID == "" {
 		return nil, nil, errors.New("hosted agents: session id is required")
 	}
@@ -1640,7 +1750,42 @@ func (s *HostedAgentsServiceOp) ExecInSandbox(ctx context.Context, sessionID str
 	if err != nil {
 		return nil, nil, err
 	}
-	root := new(HostedAgentSandboxExecResponse)
+	req.Header.Set("Accept", "text/event-stream")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Connection", "keep-alive")
+
+	resp, err := s.client.DoStream(ctx, req)
+	if err != nil {
+		return nil, resp, err
+	}
+	stream := &HostedAgentSandboxExecStream{
+		raw:  NewSSEReader(resp.Body),
+		body: resp.Body,
+	}
+	return stream, resp, nil
+}
+
+// WriteExecStdin appends bytes to a keep-stdin command. execID comes from the
+// StreamExecInSandbox started frame (or ExecID()). Offset is required.
+func (s *HostedAgentsServiceOp) WriteExecStdin(ctx context.Context, sessionID, execID string, body *HostedAgentWriteExecStdinRequest) (*HostedAgentWriteExecStdinResponse, *Response, error) {
+	if sessionID == "" {
+		return nil, nil, errors.New("hosted agents: session id is required")
+	}
+	if execID == "" {
+		return nil, nil, errors.New("hosted agents: exec id is required")
+	}
+	if body == nil {
+		return nil, nil, errors.New("hosted agents: stdin write is required")
+	}
+	if len(body.Data) == 0 && !body.EOF {
+		return nil, nil, errors.New("hosted agents: stdin data or eof is required")
+	}
+	path := fmt.Sprintf(hostedAgentSessionSandboxExecStdinPath, sessionID, execID)
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, body)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(HostedAgentWriteExecStdinResponse)
 	resp, err := s.client.Do(ctx, req, root)
 	if err != nil {
 		return nil, resp, err
@@ -2018,6 +2163,93 @@ func (b *workspaceDownloadBody) Close() error {
 		return b.verr
 	}
 	return nil
+}
+
+// Next advances to the next streaming-exec event. Returns false on EOF or error.
+func (s *HostedAgentSandboxExecStream) Next() bool {
+	for {
+		if s.done || s.err != nil {
+			return false
+		}
+		ev, err := s.raw.Next()
+		if errors.Is(err, io.EOF) {
+			s.done = true
+			return false
+		}
+		if err != nil {
+			s.err = err
+			return false
+		}
+		if len(ev.Data) == 0 && ev.Event == "" {
+			continue
+		}
+		kind := HostedAgentSandboxExecEventKind(ev.Event)
+		event := HostedAgentSandboxExecEvent{Kind: kind}
+		switch kind {
+		case HostedAgentSandboxExecEventStarted:
+			var payload struct {
+				ExecID string `json:"exec_id"`
+			}
+			if err := json.Unmarshal(ev.Data, &payload); err != nil {
+				s.err = err
+				return false
+			}
+			event.ExecID = payload.ExecID
+			s.execID = payload.ExecID
+		case HostedAgentSandboxExecEventStdout, HostedAgentSandboxExecEventStderr:
+			var payload struct {
+				Data []byte `json:"data"`
+			}
+			if err := json.Unmarshal(ev.Data, &payload); err != nil {
+				s.err = err
+				return false
+			}
+			event.Data = payload.Data
+		case HostedAgentSandboxExecEventExit:
+			var payload struct {
+				ExitCode   int32 `json:"exit_code"`
+				DurationMS int64 `json:"duration_ms"`
+			}
+			if err := json.Unmarshal(ev.Data, &payload); err != nil {
+				s.err = err
+				return false
+			}
+			event.ExitCode = payload.ExitCode
+			event.DurationMS = payload.DurationMS
+		case HostedAgentSandboxExecEventError:
+			var payload struct {
+				Message string `json:"message"`
+			}
+			if err := json.Unmarshal(ev.Data, &payload); err != nil {
+				s.err = err
+				return false
+			}
+			event.Message = payload.Message
+		default:
+			// Unknown frame: skip rather than fail the whole stream, so a
+			// newer server event does not break an older client mid-exec.
+			continue
+		}
+		s.current = event
+		return true
+	}
+}
+
+// Current returns the most recent event produced by Next.
+func (s *HostedAgentSandboxExecStream) Current() HostedAgentSandboxExecEvent { return s.current }
+
+// ExecID returns the exec id from the started frame, or empty until it arrives.
+func (s *HostedAgentSandboxExecStream) ExecID() string { return s.execID }
+
+// Err returns any non-EOF error encountered during iteration.
+func (s *HostedAgentSandboxExecStream) Err() error { return s.err }
+
+// Close releases the underlying HTTP response body. Always call Close.
+func (s *HostedAgentSandboxExecStream) Close() error {
+	if s.body == nil {
+		return nil
+	}
+	return s.body.Close()
 }
 
 // HostedAgentSessionStream is a typed iterator over a session SSE stream.
