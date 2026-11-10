@@ -49,29 +49,36 @@ type DataCloudPlatformService interface {
 	GetWorkspaceQueryCredentials(context.Context, string, string) (*DataCloudQueryCredentials, *Response, error)
 
 	// CreateDataFlow creates a data flow in a workspace.
+	// Region on the request is path-only and is not sent in the body.
 	CreateDataFlow(context.Context, *DataCloudDataFlowCreateRequest) (*DataCloudDataFlowCreateResponse, *Response, error)
 	// ListDataFlows lists data flows in a workspace.
+	// Region on the request is path-only.
 	ListDataFlows(context.Context, *DataCloudDataFlowListRequest) (*DataCloudListDataFlowsResponse, *Response, error)
-	// GetDataFlow returns one data flow by workspace and id.
-	GetDataFlow(context.Context, string, string) (*DataCloudDataFlow, *Response, error)
+	// GetDataFlow returns one data flow by region, workspace, and id.
+	GetDataFlow(context.Context, string, string, string) (*DataCloudDataFlow, *Response, error)
 	// UpdateDataFlow patches a data flow's replica settings, secret refs, or manifest.
+	// Region on the request is path-only and is not sent in the body.
 	UpdateDataFlow(context.Context, *DataCloudDataFlowUpdateRequest) (*DataCloudDataFlowUpdateResponse, *Response, error)
 	// DeleteDataFlow begins deleting a data flow.
-	DeleteDataFlow(context.Context, string, string) (*Response, error)
+	DeleteDataFlow(context.Context, string, string, string) (*Response, error)
 	// PauseDataFlow pauses an active data flow.
-	PauseDataFlow(context.Context, string, string) (*Response, error)
+	PauseDataFlow(context.Context, string, string, string) (*Response, error)
 	// ResumeDataFlow resumes a paused data flow.
-	ResumeDataFlow(context.Context, string, string) (*Response, error)
+	ResumeDataFlow(context.Context, string, string, string) (*Response, error)
 	// RestartDataFlow restarts a data flow.
-	RestartDataFlow(context.Context, string, string) (*Response, error)
+	RestartDataFlow(context.Context, string, string, string) (*Response, error)
 	// RewindDataFlow requests rewind to an earlier time. The server currently
 	// reports rewind as unsupported; still call the endpoint and surface that response.
+	// Region on the request is path-only and is not sent in the body.
 	RewindDataFlow(context.Context, *DataCloudDataFlowRewindRequest) (*Response, error)
 	// CreateFchainUploadURL creates a temporary upload URL for a function-chain archive.
+	// Region on the request is path-only and is not sent in the body.
 	CreateFchainUploadURL(context.Context, *DataCloudFchainUploadURLRequest) (*DataCloudFchainUploadURLResponse, *Response, error)
 	// AttachDataFlowFchain attaches an uploaded function-chain archive to a data flow.
+	// Region on the request is path-only and is not sent in the body.
 	AttachDataFlowFchain(context.Context, *DataCloudAttachDataFlowFchainRequest) (*Response, error)
 	// GetWorkspaceMetrics queries data flow metrics for a workspace.
+	// Region on the request is path-only and is not sent in the body.
 	GetWorkspaceMetrics(context.Context, *DataCloudWorkspaceMetricsRequest) (*DataCloudWorkspaceMetricsResponse, *Response, error)
 }
 

@@ -41,8 +41,10 @@ type DataCloudDataFlow struct {
 }
 
 // DataCloudDataFlowCreateRequest is the body for CreateDataFlow.
-// Workspace is required and used as the path segment.
+// Region is path-only and is not sent in the JSON body. Workspace is required
+// and used as a path segment; it is also sent in the body.
 type DataCloudDataFlowCreateRequest struct {
+	Region          string          `json:"-"`
 	Name            string          `json:"name,omitempty"`
 	DesiredReplicas int32           `json:"desired_replicas,omitempty"`
 	MaxReplicas     int32           `json:"max_replicas,omitempty"`
@@ -59,7 +61,9 @@ type DataCloudDataFlowCreateResponse struct {
 }
 
 // DataCloudDataFlowListRequest holds path and query args for ListDataFlows.
+// Region and Workspace are path-only.
 type DataCloudDataFlowListRequest struct {
+	Region    string `url:"-"`
 	Workspace string `url:"-"`
 	PageSize  int    `url:"page_size,omitempty"`
 	PageToken string `url:"page_token,omitempty"`
@@ -72,8 +76,10 @@ type DataCloudListDataFlowsResponse struct {
 }
 
 // DataCloudDataFlowUpdateRequest is the body for UpdateDataFlow.
-// Workspace and ID are required path segments and are also sent in the body.
+// Region is path-only and is not sent in the JSON body. Workspace and ID are
+// required path segments and are also sent in the body.
 type DataCloudDataFlowUpdateRequest struct {
+	Region          string          `json:"-"`
 	ID              string          `json:"id"`
 	Workspace       string          `json:"workspace"`
 	DesiredReplicas int32           `json:"desired_replicas,omitempty"`
@@ -91,14 +97,18 @@ type DataCloudDataFlowUpdateResponse struct {
 }
 
 // DataCloudDataFlowRewindRequest is the body for RewindDataFlow.
+// Region is path-only and is not sent in the JSON body.
 type DataCloudDataFlowRewindRequest struct {
+	Region    string `json:"-"`
 	ID        string `json:"id"`
 	Workspace string `json:"workspace"`
 	RewindTo  string `json:"rewind_to,omitempty"`
 }
 
 // DataCloudFchainUploadURLRequest is the body for CreateFchainUploadURL.
+// Region is path-only and is not sent in the JSON body.
 type DataCloudFchainUploadURLRequest struct {
+	Region    string `json:"-"`
 	SHA256    string `json:"sha256,omitempty"`
 	Workspace string `json:"workspace"`
 }
@@ -111,14 +121,18 @@ type DataCloudFchainUploadURLResponse struct {
 }
 
 // DataCloudAttachDataFlowFchainRequest is the body for AttachDataFlowFchain.
+// Region is path-only and is not sent in the JSON body.
 type DataCloudAttachDataFlowFchainRequest struct {
+	Region    string `json:"-"`
 	ID        string `json:"id"`
 	Workspace string `json:"workspace"`
 	ObjectKey string `json:"object_key,omitempty"`
 }
 
 // DataCloudWorkspaceMetricsRequest is the body for GetWorkspaceMetrics.
+// Region is path-only and is not sent in the JSON body.
 type DataCloudWorkspaceMetricsRequest struct {
+	Region      string   `json:"-"`
 	Workspace   string   `json:"workspace"`
 	MetricNames []string `json:"metric_names,omitempty"`
 	DataFlowID  string   `json:"data_flow_id,omitempty"`
@@ -136,52 +150,62 @@ type DataCloudWorkspaceMetricsResponse struct {
 	Rows    []map[string]any `json:"rows,omitempty"`
 }
 
-func dataCloudDataFlowsPath(workspace string) (string, error) {
+func dataCloudDataFlowsPath(region, workspace string) (string, error) {
+	if region == "" {
+		return "", errors.New("data cloud platform: region is required")
+	}
 	if workspace == "" {
 		return "", errors.New("data cloud platform: workspace is required")
 	}
-	return dataCloudPlatformPrefix + "/workspaces/" + url.PathEscape(workspace) + "/data-flows", nil
+	return dataCloudPlatformPrefix + "/" + url.PathEscape(region) + "/workspaces/" + url.PathEscape(workspace) + "/data-flows", nil
 }
 
-func dataCloudDataFlowPath(workspace, id string) (string, error) {
+func dataCloudDataFlowPath(region, workspace, id string) (string, error) {
 	if id == "" {
 		return "", errors.New("data cloud platform: data flow id is required")
 	}
-	base, err := dataCloudDataFlowsPath(workspace)
+	base, err := dataCloudDataFlowsPath(region, workspace)
 	if err != nil {
 		return "", err
 	}
 	return base + "/" + url.PathEscape(id), nil
 }
 
-func dataCloudDataFlowActionPath(workspace, id, action string) (string, error) {
-	base, err := dataCloudDataFlowPath(workspace, id)
+func dataCloudDataFlowActionPath(region, workspace, id, action string) (string, error) {
+	base, err := dataCloudDataFlowPath(region, workspace, id)
 	if err != nil {
 		return "", err
 	}
 	return base + "/" + action, nil
 }
 
-func dataCloudFchainUploadURLPath(workspace string) (string, error) {
+func dataCloudFchainUploadURLPath(region, workspace string) (string, error) {
+	if region == "" {
+		return "", errors.New("data cloud platform: region is required")
+	}
 	if workspace == "" {
 		return "", errors.New("data cloud platform: workspace is required")
 	}
-	return dataCloudPlatformPrefix + "/workspaces/" + url.PathEscape(workspace) + "/fchain/upload-url", nil
+	return dataCloudPlatformPrefix + "/" + url.PathEscape(region) + "/workspaces/" + url.PathEscape(workspace) + "/fchain/upload-url", nil
 }
 
-func dataCloudWorkspaceMetricsPath(workspace string) (string, error) {
+func dataCloudWorkspaceMetricsPath(region, workspace string) (string, error) {
+	if region == "" {
+		return "", errors.New("data cloud platform: region is required")
+	}
 	if workspace == "" {
 		return "", errors.New("data cloud platform: workspace is required")
 	}
-	return dataCloudPlatformPrefix + "/workspaces/" + url.PathEscape(workspace) + "/metrics", nil
+	return dataCloudPlatformPrefix + "/" + url.PathEscape(region) + "/workspaces/" + url.PathEscape(workspace) + "/metrics", nil
 }
 
 // CreateDataFlow creates a data flow in the workspace on create.
+// Region comes from create and is used as the path segment only.
 func (s *DataCloudPlatformServiceOp) CreateDataFlow(ctx context.Context, create *DataCloudDataFlowCreateRequest) (*DataCloudDataFlowCreateResponse, *Response, error) {
 	if create == nil {
 		return nil, nil, errors.New("data cloud platform: create request is required")
 	}
-	path, err := dataCloudDataFlowsPath(create.Workspace)
+	path, err := dataCloudDataFlowsPath(create.Region, create.Workspace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -198,11 +222,12 @@ func (s *DataCloudPlatformServiceOp) CreateDataFlow(ctx context.Context, create 
 }
 
 // ListDataFlows lists data flows in the workspace on list.
+// Region comes from list and is used as the path segment only.
 func (s *DataCloudPlatformServiceOp) ListDataFlows(ctx context.Context, list *DataCloudDataFlowListRequest) (*DataCloudListDataFlowsResponse, *Response, error) {
 	if list == nil {
 		return nil, nil, errors.New("data cloud platform: list request is required")
 	}
-	path, err := dataCloudDataFlowsPath(list.Workspace)
+	path, err := dataCloudDataFlowsPath(list.Region, list.Workspace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -222,9 +247,9 @@ func (s *DataCloudPlatformServiceOp) ListDataFlows(ctx context.Context, list *Da
 	return root, resp, nil
 }
 
-// GetDataFlow returns one data flow by workspace and id.
-func (s *DataCloudPlatformServiceOp) GetDataFlow(ctx context.Context, workspace, id string) (*DataCloudDataFlow, *Response, error) {
-	path, err := dataCloudDataFlowPath(workspace, id)
+// GetDataFlow returns one data flow by region, workspace, and id.
+func (s *DataCloudPlatformServiceOp) GetDataFlow(ctx context.Context, region, workspace, id string) (*DataCloudDataFlow, *Response, error) {
+	path, err := dataCloudDataFlowPath(region, workspace, id)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -241,11 +266,12 @@ func (s *DataCloudPlatformServiceOp) GetDataFlow(ctx context.Context, workspace,
 }
 
 // UpdateDataFlow patches a data flow.
+// Region comes from update and is used as the path segment only.
 func (s *DataCloudPlatformServiceOp) UpdateDataFlow(ctx context.Context, update *DataCloudDataFlowUpdateRequest) (*DataCloudDataFlowUpdateResponse, *Response, error) {
 	if update == nil {
 		return nil, nil, errors.New("data cloud platform: update request is required")
 	}
-	path, err := dataCloudDataFlowPath(update.Workspace, update.ID)
+	path, err := dataCloudDataFlowPath(update.Region, update.Workspace, update.ID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -262,8 +288,8 @@ func (s *DataCloudPlatformServiceOp) UpdateDataFlow(ctx context.Context, update 
 }
 
 // DeleteDataFlow begins deleting a data flow.
-func (s *DataCloudPlatformServiceOp) DeleteDataFlow(ctx context.Context, workspace, id string) (*Response, error) {
-	path, err := dataCloudDataFlowPath(workspace, id)
+func (s *DataCloudPlatformServiceOp) DeleteDataFlow(ctx context.Context, region, workspace, id string) (*Response, error) {
+	path, err := dataCloudDataFlowPath(region, workspace, id)
 	if err != nil {
 		return nil, err
 	}
@@ -275,8 +301,8 @@ func (s *DataCloudPlatformServiceOp) DeleteDataFlow(ctx context.Context, workspa
 }
 
 // PauseDataFlow pauses an active data flow.
-func (s *DataCloudPlatformServiceOp) PauseDataFlow(ctx context.Context, workspace, id string) (*Response, error) {
-	path, err := dataCloudDataFlowActionPath(workspace, id, "pause")
+func (s *DataCloudPlatformServiceOp) PauseDataFlow(ctx context.Context, region, workspace, id string) (*Response, error) {
+	path, err := dataCloudDataFlowActionPath(region, workspace, id, "pause")
 	if err != nil {
 		return nil, err
 	}
@@ -288,8 +314,8 @@ func (s *DataCloudPlatformServiceOp) PauseDataFlow(ctx context.Context, workspac
 }
 
 // ResumeDataFlow resumes a paused data flow.
-func (s *DataCloudPlatformServiceOp) ResumeDataFlow(ctx context.Context, workspace, id string) (*Response, error) {
-	path, err := dataCloudDataFlowActionPath(workspace, id, "resume")
+func (s *DataCloudPlatformServiceOp) ResumeDataFlow(ctx context.Context, region, workspace, id string) (*Response, error) {
+	path, err := dataCloudDataFlowActionPath(region, workspace, id, "resume")
 	if err != nil {
 		return nil, err
 	}
@@ -301,8 +327,8 @@ func (s *DataCloudPlatformServiceOp) ResumeDataFlow(ctx context.Context, workspa
 }
 
 // RestartDataFlow restarts a data flow.
-func (s *DataCloudPlatformServiceOp) RestartDataFlow(ctx context.Context, workspace, id string) (*Response, error) {
-	path, err := dataCloudDataFlowActionPath(workspace, id, "restart")
+func (s *DataCloudPlatformServiceOp) RestartDataFlow(ctx context.Context, region, workspace, id string) (*Response, error) {
+	path, err := dataCloudDataFlowActionPath(region, workspace, id, "restart")
 	if err != nil {
 		return nil, err
 	}
@@ -314,11 +340,12 @@ func (s *DataCloudPlatformServiceOp) RestartDataFlow(ctx context.Context, worksp
 }
 
 // RewindDataFlow requests rewind. The server may respond that rewind is unsupported.
+// Region comes from rewind and is used as the path segment only.
 func (s *DataCloudPlatformServiceOp) RewindDataFlow(ctx context.Context, rewind *DataCloudDataFlowRewindRequest) (*Response, error) {
 	if rewind == nil {
 		return nil, errors.New("data cloud platform: rewind request is required")
 	}
-	path, err := dataCloudDataFlowActionPath(rewind.Workspace, rewind.ID, "rewind")
+	path, err := dataCloudDataFlowActionPath(rewind.Region, rewind.Workspace, rewind.ID, "rewind")
 	if err != nil {
 		return nil, err
 	}
@@ -330,11 +357,12 @@ func (s *DataCloudPlatformServiceOp) RewindDataFlow(ctx context.Context, rewind 
 }
 
 // CreateFchainUploadURL creates a temporary upload URL for a function-chain archive.
+// Region comes from create and is used as the path segment only.
 func (s *DataCloudPlatformServiceOp) CreateFchainUploadURL(ctx context.Context, create *DataCloudFchainUploadURLRequest) (*DataCloudFchainUploadURLResponse, *Response, error) {
 	if create == nil {
 		return nil, nil, errors.New("data cloud platform: create request is required")
 	}
-	path, err := dataCloudFchainUploadURLPath(create.Workspace)
+	path, err := dataCloudFchainUploadURLPath(create.Region, create.Workspace)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -351,11 +379,12 @@ func (s *DataCloudPlatformServiceOp) CreateFchainUploadURL(ctx context.Context, 
 }
 
 // AttachDataFlowFchain attaches an uploaded function-chain archive to a data flow.
+// Region comes from attach and is used as the path segment only.
 func (s *DataCloudPlatformServiceOp) AttachDataFlowFchain(ctx context.Context, attach *DataCloudAttachDataFlowFchainRequest) (*Response, error) {
 	if attach == nil {
 		return nil, errors.New("data cloud platform: attach request is required")
 	}
-	path, err := dataCloudDataFlowActionPath(attach.Workspace, attach.ID, "fchain")
+	path, err := dataCloudDataFlowActionPath(attach.Region, attach.Workspace, attach.ID, "fchain")
 	if err != nil {
 		return nil, err
 	}
@@ -367,11 +396,12 @@ func (s *DataCloudPlatformServiceOp) AttachDataFlowFchain(ctx context.Context, a
 }
 
 // GetWorkspaceMetrics queries data flow metrics for a workspace.
+// Region comes from metrics and is used as the path segment only.
 func (s *DataCloudPlatformServiceOp) GetWorkspaceMetrics(ctx context.Context, metrics *DataCloudWorkspaceMetricsRequest) (*DataCloudWorkspaceMetricsResponse, *Response, error) {
 	if metrics == nil {
 		return nil, nil, errors.New("data cloud platform: metrics request is required")
 	}
-	path, err := dataCloudWorkspaceMetricsPath(metrics.Workspace)
+	path, err := dataCloudWorkspaceMetricsPath(metrics.Region, metrics.Workspace)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -263,9 +263,9 @@ func TestDataCloudPlatform_CreateDataFlow(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows", r.URL.EscapedPath())
 		assert.Empty(t, r.URL.RawQuery)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -290,6 +290,7 @@ func TestDataCloudPlatform_CreateDataFlow(t *testing.T) {
 	})
 
 	got, resp, err := client.DataCloudPlatform.CreateDataFlow(ctx, &DataCloudDataFlowCreateRequest{
+		Region:          dataCloudTestRegion,
 		Name:            "ingest",
 		DesiredReplicas: 1,
 		MaxReplicas:     3,
@@ -317,12 +318,13 @@ func TestDataCloudPlatform_CreateDataFlow_EscapesPath(t *testing.T) {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{"uuid":"df-1","state":"pending"}`)
 	})
 
 	got, resp, err := client.DataCloudPlatform.CreateDataFlow(ctx, &DataCloudDataFlowCreateRequest{
+		Region:    "tor1/other",
 		Workspace: "ws/abc",
 		Name:      "ingest",
 	})
@@ -335,12 +337,12 @@ func TestDataCloudPlatform_CreateDataFlow_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"message":"invalid manifest","request_id":"req-create-df"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateDataFlow(ctx, &DataCloudDataFlowCreateRequest{Workspace: dataCloudTestUUID})
+	got, resp, err := client.DataCloudPlatform.CreateDataFlow(ctx, &DataCloudDataFlowCreateRequest{Region: dataCloudTestRegion, Workspace: dataCloudTestUUID})
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -353,7 +355,7 @@ func TestDataCloudPlatform_ListDataFlows(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		q := r.URL.Query()
 		assert.Equal(t, "25", q.Get("page_size"))
@@ -376,6 +378,7 @@ func TestDataCloudPlatform_ListDataFlows(t *testing.T) {
 	})
 
 	got, resp, err := client.DataCloudPlatform.ListDataFlows(ctx, &DataCloudDataFlowListRequest{
+		Region:    dataCloudTestRegion,
 		Workspace: dataCloudTestUUID,
 		PageSize:  25,
 		PageToken: "tok-1",
@@ -404,7 +407,7 @@ func TestDataCloudPlatform_ListDataFlows_EscapesPathAndQuery(t *testing.T) {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows", r.URL.EscapedPath())
 		assert.Equal(t, "a/b", r.URL.Query().Get("page_token"))
 		assert.Contains(t, r.URL.RawQuery, "page_token=a%2Fb")
 		w.WriteHeader(http.StatusOK)
@@ -412,6 +415,7 @@ func TestDataCloudPlatform_ListDataFlows_EscapesPathAndQuery(t *testing.T) {
 	})
 
 	got, resp, err := client.DataCloudPlatform.ListDataFlows(ctx, &DataCloudDataFlowListRequest{
+		Region:    "tor1/other",
 		Workspace: "ws/abc",
 		PageToken: "a/b",
 	})
@@ -424,12 +428,12 @@ func TestDataCloudPlatform_ListDataFlows_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"message":"workspace not found","request_id":"req-list-df"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListDataFlows(ctx, &DataCloudDataFlowListRequest{Workspace: dataCloudTestUUID})
+	got, resp, err := client.DataCloudPlatform.ListDataFlows(ctx, &DataCloudDataFlowListRequest{Region: dataCloudTestRegion, Workspace: dataCloudTestUUID})
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -442,7 +446,7 @@ func TestDataCloudPlatform_GetDataFlow(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
 		assert.Empty(t, r.URL.RawQuery)
 		w.WriteHeader(http.StatusOK)
@@ -456,7 +460,7 @@ func TestDataCloudPlatform_GetDataFlow(t *testing.T) {
 		}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	got, resp, err := client.DataCloudPlatform.GetDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -472,12 +476,12 @@ func TestDataCloudPlatform_GetDataFlow_EscapesPath(t *testing.T) {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows/df%2F1", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows/df%2F1", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{"uuid":"df/1","state":"active"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetDataFlow(ctx, "ws/abc", "df/1")
+	got, resp, err := client.DataCloudPlatform.GetDataFlow(ctx, "tor1/other", "ws/abc", "df/1")
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, "df/1", got.UUID)
@@ -487,12 +491,12 @@ func TestDataCloudPlatform_GetDataFlow_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"message":"data flow not found","request_id":"req-get-df"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	got, resp, err := client.DataCloudPlatform.GetDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -505,7 +509,7 @@ func TestDataCloudPlatform_UpdateDataFlow(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPatch)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -520,6 +524,7 @@ func TestDataCloudPlatform_UpdateDataFlow(t *testing.T) {
 	})
 
 	got, resp, err := client.DataCloudPlatform.UpdateDataFlow(ctx, &DataCloudDataFlowUpdateRequest{
+		Region:          dataCloudTestRegion,
 		ID:              dataCloudTestDataFlowID,
 		Workspace:       dataCloudTestUUID,
 		DesiredReplicas: 2,
@@ -536,12 +541,13 @@ func TestDataCloudPlatform_UpdateDataFlow_EscapesPath(t *testing.T) {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPatch, r.Method)
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows/df%2F1", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows/df%2F1", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{"uuid":"df/1","state":"active"}`)
 	})
 
 	got, resp, err := client.DataCloudPlatform.UpdateDataFlow(ctx, &DataCloudDataFlowUpdateRequest{
+		Region:    "tor1/other",
 		ID:        "df/1",
 		Workspace: "ws/abc",
 	})
@@ -554,12 +560,13 @@ func TestDataCloudPlatform_UpdateDataFlow_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"message":"invalid patch","request_id":"req-patch-df"}`)
 	})
 
 	got, resp, err := client.DataCloudPlatform.UpdateDataFlow(ctx, &DataCloudDataFlowUpdateRequest{
+		Region:    dataCloudTestRegion,
 		ID:        dataCloudTestDataFlowID,
 		Workspace: dataCloudTestUUID,
 	})
@@ -575,13 +582,13 @@ func TestDataCloudPlatform_DeleteDataFlow(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.DeleteDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	resp, err := client.DataCloudPlatform.DeleteDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -593,12 +600,12 @@ func TestDataCloudPlatform_DeleteDataFlow_EscapesPath(t *testing.T) {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows/df%2F1", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows/df%2F1", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.DeleteDataFlow(ctx, "ws/abc", "df/1")
+	resp, err := client.DataCloudPlatform.DeleteDataFlow(ctx, "tor1/other", "ws/abc", "df/1")
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -607,12 +614,12 @@ func TestDataCloudPlatform_DeleteDataFlow_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"message":"data flow not found","request_id":"req-delete-df"}`)
 	})
 
-	resp, err := client.DataCloudPlatform.DeleteDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	resp, err := client.DataCloudPlatform.DeleteDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.Error(t, err)
 	require.NotNil(t, resp)
 	var apiErr *ErrorResponse
@@ -624,13 +631,13 @@ func TestDataCloudPlatform_PauseDataFlow(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/pause", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/pause", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.PauseDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	resp, err := client.DataCloudPlatform.PauseDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -641,12 +648,12 @@ func TestDataCloudPlatform_PauseDataFlow_EscapesPath(t *testing.T) {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows/df%2F1/pause", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows/df%2F1/pause", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.PauseDataFlow(ctx, "ws/abc", "df/1")
+	resp, err := client.DataCloudPlatform.PauseDataFlow(ctx, "tor1/other", "ws/abc", "df/1")
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -655,12 +662,12 @@ func TestDataCloudPlatform_PauseDataFlow_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/pause", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/pause", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusConflict)
 		fmt.Fprint(w, `{"message":"not active","request_id":"req-pause"}`)
 	})
 
-	resp, err := client.DataCloudPlatform.PauseDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	resp, err := client.DataCloudPlatform.PauseDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.Error(t, err)
 	require.NotNil(t, resp)
 	var apiErr *ErrorResponse
@@ -672,13 +679,13 @@ func TestDataCloudPlatform_ResumeDataFlow(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/resume", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/resume", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.ResumeDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	resp, err := client.DataCloudPlatform.ResumeDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -688,12 +695,12 @@ func TestDataCloudPlatform_ResumeDataFlow_EscapesPath(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows/df%2F1/resume", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows/df%2F1/resume", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.ResumeDataFlow(ctx, "ws/abc", "df/1")
+	resp, err := client.DataCloudPlatform.ResumeDataFlow(ctx, "tor1/other", "ws/abc", "df/1")
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -702,12 +709,12 @@ func TestDataCloudPlatform_ResumeDataFlow_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/resume", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/resume", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusConflict)
 		fmt.Fprint(w, `{"message":"not paused","request_id":"req-resume"}`)
 	})
 
-	resp, err := client.DataCloudPlatform.ResumeDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	resp, err := client.DataCloudPlatform.ResumeDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.Error(t, err)
 	require.NotNil(t, resp)
 	var apiErr *ErrorResponse
@@ -719,13 +726,13 @@ func TestDataCloudPlatform_RestartDataFlow(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/restart", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/restart", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.RestartDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	resp, err := client.DataCloudPlatform.RestartDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -735,12 +742,12 @@ func TestDataCloudPlatform_RestartDataFlow_EscapesPath(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows/df%2F1/restart", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows/df%2F1/restart", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.RestartDataFlow(ctx, "ws/abc", "df/1")
+	resp, err := client.DataCloudPlatform.RestartDataFlow(ctx, "tor1/other", "ws/abc", "df/1")
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -749,12 +756,12 @@ func TestDataCloudPlatform_RestartDataFlow_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/restart", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/restart", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"message":"data flow not found","request_id":"req-restart"}`)
 	})
 
-	resp, err := client.DataCloudPlatform.RestartDataFlow(ctx, dataCloudTestUUID, dataCloudTestDataFlowID)
+	resp, err := client.DataCloudPlatform.RestartDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
 	require.Error(t, err)
 	require.NotNil(t, resp)
 	var apiErr *ErrorResponse
@@ -766,7 +773,7 @@ func TestDataCloudPlatform_RewindDataFlow(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/rewind", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/rewind", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -780,6 +787,7 @@ func TestDataCloudPlatform_RewindDataFlow(t *testing.T) {
 	})
 
 	resp, err := client.DataCloudPlatform.RewindDataFlow(ctx, &DataCloudDataFlowRewindRequest{
+		Region:    dataCloudTestRegion,
 		ID:        dataCloudTestDataFlowID,
 		Workspace: dataCloudTestUUID,
 		RewindTo:  "2026-11-01T00:00:00Z",
@@ -793,12 +801,13 @@ func TestDataCloudPlatform_RewindDataFlow_EscapesPath(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows/df%2F1/rewind", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows/df%2F1/rewind", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
 	resp, err := client.DataCloudPlatform.RewindDataFlow(ctx, &DataCloudDataFlowRewindRequest{
+		Region:    "tor1/other",
 		ID:        "df/1",
 		Workspace: "ws/abc",
 	})
@@ -810,12 +819,13 @@ func TestDataCloudPlatform_RewindDataFlow_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/rewind", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/rewind", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"message":"rewind is not supported","request_id":"req-rewind"}`)
 	})
 
 	resp, err := client.DataCloudPlatform.RewindDataFlow(ctx, &DataCloudDataFlowRewindRequest{
+		Region:    dataCloudTestRegion,
 		ID:        dataCloudTestDataFlowID,
 		Workspace: dataCloudTestUUID,
 		RewindTo:  "2026-11-01T00:00:00Z",
@@ -831,7 +841,7 @@ func TestDataCloudPlatform_CreateFchainUploadURL(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/fchain/upload-url", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/fchain/upload-url", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -848,6 +858,7 @@ func TestDataCloudPlatform_CreateFchainUploadURL(t *testing.T) {
 	})
 
 	got, resp, err := client.DataCloudPlatform.CreateFchainUploadURL(ctx, &DataCloudFchainUploadURLRequest{
+		Region:    dataCloudTestRegion,
 		SHA256:    "abc123",
 		Workspace: dataCloudTestUUID,
 	})
@@ -865,12 +876,12 @@ func TestDataCloudPlatform_CreateFchainUploadURL_EscapesPath(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/fchain/upload-url", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/fchain/upload-url", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{"upload_url":"https://upload.example/secret_value","object_key":"k"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateFchainUploadURL(ctx, &DataCloudFchainUploadURLRequest{Workspace: "ws/abc"})
+	got, resp, err := client.DataCloudPlatform.CreateFchainUploadURL(ctx, &DataCloudFchainUploadURLRequest{Region: "tor1/other", Workspace: "ws/abc"})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, "https://upload.example/secret_value", got.UploadURL)
@@ -880,12 +891,12 @@ func TestDataCloudPlatform_CreateFchainUploadURL_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/fchain/upload-url", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/fchain/upload-url", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"message":"sha256 required","request_id":"req-upload-url"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateFchainUploadURL(ctx, &DataCloudFchainUploadURLRequest{Workspace: dataCloudTestUUID})
+	got, resp, err := client.DataCloudPlatform.CreateFchainUploadURL(ctx, &DataCloudFchainUploadURLRequest{Region: dataCloudTestRegion, Workspace: dataCloudTestUUID})
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -898,7 +909,7 @@ func TestDataCloudPlatform_AttachDataFlowFchain(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/fchain", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/fchain", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -912,6 +923,7 @@ func TestDataCloudPlatform_AttachDataFlowFchain(t *testing.T) {
 	})
 
 	resp, err := client.DataCloudPlatform.AttachDataFlowFchain(ctx, &DataCloudAttachDataFlowFchainRequest{
+		Region:    dataCloudTestRegion,
 		ID:        dataCloudTestDataFlowID,
 		Workspace: dataCloudTestUUID,
 		ObjectKey: "fchain/abc",
@@ -925,12 +937,13 @@ func TestDataCloudPlatform_AttachDataFlowFchain_EscapesPath(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/data-flows/df%2F1/fchain", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/data-flows/df%2F1/fchain", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
 	resp, err := client.DataCloudPlatform.AttachDataFlowFchain(ctx, &DataCloudAttachDataFlowFchainRequest{
+		Region:    "tor1/other",
 		ID:        "df/1",
 		Workspace: "ws/abc",
 		ObjectKey: "fchain/abc",
@@ -943,12 +956,13 @@ func TestDataCloudPlatform_AttachDataFlowFchain_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/fchain", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID+"/fchain", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"message":"object missing","request_id":"req-attach"}`)
 	})
 
 	resp, err := client.DataCloudPlatform.AttachDataFlowFchain(ctx, &DataCloudAttachDataFlowFchainRequest{
+		Region:    dataCloudTestRegion,
 		ID:        dataCloudTestDataFlowID,
 		Workspace: dataCloudTestUUID,
 		ObjectKey: "fchain/abc",
@@ -964,7 +978,7 @@ func TestDataCloudPlatform_GetWorkspaceMetrics(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/metrics", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/metrics", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -987,6 +1001,7 @@ func TestDataCloudPlatform_GetWorkspaceMetrics(t *testing.T) {
 	})
 
 	got, resp, err := client.DataCloudPlatform.GetWorkspaceMetrics(ctx, &DataCloudWorkspaceMetricsRequest{
+		Region:      dataCloudTestRegion,
 		Workspace:   dataCloudTestUUID,
 		MetricNames: []string{"events"},
 		DataFlowID:  dataCloudTestDataFlowID,
@@ -1010,12 +1025,12 @@ func TestDataCloudPlatform_GetWorkspaceMetrics_EscapesPath(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/v2/data-cloud-platform/workspaces/ws%2Fabc/metrics", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/ws%2Fabc/metrics", r.URL.EscapedPath())
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{"count":0,"columns":[],"rows":[]}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetWorkspaceMetrics(ctx, &DataCloudWorkspaceMetricsRequest{Workspace: "ws/abc"})
+	got, resp, err := client.DataCloudPlatform.GetWorkspaceMetrics(ctx, &DataCloudWorkspaceMetricsRequest{Region: "tor1/other", Workspace: "ws/abc"})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, int32(0), got.Count)
@@ -1025,12 +1040,12 @@ func TestDataCloudPlatform_GetWorkspaceMetrics_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/workspaces/"+dataCloudTestUUID+"/metrics", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/metrics", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, `{"message":"invalid range","request_id":"req-metrics"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetWorkspaceMetrics(ctx, &DataCloudWorkspaceMetricsRequest{Workspace: dataCloudTestUUID})
+	got, resp, err := client.DataCloudPlatform.GetWorkspaceMetrics(ctx, &DataCloudWorkspaceMetricsRequest{Region: dataCloudTestRegion, Workspace: dataCloudTestUUID})
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
