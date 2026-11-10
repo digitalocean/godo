@@ -146,7 +146,11 @@ func (r *BYOIPPrefixServiceOp) Get(ctx context.Context, uuid string) (*BYOIPPref
 func (r *BYOIPPrefixServiceOp) GetResources(ctx context.Context, uuid string, opt *ListOptions) ([]BYOIPPrefixResource, *Response, error) {
 	path := fmt.Sprintf("%s/%s/ips", byoipsBasePath, uuid)
 
-	addOptions(path, opt)
+	path, err := addOptions(path, opt)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	req, err := r.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
