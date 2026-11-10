@@ -94,6 +94,26 @@ func TestDataCloudPlatform_GetWorkspaceSecret_Error(t *testing.T) {
 	assert.Equal(t, "secret not found", apiErr.Message)
 }
 
+func TestDataCloudPlatform_GetWorkspaceSecret_Forbidden(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/secrets/db-password", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, `{"message":"forbidden","request_id":"req-forbidden"}`)
+	})
+
+	got, resp, err := client.DataCloudPlatform.GetWorkspaceSecret(ctx, dataCloudTestRegion, dataCloudTestUUID, "db-password")
+	require.Error(t, err)
+	assert.Nil(t, got)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	var apiErr *ErrorResponse
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, "forbidden", apiErr.Message)
+	assert.Equal(t, "req-forbidden", apiErr.RequestID)
+}
+
 func TestDataCloudPlatform_ListWorkspaceSecrets(t *testing.T) {
 	setup()
 	defer teardown()
@@ -257,6 +277,26 @@ func TestDataCloudPlatform_GetWorkspaceQueryCredentials_Error(t *testing.T) {
 	var apiErr *ErrorResponse
 	require.ErrorAs(t, err, &apiErr)
 	assert.Equal(t, "workspace not found", apiErr.Message)
+}
+
+func TestDataCloudPlatform_GetWorkspaceQueryCredentials_Forbidden(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/query/credentials", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, `{"message":"forbidden","request_id":"req-forbidden"}`)
+	})
+
+	got, resp, err := client.DataCloudPlatform.GetWorkspaceQueryCredentials(ctx, dataCloudTestRegion, dataCloudTestUUID)
+	require.Error(t, err)
+	assert.Nil(t, got)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	var apiErr *ErrorResponse
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, "forbidden", apiErr.Message)
+	assert.Equal(t, "req-forbidden", apiErr.RequestID)
 }
 
 func TestDataCloudPlatform_CreateDataFlow(t *testing.T) {
@@ -503,6 +543,26 @@ func TestDataCloudPlatform_GetDataFlow_Error(t *testing.T) {
 	var apiErr *ErrorResponse
 	require.ErrorAs(t, err, &apiErr)
 	assert.Equal(t, "data flow not found", apiErr.Message)
+}
+
+func TestDataCloudPlatform_GetDataFlow_Forbidden(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/data-flows/"+dataCloudTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, `{"message":"forbidden","request_id":"req-forbidden"}`)
+	})
+
+	got, resp, err := client.DataCloudPlatform.GetDataFlow(ctx, dataCloudTestRegion, dataCloudTestUUID, dataCloudTestDataFlowID)
+	require.Error(t, err)
+	assert.Nil(t, got)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	var apiErr *ErrorResponse
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, "forbidden", apiErr.Message)
+	assert.Equal(t, "req-forbidden", apiErr.RequestID)
 }
 
 func TestDataCloudPlatform_UpdateDataFlow(t *testing.T) {

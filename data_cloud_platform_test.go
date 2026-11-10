@@ -380,6 +380,26 @@ func TestDataCloudPlatform_GetWorkspace_Error(t *testing.T) {
 	assert.Equal(t, "workspace not found", apiErr.Message)
 }
 
+func TestDataCloudPlatform_GetWorkspace_Forbidden(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, `{"message":"forbidden","request_id":"req-forbidden"}`)
+	})
+
+	got, resp, err := client.DataCloudPlatform.GetWorkspace(ctx, dataCloudTestRegion, dataCloudTestUUID)
+	require.Error(t, err)
+	assert.Nil(t, got)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	var apiErr *ErrorResponse
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, "forbidden", apiErr.Message)
+	assert.Equal(t, "req-forbidden", apiErr.RequestID)
+}
+
 func TestDataCloudPlatform_GetWorkspace_RequiresIDs(t *testing.T) {
 	setup()
 	defer teardown()
@@ -574,6 +594,28 @@ func TestDataCloudPlatform_CreateToken_Error(t *testing.T) {
 	require.ErrorAs(t, err, &apiErr)
 	assert.Equal(t, "region not found", apiErr.Message)
 	assert.Equal(t, "req-create-token", apiErr.RequestID)
+}
+
+func TestDataCloudPlatform_CreateToken_Forbidden(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/tokens", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		fmt.Fprint(w, `{"message":"forbidden","request_id":"req-forbidden"}`)
+	})
+
+	got, resp, err := client.DataCloudPlatform.CreateToken(ctx, &DataCloudTokenCreateRequest{
+		Region: dataCloudTestRegion,
+	})
+	require.Error(t, err)
+	assert.Nil(t, got)
+	require.NotNil(t, resp)
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+	var apiErr *ErrorResponse
+	require.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, "forbidden", apiErr.Message)
+	assert.Equal(t, "req-forbidden", apiErr.RequestID)
 }
 
 func TestDataCloudPlatform_ListTokens(t *testing.T) {
