@@ -974,8 +974,8 @@ type HostedAgentConnectionCreateRequest struct {
 
 // HostedAgentSandboxExecRequest is the body for POST .../sandbox/exec.
 type HostedAgentSandboxExecRequest struct {
-	Argv           []string `json:"argv"`
-	Workdir        string   `json:"workdir,omitempty"`
+	Argv    []string `json:"argv"`
+	Workdir string   `json:"workdir,omitempty"`
 	// Stdin is optional one-shot stdin. Without KeepStdinOpen it is delivered
 	// in full and then closed so the process sees EOF. With KeepStdinOpen it
 	// is the optional first chunk; later bytes use WriteExecStdin. Encoded as
