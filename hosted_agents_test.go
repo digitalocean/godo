@@ -2334,3 +2334,121 @@ func TestHostedAgentsRegionalBaseURL(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "https://api-mem1.digitalocean.com/", c.BaseURL.String(), "the helper returns what SetBaseURL accepts")
 }
+
+func TestHostedAgents_UpdateSessionConfig(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const manifest = "tools:\n  - do.actions:\n      tools: [toolbelt:read-only@1]\n"
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"manifest_yaml":"tools:\n  - do.actions:\n      tools: [toolbelt:read-only@1]\n"}`, string(raw))
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-cfg",
+				"agent_kind": "AGENT_KIND_HERMES",
+				"status": "SESSION_STATUS_UPDATING",
+				"update": {
+					"update_id": "upd-1",
+					"session_id": "sess-cfg",
+					"kind": "update",
+					"state": "APPLYING",
+					"sections": ["tools"],
+					"changes": {"tools": {"added": ["do.actions"]}},
+					"started_at": "2026-11-11T12:00:00Z"
+				}
+			},
+			"outcome": "ACCEPTED",
+			"warnings": ["heads up"]
+		}`)
+	})
+
+	got, resp, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: manifest})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
+	assert.Equal(t, HostedAgentSessionConfigUpdateOutcomeAccepted, got.Outcome)
+	assert.Equal(t, []string{"heads up"}, got.Warnings)
+	assert.Equal(t, HostedAgentSessionStatusUpdating, got.Session.Status)
+	require.NotNil(t, got.Session.Update)
+	assert.Equal(t, HostedAgentSessionConfigUpdateStateApplying, got.Session.Update.State)
+	assert.Equal(t, HostedAgentSessionConfigUpdateKindUpdate, got.Session.Update.Kind)
+	assert.Equal(t, []string{"do.actions"}, got.Session.Update.Changes.Tools.Added)
+}
+
+func TestHostedAgents_UpdateSessionConfig_Unchanged(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"session":{"session_id":"sess-cfg","status":"SESSION_STATUS_READY"},"outcome":"UNCHANGED"}`)
+	})
+
+	got, resp, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: "tools: []\n"})
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, HostedAgentSessionConfigUpdateOutcomeUnchanged, got.Outcome)
+	assert.Nil(t, got.Session.Update)
+}
+
+func TestHostedAgents_UpdateSessionConfig_Validation(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.UpdateSessionConfig(ctx, "", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: "tools: []"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "session id is required")
+
+	for name, update := range map[string]*HostedAgentSessionConfigUpdateRequest{
+		"nil request":    nil,
+		"empty manifest": {},
+	} {
+		t.Run(name, func(t *testing.T) {
+			_, _, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", update)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), "manifest yaml is required")
+		})
+	}
+}
+
+func TestHostedAgents_UpdateSessionConfig_ErrorStatus(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		fmt.Fprint(w, `{"id":"unprocessable_entity","message":"requires_new_session: model change"}`)
+	})
+
+	_, resp, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: "env: {}"})
+	require.Error(t, err)
+	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+	assert.Contains(t, err.Error(), "requires_new_session")
+}
+
+func TestHostedAgentSession_DecodesConfigFields(t *testing.T) {
+	var s HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(`{
+		"session_id":"s","status":"SESSION_STATUS_READY",
+		"config_drifted":true,
+		"config_diff":{"env":{"changed":["FOO"]},"secrets":{"removed":["KEY"]}},
+		"manifest":{"tools":[]},
+		"update":{"update_id":"u","state":"FAILED","error":"update_failed","reverted":true,"detail":"boom","started_at":"2026-11-11T12:00:00Z","finished_at":"2026-11-11T12:01:00Z"}
+	}`), &s))
+	assert.True(t, s.ConfigDrifted)
+	assert.Equal(t, []string{"FOO"}, s.ConfigDiff.Env.Changed)
+	assert.Equal(t, []string{"KEY"}, s.ConfigDiff.Secrets.Removed)
+	assert.JSONEq(t, `{"tools":[]}`, string(s.Manifest))
+	assert.Equal(t, HostedAgentSessionConfigUpdateStateFailed, s.Update.State)
+	assert.True(t, s.Update.Reverted)
+	assert.Equal(t, "boom", s.Update.Detail)
+}
