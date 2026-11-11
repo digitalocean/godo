@@ -12,21 +12,21 @@ import (
 )
 
 const (
-	dataCloudTestRegion = "tor1"
-	dataCloudTestUUID   = "ws-019fb39c-14d9-7080-933e-b9b90e25acda"
+	adsTestRegion = "tor1"
+	adsTestUUID   = "ws-019fb39c-14d9-7080-933e-b9b90e25acda"
 )
 
-var dataCloudWorkspace = DataCloudWorkspace{
-	UUID:              dataCloudTestUUID,
+var adsWorkspace = ADSWorkspace{
+	UUID:              adsTestUUID,
 	OwnerUUID:         "7f3c1e52-9a4b-4d6e-8c21-5b0a9d3e6f14",
 	Name:              "analytics",
-	Region:            dataCloudTestRegion,
+	Region:            adsTestRegion,
 	Status:            "active",
 	QueryEndpoint:     "https://query.example.internal",
 	QueryInstanceSize: "small",
 }
 
-const dataCloudWorkspaceJSON = `{
+const adsWorkspaceJSON = `{
 	"uuid": "ws-019fb39c-14d9-7080-933e-b9b90e25acda",
 	"owner_uuid": "7f3c1e52-9a4b-4d6e-8c21-5b0a9d3e6f14",
 	"name": "analytics",
@@ -36,11 +36,11 @@ const dataCloudWorkspaceJSON = `{
 	"query_instance_size": "small"
 }`
 
-func TestDataCloudTokenCreateRequest_JSON(t *testing.T) {
-	raw, err := json.Marshal(DataCloudTokenCreateRequest{
+func TestADSTokenCreateRequest_JSON(t *testing.T) {
+	raw, err := json.Marshal(ADSTokenCreateRequest{
 		Region:           "tor1",
-		Purpose:          DataCloudTokenPurposeQuery,
-		WorkspaceUUIDs:   []string{dataCloudTestUUID},
+		Purpose:          ADSTokenPurposeQuery,
+		WorkspaceUUIDs:   []string{adsTestUUID},
 		Name:             "analytics",
 		ExpiresInSeconds: 3600,
 		Permissions:      []string{"read"},
@@ -57,13 +57,13 @@ func TestDataCloudTokenCreateRequest_JSON(t *testing.T) {
 	assert.NotContains(t, string(raw), "sandbox_uuids")
 }
 
-func TestDataCloudTokenCreateRequest_OmitsOptionalFields(t *testing.T) {
-	raw, err := json.Marshal(DataCloudTokenCreateRequest{Region: "tor1"})
+func TestADSTokenCreateRequest_OmitsOptionalFields(t *testing.T) {
+	raw, err := json.Marshal(ADSTokenCreateRequest{Region: "tor1"})
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"region":"tor1"}`, string(raw))
 }
 
-func TestDataCloudPlatform_ListPlans(t *testing.T) {
+func TestADS_ListPlans(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -89,16 +89,16 @@ func TestDataCloudPlatform_ListPlans(t *testing.T) {
 		}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListPlans(ctx)
+	got, resp, err := client.ADS.ListPlans(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudPlansResponse{
-		Plans: []DataCloudPlan{
+	assert.Equal(t, &ADSPlansResponse{
+		Plans: []ADSPlan{
 			{
 				RegionSlug:         "tor1",
 				AvailableForCreate: true,
-				QueryEngineSizes: []DataCloudQueryEngineSize{{
+				QueryEngineSizes: []ADSQueryEngineSize{{
 					Size:        "small",
 					DropletSlug: "s-1vcpu-2gb",
 					CPU:         1,
@@ -113,7 +113,7 @@ func TestDataCloudPlatform_ListPlans(t *testing.T) {
 	}, got)
 }
 
-func TestDataCloudPlatform_ListPlans_Error(t *testing.T) {
+func TestADS_ListPlans_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -122,7 +122,7 @@ func TestDataCloudPlatform_ListPlans_Error(t *testing.T) {
 		fmt.Fprint(w, `{"message":"plans unavailable","request_id":"req-plans"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListPlans(ctx)
+	got, resp, err := client.ADS.ListPlans(ctx)
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -133,7 +133,7 @@ func TestDataCloudPlatform_ListPlans_Error(t *testing.T) {
 	assert.Equal(t, "req-plans", apiErr.RequestID)
 }
 
-func TestDataCloudPlatform_CreateWorkspace(t *testing.T) {
+func TestADS_CreateWorkspace(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -145,20 +145,20 @@ func TestDataCloudPlatform_CreateWorkspace(t *testing.T) {
 		require.NoError(t, err)
 		assert.JSONEq(t, `{"name":"analytics","query_instance_size":"medium"}`, string(raw))
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"workspace":%s}`, dataCloudWorkspaceJSON)
+		fmt.Fprintf(w, `{"workspace":%s}`, adsWorkspaceJSON)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateWorkspace(ctx, dataCloudTestRegion, &DataCloudWorkspaceCreateRequest{
+	got, resp, err := client.ADS.CreateWorkspace(ctx, adsTestRegion, &ADSWorkspaceCreateRequest{
 		Name:              "analytics",
 		QueryInstanceSize: "medium",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &dataCloudWorkspace, got)
+	assert.Equal(t, &adsWorkspace, got)
 }
 
-func TestDataCloudPlatform_CreateWorkspace_OmitsEmptyFields(t *testing.T) {
+func TestADS_CreateWorkspace_OmitsEmptyFields(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -167,17 +167,17 @@ func TestDataCloudPlatform_CreateWorkspace_OmitsEmptyFields(t *testing.T) {
 		require.NoError(t, err)
 		assert.JSONEq(t, `{}`, string(raw))
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"workspace":%s}`, dataCloudWorkspaceJSON)
+		fmt.Fprintf(w, `{"workspace":%s}`, adsWorkspaceJSON)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateWorkspace(ctx, dataCloudTestRegion, &DataCloudWorkspaceCreateRequest{})
+	got, resp, err := client.ADS.CreateWorkspace(ctx, adsTestRegion, &ADSWorkspaceCreateRequest{})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &dataCloudWorkspace, got)
+	assert.Equal(t, &adsWorkspace, got)
 }
 
-func TestDataCloudPlatform_CreateWorkspace_EscapesRegion(t *testing.T) {
+func TestADS_CreateWorkspace_EscapesRegion(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -189,19 +189,19 @@ func TestDataCloudPlatform_CreateWorkspace_EscapesRegion(t *testing.T) {
 		require.NoError(t, err)
 		assert.JSONEq(t, `{"name":"analytics"}`, string(raw))
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"workspace":%s}`, dataCloudWorkspaceJSON)
+		fmt.Fprintf(w, `{"workspace":%s}`, adsWorkspaceJSON)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateWorkspace(ctx, "tor1/other", &DataCloudWorkspaceCreateRequest{
+	got, resp, err := client.ADS.CreateWorkspace(ctx, "tor1/other", &ADSWorkspaceCreateRequest{
 		Name: "analytics",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &dataCloudWorkspace, got)
+	assert.Equal(t, &adsWorkspace, got)
 }
 
-func TestDataCloudPlatform_CreateWorkspace_Error(t *testing.T) {
+func TestADS_CreateWorkspace_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -210,7 +210,7 @@ func TestDataCloudPlatform_CreateWorkspace_Error(t *testing.T) {
 		fmt.Fprint(w, `{"message":"region not found","request_id":"req-create"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateWorkspace(ctx, dataCloudTestRegion, &DataCloudWorkspaceCreateRequest{Name: "analytics"})
+	got, resp, err := client.ADS.CreateWorkspace(ctx, adsTestRegion, &ADSWorkspaceCreateRequest{Name: "analytics"})
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -220,27 +220,27 @@ func TestDataCloudPlatform_CreateWorkspace_Error(t *testing.T) {
 	assert.Equal(t, "region not found", apiErr.Message)
 }
 
-func TestDataCloudPlatform_CreateWorkspace_RequiresRequest(t *testing.T) {
+func TestADS_CreateWorkspace_RequiresRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.CreateWorkspace(ctx, dataCloudTestRegion, nil)
-	require.EqualError(t, err, "data cloud platform: create request is required")
+	got, resp, err := client.ADS.CreateWorkspace(ctx, adsTestRegion, nil)
+	require.EqualError(t, err, "ads: create request is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_CreateWorkspace_RequiresRegion(t *testing.T) {
+func TestADS_CreateWorkspace_RequiresRegion(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.CreateWorkspace(ctx, "", &DataCloudWorkspaceCreateRequest{Name: "analytics"})
-	require.EqualError(t, err, "data cloud platform: region is required")
+	got, resp, err := client.ADS.CreateWorkspace(ctx, "", &ADSWorkspaceCreateRequest{Name: "analytics"})
+	require.EqualError(t, err, "ads: region is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_CreateWorkspace_EmptyWorkspace(t *testing.T) {
+func TestADS_CreateWorkspace_EmptyWorkspace(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -249,14 +249,14 @@ func TestDataCloudPlatform_CreateWorkspace_EmptyWorkspace(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateWorkspace(ctx, dataCloudTestRegion, &DataCloudWorkspaceCreateRequest{Name: "analytics"})
-	require.EqualError(t, err, "data cloud platform: create workspace returned no workspace")
+	got, resp, err := client.ADS.CreateWorkspace(ctx, adsTestRegion, &ADSWorkspaceCreateRequest{Name: "analytics"})
+	require.EqualError(t, err, "ads: create workspace returned no workspace")
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func TestDataCloudPlatform_ListWorkspaces(t *testing.T) {
+func TestADS_ListWorkspaces(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -265,17 +265,17 @@ func TestDataCloudPlatform_ListWorkspaces(t *testing.T) {
 		assert.Equal(t, "/v2/data-cloud-platform/tor1/workspaces", r.URL.EscapedPath())
 		assert.Empty(t, r.URL.RawQuery)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"workspaces":[%s]}`, dataCloudWorkspaceJSON)
+		fmt.Fprintf(w, `{"workspaces":[%s]}`, adsWorkspaceJSON)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListWorkspaces(ctx, dataCloudTestRegion)
+	got, resp, err := client.ADS.ListWorkspaces(ctx, adsTestRegion)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudWorkspacesResponse{Workspaces: []DataCloudWorkspace{dataCloudWorkspace}}, got)
+	assert.Equal(t, &ADSWorkspacesResponse{Workspaces: []ADSWorkspace{adsWorkspace}}, got)
 }
 
-func TestDataCloudPlatform_ListWorkspaces_EscapesRegion(t *testing.T) {
+func TestADS_ListWorkspaces_EscapesRegion(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -287,14 +287,14 @@ func TestDataCloudPlatform_ListWorkspaces_EscapesRegion(t *testing.T) {
 		fmt.Fprint(w, `{"workspaces":[]}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListWorkspaces(ctx, "tor1/other")
+	got, resp, err := client.ADS.ListWorkspaces(ctx, "tor1/other")
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudWorkspacesResponse{Workspaces: []DataCloudWorkspace{}}, got)
+	assert.Equal(t, &ADSWorkspacesResponse{Workspaces: []ADSWorkspace{}}, got)
 }
 
-func TestDataCloudPlatform_ListWorkspaces_Error(t *testing.T) {
+func TestADS_ListWorkspaces_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -303,7 +303,7 @@ func TestDataCloudPlatform_ListWorkspaces_Error(t *testing.T) {
 		fmt.Fprint(w, `{"message":"region not found","request_id":"req-list"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListWorkspaces(ctx, dataCloudTestRegion)
+	got, resp, err := client.ADS.ListWorkspaces(ctx, adsTestRegion)
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -313,36 +313,36 @@ func TestDataCloudPlatform_ListWorkspaces_Error(t *testing.T) {
 	assert.Equal(t, "region not found", apiErr.Message)
 }
 
-func TestDataCloudPlatform_ListWorkspaces_RequiresRegion(t *testing.T) {
+func TestADS_ListWorkspaces_RequiresRegion(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.ListWorkspaces(ctx, "")
-	require.EqualError(t, err, "data cloud platform: region is required")
+	got, resp, err := client.ADS.ListWorkspaces(ctx, "")
+	require.EqualError(t, err, "ads: region is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_GetWorkspace(t *testing.T) {
+func TestADS_GetWorkspace(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodGet)
-		assert.Equal(t, "/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID, r.URL.EscapedPath())
 		assert.Empty(t, r.URL.RawQuery)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"workspace":%s}`, dataCloudWorkspaceJSON)
+		fmt.Fprintf(w, `{"workspace":%s}`, adsWorkspaceJSON)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetWorkspace(ctx, dataCloudTestRegion, dataCloudTestUUID)
+	got, resp, err := client.ADS.GetWorkspace(ctx, adsTestRegion, adsTestUUID)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &dataCloudWorkspace, got)
+	assert.Equal(t, &adsWorkspace, got)
 }
 
-func TestDataCloudPlatform_GetWorkspace_EscapesPath(t *testing.T) {
+func TestADS_GetWorkspace_EscapesPath(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -351,26 +351,26 @@ func TestDataCloudPlatform_GetWorkspace_EscapesPath(t *testing.T) {
 		assert.Equal(t, "/v2/data-cloud-platform/tor1%2Fother/workspaces/abc%2Fdef", r.URL.EscapedPath())
 		assert.Empty(t, r.URL.RawQuery)
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"workspace":%s}`, dataCloudWorkspaceJSON)
+		fmt.Fprintf(w, `{"workspace":%s}`, adsWorkspaceJSON)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetWorkspace(ctx, "tor1/other", "abc/def")
+	got, resp, err := client.ADS.GetWorkspace(ctx, "tor1/other", "abc/def")
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &dataCloudWorkspace, got)
+	assert.Equal(t, &adsWorkspace, got)
 }
 
-func TestDataCloudPlatform_GetWorkspace_Error(t *testing.T) {
+func TestADS_GetWorkspace_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"message":"workspace not found","request_id":"req-get"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetWorkspace(ctx, dataCloudTestRegion, dataCloudTestUUID)
+	got, resp, err := client.ADS.GetWorkspace(ctx, adsTestRegion, adsTestUUID)
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -380,16 +380,16 @@ func TestDataCloudPlatform_GetWorkspace_Error(t *testing.T) {
 	assert.Equal(t, "workspace not found", apiErr.Message)
 }
 
-func TestDataCloudPlatform_GetWorkspace_Forbidden(t *testing.T) {
+func TestADS_GetWorkspace_Forbidden(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		fmt.Fprint(w, `{"message":"forbidden","request_id":"req-forbidden"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetWorkspace(ctx, dataCloudTestRegion, dataCloudTestUUID)
+	got, resp, err := client.ADS.GetWorkspace(ctx, adsTestRegion, adsTestUUID)
 	require.Error(t, err)
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
@@ -400,56 +400,56 @@ func TestDataCloudPlatform_GetWorkspace_Forbidden(t *testing.T) {
 	assert.Equal(t, "req-forbidden", apiErr.RequestID)
 }
 
-func TestDataCloudPlatform_GetWorkspace_RequiresIDs(t *testing.T) {
+func TestADS_GetWorkspace_RequiresIDs(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.GetWorkspace(ctx, "", dataCloudTestUUID)
-	require.EqualError(t, err, "data cloud platform: region is required")
+	got, resp, err := client.ADS.GetWorkspace(ctx, "", adsTestUUID)
+	require.EqualError(t, err, "ads: region is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 
-	got, resp, err = client.DataCloudPlatform.GetWorkspace(ctx, dataCloudTestRegion, "")
-	require.EqualError(t, err, "data cloud platform: workspace uuid is required")
+	got, resp, err = client.ADS.GetWorkspace(ctx, adsTestRegion, "")
+	require.EqualError(t, err, "ads: workspace uuid is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_GetWorkspace_EmptyWorkspace(t *testing.T) {
+func TestADS_GetWorkspace_EmptyWorkspace(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.GetWorkspace(ctx, dataCloudTestRegion, dataCloudTestUUID)
-	require.EqualError(t, err, "data cloud platform: get workspace returned no workspace")
+	got, resp, err := client.ADS.GetWorkspace(ctx, adsTestRegion, adsTestUUID)
+	require.EqualError(t, err, "ads: get workspace returned no workspace")
 	assert.Nil(t, got)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func TestDataCloudPlatform_DeleteWorkspace(t *testing.T) {
+func TestADS_DeleteWorkspace(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID, func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodDelete)
-		assert.Equal(t, "/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID, r.URL.EscapedPath())
 		assert.Empty(t, r.URL.RawQuery)
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.DeleteWorkspace(ctx, dataCloudTestRegion, dataCloudTestUUID)
+	resp, err := client.ADS.DeleteWorkspace(ctx, adsTestRegion, adsTestUUID)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func TestDataCloudPlatform_DeleteWorkspace_EscapesPath(t *testing.T) {
+func TestADS_DeleteWorkspace_EscapesPath(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -461,22 +461,22 @@ func TestDataCloudPlatform_DeleteWorkspace_EscapesPath(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	resp, err := client.DataCloudPlatform.DeleteWorkspace(ctx, "tor1/other", "abc/def")
+	resp, err := client.ADS.DeleteWorkspace(ctx, "tor1/other", "abc/def")
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func TestDataCloudPlatform_DeleteWorkspace_Error(t *testing.T) {
+func TestADS_DeleteWorkspace_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"message":"workspace not found","request_id":"req-delete"}`)
 	})
 
-	resp, err := client.DataCloudPlatform.DeleteWorkspace(ctx, dataCloudTestRegion, dataCloudTestUUID)
+	resp, err := client.ADS.DeleteWorkspace(ctx, adsTestRegion, adsTestUUID)
 	require.Error(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
@@ -485,20 +485,20 @@ func TestDataCloudPlatform_DeleteWorkspace_Error(t *testing.T) {
 	assert.Equal(t, "workspace not found", apiErr.Message)
 }
 
-func TestDataCloudPlatform_DeleteWorkspace_RequiresIDs(t *testing.T) {
+func TestADS_DeleteWorkspace_RequiresIDs(t *testing.T) {
 	setup()
 	defer teardown()
 
-	resp, err := client.DataCloudPlatform.DeleteWorkspace(ctx, "", dataCloudTestUUID)
-	require.EqualError(t, err, "data cloud platform: region is required")
+	resp, err := client.ADS.DeleteWorkspace(ctx, "", adsTestUUID)
+	require.EqualError(t, err, "ads: region is required")
 	assert.Nil(t, resp)
 
-	resp, err = client.DataCloudPlatform.DeleteWorkspace(ctx, dataCloudTestRegion, "")
-	require.EqualError(t, err, "data cloud platform: workspace uuid is required")
+	resp, err = client.ADS.DeleteWorkspace(ctx, adsTestRegion, "")
+	require.EqualError(t, err, "ads: workspace uuid is required")
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_CreateToken(t *testing.T) {
+func TestADS_CreateToken(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -525,10 +525,10 @@ func TestDataCloudPlatform_CreateToken(t *testing.T) {
 		}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateToken(ctx, &DataCloudTokenCreateRequest{
-		Region:           dataCloudTestRegion,
-		Purpose:          DataCloudTokenPurposeQuery,
-		WorkspaceUUIDs:   []string{dataCloudTestUUID},
+	got, resp, err := client.ADS.CreateToken(ctx, &ADSTokenCreateRequest{
+		Region:           adsTestRegion,
+		Purpose:          ADSTokenPurposeQuery,
+		WorkspaceUUIDs:   []string{adsTestUUID},
 		Name:             "analytics",
 		ExpiresInSeconds: 3600,
 		Permissions:      []string{"read"},
@@ -536,7 +536,7 @@ func TestDataCloudPlatform_CreateToken(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudTokenCreateResponse{
+	assert.Equal(t, &ADSTokenCreateResponse{
 		ID:          "tok-019fb39c-14d9-7080-933e-b9b90e25acda",
 		Name:        "analytics",
 		AccessToken: "secret_value",
@@ -544,7 +544,7 @@ func TestDataCloudPlatform_CreateToken(t *testing.T) {
 	}, got)
 }
 
-func TestDataCloudPlatform_CreateToken_EscapesRegion(t *testing.T) {
+func TestADS_CreateToken_EscapesRegion(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -562,19 +562,19 @@ func TestDataCloudPlatform_CreateToken_EscapesRegion(t *testing.T) {
 		}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateToken(ctx, &DataCloudTokenCreateRequest{
+	got, resp, err := client.ADS.CreateToken(ctx, &ADSTokenCreateRequest{
 		Region: "tor1/other",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudTokenCreateResponse{
+	assert.Equal(t, &ADSTokenCreateResponse{
 		ID:          "tok-019fb39c-14d9-7080-933e-b9b90e25acda",
 		AccessToken: "secret_value",
 	}, got)
 }
 
-func TestDataCloudPlatform_CreateToken_Error(t *testing.T) {
+func TestADS_CreateToken_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -583,8 +583,8 @@ func TestDataCloudPlatform_CreateToken_Error(t *testing.T) {
 		fmt.Fprint(w, `{"message":"region not found","request_id":"req-create-token"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateToken(ctx, &DataCloudTokenCreateRequest{
-		Region: dataCloudTestRegion,
+	got, resp, err := client.ADS.CreateToken(ctx, &ADSTokenCreateRequest{
+		Region: adsTestRegion,
 	})
 	require.Error(t, err)
 	assert.Nil(t, got)
@@ -596,7 +596,7 @@ func TestDataCloudPlatform_CreateToken_Error(t *testing.T) {
 	assert.Equal(t, "req-create-token", apiErr.RequestID)
 }
 
-func TestDataCloudPlatform_CreateToken_Forbidden(t *testing.T) {
+func TestADS_CreateToken_Forbidden(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -605,8 +605,8 @@ func TestDataCloudPlatform_CreateToken_Forbidden(t *testing.T) {
 		fmt.Fprint(w, `{"message":"forbidden","request_id":"req-forbidden"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.CreateToken(ctx, &DataCloudTokenCreateRequest{
-		Region: dataCloudTestRegion,
+	got, resp, err := client.ADS.CreateToken(ctx, &ADSTokenCreateRequest{
+		Region: adsTestRegion,
 	})
 	require.Error(t, err)
 	assert.Nil(t, got)
@@ -618,7 +618,7 @@ func TestDataCloudPlatform_CreateToken_Forbidden(t *testing.T) {
 	assert.Equal(t, "req-forbidden", apiErr.RequestID)
 }
 
-func TestDataCloudPlatform_ListTokens(t *testing.T) {
+func TestADS_ListTokens(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -627,8 +627,8 @@ func TestDataCloudPlatform_ListTokens(t *testing.T) {
 		assert.Equal(t, "/v2/data-cloud-platform/tor1/tokens", r.URL.EscapedPath())
 		q := r.URL.Query()
 		assert.Equal(t, "TOKEN_PURPOSE_QUERY", q.Get("purpose"))
-		assert.Equal(t, dataCloudTestUUID, q.Get("workspace_uuid"))
-		assert.Equal(t, "sbx-019fb39c-14d9-7080-933e-b9b90e25acda", q.Get("sandbox_uuid"))
+		assert.Equal(t, adsTestUUID, q.Get("workspace_uuid"))
+		assert.Empty(t, q.Get("sandbox_uuid"))
 		assert.Equal(t, "2", q.Get("page"))
 		assert.Equal(t, "10", q.Get("per_page"))
 		assert.Empty(t, q.Get("region"))
@@ -641,7 +641,6 @@ func TestDataCloudPlatform_ListTokens(t *testing.T) {
 					"created_at": "2026-11-06T00:00:00Z",
 					"expires_at": "2026-11-07T00:00:00Z",
 					"purpose": "TOKEN_PURPOSE_QUERY",
-					"sandbox_uuids": ["sbx-019fb39c-14d9-7080-933e-b9b90e25acda"],
 					"query_hosts": ["query.example.internal"],
 					"workspace_uuids": ["ws-019fb39c-14d9-7080-933e-b9b90e25acda"]
 				}
@@ -650,33 +649,31 @@ func TestDataCloudPlatform_ListTokens(t *testing.T) {
 		}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListTokens(ctx, &DataCloudTokenListRequest{
-		Region:        dataCloudTestRegion,
-		Purpose:       DataCloudTokenPurposeQuery,
-		SandboxUUID:   "sbx-019fb39c-14d9-7080-933e-b9b90e25acda",
+	got, resp, err := client.ADS.ListTokens(ctx, &ADSTokenListRequest{
+		Region:        adsTestRegion,
+		Purpose:       ADSTokenPurposeQuery,
 		Page:          2,
 		PerPage:       10,
-		WorkspaceUUID: dataCloudTestUUID,
+		WorkspaceUUID: adsTestUUID,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudListTokensResponse{
-		Tokens: []DataCloudTokenSummary{{
+	assert.Equal(t, &ADSListTokensResponse{
+		Tokens: []ADSTokenSummary{{
 			ID:             "tok-019fb39c-14d9-7080-933e-b9b90e25acda",
 			Name:           "analytics",
 			CreatedAt:      "2026-11-06T00:00:00Z",
 			ExpiresAt:      "2026-11-07T00:00:00Z",
-			Purpose:        DataCloudTokenPurposeQuery,
-			SandboxUUIDs:   []string{"sbx-019fb39c-14d9-7080-933e-b9b90e25acda"},
+			Purpose:        ADSTokenPurposeQuery,
 			QueryHosts:     []string{"query.example.internal"},
-			WorkspaceUUIDs: []string{dataCloudTestUUID},
+			WorkspaceUUIDs: []string{adsTestUUID},
 		}},
 		Total: "1",
 	}, got)
 }
 
-func TestDataCloudPlatform_ListTokens_EscapesPathAndQuery(t *testing.T) {
+func TestADS_ListTokens_EscapesPathAndQuery(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -689,20 +686,20 @@ func TestDataCloudPlatform_ListTokens_EscapesPathAndQuery(t *testing.T) {
 		fmt.Fprint(w, `{"tokens":[],"total":"0"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListTokens(ctx, &DataCloudTokenListRequest{
+	got, resp, err := client.ADS.ListTokens(ctx, &ADSTokenListRequest{
 		Region:        "tor1/other",
 		WorkspaceUUID: "ws/abc",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudListTokensResponse{
-		Tokens: []DataCloudTokenSummary{},
+	assert.Equal(t, &ADSListTokensResponse{
+		Tokens: []ADSTokenSummary{},
 		Total:  "0",
 	}, got)
 }
 
-func TestDataCloudPlatform_ListTokens_OmitsEmptyFilters(t *testing.T) {
+func TestADS_ListTokens_OmitsEmptyFilters(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -714,19 +711,19 @@ func TestDataCloudPlatform_ListTokens_OmitsEmptyFilters(t *testing.T) {
 		fmt.Fprint(w, `{"tokens":[],"total":"0"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListTokens(ctx, &DataCloudTokenListRequest{
-		Region: dataCloudTestRegion,
+	got, resp, err := client.ADS.ListTokens(ctx, &ADSTokenListRequest{
+		Region: adsTestRegion,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudListTokensResponse{
-		Tokens: []DataCloudTokenSummary{},
+	assert.Equal(t, &ADSListTokensResponse{
+		Tokens: []ADSTokenSummary{},
 		Total:  "0",
 	}, got)
 }
 
-func TestDataCloudPlatform_ListTokens_Error(t *testing.T) {
+func TestADS_ListTokens_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -735,8 +732,8 @@ func TestDataCloudPlatform_ListTokens_Error(t *testing.T) {
 		fmt.Fprint(w, `{"message":"region not found","request_id":"req-list-tokens"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.ListTokens(ctx, &DataCloudTokenListRequest{
-		Region: dataCloudTestRegion,
+	got, resp, err := client.ADS.ListTokens(ctx, &ADSTokenListRequest{
+		Region: adsTestRegion,
 	})
 	require.Error(t, err)
 	assert.Nil(t, got)
@@ -748,33 +745,33 @@ func TestDataCloudPlatform_ListTokens_Error(t *testing.T) {
 	assert.Equal(t, "req-list-tokens", apiErr.RequestID)
 }
 
-func TestDataCloudPlatform_ListTokens_RequiresRequest(t *testing.T) {
+func TestADS_ListTokens_RequiresRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.ListTokens(ctx, nil)
-	require.EqualError(t, err, "data cloud platform: list request is required")
+	got, resp, err := client.ADS.ListTokens(ctx, nil)
+	require.EqualError(t, err, "ads: list request is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_ListTokens_RequiresRegion(t *testing.T) {
+func TestADS_ListTokens_RequiresRegion(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.ListTokens(ctx, &DataCloudTokenListRequest{})
-	require.EqualError(t, err, "data cloud platform: region is required")
+	got, resp, err := client.ADS.ListTokens(ctx, &ADSTokenListRequest{})
+	require.EqualError(t, err, "ads: region is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_PutWorkspaceSecret(t *testing.T) {
+func TestADS_PutWorkspaceSecret(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/secrets/db-password", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID+"/secrets/db-password", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPut)
-		assert.Equal(t, "/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/secrets/db-password", r.URL.EscapedPath())
+		assert.Equal(t, "/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID+"/secrets/db-password", r.URL.EscapedPath())
 		assert.Empty(t, r.URL.RawQuery)
 		raw, err := io.ReadAll(r.Body)
 		require.NoError(t, err)
@@ -797,18 +794,18 @@ func TestDataCloudPlatform_PutWorkspaceSecret(t *testing.T) {
 		}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.PutWorkspaceSecret(ctx, &DataCloudPutWorkspaceSecretRequest{
-		Region:    dataCloudTestRegion,
-		UUID:      dataCloudTestUUID,
+	got, resp, err := client.ADS.PutWorkspaceSecret(ctx, &ADSPutWorkspaceSecretRequest{
+		Region:    adsTestRegion,
+		UUID:      adsTestUUID,
 		SecretKey: "db-password",
 		Data:      map[string]string{"password": "secret_value"},
-		Options:   &DataCloudSecretOptions{CAS: 1},
+		Options:   &ADSSecretOptions{CAS: 1},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudPutWorkspaceSecretResponse{
-		Data: &DataCloudSecretMetadata{
+	assert.Equal(t, &ADSPutWorkspaceSecretResponse{
+		Data: &ADSSecretMetadata{
 			CreatedTime:    "2026-11-07T00:00:00Z",
 			CustomMetadata: map[string]any{"owner": "analytics"},
 			DeletionTime:   "",
@@ -818,7 +815,7 @@ func TestDataCloudPlatform_PutWorkspaceSecret(t *testing.T) {
 	}, got)
 }
 
-func TestDataCloudPlatform_PutWorkspaceSecret_EscapesPath(t *testing.T) {
+func TestADS_PutWorkspaceSecret_EscapesPath(t *testing.T) {
 	setup()
 	defer teardown()
 
@@ -844,7 +841,7 @@ func TestDataCloudPlatform_PutWorkspaceSecret_EscapesPath(t *testing.T) {
 		}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.PutWorkspaceSecret(ctx, &DataCloudPutWorkspaceSecretRequest{
+	got, resp, err := client.ADS.PutWorkspaceSecret(ctx, &ADSPutWorkspaceSecretRequest{
 		Region:    "tor1/other",
 		UUID:      "ws/abc",
 		SecretKey: "db/password",
@@ -853,8 +850,8 @@ func TestDataCloudPlatform_PutWorkspaceSecret_EscapesPath(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	assert.Equal(t, &DataCloudPutWorkspaceSecretResponse{
-		Data: &DataCloudSecretMetadata{
+	assert.Equal(t, &ADSPutWorkspaceSecretResponse{
+		Data: &ADSSecretMetadata{
 			CreatedTime: "2026-11-07T00:00:00Z",
 			Destroyed:   false,
 			Version:     1,
@@ -862,18 +859,18 @@ func TestDataCloudPlatform_PutWorkspaceSecret_EscapesPath(t *testing.T) {
 	}, got)
 }
 
-func TestDataCloudPlatform_PutWorkspaceSecret_Error(t *testing.T) {
+func TestADS_PutWorkspaceSecret_Error(t *testing.T) {
 	setup()
 	defer teardown()
 
-	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+dataCloudTestUUID+"/secrets/db-password", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID+"/secrets/db-password", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprint(w, `{"message":"workspace not found","request_id":"req-put-secret"}`)
 	})
 
-	got, resp, err := client.DataCloudPlatform.PutWorkspaceSecret(ctx, &DataCloudPutWorkspaceSecretRequest{
-		Region:    dataCloudTestRegion,
-		UUID:      dataCloudTestUUID,
+	got, resp, err := client.ADS.PutWorkspaceSecret(ctx, &ADSPutWorkspaceSecretRequest{
+		Region:    adsTestRegion,
+		UUID:      adsTestUUID,
 		SecretKey: "db-password",
 		Data:      map[string]string{"password": "secret_value"},
 	})
@@ -887,68 +884,68 @@ func TestDataCloudPlatform_PutWorkspaceSecret_Error(t *testing.T) {
 	assert.Equal(t, "req-put-secret", apiErr.RequestID)
 }
 
-func TestDataCloudPlatform_PutWorkspaceSecret_RequiresRequest(t *testing.T) {
+func TestADS_PutWorkspaceSecret_RequiresRequest(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.PutWorkspaceSecret(ctx, nil)
-	require.EqualError(t, err, "data cloud platform: put request is required")
+	got, resp, err := client.ADS.PutWorkspaceSecret(ctx, nil)
+	require.EqualError(t, err, "ads: put request is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_PutWorkspaceSecret_RequiresData(t *testing.T) {
+func TestADS_PutWorkspaceSecret_RequiresData(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.PutWorkspaceSecret(ctx, &DataCloudPutWorkspaceSecretRequest{
-		Region:    dataCloudTestRegion,
-		UUID:      dataCloudTestUUID,
+	got, resp, err := client.ADS.PutWorkspaceSecret(ctx, &ADSPutWorkspaceSecretRequest{
+		Region:    adsTestRegion,
+		UUID:      adsTestUUID,
 		SecretKey: "db-password",
 	})
-	require.EqualError(t, err, "data cloud platform: secret data is required")
+	require.EqualError(t, err, "ads: secret data is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 
-	got, resp, err = client.DataCloudPlatform.PutWorkspaceSecret(ctx, &DataCloudPutWorkspaceSecretRequest{
-		Region:    dataCloudTestRegion,
-		UUID:      dataCloudTestUUID,
+	got, resp, err = client.ADS.PutWorkspaceSecret(ctx, &ADSPutWorkspaceSecretRequest{
+		Region:    adsTestRegion,
+		UUID:      adsTestUUID,
 		SecretKey: "db-password",
 		Data:      map[string]string{},
 	})
-	require.EqualError(t, err, "data cloud platform: secret data is required")
+	require.EqualError(t, err, "ads: secret data is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
 
-func TestDataCloudPlatform_PutWorkspaceSecret_RequiresPathArgs(t *testing.T) {
+func TestADS_PutWorkspaceSecret_RequiresPathArgs(t *testing.T) {
 	setup()
 	defer teardown()
 
-	got, resp, err := client.DataCloudPlatform.PutWorkspaceSecret(ctx, &DataCloudPutWorkspaceSecretRequest{
-		UUID:      dataCloudTestUUID,
+	got, resp, err := client.ADS.PutWorkspaceSecret(ctx, &ADSPutWorkspaceSecretRequest{
+		UUID:      adsTestUUID,
 		SecretKey: "db-password",
 		Data:      map[string]string{"password": "secret_value"},
 	})
-	require.EqualError(t, err, "data cloud platform: region is required")
+	require.EqualError(t, err, "ads: region is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 
-	got, resp, err = client.DataCloudPlatform.PutWorkspaceSecret(ctx, &DataCloudPutWorkspaceSecretRequest{
-		Region:    dataCloudTestRegion,
+	got, resp, err = client.ADS.PutWorkspaceSecret(ctx, &ADSPutWorkspaceSecretRequest{
+		Region:    adsTestRegion,
 		SecretKey: "db-password",
 		Data:      map[string]string{"password": "secret_value"},
 	})
-	require.EqualError(t, err, "data cloud platform: workspace uuid is required")
+	require.EqualError(t, err, "ads: workspace uuid is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 
-	got, resp, err = client.DataCloudPlatform.PutWorkspaceSecret(ctx, &DataCloudPutWorkspaceSecretRequest{
-		Region: dataCloudTestRegion,
-		UUID:   dataCloudTestUUID,
+	got, resp, err = client.ADS.PutWorkspaceSecret(ctx, &ADSPutWorkspaceSecretRequest{
+		Region: adsTestRegion,
+		UUID:   adsTestUUID,
 		Data:   map[string]string{"password": "secret_value"},
 	})
-	require.EqualError(t, err, "data cloud platform: secret key is required")
+	require.EqualError(t, err, "ads: secret key is required")
 	assert.Nil(t, got)
 	assert.Nil(t, resp)
 }
