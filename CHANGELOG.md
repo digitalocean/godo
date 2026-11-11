@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- #TBD - @v-skiran - hosted agents: trigger run-now, keep_session_awake, webhook event filter, list by bound session
+- #1222 - @v-skiran - hosted agents: trigger run-now, keep_session_awake, webhook event filter, list by bound session
 
 ## [1.237.0] - 2026-11-10
 
