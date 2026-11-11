@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -141,7 +142,7 @@ func (d *DropletAutoscaleServiceOp) Create(ctx context.Context, createReq *Dropl
 
 // Get an existing droplet autoscale pool
 func (d *DropletAutoscaleServiceOp) Get(ctx context.Context, id string) (*DropletAutoscalePool, *Response, error) {
-	req, err := d.client.NewRequest(ctx, http.MethodGet, fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, id), nil)
+	req, err := d.client.NewRequest(ctx, http.MethodGet, fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, url.PathEscape(id)), nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -179,7 +180,7 @@ func (d *DropletAutoscaleServiceOp) List(ctx context.Context, opts *ListOptions)
 
 // ListMembers all members for an existing droplet autoscale pool
 func (d *DropletAutoscaleServiceOp) ListMembers(ctx context.Context, id string, opts *ListOptions) ([]*DropletAutoscaleResource, *Response, error) {
-	path, err := addOptions(fmt.Sprintf("%s/%s/members", dropletAutoscaleBasePath, id), opts)
+	path, err := addOptions(fmt.Sprintf("%s/%s/members", dropletAutoscaleBasePath, url.PathEscape(id)), opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -203,7 +204,7 @@ func (d *DropletAutoscaleServiceOp) ListMembers(ctx context.Context, id string, 
 
 // ListHistory all history events for an existing droplet autoscale pool
 func (d *DropletAutoscaleServiceOp) ListHistory(ctx context.Context, id string, opts *ListOptions) ([]*DropletAutoscaleHistoryEvent, *Response, error) {
-	path, err := addOptions(fmt.Sprintf("%s/%s/history", dropletAutoscaleBasePath, id), opts)
+	path, err := addOptions(fmt.Sprintf("%s/%s/history", dropletAutoscaleBasePath, url.PathEscape(id)), opts)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -227,7 +228,7 @@ func (d *DropletAutoscaleServiceOp) ListHistory(ctx context.Context, id string, 
 
 // Update an existing autoscale pool
 func (d *DropletAutoscaleServiceOp) Update(ctx context.Context, id string, updateReq *DropletAutoscalePoolRequest) (*DropletAutoscalePool, *Response, error) {
-	req, err := d.client.NewRequest(ctx, http.MethodPut, fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, id), updateReq)
+	req, err := d.client.NewRequest(ctx, http.MethodPut, fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, url.PathEscape(id)), updateReq)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -241,7 +242,7 @@ func (d *DropletAutoscaleServiceOp) Update(ctx context.Context, id string, updat
 
 // Delete an existing autoscale pool
 func (d *DropletAutoscaleServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
-	req, err := d.client.NewRequest(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, id), nil)
+	req, err := d.client.NewRequest(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", dropletAutoscaleBasePath, url.PathEscape(id)), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +251,7 @@ func (d *DropletAutoscaleServiceOp) Delete(ctx context.Context, id string) (*Res
 
 // DeleteDangerous deletes an existing autoscale pool with all underlying resources
 func (d *DropletAutoscaleServiceOp) DeleteDangerous(ctx context.Context, id string) (*Response, error) {
-	req, err := d.client.NewRequest(ctx, http.MethodDelete, fmt.Sprintf("%s/%s/dangerous", dropletAutoscaleBasePath, id), nil)
+	req, err := d.client.NewRequest(ctx, http.MethodDelete, fmt.Sprintf("%s/%s/dangerous", dropletAutoscaleBasePath, url.PathEscape(id)), nil)
 	req.Header.Set("X-Dangerous", "true")
 	if err != nil {
 		return nil, err

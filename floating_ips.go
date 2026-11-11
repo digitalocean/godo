@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const floatingBasePath = "v2/floating_ips"
@@ -94,7 +95,7 @@ func (f *FloatingIPsServiceOp) List(ctx context.Context, opt *ListOptions) ([]Fl
 
 // Get an individual floating IP.
 func (f *FloatingIPsServiceOp) Get(ctx context.Context, ip string) (*FloatingIP, *Response, error) {
-	path := fmt.Sprintf("%s/%s", floatingBasePath, ip)
+	path := fmt.Sprintf("%s/%s", floatingBasePath, url.PathEscape(ip))
 
 	req, err := f.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -134,7 +135,7 @@ func (f *FloatingIPsServiceOp) Create(ctx context.Context, createRequest *Floati
 
 // Delete a floating IP.
 func (f *FloatingIPsServiceOp) Delete(ctx context.Context, ip string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", floatingBasePath, ip)
+	path := fmt.Sprintf("%s/%s", floatingBasePath, url.PathEscape(ip))
 
 	req, err := f.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {

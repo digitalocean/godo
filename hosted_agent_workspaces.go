@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // hostedAgentIdempotencyKeyHeader carries the optional client-chosen key that
@@ -153,7 +154,7 @@ func (s *HostedAgentsServiceOp) GetWorkspace(ctx context.Context, workspaceID st
 	if workspaceID == "" {
 		return nil, nil, errors.New("hosted agents: workspace id is required")
 	}
-	path := fmt.Sprintf(hostedAgentWorkspaceByIDPath, workspaceID)
+	path := fmt.Sprintf(hostedAgentWorkspaceByIDPath, url.PathEscape(workspaceID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -177,7 +178,7 @@ func (s *HostedAgentsServiceOp) DeleteWorkspace(ctx context.Context, workspaceID
 	if workspaceID == "" {
 		return nil, errors.New("hosted agents: workspace id is required")
 	}
-	path := fmt.Sprintf(hostedAgentWorkspaceByIDPath, workspaceID)
+	path := fmt.Sprintf(hostedAgentWorkspaceByIDPath, url.PathEscape(workspaceID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err

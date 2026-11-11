@@ -43,11 +43,10 @@ type inferenceTransport struct {
 }
 
 func (t *inferenceTransport) newRequest(ctx context.Context, method, path string, body interface{}) (*http.Request, error) {
-	rel, err := url.Parse(path)
+	u, err := resolveRequestURL(t.baseURL, path)
 	if err != nil {
 		return nil, err
 	}
-	u := t.baseURL.ResolveReference(rel)
 	return t.client.NewRequest(ctx, method, u.String(), body)
 }
 
@@ -150,7 +149,7 @@ func (s *AsyncInvocationService) New(ctx context.Context, body *AsyncInvocationN
 
 // Get fetches the current status of an async invocation; Output/Error are populated only on terminal states.
 func (s *AsyncInvocationService) Get(ctx context.Context, requestID string) (*AsyncInvocation, *Response, error) {
-	path := fmt.Sprintf("%s/%s", serverlessInferenceAsyncInvokePath, requestID)
+	path := fmt.Sprintf("%s/%s", serverlessInferenceAsyncInvokePath, url.PathEscape(requestID))
 	req, err := s.newRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -225,7 +224,7 @@ func (s *VideoGenerationService) Get(ctx context.Context, id string) (*VideoGene
 	if id == "" {
 		return nil, nil, errors.New("serverless inference: id is required")
 	}
-	path := fmt.Sprintf("%s/%s", serverlessInferenceVideosPath, id)
+	path := fmt.Sprintf("%s/%s", serverlessInferenceVideosPath, url.PathEscape(id))
 	req, err := s.newRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -243,7 +242,7 @@ func (s *VideoGenerationService) Content(ctx context.Context, id string) ([]byte
 	if id == "" {
 		return nil, nil, errors.New("serverless inference: id is required")
 	}
-	path := fmt.Sprintf("%s/%s/content", serverlessInferenceVideosPath, id)
+	path := fmt.Sprintf("%s/%s/content", serverlessInferenceVideosPath, url.PathEscape(id))
 	req, err := s.newRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err

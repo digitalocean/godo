@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -181,7 +182,7 @@ func (svc *VectorDBsServiceOp) List(ctx context.Context, opts *ListOptions) ([]V
 
 // Get retrieves the details of a vector database.
 func (svc *VectorDBsServiceOp) Get(ctx context.Context, id string) (*VectorDB, *Response, error) {
-	path := fmt.Sprintf(vectorDatabaseSinglePath, id)
+	path := fmt.Sprintf(vectorDatabaseSinglePath, url.PathEscape(id))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -211,7 +212,7 @@ func (svc *VectorDBsServiceOp) Create(ctx context.Context, create *VectorDBCreat
 
 // Update updates a vector database's configuration.
 func (svc *VectorDBsServiceOp) Update(ctx context.Context, id string, update *VectorDBUpdateRequest) (*VectorDB, *Response, error) {
-	path := fmt.Sprintf(vectorDatabaseSinglePath, id)
+	path := fmt.Sprintf(vectorDatabaseSinglePath, url.PathEscape(id))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -227,7 +228,7 @@ func (svc *VectorDBsServiceOp) Update(ctx context.Context, id string, update *Ve
 // Delete deletes a vector database. There is no way to recover an instance once
 // it has been destroyed.
 func (svc *VectorDBsServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
-	path := fmt.Sprintf(vectorDatabaseSinglePath, id)
+	path := fmt.Sprintf(vectorDatabaseSinglePath, url.PathEscape(id))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -241,7 +242,7 @@ func (svc *VectorDBsServiceOp) Delete(ctx context.Context, id string) (*Response
 
 // Resize resizes a vector database to a new resource tier.
 func (svc *VectorDBsServiceOp) Resize(ctx context.Context, id string, resize *VectorDBResizeRequest) (*VectorDB, *Response, error) {
-	path := fmt.Sprintf(vectorDatabaseResizePath, id)
+	path := fmt.Sprintf(vectorDatabaseResizePath, url.PathEscape(id))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, resize)
 	if err != nil {
 		return nil, nil, err
@@ -256,7 +257,7 @@ func (svc *VectorDBsServiceOp) Resize(ctx context.Context, id string, resize *Ve
 
 // UpdateTags replaces all tags on a vector database.
 func (svc *VectorDBsServiceOp) UpdateTags(ctx context.Context, id string, update *VectorDBUpdateTagsRequest) (*VectorDB, *Response, error) {
-	path := fmt.Sprintf(vectorDatabaseTagsPath, id)
+	path := fmt.Sprintf(vectorDatabaseTagsPath, url.PathEscape(id))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -271,7 +272,7 @@ func (svc *VectorDBsServiceOp) UpdateTags(ctx context.Context, id string, update
 
 // GetCredentials retrieves admin credentials for a vector database.
 func (svc *VectorDBsServiceOp) GetCredentials(ctx context.Context, id string) (*VectorDBAdminCredentials, *Response, error) {
-	path := fmt.Sprintf(vectorDatabaseCredentialsPath, id)
+	path := fmt.Sprintf(vectorDatabaseCredentialsPath, url.PathEscape(id))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -290,7 +291,7 @@ func (svc *VectorDBsServiceOp) GetCredentials(ctx context.Context, id string) (*
 // ListBackups returns the available backups for a vector database.
 // Only backups with status SUCCESS are returned.
 func (svc *VectorDBsServiceOp) ListBackups(ctx context.Context, id string) ([]VectorDBBackup, *Response, error) {
-	path := fmt.Sprintf(vectorDatabaseBackupsPath, id)
+	path := fmt.Sprintf(vectorDatabaseBackupsPath, url.PathEscape(id))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -306,7 +307,7 @@ func (svc *VectorDBsServiceOp) ListBackups(ctx context.Context, id string) ([]Ve
 // RestoreBackup initiates a restore from a backup.
 // The restore is performed asynchronously; use GetRestoreStatus to monitor progress.
 func (svc *VectorDBsServiceOp) RestoreBackup(ctx context.Context, id, backupID string, restore *VectorDBRestoreBackupRequest) (*VectorDBRestoreBackupResponse, *Response, error) {
-	path := fmt.Sprintf(vectorDatabaseRestorePath, id, backupID)
+	path := fmt.Sprintf(vectorDatabaseRestorePath, url.PathEscape(id), url.PathEscape(backupID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, restore)
 	if err != nil {
 		return nil, nil, err
@@ -324,7 +325,7 @@ func (svc *VectorDBsServiceOp) RestoreBackup(ctx context.Context, id, backupID s
 
 // GetRestoreStatus returns the current status of a restore operation.
 func (svc *VectorDBsServiceOp) GetRestoreStatus(ctx context.Context, id, backupID string) (*VectorDBRestoreStatus, *Response, error) {
-	path := fmt.Sprintf(vectorDatabaseRestorePath, id, backupID)
+	path := fmt.Sprintf(vectorDatabaseRestorePath, url.PathEscape(id), url.PathEscape(backupID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err

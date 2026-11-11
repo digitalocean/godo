@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // ReservedIPActionsService is an interface for interfacing with the
@@ -105,5 +106,5 @@ func (s *ReservedIPActionsServiceOp) list(ctx context.Context, path string) ([]A
 }
 
 func reservedIPActionPath(ip string) string {
-	return fmt.Sprintf("%s/%s/actions", reservedIPsBasePath, ip)
+	return fmt.Sprintf("%s/%s/actions", reservedIPsBasePath, url.PathEscape(ip))
 }

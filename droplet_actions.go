@@ -363,5 +363,5 @@ func dropletActionPath(dropletID int) string {
 }
 
 func dropletActionPathByTag(tag string) string {
-	return fmt.Sprintf("v2/droplets/actions?tag_name=%s", tag)
+	return fmt.Sprintf("v2/droplets/actions?tag_name=%s", url.QueryEscape(tag))
 }

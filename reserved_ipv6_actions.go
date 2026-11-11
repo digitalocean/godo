@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // ReservedIPActionsService is an interface for interfacing with the
@@ -53,5 +54,5 @@ func (s *ReservedIPV6ActionsServiceOp) doV6Action(ctx context.Context, ip string
 }
 
 func reservedIPV6ActionPath(ip string) string {
-	return fmt.Sprintf("%s/%s/actions", reservedIPV6sBasePath, ip)
+	return fmt.Sprintf("%s/%s/actions", reservedIPV6sBasePath, url.PathEscape(ip))
 }

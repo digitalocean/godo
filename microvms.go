@@ -620,7 +620,7 @@ func (s *MicroVMsServiceOp) Get(ctx context.Context, id string) (*MicroVM, *Resp
 		return nil, nil, NewArgError("id", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", microVMBasePath, id)
+	path := fmt.Sprintf("%s/%s", microVMBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -679,7 +679,7 @@ func (s *MicroVMsServiceOp) doTransition(ctx context.Context, id, action string)
 		return nil, nil, NewArgError("id", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/%s", microVMBasePath, id, action)
+	path := fmt.Sprintf("%s/%s/%s", microVMBasePath, url.PathEscape(id), url.PathEscape(action))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
@@ -702,7 +702,7 @@ func (s *MicroVMsServiceOp) Delete(ctx context.Context, id string) (*Response, e
 		return nil, NewArgError("id", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", microVMBasePath, id)
+	path := fmt.Sprintf("%s/%s", microVMBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -726,7 +726,7 @@ func (s *MicroVMsServiceOp) AddURL(ctx context.Context, microVMID string, create
 		createRequest = &MicroVMURLCreateRequest{}
 	}
 
-	path := fmt.Sprintf("%s/%s/urls", microVMBasePath, microVMID)
+	path := fmt.Sprintf("%s/%s/urls", microVMBasePath, url.PathEscape(microVMID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
 	if err != nil {
@@ -754,7 +754,7 @@ func (s *MicroVMsServiceOp) RemoveURL(ctx context.Context, microVMID, urlID stri
 		return nil, NewArgError("urlID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/urls/%s", microVMBasePath, microVMID, urlID)
+	path := fmt.Sprintf("%s/%s/urls/%s", microVMBasePath, url.PathEscape(microVMID), url.PathEscape(urlID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -778,7 +778,7 @@ func (s *MicroVMsServiceOp) CreateAccessToken(ctx context.Context, microVMID str
 		return nil, nil, NewArgError("createRequest", "cannot be nil")
 	}
 
-	path := fmt.Sprintf("%s/%s/access_tokens", microVMBasePath, microVMID)
+	path := fmt.Sprintf("%s/%s/access_tokens", microVMBasePath, url.PathEscape(microVMID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
 	if err != nil {
@@ -801,7 +801,7 @@ func (s *MicroVMsServiceOp) ListAccessTokens(ctx context.Context, microVMID stri
 		return nil, nil, NewArgError("microVMID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/access_tokens", microVMBasePath, microVMID)
+	path := fmt.Sprintf("%s/%s/access_tokens", microVMBasePath, url.PathEscape(microVMID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -829,7 +829,7 @@ func (s *MicroVMsServiceOp) RevokeAccessToken(ctx context.Context, microVMID, to
 		return nil, NewArgError("tokenID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/access_tokens/%s", microVMBasePath, microVMID, tokenID)
+	path := fmt.Sprintf("%s/%s/access_tokens/%s", microVMBasePath, url.PathEscape(microVMID), url.PathEscape(tokenID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -877,7 +877,7 @@ func (s *MicroVMsServiceOp) CreateCheckpoint(ctx context.Context, microVMID stri
 		createRequest = &MicroVMCheckpointCreateRequest{}
 	}
 
-	path := fmt.Sprintf("%s/%s/checkpoints", microVMBasePath, microVMID)
+	path := fmt.Sprintf("%s/%s/checkpoints", microVMBasePath, url.PathEscape(microVMID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
 	if err != nil {
@@ -899,7 +899,7 @@ func (s *MicroVMsServiceOp) GetCheckpoint(ctx context.Context, id string) (*Micr
 		return nil, nil, NewArgError("id", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", microVMCheckpointsBasePath, id)
+	path := fmt.Sprintf("%s/%s", microVMCheckpointsBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -922,7 +922,7 @@ func (s *MicroVMsServiceOp) DeleteCheckpoint(ctx context.Context, id string) (*R
 		return nil, NewArgError("id", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", microVMCheckpointsBasePath, id)
+	path := fmt.Sprintf("%s/%s", microVMCheckpointsBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -965,7 +965,7 @@ func (s *MicroVMsServiceOp) Exec(ctx context.Context, id string, execRequest *Mi
 		return nil, nil, NewArgError("execRequest.Argv", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/exec", microVMBasePath, id)
+	path := fmt.Sprintf("%s/%s/exec", microVMBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, execRequest)
 	if err != nil {
@@ -997,7 +997,7 @@ func (s *MicroVMsServiceOp) ConsoleURL(id string, opt *MicroVMConsoleOptions) (s
 		return "", NewArgError("client.BaseURL", "cannot be nil")
 	}
 
-	u, err := s.client.BaseURL.Parse(fmt.Sprintf("%s/%s/console", microVMBasePath, id))
+	u, err := resolveRequestURL(s.client.BaseURL, fmt.Sprintf("%s/%s/console", microVMBasePath, url.PathEscape(id)))
 	if err != nil {
 		return "", err
 	}
@@ -1075,7 +1075,7 @@ func (s *MicroVMsServiceOp) UploadFile(ctx context.Context, id string, uploadReq
 		return nil, nil, NewArgError("uploadRequest.UID/GID", "must be set together")
 	}
 
-	u, err := s.client.BaseURL.Parse(fmt.Sprintf("%s/%s/files", microVMBasePath, id))
+	u, err := resolveRequestURL(s.client.BaseURL, fmt.Sprintf("%s/%s/files", microVMBasePath, url.PathEscape(id)))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1139,7 +1139,7 @@ func (s *MicroVMsServiceOp) DownloadFile(ctx context.Context, id, path string) (
 
 	q := url.Values{}
 	q.Set("path", path)
-	reqPath := fmt.Sprintf("%s/%s/files?%s", microVMBasePath, id, q.Encode())
+	reqPath := fmt.Sprintf("%s/%s/files?%s", microVMBasePath, url.PathEscape(id), q.Encode())
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, reqPath, nil)
 	if err != nil {

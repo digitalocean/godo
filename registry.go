@@ -334,7 +334,7 @@ func (svc *RegistryServiceOp) DockerCredentials(ctx context.Context, request *Re
 
 // ListRepositories returns a list of the Repositories visible with the registry's credentials.
 func (svc *RegistryServiceOp) ListRepositories(ctx context.Context, registry string, opts *ListOptions) ([]*Repository, *Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories", registryPath, registry)
+	path := fmt.Sprintf("%s/%s/repositories", registryPath, url.PathEscape(registry))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -362,7 +362,7 @@ func (svc *RegistryServiceOp) ListRepositories(ctx context.Context, registry str
 
 // ListRepositoriesV2 returns a list of the Repositories in a registry.
 func (svc *RegistryServiceOp) ListRepositoriesV2(ctx context.Context, registry string, opts *TokenListOptions) ([]*RepositoryV2, *Response, error) {
-	path := fmt.Sprintf("%s/%s/repositoriesV2", registryPath, registry)
+	path := fmt.Sprintf("%s/%s/repositoriesV2", registryPath, url.PathEscape(registry))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -386,7 +386,7 @@ func (svc *RegistryServiceOp) ListRepositoriesV2(ctx context.Context, registry s
 
 // ListRepositoryTags returns a list of the RepositoryTags available within the given repository.
 func (svc *RegistryServiceOp) ListRepositoryTags(ctx context.Context, registry, repository string, opts *ListOptions) ([]*RepositoryTag, *Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories/%s/tags", registryPath, registry, url.PathEscape(repository))
+	path := fmt.Sprintf("%s/%s/repositories/%s/tags", registryPath, url.PathEscape(registry), url.PathEscape(repository))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -414,7 +414,7 @@ func (svc *RegistryServiceOp) ListRepositoryTags(ctx context.Context, registry, 
 
 // DeleteTag deletes a tag within a given repository.
 func (svc *RegistryServiceOp) DeleteTag(ctx context.Context, registry, repository, tag string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories/%s/tags/%s", registryPath, registry, url.PathEscape(repository), tag)
+	path := fmt.Sprintf("%s/%s/repositories/%s/tags/%s", registryPath, url.PathEscape(registry), url.PathEscape(repository), url.PathEscape(tag))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -429,7 +429,7 @@ func (svc *RegistryServiceOp) DeleteTag(ctx context.Context, registry, repositor
 
 // ListRepositoryManifests returns a list of the RepositoryManifests available within the given repository.
 func (svc *RegistryServiceOp) ListRepositoryManifests(ctx context.Context, registry, repository string, opts *ListOptions) ([]*RepositoryManifest, *Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories/%s/digests", registryPath, registry, url.PathEscape(repository))
+	path := fmt.Sprintf("%s/%s/repositories/%s/digests", registryPath, url.PathEscape(registry), url.PathEscape(repository))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -453,7 +453,7 @@ func (svc *RegistryServiceOp) ListRepositoryManifests(ctx context.Context, regis
 
 // DeleteManifest deletes a manifest by its digest within a given repository.
 func (svc *RegistryServiceOp) DeleteManifest(ctx context.Context, registry, repository, digest string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories/%s/digests/%s", registryPath, registry, url.PathEscape(repository), digest)
+	path := fmt.Sprintf("%s/%s/repositories/%s/digests/%s", registryPath, url.PathEscape(registry), url.PathEscape(repository), url.PathEscape(digest))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -469,7 +469,7 @@ func (svc *RegistryServiceOp) DeleteManifest(ctx context.Context, registry, repo
 // StartGarbageCollection requests a garbage collection for the specified
 // registry.
 func (svc *RegistryServiceOp) StartGarbageCollection(ctx context.Context, registry string, request ...*StartGarbageCollectionRequest) (*GarbageCollection, *Response, error) {
-	path := fmt.Sprintf("%s/%s/garbage-collection", registryPath, registry)
+	path := fmt.Sprintf("%s/%s/garbage-collection", registryPath, url.PathEscape(registry))
 	var requestParams interface{}
 	if len(request) < 1 {
 		// default to only garbage collecting unreferenced blobs for backwards
@@ -499,7 +499,7 @@ func (svc *RegistryServiceOp) StartGarbageCollection(ctx context.Context, regist
 // return a 404/NotFound error. There can only be one active garbage
 // collection on a registry.
 func (svc *RegistryServiceOp) GetGarbageCollection(ctx context.Context, registry string) (*GarbageCollection, *Response, error) {
-	path := fmt.Sprintf("%s/%s/garbage-collection", registryPath, registry)
+	path := fmt.Sprintf("%s/%s/garbage-collection", registryPath, url.PathEscape(registry))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -517,7 +517,7 @@ func (svc *RegistryServiceOp) GetGarbageCollection(ctx context.Context, registry
 // ListGarbageCollections retrieves all garbage collections (active and
 // inactive) for the specified registry.
 func (svc *RegistryServiceOp) ListGarbageCollections(ctx context.Context, registry string, opts *ListOptions) ([]*GarbageCollection, *Response, error) {
-	path := fmt.Sprintf("%s/%s/garbage-collections", registryPath, registry)
+	path := fmt.Sprintf("%s/%s/garbage-collections", registryPath, url.PathEscape(registry))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -550,7 +550,7 @@ func (svc *RegistryServiceOp) ListGarbageCollections(ctx context.Context, regist
 // implicit "currently-active" garbage collection. Returns the updated garbage
 // collection.
 func (svc *RegistryServiceOp) UpdateGarbageCollection(ctx context.Context, registry, gcUUID string, request *UpdateGarbageCollectionRequest) (*GarbageCollection, *Response, error) {
-	path := fmt.Sprintf("%s/%s/garbage-collection/%s", registryPath, registry, gcUUID)
+	path := fmt.Sprintf("%s/%s/garbage-collection/%s", registryPath, url.PathEscape(registry), url.PathEscape(gcUUID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, request)
 	if err != nil {
 		return nil, nil, err
@@ -696,7 +696,7 @@ func (svc *RegistriesServiceOp) ListByUUID(ctx context.Context, uuid string) ([]
 
 // Get returns the details of a Registry identified by name or UUID.
 func (svc *RegistriesServiceOp) Get(ctx context.Context, registry string) (*Registry, *Response, error) {
-	path := fmt.Sprintf("%s/%s", registriesPath, registry)
+	path := fmt.Sprintf("%s/%s", registriesPath, url.PathEscape(registry))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -726,7 +726,7 @@ func (svc *RegistriesServiceOp) Create(ctx context.Context, create *RegistryCrea
 // Delete deletes a named Registry. There is no way to recover a Registry once it has
 // been destroyed.
 func (svc *RegistriesServiceOp) Delete(ctx context.Context, registry string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", registriesPath, registry)
+	path := fmt.Sprintf("%s/%s", registriesPath, url.PathEscape(registry))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -740,7 +740,7 @@ func (svc *RegistriesServiceOp) Delete(ctx context.Context, registry string) (*R
 
 // DockerCredentials retrieves a Docker config file containing named Registry's credentials.
 func (svc *RegistriesServiceOp) DockerCredentials(ctx context.Context, registry string, request *RegistryDockerCredentialsRequest) (*DockerCredentials, *Response, error) {
-	path := fmt.Sprintf("%s/%s/%s", registriesPath, registry, "docker-credentials")
+	path := fmt.Sprintf("%s/%s/%s", registriesPath, url.PathEscape(registry), "docker-credentials")
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -767,7 +767,7 @@ func (svc *RegistriesServiceOp) DockerCredentials(ctx context.Context, registry 
 
 // ListRepositoriesV2 returns a list of repositories in V2 format
 func (svc *RegistriesServiceOp) ListRepositoriesV2(ctx context.Context, registry string, opts *TokenListOptions) ([]*RepositoryV2, *Response, error) {
-	path := fmt.Sprintf("%s/%s/repositoriesV2", registriesPath, registry)
+	path := fmt.Sprintf("%s/%s/repositoriesV2", registriesPath, url.PathEscape(registry))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -791,7 +791,7 @@ func (svc *RegistriesServiceOp) ListRepositoriesV2(ctx context.Context, registry
 
 // ListRepositoryTags returns a list of tags in a repository
 func (svc *RegistriesServiceOp) ListRepositoryTags(ctx context.Context, registry, repository string, opts *ListOptions) ([]*RepositoryTag, *Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories/%s/tags", registriesPath, registry, url.PathEscape(repository))
+	path := fmt.Sprintf("%s/%s/repositories/%s/tags", registriesPath, url.PathEscape(registry), url.PathEscape(repository))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -819,7 +819,7 @@ func (svc *RegistriesServiceOp) ListRepositoryTags(ctx context.Context, registry
 
 // DeleteTag deletes a tag from a repository
 func (svc *RegistriesServiceOp) DeleteTag(ctx context.Context, registry, repository, tag string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories/%s/tags/%s", registriesPath, registry, url.PathEscape(repository), tag)
+	path := fmt.Sprintf("%s/%s/repositories/%s/tags/%s", registriesPath, url.PathEscape(registry), url.PathEscape(repository), url.PathEscape(tag))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -834,7 +834,7 @@ func (svc *RegistriesServiceOp) DeleteTag(ctx context.Context, registry, reposit
 
 // ListRepositoryManifests returns a list of manifests in a repository
 func (svc *RegistriesServiceOp) ListRepositoryManifests(ctx context.Context, registry, repository string, opts *ListOptions) ([]*RepositoryManifest, *Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories/%s/digests", registriesPath, registry, url.PathEscape(repository))
+	path := fmt.Sprintf("%s/%s/repositories/%s/digests", registriesPath, url.PathEscape(registry), url.PathEscape(repository))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -858,7 +858,7 @@ func (svc *RegistriesServiceOp) ListRepositoryManifests(ctx context.Context, reg
 
 // DeleteManifest deletes a manifest from a repository
 func (svc *RegistriesServiceOp) DeleteManifest(ctx context.Context, registry, repository, digest string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/repositories/%s/digests/%s", registriesPath, registry, url.PathEscape(repository), digest)
+	path := fmt.Sprintf("%s/%s/repositories/%s/digests/%s", registriesPath, url.PathEscape(registry), url.PathEscape(repository), url.PathEscape(digest))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -873,7 +873,7 @@ func (svc *RegistriesServiceOp) DeleteManifest(ctx context.Context, registry, re
 
 // StartGarbageCollection starts a garbage collection process
 func (svc *RegistriesServiceOp) StartGarbageCollection(ctx context.Context, registry string, request ...*StartGarbageCollectionRequest) (*GarbageCollection, *Response, error) {
-	path := fmt.Sprintf("%s/%s/garbage-collection", registriesPath, registry)
+	path := fmt.Sprintf("%s/%s/garbage-collection", registriesPath, url.PathEscape(registry))
 	var requestParams interface{}
 	if len(request) < 1 {
 		// default to only garbage collecting unreferenced blobs for backwards
@@ -900,7 +900,7 @@ func (svc *RegistriesServiceOp) StartGarbageCollection(ctx context.Context, regi
 
 // GetGarbageCollection gets the active garbage collection
 func (svc *RegistriesServiceOp) GetGarbageCollection(ctx context.Context, registry string) (*GarbageCollection, *Response, error) {
-	path := fmt.Sprintf("%s/%s/garbage-collection", registriesPath, registry)
+	path := fmt.Sprintf("%s/%s/garbage-collection", registriesPath, url.PathEscape(registry))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -917,7 +917,7 @@ func (svc *RegistriesServiceOp) GetGarbageCollection(ctx context.Context, regist
 
 // ListGarbageCollections lists all garbage collections
 func (svc *RegistriesServiceOp) ListGarbageCollections(ctx context.Context, registry string, opts *ListOptions) ([]*GarbageCollection, *Response, error) {
-	path := fmt.Sprintf("%s/%s/garbage-collections", registriesPath, registry)
+	path := fmt.Sprintf("%s/%s/garbage-collections", registriesPath, url.PathEscape(registry))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -945,7 +945,7 @@ func (svc *RegistriesServiceOp) ListGarbageCollections(ctx context.Context, regi
 
 // UpdateGarbageCollection updates a garbage collection
 func (svc *RegistriesServiceOp) UpdateGarbageCollection(ctx context.Context, registry, gcUUID string, request *UpdateGarbageCollectionRequest) (*GarbageCollection, *Response, error) {
-	path := fmt.Sprintf("%s/%s/garbage-collection/%s", registriesPath, registry, gcUUID)
+	path := fmt.Sprintf("%s/%s/garbage-collection/%s", registriesPath, url.PathEscape(registry), url.PathEscape(gcUUID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, request)
 	if err != nil {
 		return nil, nil, err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // StorageActionsService is an interface for interfacing with the
@@ -128,5 +129,5 @@ func (s *StorageActionsServiceOp) list(ctx context.Context, path string) ([]Acti
 }
 
 func storageAllocationActionPath(volumeID string) string {
-	return fmt.Sprintf("%s/%s/actions", storageAllocPath, volumeID)
+	return fmt.Sprintf("%s/%s/actions", storageAllocPath, url.PathEscape(volumeID))
 }

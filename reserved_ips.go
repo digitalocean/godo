@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const resourceType = "ReservedIP"
@@ -95,7 +96,7 @@ func (r *ReservedIPsServiceOp) List(ctx context.Context, opt *ListOptions) ([]Re
 
 // Get an individual reserved IP.
 func (r *ReservedIPsServiceOp) Get(ctx context.Context, ip string) (*ReservedIP, *Response, error) {
-	path := fmt.Sprintf("%s/%s", reservedIPsBasePath, ip)
+	path := fmt.Sprintf("%s/%s", reservedIPsBasePath, url.PathEscape(ip))
 
 	req, err := r.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -135,7 +136,7 @@ func (r *ReservedIPsServiceOp) Create(ctx context.Context, createRequest *Reserv
 
 // Delete a reserved IP.
 func (r *ReservedIPsServiceOp) Delete(ctx context.Context, ip string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", reservedIPsBasePath, ip)
+	path := fmt.Sprintf("%s/%s", reservedIPsBasePath, url.PathEscape(ip))
 
 	req, err := r.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {

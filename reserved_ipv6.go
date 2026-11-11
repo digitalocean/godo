@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -88,7 +89,7 @@ func (r *ReservedIPV6sServiceOp) List(ctx context.Context, opt *ListOptions) ([]
 
 // Get an individual reserved IPv6.
 func (r *ReservedIPV6sServiceOp) Get(ctx context.Context, ip string) (*ReservedIPV6, *Response, error) {
-	path := fmt.Sprintf("%s/%s", reservedIPV6sBasePath, ip)
+	path := fmt.Sprintf("%s/%s", reservedIPV6sBasePath, url.PathEscape(ip))
 
 	req, err := r.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -124,7 +125,7 @@ func (r *ReservedIPV6sServiceOp) Create(ctx context.Context, reserveRequest *Res
 
 // Delete a reserved IPv6.
 func (r *ReservedIPV6sServiceOp) Delete(ctx context.Context, ip string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", reservedIPV6sBasePath, ip)
+	path := fmt.Sprintf("%s/%s", reservedIPV6sBasePath, url.PathEscape(ip))
 
 	req, err := r.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {

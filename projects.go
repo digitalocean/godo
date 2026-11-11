@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"path"
+	"net/url"
 )
 
 const (
@@ -195,7 +195,7 @@ func (p *ProjectsServiceOp) Create(ctx context.Context, cr *CreateProjectRequest
 
 // Update an existing project.
 func (p *ProjectsServiceOp) Update(ctx context.Context, projectID string, ur *UpdateProjectRequest) (*Project, *Response, error) {
-	path := path.Join(projectsBasePath, projectID)
+	path := projectsBasePath + "/" + url.PathEscape(projectID)
 	req, err := p.client.NewRequest(ctx, http.MethodPatch, path, ur)
 	if err != nil {
 		return nil, nil, err
@@ -213,7 +213,7 @@ func (p *ProjectsServiceOp) Update(ctx context.Context, projectID string, ur *Up
 // Delete an existing project. You cannot have any resources in a project
 // before deleting it. See the API documentation for more details.
 func (p *ProjectsServiceOp) Delete(ctx context.Context, projectID string) (*Response, error) {
-	path := path.Join(projectsBasePath, projectID)
+	path := projectsBasePath + "/" + url.PathEscape(projectID)
 	req, err := p.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -224,7 +224,7 @@ func (p *ProjectsServiceOp) Delete(ctx context.Context, projectID string) (*Resp
 
 // ListResources lists all resources in a project.
 func (p *ProjectsServiceOp) ListResources(ctx context.Context, projectID string, opts *ListOptions) ([]ProjectResource, *Response, error) {
-	basePath := path.Join(projectsBasePath, projectID, "resources")
+	basePath := projectsBasePath + "/" + url.PathEscape(projectID) + "/resources"
 	path, err := addOptions(basePath, opts)
 	if err != nil {
 		return nil, nil, err
@@ -258,7 +258,7 @@ func (p *ProjectsServiceOp) ListResources(ctx context.Context, projectID string,
 // There is no unassign. To move a resource to another project, just assign
 // it to that other project.
 func (p *ProjectsServiceOp) AssignResources(ctx context.Context, projectID string, resources ...interface{}) ([]ProjectResource, *Response, error) {
-	path := path.Join(projectsBasePath, projectID, "resources")
+	path := projectsBasePath + "/" + url.PathEscape(projectID) + "/resources"
 
 	ar := &assignResourcesRequest{
 		Resources: make([]string, len(resources)),
@@ -292,7 +292,7 @@ func (p *ProjectsServiceOp) AssignResources(ctx context.Context, projectID strin
 }
 
 func (p *ProjectsServiceOp) getHelper(ctx context.Context, projectID string) (*Project, *Response, error) {
-	path := path.Join(projectsBasePath, projectID)
+	path := projectsBasePath + "/" + url.PathEscape(projectID)
 
 	req, err := p.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

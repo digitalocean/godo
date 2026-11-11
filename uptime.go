@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"path"
+	"net/url"
 )
 
 const (
@@ -179,7 +179,7 @@ func (p *UptimeChecksServiceOp) List(ctx context.Context, opts *ListOptions) ([]
 
 // GetState of uptime check.
 func (p *UptimeChecksServiceOp) GetState(ctx context.Context, uptimeCheckID string) (*UptimeCheckState, *Response, error) {
-	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/state")
+	path := uptimeChecksBasePath + "/" + url.PathEscape(uptimeCheckID) + "/state"
 
 	req, err := p.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -197,7 +197,7 @@ func (p *UptimeChecksServiceOp) GetState(ctx context.Context, uptimeCheckID stri
 
 // Get retrieves a single uptime check by its ID.
 func (p *UptimeChecksServiceOp) Get(ctx context.Context, uptimeCheckID string) (*UptimeCheck, *Response, error) {
-	path := path.Join(uptimeChecksBasePath, uptimeCheckID)
+	path := uptimeChecksBasePath + "/" + url.PathEscape(uptimeCheckID)
 
 	req, err := p.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -231,7 +231,7 @@ func (p *UptimeChecksServiceOp) Create(ctx context.Context, cr *CreateUptimeChec
 
 // Update an uptime check.
 func (p *UptimeChecksServiceOp) Update(ctx context.Context, uptimeCheckID string, ur *UpdateUptimeCheckRequest) (*UptimeCheck, *Response, error) {
-	path := path.Join(uptimeChecksBasePath, uptimeCheckID)
+	path := uptimeChecksBasePath + "/" + url.PathEscape(uptimeCheckID)
 	req, err := p.client.NewRequest(ctx, http.MethodPut, path, ur)
 	if err != nil {
 		return nil, nil, err
@@ -248,7 +248,7 @@ func (p *UptimeChecksServiceOp) Update(ctx context.Context, uptimeCheckID string
 
 // Delete an existing uptime check.
 func (p *UptimeChecksServiceOp) Delete(ctx context.Context, uptimeCheckID string) (*Response, error) {
-	path := path.Join(uptimeChecksBasePath, uptimeCheckID)
+	path := uptimeChecksBasePath + "/" + url.PathEscape(uptimeCheckID)
 	req, err := p.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -261,7 +261,7 @@ func (p *UptimeChecksServiceOp) Delete(ctx context.Context, uptimeCheckID string
 
 // ListAlerts lists alerts for a check.
 func (p *UptimeChecksServiceOp) ListAlerts(ctx context.Context, uptimeCheckID string, opts *ListOptions) ([]UptimeAlert, *Response, error) {
-	fullPath := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts")
+	fullPath := uptimeChecksBasePath + "/" + url.PathEscape(uptimeCheckID) + "/alerts"
 	path, err := addOptions(fullPath, opts)
 	if err != nil {
 		return nil, nil, err
@@ -289,7 +289,7 @@ func (p *UptimeChecksServiceOp) ListAlerts(ctx context.Context, uptimeCheckID st
 
 // CreateAlert creates a new check alert.
 func (p *UptimeChecksServiceOp) CreateAlert(ctx context.Context, uptimeCheckID string, cr *CreateUptimeAlertRequest) (*UptimeAlert, *Response, error) {
-	fullPath := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts")
+	fullPath := uptimeChecksBasePath + "/" + url.PathEscape(uptimeCheckID) + "/alerts"
 	req, err := p.client.NewRequest(ctx, http.MethodPost, fullPath, cr)
 	if err != nil {
 		return nil, nil, err
@@ -306,7 +306,7 @@ func (p *UptimeChecksServiceOp) CreateAlert(ctx context.Context, uptimeCheckID s
 
 // GetAlert retrieves a single uptime check alert by its ID.
 func (p *UptimeChecksServiceOp) GetAlert(ctx context.Context, uptimeCheckID string, alertID string) (*UptimeAlert, *Response, error) {
-	path := fmt.Sprintf("v2/uptime/checks/%s/alerts/%s", uptimeCheckID, alertID)
+	path := fmt.Sprintf("v2/uptime/checks/%s/alerts/%s", url.PathEscape(uptimeCheckID), url.PathEscape(alertID))
 
 	req, err := p.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -324,7 +324,7 @@ func (p *UptimeChecksServiceOp) GetAlert(ctx context.Context, uptimeCheckID stri
 
 // UpdateAlert updates an check's alert.
 func (p *UptimeChecksServiceOp) UpdateAlert(ctx context.Context, uptimeCheckID string, alertID string, ur *UpdateUptimeAlertRequest) (*UptimeAlert, *Response, error) {
-	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts/", alertID)
+	path := uptimeChecksBasePath + "/" + url.PathEscape(uptimeCheckID) + "/alerts/" + url.PathEscape(alertID)
 	req, err := p.client.NewRequest(ctx, http.MethodPut, path, ur)
 	if err != nil {
 		return nil, nil, err
@@ -341,7 +341,7 @@ func (p *UptimeChecksServiceOp) UpdateAlert(ctx context.Context, uptimeCheckID s
 
 // DeleteAlert deletes an existing check's alert.
 func (p *UptimeChecksServiceOp) DeleteAlert(ctx context.Context, uptimeCheckID string, alertID string) (*Response, error) {
-	path := path.Join(uptimeChecksBasePath, uptimeCheckID, "/alerts/", alertID)
+	path := uptimeChecksBasePath + "/" + url.PathEscape(uptimeCheckID) + "/alerts/" + url.PathEscape(alertID)
 	req, err := p.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err

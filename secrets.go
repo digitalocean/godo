@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 )
 
 const secretsBasePath = "v2/security/secrets"
@@ -129,7 +130,7 @@ func (s *SecretsServiceOp) Get(ctx context.Context, name, region string) (*Secre
 		return nil, nil, NewArgError("region", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", secretsBasePath, name)
+	path := fmt.Sprintf("%s/%s", secretsBasePath, url.PathEscape(name))
 	path, err := addOptions(path, &secretRegionOptions{Region: region})
 	if err != nil {
 		return nil, nil, err
@@ -158,7 +159,7 @@ func (s *SecretsServiceOp) ListVersions(ctx context.Context, name, region string
 		return nil, nil, NewArgError("region", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/versions", secretsBasePath, name)
+	path := fmt.Sprintf("%s/%s/versions", secretsBasePath, url.PathEscape(name))
 	path, err := addOptions(path, &secretRegionOptions{Region: region})
 	if err != nil {
 		return nil, nil, err
@@ -213,7 +214,7 @@ func (s *SecretsServiceOp) Update(ctx context.Context, name string, updateReques
 		return nil, nil, NewArgError("region", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", secretsBasePath, name)
+	path := fmt.Sprintf("%s/%s", secretsBasePath, url.PathEscape(name))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
@@ -237,7 +238,7 @@ func (s *SecretsServiceOp) Delete(ctx context.Context, name, region string) (*Re
 		return nil, NewArgError("region", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", secretsBasePath, name)
+	path := fmt.Sprintf("%s/%s", secretsBasePath, url.PathEscape(name))
 	path, err := addOptions(path, &secretRegionOptions{Region: region})
 	if err != nil {
 		return nil, err
@@ -260,7 +261,7 @@ func (s *SecretsServiceOp) Restore(ctx context.Context, name, region string) (*R
 		return nil, NewArgError("region", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/restore", secretsBasePath, name)
+	path := fmt.Sprintf("%s/%s/restore", secretsBasePath, url.PathEscape(name))
 	path, err := addOptions(path, &secretRegionOptions{Region: region})
 	if err != nil {
 		return nil, err

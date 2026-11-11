@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -170,7 +171,7 @@ func (s *HostedAgentsServiceOp) GetAgentConfig(ctx context.Context, configID str
 	if configID == "" {
 		return nil, nil, errors.New("hosted agents: config id is required")
 	}
-	path := fmt.Sprintf(hostedAgentConfigByIDPath, configID)
+	path := fmt.Sprintf(hostedAgentConfigByIDPath, url.PathEscape(configID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -216,7 +217,7 @@ func (s *HostedAgentsServiceOp) DeleteAgentConfig(ctx context.Context, configID 
 	if configID == "" {
 		return nil, errors.New("hosted agents: config id is required")
 	}
-	path := fmt.Sprintf(hostedAgentConfigByIDPath, configID)
+	path := fmt.Sprintf(hostedAgentConfigByIDPath, url.PathEscape(configID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -230,7 +231,7 @@ func (s *HostedAgentsServiceOp) ListAgentConfigSessions(ctx context.Context, con
 	if configID == "" {
 		return nil, nil, errors.New("hosted agents: config id is required")
 	}
-	path := fmt.Sprintf(hostedAgentConfigSessionsPath, configID)
+	path := fmt.Sprintf(hostedAgentConfigSessionsPath, url.PathEscape(configID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
