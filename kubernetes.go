@@ -999,10 +999,7 @@ func (svc *KubernetesServiceOp) GetNodePool(ctx context.Context, clusterID, pool
 
 // GetNodePoolTemplate retrieves the template used for a given node pool to scale up from zero.
 func (svc *KubernetesServiceOp) GetNodePoolTemplate(ctx context.Context, clusterID string, nodePoolName string) (*KubernetesNodePoolTemplate, *Response, error) {
-	path, err := url.JoinPath(kubernetesClustersPath, clusterID, "node_pools_template", nodePoolName)
-	if err != nil {
-		return nil, nil, err
-	}
+	path := fmt.Sprintf("%s/%s/node_pools_template/%s", kubernetesClustersPath, url.PathEscape(clusterID), url.PathEscape(nodePoolName))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
