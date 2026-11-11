@@ -196,7 +196,10 @@ type HostedAgentCreateWebhookConfig struct {
 }
 
 // HostedAgentUpdateWebhookConfig is the webhook block on update: the event
-// filter only, since the provider is immutable. An empty list clears it.
+// filter only, since the provider is immutable. Events is sent as given: a
+// nil slice marshals as null, which the API treats as "leave the filter
+// unchanged"; an empty non-nil slice ([]string{}) marshals as [] and clears
+// it, so the trigger fires on every delivery again.
 type HostedAgentUpdateWebhookConfig struct {
 	Events []string `json:"events"`
 }
