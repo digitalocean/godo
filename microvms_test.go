@@ -341,6 +341,103 @@ func TestMicroVMs_Create(t *testing.T) {
 	}
 }
 
+func TestMicroVMs_Update(t *testing.T) {
+	emptyTags := []string{}
+	tags := []string{"env:prod"}
+
+	tests := []struct {
+		name    string
+		request *MicroVMUpdateRequest
+		want    map[string]interface{}
+	}{
+		{
+			name: "all fields",
+			request: &MicroVMUpdateRequest{
+				Name:      "renamed",
+				Tags:      &tags,
+				AutoPause: &AutoPauseConfig{IdleTimeout: "10m"},
+			},
+			want: map[string]interface{}{
+				"name":       "renamed",
+				"tags":       []interface{}{"env:prod"},
+				"auto_pause": map[string]interface{}{"idle_timeout": "10m"},
+			},
+		},
+		{
+			name:    "name only",
+			request: &MicroVMUpdateRequest{Name: "renamed"},
+			want:    map[string]interface{}{"name": "renamed"},
+		},
+		{
+			name:    "empty tags clears every tag",
+			request: &MicroVMUpdateRequest{Tags: &emptyTags},
+			want:    map[string]interface{}{"tags": []interface{}{}},
+		},
+		{
+			name:    "auto_pause only",
+			request: &MicroVMUpdateRequest{AutoPause: &AutoPauseConfig{IdleTimeout: "30s"}},
+			want:    map[string]interface{}{"auto_pause": map[string]interface{}{"idle_timeout": "30s"}},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			mux.HandleFunc("/v2/microvms/aaa-111", func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, http.MethodPatch)
+
+				var got map[string]interface{}
+				if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+					t.Fatalf("decode request body: %v", err)
+				}
+				if !reflect.DeepEqual(got, tc.want) {
+					t.Errorf("Update body\n got=%#v\nwant=%#v", got, tc.want)
+				}
+
+				fmt.Fprint(w, `{"microvm": {"id": "aaa-111", "name": "renamed", "state": "running", "tags": ["env:prod"]}}`)
+			})
+
+			microVM, _, err := client.MicroVMs.Update(ctx, "aaa-111", tc.request)
+			if err != nil {
+				t.Fatalf("MicroVMs.Update returned error: %v", err)
+			}
+
+			want := &MicroVM{ID: "aaa-111", Name: "renamed", State: MicroVMStateRunning, Tags: []string{"env:prod"}}
+			if !reflect.DeepEqual(microVM, want) {
+				t.Errorf("MicroVMs.Update returned %+v, expected %+v", microVM, want)
+			}
+		})
+	}
+}
+
+func TestMicroVMs_Update_InvalidArgs(t *testing.T) {
+	setup()
+	defer teardown()
+
+	tests := []struct {
+		name    string
+		id      string
+		request *MicroVMUpdateRequest
+	}{
+		{name: "empty id", id: "", request: &MicroVMUpdateRequest{Name: "renamed"}},
+		{name: "nil request", id: "aaa-111", request: nil},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, _, err := client.MicroVMs.Update(ctx, tc.id, tc.request)
+			if err == nil {
+				t.Fatal("expected error")
+			}
+			if _, ok := err.(*ArgError); !ok {
+				t.Errorf("expected *ArgError, got %T: %v", err, err)
+			}
+		})
+	}
+}
+
 func TestMicroVMs_Create_EgressPolicy(t *testing.T) {
 	setup()
 	defer teardown()
