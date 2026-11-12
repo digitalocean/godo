@@ -1,0 +1,159 @@
+# Regenerates package v2 (Client.V2) from digitalocean/openapi and opens a PR.
+#
+# Fully automatic path (same pattern as pydo):
+#   digitalocean/openapi "Spec Main" succeeds
+#     → openapi workflow runs: gh workflow run v2-client-gen.yml -f openapi_short_sha=...
+#     → this workflow downloads the published bundled spec, regenerates, opens a godo PR
+#
+# Also supports:
+#   - Manual: Actions → "V2 Client Generation" → Run workflow (pass short SHA)
+#
+# Secrets:
+#   WORKFLOW_TOKEN — PAT with repo scope on digitalocean/godo. Required to push
+#   the regen branch and open the pull request. GITHUB_TOKEN cannot open PRs
+#   unless the repo allows Actions to create them.
+name: V2 Client Generation
+
+on:
+  workflow_dispatch:
+    inputs:
+      openapi_short_sha:
+        description: "Short commit SHA from digitalocean/openapi, as git rev-parse --short in Spec Main (leave empty to use latest main)"
+        required: false
+        type: string
+
+env:
+  SPEC_URL_BASE: https://api-engineering.nyc3.digitaloceanspaces.com/spec-ci
+
+jobs:
+  generate-v2-client:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Require WORKFLOW_TOKEN
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        run: |
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "WORKFLOW_TOKEN secret is required (PAT with repo scope on digitalocean/godo)." >&2
+            exit 1
+          fi
+
+      - name: Checkout godo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+
+      - name: Resolve OpenAPI short SHA
+        id: sha
+        run: |
+          set -euo pipefail
+          input="${{ github.event.inputs.openapi_short_sha || '' }}"
+          if [[ -n "$input" ]]; then
+            target="$input"
+          else
+            # Spec Main names the Spaces object with `git rev-parse --short`
+            # inside a depth-1 checkout. A fixed 7-character slice of the full
+            # SHA does not match once git's abbrev grows.
+            tmp="$(mktemp -d)"
+            git -C "$tmp" init -q
+            git -C "$tmp" fetch --depth 1 https://github.com/digitalocean/openapi.git main
+            target="$(git -C "$tmp" rev-parse --short FETCH_HEAD)"
+          fi
+          current="$(tr -d '[:space:]' < DO_OPENAPI_COMMIT_SHA.txt || true)"
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+          echo "Resolved openapi@$target (current pin: $current)"
+
+      - name: Skip if already up to date
+        id: skip
+        run: |
+          if [[ "${{ steps.sha.outputs.current }}" == "${{ steps.sha.outputs.target }}" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Already pinned to ${{ steps.sha.outputs.target }}; nothing to do."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: OpenAPI changelist
+        if: steps.skip.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+        run: |
+          chmod +x scripts/openapi_changelist.sh
+          scripts/openapi_changelist.sh "${{ steps.sha.outputs.current }}" "${{ steps.sha.outputs.target }}" > changelist.md
+          cat changelist.md
+
+      - name: Download published bundled OpenAPI
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          sha="${{ steps.sha.outputs.target }}"
+          url="${SPEC_URL_BASE}/DigitalOcean-public-${sha}.v2.yaml"
+          echo "Downloading $url"
+          curl --fail -L "$url" -o DigitalOcean-public.v2.yaml
+          echo "$sha" > DO_OPENAPI_COMMIT_SHA.txt
+
+      - name: Install Go
+        if: steps.skip.outputs.skip != 'true'
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Generate package v2
+        if: steps.skip.outputs.skip != 'true'
+        run: |
+          make clean-generate
+          SPEC_FILE="$PWD/DigitalOcean-public.v2.yaml" make generate
+
+      - name: Run tests
+        if: steps.skip.outputs.skip != 'true'
+        run: go test ./...
+
+      - name: Create branch, commit, open PR
+        if: steps.skip.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+          TARGET: ${{ steps.sha.outputs.target }}
+          CURRENT: ${{ steps.sha.outputs.current }}
+        run: |
+          set -euo pipefail
+          BRANCH="openapi-${TARGET}/v2-clientgen"
+
+          git config user.email "api-engineering@digitalocean.com"
+          git config user.name "API Engineering"
+
+          git checkout -B "$BRANCH"
+
+          # Do not commit the downloaded YAML blob; pin + generated Go only.
+          git add DO_OPENAPI_COMMIT_SHA.txt v2/*.gen.go
+          # Stub client.go is removed by generate; ensure it is gone from the tree.
+          git add -u v2/client.go || true
+
+          if git diff --cached --quiet; then
+            echo "No file changes after generate; exiting."
+            exit 0
+          fi
+
+          git commit -m "[bot] Regenerate Client.V2 from digitalocean/openapi@${TARGET}"
+          git push -u origin "$BRANCH" --force
+
+          TITLE="$(gh pr list --search "$TARGET" --json title --jq '.[0].title // empty' \
+            --repo digitalocean/openapi --state merged 2>/dev/null || true)"
+          export TITLE CURRENT TARGET
+          envsubst < scripts/pr_body.md_tmpl > pr_body.md
+          cat changelist.md >> pr_body.md
+
+          existing="$(gh pr list --head "$BRANCH" --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            echo "Updating existing PR #$existing"
+            gh pr edit "$existing" --title "[bot] Re-Generated Client.V2 from digitalocean/openapi@${TARGET}" --body-file pr_body.md
+          else
+            gh pr create \
+              --title "[bot] Re-Generated Client.V2 from digitalocean/openapi@${TARGET}" \
+              --body-file pr_body.md \
+              --head "$BRANCH" \
+              --base main
+          fi
