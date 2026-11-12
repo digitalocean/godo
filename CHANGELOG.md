@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.239.0] - 2026-11-12
+
+- #1220 - @hmooda-do - hosted agents: add UpdateSessionConfig for live session config updates
+
 ## [1.238.0] - 2026-11-12
 
 - #1219 - @kwadhwa-source - microvms: add Update for name, tags, and auto_pause (MDROP-719)
