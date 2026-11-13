@@ -1182,19 +1182,126 @@ func TestHostedAgents_ExecInSandbox(t *testing.T) {
 
 	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/sandbox/exec", func(w http.ResponseWriter, r *http.Request) {
 		testMethod(t, r, http.MethodPost)
+		assert.NotEqual(t, "text/event-stream", r.Header.Get("Accept"))
 		var body HostedAgentSandboxExecRequest
 		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-		assert.Equal(t, []string{"echo", "hello"}, body.Argv)
-		fmt.Fprint(w, `{"exit_code":0,"stdout":"hello\n"}`)
+		assert.Equal(t, []string{"cat"}, body.Argv)
+		assert.Equal(t, []byte("hello\n"), body.Stdin)
+		assert.False(t, body.KeepStdinOpen)
+		fmt.Fprint(w, `{"exit_code":0,"stdout":"hello\n","duration_ms":12}`)
 	})
 
 	got, resp, err := client.HostedAgents.ExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{
-		Argv: []string{"echo", "hello"},
+		Argv:  []string{"cat"},
+		Stdin: []byte("hello\n"),
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 0, got.ExitCode)
 	assert.Equal(t, "hello\n", got.Stdout)
+	assert.Equal(t, int64(12), got.DurationMS)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgents_ExecInSandbox_KeepStdinOpenRejected(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.HostedAgents.ExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{
+		Argv:          []string{"cat"},
+		KeepStdinOpen: true,
+	})
+	require.EqualError(t, err, "hosted agents: keep_stdin_open requires StreamExecInSandbox")
+}
+
+func TestHostedAgents_StreamExecInSandbox(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/sandbox/exec", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		assert.Equal(t, "text/event-stream", r.Header.Get("Accept"))
+		var body HostedAgentSandboxExecRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, []string{"bash", "-c", "read a; echo got:$a"}, body.Argv)
+		assert.True(t, body.KeepStdinOpen)
+		assert.Equal(t, []byte("first\n"), body.Stdin)
+
+		w.Header().Set("Content-Type", "text/event-stream")
+		fmt.Fprint(w, "event: started\ndata: {\"exec_id\":\"exec-1\"}\n\n")
+		fmt.Fprint(w, "event: stdout\ndata: {\"data\":\"Z290OmEK\"}\n\n")
+		fmt.Fprint(w, "event: exit\ndata: {\"exit_code\":0,\"duration_ms\":42}\n\n")
+	})
+
+	stream, resp, err := client.HostedAgents.StreamExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{
+		Argv:          []string{"bash", "-c", "read a; echo got:$a"},
+		Stdin:         []byte("first\n"),
+		KeepStdinOpen: true,
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentSandboxExecEventStarted, stream.Current().Kind)
+	assert.Equal(t, "exec-1", stream.Current().ExecID)
+	assert.Equal(t, "exec-1", stream.ExecID())
+
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentSandboxExecEventStdout, stream.Current().Kind)
+	assert.Equal(t, []byte("got:a\n"), stream.Current().Data)
+
+	require.True(t, stream.Next())
+	assert.Equal(t, HostedAgentSandboxExecEventExit, stream.Current().Kind)
+	assert.Equal(t, int32(0), stream.Current().ExitCode)
+	assert.Equal(t, int64(42), stream.Current().DurationMS)
+
+	assert.False(t, stream.Next())
+	require.NoError(t, stream.Err())
+}
+
+func TestHostedAgents_WriteExecStdin(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/sandbox/exec/exec-1/stdin", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body HostedAgentWriteExecStdinRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, []byte("hello\n"), body.Data)
+		assert.Equal(t, int64(0), body.Offset)
+		assert.False(t, body.EOF)
+		fmt.Fprint(w, `{"offset":6}`)
+	})
+
+	got, resp, err := client.HostedAgents.WriteExecStdin(ctx, "sess-abc123", "exec-1", &HostedAgentWriteExecStdinRequest{
+		Data:   []byte("hello\n"),
+		Offset: 0,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, int64(6), got.Offset)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestHostedAgents_WriteExecStdin_EOF(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123/sandbox/exec/exec-1/stdin", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.Contains(t, string(raw), `"offset":6`)
+		assert.Contains(t, string(raw), `"eof":true`)
+		assert.NotContains(t, string(raw), `"data"`)
+		fmt.Fprint(w, `{"offset":6}`)
+	})
+
+	got, _, err := client.HostedAgents.WriteExecStdin(ctx, "sess-abc123", "exec-1", &HostedAgentWriteExecStdinRequest{
+		Offset: 6,
+		EOF:    true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, int64(6), got.Offset)
 }
 
 func TestHostedAgents_ListSandboxSizes(t *testing.T) {
@@ -1503,6 +1610,19 @@ func TestHostedAgents_ValidationErrors(t *testing.T) {
 
 	_, _, err = client.HostedAgents.ExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{})
 	require.EqualError(t, err, "hosted agents: argv is required")
+
+	_, _, err = client.HostedAgents.StreamExecInSandbox(ctx, "sess-abc123", &HostedAgentSandboxExecRequest{})
+	require.EqualError(t, err, "hosted agents: argv is required")
+
+	_, _, err = client.HostedAgents.WriteExecStdin(ctx, "sess-abc123", "exec-1", &HostedAgentWriteExecStdinRequest{
+		Offset: 0,
+	})
+	require.EqualError(t, err, "hosted agents: stdin data or eof is required")
+
+	_, _, err = client.HostedAgents.WriteExecStdin(ctx, "sess-abc123", "", &HostedAgentWriteExecStdinRequest{
+		EOF: true,
+	})
+	require.EqualError(t, err, "hosted agents: exec id is required")
 
 	// A live attach cannot start in the past; the server answers this with a
 	// 400, so it is rejected before the request goes out.
