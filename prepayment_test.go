@@ -30,7 +30,8 @@ func TestPrepaymentGetConfig(t *testing.T) {
 				"is_auto_prepay_enabled": true,
 				"blocked": true,
 				"eligible": true,
-				"month_to_date_balance": "75.00"
+				"month_to_date_balance": "75.00",
+				"available_credit": "9.29"
 			}
 		}
 		`
@@ -58,6 +59,7 @@ func TestPrepaymentGetConfig(t *testing.T) {
 			Blocked:             true,
 			Eligible:            true,
 			MonthToDateBalance:  "75.00",
+			AvailableCredit:     "9.29",
 		},
 	}
 	if !reflect.DeepEqual(got, expected) {
@@ -79,7 +81,8 @@ func TestPrepaymentGetStatus(t *testing.T) {
 				"is_auto_prepay_enabled": true,
 				"blocked": true,
 				"eligible": true,
-				"month_to_date_balance": "75.00"
+				"month_to_date_balance": "75.00",
+				"available_credit": "9.29"
 			}
 		}
 		`
@@ -99,6 +102,7 @@ func TestPrepaymentGetStatus(t *testing.T) {
 			Blocked:             true,
 			Eligible:            true,
 			MonthToDateBalance:  "75.00",
+			AvailableCredit:     "9.29",
 		},
 	}
 	if !reflect.DeepEqual(got, expected) {
