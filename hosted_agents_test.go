@@ -326,6 +326,18 @@ func TestHostedAgentSession_DecodesPauseReason(t *testing.T) {
 	assert.Equal(t, HostedAgentSessionPauseReasonLowBalance, session.PauseReason)
 }
 
+func TestHostedAgentSession_DecodesTriggerPauseReason(t *testing.T) {
+	const sessionJSON = `{
+		"session_id": "sess-trigger",
+		"status": "SESSION_STATUS_PAUSED",
+		"pause_reason": "trigger"
+	}`
+
+	var session HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(sessionJSON), &session))
+	assert.Equal(t, HostedAgentSessionPauseReasonTrigger, session.PauseReason)
+}
+
 // The API reserves the right to add reasons, so a value this client has no
 // constant for still has to survive decoding intact.
 func TestHostedAgentSession_KeepsUnknownPauseReasonVerbatim(t *testing.T) {
