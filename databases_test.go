@@ -5199,3 +5199,64 @@ func TestDatabases_GetStorageAutoscale(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, want, got)
 }
+
+func TestDatabases_UpdateLogsink_RsyslogKeepsTLSFalse(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		logsinkID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		var got map[string]map[string]interface{}
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		require.Contains(t, got["config"], "tls")
+		require.Equal(t, false, got["config"]["tls"])
+	})
+
+	_, err := client.Databases.UpdateLogsink(ctx, dbID, logsinkID, &DatabaseUpdateLogsinkRequest{
+		Config: &DatabaseLogsinkConfig{
+			Server: "192.168.0.1",
+			Port:   514,
+			TLS:    false,
+			Format: "rfc3164",
+		},
+	})
+
+	require.NoError(t, err)
+}
+
+func TestDatabases_UpdateLogsink_OpensearchOmitsTLS(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var (
+		dbID      = "deadbeef-dead-4aa5-beef-deadbeef347d"
+		logsinkID = "50484ec3-19d6-4cd3-b56f-3b0381c289a6"
+	)
+
+	path := fmt.Sprintf("/v2/databases/%s/logsink/%s", dbID, logsinkID)
+
+	mux.HandleFunc(path, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPut)
+
+		var got map[string]map[string]interface{}
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&got))
+		require.NotContains(t, got["config"], "tls")
+	})
+
+	_, err := client.Databases.UpdateLogsink(ctx, dbID, logsinkID, &DatabaseUpdateLogsinkRequest{
+		Config: &DatabaseLogsinkConfig{
+			URL:         "https://user:passwd@192.168.0.1:25060",
+			IndexPrefix: "opensearch-logs",
+		},
+	})
+
+	require.NoError(t, err)
+}
