@@ -650,3 +650,100 @@ func TestHostedAgentTriggers_ListWebhookProviders(t *testing.T) {
 	assert.Equal(t, HostedAgentWebhookSignatureHMACSHA256, got.Providers[0].Signature.Scheme)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
+
+func TestHostedAgentTriggers_Run(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-abc123/executions", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{
+			"execution": {
+				"execution_id": "exec-m1",
+				"trigger_id": "trig-abc123",
+				"status": "pending",
+				"payload": "{\"kind\":\"manual\",\"requested_at\":\"2026-11-11T09:00:00Z\"}"
+			}
+		}`)
+	})
+
+	got, resp, err := client.HostedAgentTriggers.Run(ctx, "trig-abc123")
+	require.NoError(t, err)
+	assert.Equal(t, http.StatusCreated, resp.StatusCode)
+	assert.Equal(t, "exec-m1", got.ExecutionID)
+	assert.Equal(t, HostedAgentTriggerExecutionStatusPending, got.Status)
+}
+
+func TestHostedAgentTriggers_Run_RequiresTriggerID(t *testing.T) {
+	setup()
+	defer teardown()
+	_, _, err := client.HostedAgentTriggers.Run(ctx, "")
+	require.Error(t, err)
+}
+
+func TestHostedAgentTriggers_ListBySession(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/triggers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{"bound_session_id": "sess-1", "page_size": "20"})
+		fmt.Fprint(w, `{"triggers": [{"trigger_id": "trig-1", "kind": "cron", "bound_session_id": "sess-1", "keep_session_awake": true}], "next_page_token": ""}`)
+	})
+
+	got, _, err := client.HostedAgentTriggers.List(ctx, &HostedAgentTriggerListOptions{BoundSessionID: "sess-1", PageSize: 20})
+	require.NoError(t, err)
+	require.Len(t, got.Triggers, 1)
+	assert.Equal(t, "sess-1", got.Triggers[0].BoundSessionID)
+	assert.True(t, got.Triggers[0].KeepSessionAwake)
+}
+
+func TestHostedAgentTriggers_CreateWebhookWithEventsAndKeepAwake(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/triggers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPost)
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, true, body["keep_session_awake"])
+		assert.Equal(t, map[string]any{"provider": "github", "events": []any{"pull_request.opened", "push"}}, body["webhook"])
+		w.WriteHeader(http.StatusCreated)
+		fmt.Fprint(w, `{"trigger": {"trigger_id": "trig-ev", "kind": "webhook", "keep_session_awake": true, "webhook": {"provider": "github", "webhook_url": "https://api.example/v2/agents/triggers/trig-ev/webhook", "events": ["pull_request.opened", "push"]}}, "webhook_secret": "s3cret"}`)
+	})
+
+	got, _, err := client.HostedAgentTriggers.Create(ctx, &HostedAgentTriggerCreateRequest{
+		Kind: HostedAgentTriggerKindWebhook, Name: "pr-review", SessionMode: HostedAgentTriggerSessionModeReuse,
+		PromptTemplate: "Review", Output: HostedAgentTriggerOutputWrite{Mode: HostedAgentTriggerOutputModeNone},
+		BoundSessionID: "sess-1", KeepSessionAwake: true,
+		Webhook: &HostedAgentCreateWebhookConfig{Provider: HostedAgentWebhookProviderGitHub, Events: []string{"pull_request.opened", "push"}},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "s3cret", got.WebhookSecret)
+	assert.True(t, got.Trigger.KeepSessionAwake)
+	assert.Equal(t, []string{"pull_request.opened", "push"}, got.Trigger.Webhook.Events)
+}
+
+func TestHostedAgentTriggers_UpdateWebhookEventsAndKeepAwake(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/triggers/trig-ev", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, false, body["keep_session_awake"])
+		assert.Equal(t, map[string]any{"events": []any{}}, body["webhook"], "an empty list clears the filter and must be sent")
+		fmt.Fprint(w, `{"trigger": {"trigger_id": "trig-ev", "kind": "webhook", "webhook": {"provider": "github"}}}`)
+	})
+
+	off := false
+	got, _, err := client.HostedAgentTriggers.Update(ctx, "trig-ev", &HostedAgentTriggerUpdateRequest{
+		KeepSessionAwake: &off,
+		Webhook:          &HostedAgentUpdateWebhookConfig{Events: []string{}},
+	})
+	require.NoError(t, err)
+	assert.False(t, got.KeepSessionAwake)
+	assert.Empty(t, got.Webhook.Events)
+}
