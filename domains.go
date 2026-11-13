@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const domainsBasePath = "v2/domains"
@@ -140,7 +141,7 @@ func (s *DomainsServiceOp) Get(ctx context.Context, name string) (*Domain, *Resp
 		return nil, nil, NewArgError("name", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s", domainsBasePath, name)
+	path := fmt.Sprintf("%s/%s", domainsBasePath, url.PathEscape(name))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -183,7 +184,7 @@ func (s *DomainsServiceOp) Delete(ctx context.Context, name string) (*Response, 
 		return nil, NewArgError("name", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s", domainsBasePath, name)
+	path := fmt.Sprintf("%s/%s", domainsBasePath, url.PathEscape(name))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -211,7 +212,7 @@ func (s *DomainsServiceOp) Records(ctx context.Context, domain string, opt *List
 		return nil, nil, NewArgError("domain", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s/records", domainsBasePath, domain)
+	path := fmt.Sprintf("%s/%s/records", domainsBasePath, url.PathEscape(domain))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -230,7 +231,7 @@ func (s *DomainsServiceOp) RecordsByType(ctx context.Context, domain, ofType str
 		return nil, nil, NewArgError("type", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s/records?type=%s", domainsBasePath, domain, ofType)
+	path := fmt.Sprintf("%s/%s/records?type=%s", domainsBasePath, url.PathEscape(domain), url.QueryEscape(ofType))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -249,7 +250,7 @@ func (s *DomainsServiceOp) RecordsByName(ctx context.Context, domain, name strin
 		return nil, nil, NewArgError("name", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s/records?name=%s", domainsBasePath, domain, name)
+	path := fmt.Sprintf("%s/%s/records?name=%s", domainsBasePath, url.PathEscape(domain), url.QueryEscape(name))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -272,7 +273,7 @@ func (s *DomainsServiceOp) RecordsByTypeAndName(ctx context.Context, domain, ofT
 		return nil, nil, NewArgError("name", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s/records?type=%s&name=%s", domainsBasePath, domain, ofType, name)
+	path := fmt.Sprintf("%s/%s/records?type=%s&name=%s", domainsBasePath, url.PathEscape(domain), url.QueryEscape(ofType), url.QueryEscape(name))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -291,7 +292,7 @@ func (s *DomainsServiceOp) Record(ctx context.Context, domain string, id int) (*
 		return nil, nil, NewArgError("id", "cannot be less than 1")
 	}
 
-	path := fmt.Sprintf("%s/%s/records/%d", domainsBasePath, domain, id)
+	path := fmt.Sprintf("%s/%s/records/%d", domainsBasePath, url.PathEscape(domain), id)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -317,7 +318,7 @@ func (s *DomainsServiceOp) DeleteRecord(ctx context.Context, domain string, id i
 		return nil, NewArgError("id", "cannot be less than 1")
 	}
 
-	path := fmt.Sprintf("%s/%s/records/%d", domainsBasePath, domain, id)
+	path := fmt.Sprintf("%s/%s/records/%d", domainsBasePath, url.PathEscape(domain), id)
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -347,7 +348,7 @@ func (s *DomainsServiceOp) EditRecord(ctx context.Context,
 		return nil, nil, NewArgError("editRequest", "cannot be nil")
 	}
 
-	path := fmt.Sprintf("%s/%s/records/%d", domainsBasePath, domain, id)
+	path := fmt.Sprintf("%s/%s/records/%d", domainsBasePath, url.PathEscape(domain), id)
 
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, editRequest)
 	if err != nil {
@@ -375,7 +376,7 @@ func (s *DomainsServiceOp) CreateRecord(ctx context.Context,
 		return nil, nil, NewArgError("createRequest", "cannot be nil")
 	}
 
-	path := fmt.Sprintf("%s/%s/records", domainsBasePath, domain)
+	path := fmt.Sprintf("%s/%s/records", domainsBasePath, url.PathEscape(domain))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
 
 	if err != nil {

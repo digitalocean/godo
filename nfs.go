@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const nfsBasePath = "v2/nfs"
@@ -329,7 +330,7 @@ func (s *NfsServiceOp) Get(ctx context.Context, nfsShareId string, region string
 		return nil, nil, NewArgError("id", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", nfsBasePath, nfsShareId)
+	path := fmt.Sprintf("%s/%s", nfsBasePath, url.PathEscape(nfsShareId))
 
 	getOpts := &nfsQueryOptions{Region: region}
 	path, err := addOptions(path, getOpts)
@@ -402,7 +403,7 @@ func (s *NfsServiceOp) DeleteWithOptions(ctx context.Context, nfsShareId string,
 	if nfsShareId == "" {
 		return nil, NewArgError("id", "cannot be empty")
 	}
-	path := fmt.Sprintf("%s/%s", nfsBasePath, nfsShareId)
+	path := fmt.Sprintf("%s/%s", nfsBasePath, url.PathEscape(nfsShareId))
 
 	path, err := addOptions(path, opts)
 	if err != nil {
@@ -450,7 +451,7 @@ func (s *NfsServiceOp) GetSnapshot(ctx context.Context, nfsSnapshotID string, re
 		return nil, nil, NewArgError("snapshotID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", nfsSnapshotsBasePath, nfsSnapshotID)
+	path := fmt.Sprintf("%s/%s", nfsSnapshotsBasePath, url.PathEscape(nfsSnapshotID))
 
 	getOpts := &nfsQueryOptions{Region: region}
 	path, err := addOptions(path, getOpts)
@@ -512,7 +513,7 @@ func (s *NfsServiceOp) DeleteSnapshot(ctx context.Context, nfsSnapshotID string,
 	if nfsSnapshotID == "" {
 		return nil, NewArgError("snapshotID", "cannot be empty")
 	}
-	path := fmt.Sprintf("%s/%s", nfsSnapshotsBasePath, nfsSnapshotID)
+	path := fmt.Sprintf("%s/%s", nfsSnapshotsBasePath, url.PathEscape(nfsSnapshotID))
 
 	deleteOpts := &nfsQueryOptions{Region: region}
 	path, err := addOptions(path, deleteOpts)
@@ -545,7 +546,7 @@ func (s *NfsServiceOp) CreateAccessPoint(ctx context.Context, shareID string, cr
 		return nil, nil, NewArgError("vpc_id", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/access_points", nfsSharesBasePath, shareID)
+	path := fmt.Sprintf("%s/%s/access_points", nfsSharesBasePath, url.PathEscape(shareID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
 	if err != nil {
@@ -567,7 +568,7 @@ func (s *NfsServiceOp) GetAccessPoint(ctx context.Context, accessPointID string)
 		return nil, nil, NewArgError("accessPointID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", nfsAccessPointsBasePath, accessPointID)
+	path := fmt.Sprintf("%s/%s", nfsAccessPointsBasePath, url.PathEscape(accessPointID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -589,7 +590,7 @@ func (s *NfsServiceOp) ListAccessPoints(ctx context.Context, shareID string, opt
 		return nil, nil, NewArgError("shareID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s/access_points", nfsSharesBasePath, shareID)
+	path := fmt.Sprintf("%s/%s/access_points", nfsSharesBasePath, url.PathEscape(shareID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -615,7 +616,7 @@ func (s *NfsServiceOp) DeleteAccessPoint(ctx context.Context, accessPointID stri
 		return nil, nil, NewArgError("accessPointID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", nfsAccessPointsBasePath, accessPointID)
+	path := fmt.Sprintf("%s/%s", nfsAccessPointsBasePath, url.PathEscape(accessPointID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {

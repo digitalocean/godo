@@ -1307,7 +1307,7 @@ func (s *HostedAgentsServiceOp) doCreateSession(ctx context.Context, req *http.R
 }
 
 func (s *HostedAgentsServiceOp) newCreateSessionPostRequest(ctx context.Context, path string, body io.Reader, contentType string) (*http.Request, error) {
-	u, err := s.client.BaseURL.Parse(path)
+	u, err := resolveRequestURL(s.client.BaseURL, path)
 	if err != nil {
 		return nil, err
 	}
@@ -1348,7 +1348,7 @@ func (s *HostedAgentsServiceOp) GetSession(ctx context.Context, sessionID string
 	if sessionID == "" {
 		return nil, nil, errors.New("hosted agents: session id is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionByIDPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionByIDPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1375,7 +1375,7 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 	if update.empty() {
 		return nil, nil, errors.New("hosted agents: update request must set at least one field")
 	}
-	path := fmt.Sprintf(hostedAgentSessionByIDPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionByIDPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -1427,7 +1427,7 @@ func (s *HostedAgentsServiceOp) DestroySession(ctx context.Context, sessionID st
 	if sessionID == "" {
 		return nil, errors.New("hosted agents: session id is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionByIDPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionByIDPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -1439,7 +1439,7 @@ func (s *HostedAgentsServiceOp) PauseSession(ctx context.Context, sessionID stri
 	if sessionID == "" {
 		return nil, errors.New("hosted agents: session id is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionPausePath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionPausePath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, struct{}{})
 	if err != nil {
 		return nil, err
@@ -1451,7 +1451,7 @@ func (s *HostedAgentsServiceOp) ResumeSession(ctx context.Context, sessionID str
 	if sessionID == "" {
 		return nil, errors.New("hosted agents: session id is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionResumePath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionResumePath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, struct{}{})
 	if err != nil {
 		return nil, err
@@ -1499,7 +1499,7 @@ func (s *HostedAgentsServiceOp) StreamSession(ctx context.Context, sessionID str
 		includeRaw = opt.IncludeRaw
 	}
 
-	path := fmt.Sprintf(hostedAgentSessionEventsPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionEventsPath, url.PathEscape(sessionID))
 	q := url.Values{}
 	if replayOnly {
 		q.Set("replay_only", "true")
@@ -1554,7 +1554,7 @@ func (s *HostedAgentsServiceOp) SendInput(ctx context.Context, sessionID string,
 	if strings.TrimSpace(input.Text) == "" {
 		return nil, nil, errors.New("hosted agents: text is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionInputPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionInputPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, input)
 	if err != nil {
 		return nil, nil, err
@@ -1578,7 +1578,7 @@ func (s *HostedAgentsServiceOp) RelayRequest(ctx context.Context, sessionID stri
 	if body == nil || len(body.SourceRaw) == 0 {
 		return nil, nil, errors.New("hosted agents: source_raw is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionRequestPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionRequestPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, body)
 	if err != nil {
 		return nil, nil, err
@@ -1605,7 +1605,7 @@ func (s *HostedAgentsServiceOp) ResolveHITL(ctx context.Context, sessionID, requ
 	if body.Outcome == "" || body.Outcome == HostedAgentHITLOutcomeUnspecified {
 		return nil, errors.New("hosted agents: outcome is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionHITLPath, sessionID, requestID)
+	path := fmt.Sprintf(hostedAgentSessionHITLPath, url.PathEscape(sessionID), url.PathEscape(requestID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, body)
 	if err != nil {
 		return nil, err
@@ -1620,7 +1620,7 @@ func (s *HostedAgentsServiceOp) StartProviderAuth(ctx context.Context, provider 
 	if provider == "" {
 		return nil, nil, errors.New("hosted agents: provider is required")
 	}
-	path := fmt.Sprintf(hostedAgentProviderAuthPath, provider)
+	path := fmt.Sprintf(hostedAgentProviderAuthPath, url.PathEscape(provider))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, struct{}{})
 	if err != nil {
 		return nil, nil, err
@@ -1643,7 +1643,7 @@ func (s *HostedAgentsServiceOp) PollProviderAuth(ctx context.Context, provider, 
 	if pollURL == "" {
 		return nil, nil, errors.New("hosted agents: poll url is required")
 	}
-	path := fmt.Sprintf(hostedAgentProviderAuthPollPath, provider)
+	path := fmt.Sprintf(hostedAgentProviderAuthPollPath, url.PathEscape(provider))
 	q := url.Values{}
 	q.Set("poll_url", pollURL)
 	path += "?" + q.Encode()
@@ -1664,7 +1664,7 @@ func (s *HostedAgentsServiceOp) ListConnections(ctx context.Context, provider st
 	if provider == "" {
 		return nil, nil, errors.New("hosted agents: provider is required")
 	}
-	path := fmt.Sprintf(hostedAgentProviderConnectionsPath, provider)
+	path := fmt.Sprintf(hostedAgentProviderConnectionsPath, url.PathEscape(provider))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -1689,7 +1689,7 @@ func (s *HostedAgentsServiceOp) CreateConnection(ctx context.Context, provider s
 	if body == nil || body.ActorID == "" {
 		return nil, nil, errors.New("hosted agents: actor is required")
 	}
-	path := fmt.Sprintf(hostedAgentProviderConnectionsPath, provider)
+	path := fmt.Sprintf(hostedAgentProviderConnectionsPath, url.PathEscape(provider))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, body)
 	if err != nil {
 		return nil, nil, err
@@ -1710,7 +1710,7 @@ func (s *HostedAgentsServiceOp) GetConnection(ctx context.Context, provider, id 
 	if id == "" {
 		return nil, nil, errors.New("hosted agents: connection id is required")
 	}
-	path := fmt.Sprintf(hostedAgentProviderConnectionByIDPath, provider, id)
+	path := fmt.Sprintf(hostedAgentProviderConnectionByIDPath, url.PathEscape(provider), url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1731,7 +1731,7 @@ func (s *HostedAgentsServiceOp) DeleteConnection(ctx context.Context, provider, 
 	if id == "" {
 		return nil, nil, errors.New("hosted agents: connection id is required")
 	}
-	path := fmt.Sprintf(hostedAgentProviderConnectionByIDPath, provider, id)
+	path := fmt.Sprintf(hostedAgentProviderConnectionByIDPath, url.PathEscape(provider), url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1752,7 +1752,7 @@ func (s *HostedAgentsServiceOp) ReconnectConnection(ctx context.Context, provide
 	if id == "" {
 		return nil, nil, errors.New("hosted agents: connection id is required")
 	}
-	path := fmt.Sprintf(hostedAgentProviderConnectionReconnectPath, provider, id)
+	path := fmt.Sprintf(hostedAgentProviderConnectionReconnectPath, url.PathEscape(provider), url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, struct{}{})
 	if err != nil {
 		return nil, nil, err
@@ -1776,7 +1776,7 @@ func (s *HostedAgentsServiceOp) ExecInSandbox(ctx context.Context, sessionID str
 	if len(body.Argv) == 0 {
 		return nil, nil, errors.New("hosted agents: argv is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionSandboxExecPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionSandboxExecPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, body)
 	if err != nil {
 		return nil, nil, err
@@ -1822,8 +1822,8 @@ func (s *HostedAgentsServiceOp) UploadWorkspace(ctx context.Context, sessionID s
 		return nil, nil, errors.New("hosted agents: body is required")
 	}
 
-	path := fmt.Sprintf(hostedAgentSessionWorkspaceUploadPath, sessionID)
-	u, err := s.client.BaseURL.Parse(path)
+	path := fmt.Sprintf(hostedAgentSessionWorkspaceUploadPath, url.PathEscape(sessionID))
+	u, err := resolveRequestURL(s.client.BaseURL, path)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1868,7 +1868,7 @@ func (s *HostedAgentsServiceOp) DownloadWorkspace(ctx context.Context, sessionID
 		return nil, nil, errors.New("hosted agents: path is required")
 	}
 
-	path := fmt.Sprintf(hostedAgentSessionWorkspaceDownloadPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionWorkspaceDownloadPath, url.PathEscape(sessionID))
 	q := url.Values{}
 	q.Set("path", input.Path)
 	if input.AsArchive {
@@ -1920,7 +1920,7 @@ func (s *HostedAgentsServiceOp) CreateWorkspaceTransfer(ctx context.Context, ses
 		return nil, nil, errors.New("hosted agents: path is required")
 	}
 
-	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransfersPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransfersPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, input)
 	if err != nil {
 		return nil, nil, err
@@ -1955,7 +1955,7 @@ func (s *HostedAgentsServiceOp) CreateWorkspaceTransferPartUploadURLs(ctx contex
 		}
 	}
 
-	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransferPartURLsPath, sessionID, transferID)
+	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransferPartURLsPath, url.PathEscape(sessionID), url.PathEscape(transferID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, input)
 	if err != nil {
 		return nil, nil, err
@@ -1981,7 +1981,7 @@ func (s *HostedAgentsServiceOp) CommitWorkspaceTransfer(ctx context.Context, ses
 		input = &HostedAgentWorkspaceTransferCommitRequest{}
 	}
 
-	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransferCommitPath, sessionID, transferID)
+	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransferCommitPath, url.PathEscape(sessionID), url.PathEscape(transferID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, input)
 	if err != nil {
 		return nil, nil, err
@@ -2005,7 +2005,7 @@ func (s *HostedAgentsServiceOp) GetWorkspaceTransfer(ctx context.Context, sessio
 		return nil, nil, errors.New("hosted agents: transfer id is required")
 	}
 
-	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransferByIDPath, sessionID, transferID)
+	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransferByIDPath, url.PathEscape(sessionID), url.PathEscape(transferID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2030,7 +2030,7 @@ func (s *HostedAgentsServiceOp) CancelWorkspaceTransfer(ctx context.Context, ses
 		input = &HostedAgentWorkspaceTransferCancelRequest{}
 	}
 
-	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransferCancelPath, sessionID, transferID)
+	path := fmt.Sprintf(hostedAgentSessionWorkspaceTransferCancelPath, url.PathEscape(sessionID), url.PathEscape(transferID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, input)
 	if err != nil {
 		return nil, nil, err

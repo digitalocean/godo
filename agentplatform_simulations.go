@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -703,7 +704,7 @@ func (s *AgentPlatformServiceOp) GetScenarioSet(ctx context.Context, scenarioSet
 	if scenarioSetUUID == "" {
 		return nil, nil, fmt.Errorf("scenario set uuid is required")
 	}
-	path := fmt.Sprintf(scenarioSetByIDPath, scenarioSetUUID)
+	path := fmt.Sprintf(scenarioSetByIDPath, url.PathEscape(scenarioSetUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -723,7 +724,7 @@ func (s *AgentPlatformServiceOp) ListScenarios(ctx context.Context, scenarioSetU
 	if scenarioSetUUID == "" {
 		return nil, nil, fmt.Errorf("scenario set uuid is required")
 	}
-	path := fmt.Sprintf(scenarioSetScenariosPath, scenarioSetUUID)
+	path := fmt.Sprintf(scenarioSetScenariosPath, url.PathEscape(scenarioSetUUID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -754,7 +755,7 @@ func (s *AgentPlatformServiceOp) GetScenarioSetDownloadURL(ctx context.Context, 
 	if scenarioSetUUID == "" {
 		return nil, nil, fmt.Errorf("scenario set uuid is required")
 	}
-	path := fmt.Sprintf(scenarioSetDownloadURLPath, scenarioSetUUID)
+	path := fmt.Sprintf(scenarioSetDownloadURLPath, url.PathEscape(scenarioSetUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -780,7 +781,7 @@ func (s *AgentPlatformServiceOp) UpdateScenarioSet(ctx context.Context, scenario
 	if updateRequest.Name == "" && len(updateRequest.Scenarios) == 0 {
 		return nil, nil, fmt.Errorf("at least one of name or scenarios must be set")
 	}
-	path := fmt.Sprintf(scenarioSetByIDPath, scenarioSetUUID)
+	path := fmt.Sprintf(scenarioSetByIDPath, url.PathEscape(scenarioSetUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
@@ -800,7 +801,7 @@ func (s *AgentPlatformServiceOp) DeleteScenarioSet(ctx context.Context, scenario
 	if scenarioSetUUID == "" {
 		return nil, nil, fmt.Errorf("scenario set uuid is required")
 	}
-	path := fmt.Sprintf(scenarioSetByIDPath, scenarioSetUUID)
+	path := fmt.Sprintf(scenarioSetByIDPath, url.PathEscape(scenarioSetUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -846,7 +847,7 @@ func (s *AgentPlatformServiceOp) ListScenarioLibraryScenarios(ctx context.Contex
 	if libraryScenarioUUID == "" {
 		return nil, nil, fmt.Errorf("library scenario uuid is required")
 	}
-	path := fmt.Sprintf(scenarioLibraryScenariosPath, libraryScenarioUUID)
+	path := fmt.Sprintf(scenarioLibraryScenariosPath, url.PathEscape(libraryScenarioUUID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -883,7 +884,7 @@ func (s *AgentPlatformServiceOp) CreateScenarioSetFromLibrary(ctx context.Contex
 	if createRequest.LibraryScenarioUUID == "" {
 		createRequest.LibraryScenarioUUID = libraryScenarioUUID
 	}
-	path := fmt.Sprintf(scenarioLibraryCreateScenarioSetPath, libraryScenarioUUID)
+	path := fmt.Sprintf(scenarioLibraryCreateScenarioSetPath, url.PathEscape(libraryScenarioUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
 	if err != nil {
@@ -955,7 +956,7 @@ func (s *AgentPlatformServiceOp) GetSimulationRun(ctx context.Context, runUUID s
 	if runUUID == "" {
 		return nil, nil, fmt.Errorf("run uuid is required")
 	}
-	path := fmt.Sprintf(simulationRunByIDPath, runUUID)
+	path := fmt.Sprintf(simulationRunByIDPath, url.PathEscape(runUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -981,7 +982,7 @@ func (s *AgentPlatformServiceOp) UpdateSimulationRun(ctx context.Context, runUUI
 	if updateRequest.Name == "" {
 		return nil, nil, fmt.Errorf("name is required")
 	}
-	path := fmt.Sprintf(simulationRunByIDPath, runUUID)
+	path := fmt.Sprintf(simulationRunByIDPath, url.PathEscape(runUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
@@ -1001,7 +1002,7 @@ func (s *AgentPlatformServiceOp) CancelSimulationRun(ctx context.Context, runUUI
 	if runUUID == "" {
 		return nil, nil, fmt.Errorf("run uuid is required")
 	}
-	path := fmt.Sprintf(simulationRunCancelPath, runUUID)
+	path := fmt.Sprintf(simulationRunCancelPath, url.PathEscape(runUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, nil)
 	if err != nil {
@@ -1021,7 +1022,7 @@ func (s *AgentPlatformServiceOp) DeleteSimulationRun(ctx context.Context, runUUI
 	if runUUID == "" {
 		return nil, nil, fmt.Errorf("run uuid is required")
 	}
-	path := fmt.Sprintf(simulationRunByIDPath, runUUID)
+	path := fmt.Sprintf(simulationRunByIDPath, url.PathEscape(runUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -1041,7 +1042,7 @@ func (s *AgentPlatformServiceOp) ListSimulationEpisodes(ctx context.Context, run
 	if runUUID == "" {
 		return nil, nil, fmt.Errorf("run uuid is required")
 	}
-	path := fmt.Sprintf(simulationRunEpisodesPath, runUUID)
+	path := fmt.Sprintf(simulationRunEpisodesPath, url.PathEscape(runUUID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -1074,7 +1075,7 @@ func (s *AgentPlatformServiceOp) GetSimulationEpisode(ctx context.Context, runUU
 	if episodeUUID == "" {
 		return nil, nil, fmt.Errorf("episode uuid is required")
 	}
-	path := fmt.Sprintf(simulationEpisodeByIDPath, runUUID, episodeUUID)
+	path := fmt.Sprintf(simulationEpisodeByIDPath, url.PathEscape(runUUID), url.PathEscape(episodeUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -1098,7 +1099,7 @@ func (s *AgentPlatformServiceOp) GetSimulationEpisodeTrajectoryURL(ctx context.C
 	if episodeUUID == "" {
 		return nil, nil, fmt.Errorf("episode uuid is required")
 	}
-	path := fmt.Sprintf(simulationEpisodeTrajectoryURLPath, runUUID, episodeUUID)
+	path := fmt.Sprintf(simulationEpisodeTrajectoryURLPath, url.PathEscape(runUUID), url.PathEscape(episodeUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -1122,7 +1123,7 @@ func (s *AgentPlatformServiceOp) GetSimulationEpisodeTrajectory(ctx context.Cont
 	if episodeUUID == "" {
 		return nil, nil, fmt.Errorf("episode uuid is required")
 	}
-	path := fmt.Sprintf(simulationEpisodeTrajectoryPath, runUUID, episodeUUID)
+	path := fmt.Sprintf(simulationEpisodeTrajectoryPath, url.PathEscape(runUUID), url.PathEscape(episodeUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

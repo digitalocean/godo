@@ -424,7 +424,7 @@ func (s *SignalsServiceOp) SetInferenceConsent(ctx context.Context, enabled bool
 // GetAgentConsent returns collection consent for one environment (default deny if no row).
 // Uses GET /v1/consent/{environment_id} on consent-gateway (same public path as Cloud UI / SetAgentConsent).
 func (s *SignalsServiceOp) GetAgentConsent(ctx context.Context, agentID string) (*SignalsAgentConsent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", consentBasePath, agentID)
+	path := fmt.Sprintf("%s/%s", consentBasePath, url.PathEscape(agentID))
 	root := new(SignalsAgentConsent)
 	resp, err := s.get(ctx, path, root)
 	if err != nil {
@@ -436,7 +436,7 @@ func (s *SignalsServiceOp) GetAgentConsent(ctx context.Context, agentID string) 
 // SetAgentConsent enables or disables collection for one agent (PUT /v1/consent/{id}).
 // Requires IAM signals:update. Oceanus routes this to consent-gateway, not signals-api.
 func (s *SignalsServiceOp) SetAgentConsent(ctx context.Context, agentID string, enabled bool) (*SignalsConsentRecord, *Response, error) {
-	path := fmt.Sprintf("%s/%s", consentBasePath, agentID)
+	path := fmt.Sprintf("%s/%s", consentBasePath, url.PathEscape(agentID))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, &signalsSetConsentRequest{Enabled: enabled})
 	if err != nil {
 		return nil, nil, err
@@ -451,7 +451,7 @@ func (s *SignalsServiceOp) SetAgentConsent(ctx context.Context, agentID string, 
 
 // ListAgentSessions lists sessions for an agent.
 func (s *SignalsServiceOp) ListAgentSessions(ctx context.Context, agentID string, opts *SignalsListAgentSessionsOptions) (*SignalsListAgentSessionsResponse, *Response, error) {
-	path := fmt.Sprintf("%s/agents/%s/sessions", signalsBasePath, agentID)
+	path := fmt.Sprintf("%s/agents/%s/sessions", signalsBasePath, url.PathEscape(agentID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -466,7 +466,7 @@ func (s *SignalsServiceOp) ListAgentSessions(ctx context.Context, agentID string
 
 // ListSessionDialogues lists replay dialogues for a session.
 func (s *SignalsServiceOp) ListSessionDialogues(ctx context.Context, sessionID string, opts *SignalsListDialoguesOptions) (*SignalsSessionDialoguesResponse, *Response, error) {
-	path := fmt.Sprintf("%s/sessions/%s/dialogues", signalsBasePath, sessionID)
+	path := fmt.Sprintf("%s/sessions/%s/dialogues", signalsBasePath, url.PathEscape(sessionID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -527,7 +527,7 @@ func (s *SignalsServiceOp) ListExports(ctx context.Context, opts *SignalsListExp
 
 // GetExport polls one export job.
 func (s *SignalsServiceOp) GetExport(ctx context.Context, exportID string) (*SignalsExportJob, *Response, error) {
-	path := fmt.Sprintf("%s/exports/%s", signalsBasePath, exportID)
+	path := fmt.Sprintf("%s/exports/%s", signalsBasePath, url.PathEscape(exportID))
 	root := new(SignalsExportJob)
 	resp, err := s.get(ctx, path, root)
 	if err != nil {
@@ -538,7 +538,7 @@ func (s *SignalsServiceOp) GetExport(ctx context.Context, exportID string) (*Sig
 
 // GetExportDownload returns a 15-minute Spaces presign for a completed export.
 func (s *SignalsServiceOp) GetExportDownload(ctx context.Context, exportID string) (*SignalsExportDownload, *Response, error) {
-	path := fmt.Sprintf("%s/exports/%s/download", signalsBasePath, exportID)
+	path := fmt.Sprintf("%s/exports/%s/download", signalsBasePath, url.PathEscape(exportID))
 	root := new(SignalsExportDownload)
 	resp, err := s.get(ctx, path, root)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -375,7 +376,7 @@ var _ LoadBalancersService = &LoadBalancersServiceOp{}
 
 // Get an existing load balancer by its identifier.
 func (l *LoadBalancersServiceOp) Get(ctx context.Context, lbID string) (*LoadBalancer, *Response, error) {
-	path := fmt.Sprintf("%s/%s", loadBalancersBasePath, lbID)
+	path := fmt.Sprintf("%s/%s", loadBalancersBasePath, url.PathEscape(lbID))
 
 	req, err := l.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -502,7 +503,7 @@ func (l *LoadBalancersServiceOp) Create(ctx context.Context, lbr *LoadBalancerRe
 
 // Update an existing load balancer with new configuration.
 func (l *LoadBalancersServiceOp) Update(ctx context.Context, lbID string, lbr *LoadBalancerRequest) (*LoadBalancer, *Response, error) {
-	path := fmt.Sprintf("%s/%s", loadBalancersBasePath, lbID)
+	path := fmt.Sprintf("%s/%s", loadBalancersBasePath, url.PathEscape(lbID))
 
 	req, err := l.client.NewRequest(ctx, "PUT", path, lbr)
 	if err != nil {
@@ -520,7 +521,7 @@ func (l *LoadBalancersServiceOp) Update(ctx context.Context, lbID string, lbr *L
 
 // Delete a load balancer by its identifier.
 func (l *LoadBalancersServiceOp) Delete(ctx context.Context, ldID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", loadBalancersBasePath, ldID)
+	path := fmt.Sprintf("%s/%s", loadBalancersBasePath, url.PathEscape(ldID))
 
 	req, err := l.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -532,7 +533,7 @@ func (l *LoadBalancersServiceOp) Delete(ctx context.Context, ldID string) (*Resp
 
 // AddDroplets adds droplets to a load balancer.
 func (l *LoadBalancersServiceOp) AddDroplets(ctx context.Context, lbID string, dropletIDs ...int) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, lbID, dropletsPath)
+	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, url.PathEscape(lbID), dropletsPath)
 
 	req, err := l.client.NewRequest(ctx, http.MethodPost, path, &dropletIDsRequest{IDs: dropletIDs})
 	if err != nil {
@@ -544,7 +545,7 @@ func (l *LoadBalancersServiceOp) AddDroplets(ctx context.Context, lbID string, d
 
 // RemoveDroplets removes droplets from a load balancer.
 func (l *LoadBalancersServiceOp) RemoveDroplets(ctx context.Context, lbID string, dropletIDs ...int) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, lbID, dropletsPath)
+	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, url.PathEscape(lbID), dropletsPath)
 
 	req, err := l.client.NewRequest(ctx, http.MethodDelete, path, &dropletIDsRequest{IDs: dropletIDs})
 	if err != nil {
@@ -556,7 +557,7 @@ func (l *LoadBalancersServiceOp) RemoveDroplets(ctx context.Context, lbID string
 
 // AddForwardingRules adds forwarding rules to a load balancer.
 func (l *LoadBalancersServiceOp) AddForwardingRules(ctx context.Context, lbID string, rules ...ForwardingRule) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, lbID, forwardingRulesPath)
+	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, url.PathEscape(lbID), forwardingRulesPath)
 
 	req, err := l.client.NewRequest(ctx, http.MethodPost, path, &forwardingRulesRequest{Rules: rules})
 	if err != nil {
@@ -568,7 +569,7 @@ func (l *LoadBalancersServiceOp) AddForwardingRules(ctx context.Context, lbID st
 
 // RemoveForwardingRules removes forwarding rules from a load balancer.
 func (l *LoadBalancersServiceOp) RemoveForwardingRules(ctx context.Context, lbID string, rules ...ForwardingRule) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, lbID, forwardingRulesPath)
+	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, url.PathEscape(lbID), forwardingRulesPath)
 
 	req, err := l.client.NewRequest(ctx, http.MethodDelete, path, &forwardingRulesRequest{Rules: rules})
 	if err != nil {
@@ -580,7 +581,7 @@ func (l *LoadBalancersServiceOp) RemoveForwardingRules(ctx context.Context, lbID
 
 // PurgeCache purges the CDN cache of a global load balancer by its identifier.
 func (l *LoadBalancersServiceOp) PurgeCache(ctx context.Context, ldID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, ldID, cachePath)
+	path := fmt.Sprintf("%s/%s/%s", loadBalancersBasePath, url.PathEscape(ldID), cachePath)
 
 	req, err := l.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {

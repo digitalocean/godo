@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -117,11 +118,11 @@ func (svc *StorageServiceOp) ListVolumes(ctx context.Context, params *ListVolume
 	path := storageAllocPath
 	if params != nil {
 		if params.Region != "" && params.Name != "" {
-			path = fmt.Sprintf("%s?name=%s&region=%s", path, params.Name, params.Region)
+			path = fmt.Sprintf("%s?name=%s&region=%s", path, url.QueryEscape(params.Name), url.QueryEscape(params.Region))
 		} else if params.Region != "" {
-			path = fmt.Sprintf("%s?region=%s", path, params.Region)
+			path = fmt.Sprintf("%s?region=%s", path, url.QueryEscape(params.Region))
 		} else if params.Name != "" {
-			path = fmt.Sprintf("%s?name=%s", path, params.Name)
+			path = fmt.Sprintf("%s?name=%s", path, url.QueryEscape(params.Name))
 		}
 
 		if params.ListOptions != nil {
@@ -173,7 +174,7 @@ func (svc *StorageServiceOp) CreateVolume(ctx context.Context, createRequest *Vo
 
 // GetVolume retrieves an individual storage volume.
 func (svc *StorageServiceOp) GetVolume(ctx context.Context, id string) (*Volume, *Response, error) {
-	path := fmt.Sprintf("%s/%s", storageAllocPath, id)
+	path := fmt.Sprintf("%s/%s", storageAllocPath, url.PathEscape(id))
 
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -191,7 +192,7 @@ func (svc *StorageServiceOp) GetVolume(ctx context.Context, id string) (*Volume,
 
 // DeleteVolume deletes a storage volume.
 func (svc *StorageServiceOp) DeleteVolume(ctx context.Context, id string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", storageAllocPath, id)
+	path := fmt.Sprintf("%s/%s", storageAllocPath, url.PathEscape(id))
 
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -211,7 +212,7 @@ type SnapshotCreateRequest struct {
 
 // ListSnapshots lists all snapshots related to a storage volume.
 func (svc *StorageServiceOp) ListSnapshots(ctx context.Context, volumeID string, opt *ListOptions) ([]Snapshot, *Response, error) {
-	path := fmt.Sprintf("%s/%s/snapshots", storageAllocPath, volumeID)
+	path := fmt.Sprintf("%s/%s/snapshots", storageAllocPath, url.PathEscape(volumeID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -240,7 +241,7 @@ func (svc *StorageServiceOp) ListSnapshots(ctx context.Context, volumeID string,
 
 // CreateSnapshot creates a snapshot of a storage volume.
 func (svc *StorageServiceOp) CreateSnapshot(ctx context.Context, createRequest *SnapshotCreateRequest) (*Snapshot, *Response, error) {
-	path := fmt.Sprintf("%s/%s/snapshots", storageAllocPath, createRequest.VolumeID)
+	path := fmt.Sprintf("%s/%s/snapshots", storageAllocPath, url.PathEscape(createRequest.VolumeID))
 
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createRequest)
 	if err != nil {
@@ -257,7 +258,7 @@ func (svc *StorageServiceOp) CreateSnapshot(ctx context.Context, createRequest *
 
 // GetSnapshot retrieves an individual snapshot.
 func (svc *StorageServiceOp) GetSnapshot(ctx context.Context, id string) (*Snapshot, *Response, error) {
-	path := fmt.Sprintf("%s/%s", storageSnapPath, id)
+	path := fmt.Sprintf("%s/%s", storageSnapPath, url.PathEscape(id))
 
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -275,7 +276,7 @@ func (svc *StorageServiceOp) GetSnapshot(ctx context.Context, id string) (*Snaps
 
 // DeleteSnapshot deletes a snapshot.
 func (svc *StorageServiceOp) DeleteSnapshot(ctx context.Context, id string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", storageSnapPath, id)
+	path := fmt.Sprintf("%s/%s", storageSnapPath, url.PathEscape(id))
 
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {

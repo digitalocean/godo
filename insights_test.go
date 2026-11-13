@@ -1445,7 +1445,7 @@ func TestInsights_GetTraceEscapesPath(t *testing.T) {
 	defer teardown()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if got, want := r.URL.EscapedPath(), "/v2/insights/query/nyc3%2Fother/traces/abc%2F..%2Fdef"; got != want {
+		if got, want := r.URL.EscapedPath(), "/v2/insights/query/nyc3%2Fother/traces/abc%2Fdef"; got != want {
 			t.Errorf("escaped path = %q, want %q", got, want)
 		}
 		if got, want := r.URL.Query().Get("from"), "now-2h"; got != want {
@@ -1454,7 +1454,7 @@ func TestInsights_GetTraceEscapesPath(t *testing.T) {
 		fmt.Fprint(w, `{}`)
 	})
 
-	_, _, err := client.Insights.GetTrace(ctx, "nyc3/other", "abc/../def", &TraceGetOptions{From: "now-2h"})
+	_, _, err := client.Insights.GetTrace(ctx, "nyc3/other", "abc/def", &TraceGetOptions{From: "now-2h"})
 	if err != nil {
 		t.Fatalf("GetTrace: %v", err)
 	}

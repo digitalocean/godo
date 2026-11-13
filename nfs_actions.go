@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // NfsActionsService is an interface for interacting with the NFS actions
@@ -170,7 +171,7 @@ func (s *NfsActionsServiceOp) Get(ctx context.Context, actionID string) (*NfsAct
 		return nil, nil, NewArgError("actionID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/actions/%s", nfsBasePath, actionID)
+	path := fmt.Sprintf("%s/actions/%s", nfsBasePath, url.PathEscape(actionID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -208,5 +209,5 @@ func (s *NfsActionsServiceOp) doAction(ctx context.Context, nfsShareId string, r
 }
 
 func nfsActionPath(nfsID string) string {
-	return fmt.Sprintf("v2/nfs/%v/actions", nfsID)
+	return fmt.Sprintf("v2/nfs/%v/actions", url.PathEscape(nfsID))
 }

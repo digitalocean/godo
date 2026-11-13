@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // FloatingIPActionsService is an interface for interfacing with the
@@ -105,5 +106,5 @@ func (s *FloatingIPActionsServiceOp) list(ctx context.Context, path string) ([]A
 }
 
 func floatingIPActionPath(ip string) string {
-	return fmt.Sprintf("%s/%s/actions", floatingBasePath, ip)
+	return fmt.Sprintf("%s/%s/actions", floatingBasePath, url.PathEscape(ip))
 }

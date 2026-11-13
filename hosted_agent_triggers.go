@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -417,7 +418,7 @@ func (s *HostedAgentTriggersServiceOp) Get(ctx context.Context, triggerID string
 	if triggerID == "" {
 		return nil, nil, errors.New("hosted agent triggers: trigger id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTriggerByIDPath, triggerID)
+	path := fmt.Sprintf(hostedAgentTriggerByIDPath, url.PathEscape(triggerID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -441,7 +442,7 @@ func (s *HostedAgentTriggersServiceOp) Update(ctx context.Context, triggerID str
 	if update == nil {
 		return nil, nil, NewArgError("update", "cannot be nil")
 	}
-	path := fmt.Sprintf(hostedAgentTriggerByIDPath, triggerID)
+	path := fmt.Sprintf(hostedAgentTriggerByIDPath, url.PathEscape(triggerID))
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -462,7 +463,7 @@ func (s *HostedAgentTriggersServiceOp) Delete(ctx context.Context, triggerID str
 	if triggerID == "" {
 		return nil, errors.New("hosted agent triggers: trigger id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTriggerByIDPath, triggerID)
+	path := fmt.Sprintf(hostedAgentTriggerByIDPath, url.PathEscape(triggerID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -479,7 +480,7 @@ func (s *HostedAgentTriggersServiceOp) RotateSecret(ctx context.Context, trigger
 	if triggerID == "" {
 		return nil, nil, errors.New("hosted agent triggers: trigger id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTriggerRotateSecretPath, triggerID)
+	path := fmt.Sprintf(hostedAgentTriggerRotateSecretPath, url.PathEscape(triggerID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -501,7 +502,7 @@ func (s *HostedAgentTriggersServiceOp) ListExecutions(ctx context.Context, trigg
 	if triggerID == "" {
 		return nil, nil, errors.New("hosted agent triggers: trigger id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTriggerExecutionsPath, triggerID)
+	path := fmt.Sprintf(hostedAgentTriggerExecutionsPath, url.PathEscape(triggerID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -526,7 +527,7 @@ func (s *HostedAgentTriggersServiceOp) GetExecution(ctx context.Context, trigger
 	if executionID == "" {
 		return nil, nil, errors.New("hosted agent triggers: execution id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTriggerExecutionByIDPath, triggerID, executionID)
+	path := fmt.Sprintf(hostedAgentTriggerExecutionByIDPath, url.PathEscape(triggerID), url.PathEscape(executionID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -556,7 +557,7 @@ func (s *HostedAgentTriggersServiceOp) Cancel(ctx context.Context, triggerID, ex
 	if executionID == "" {
 		return nil, nil, errors.New("hosted agent triggers: execution id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTriggerExecutionCancelPath, triggerID, executionID)
+	path := fmt.Sprintf(hostedAgentTriggerExecutionCancelPath, url.PathEscape(triggerID), url.PathEscape(executionID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -581,7 +582,7 @@ func (s *HostedAgentTriggersServiceOp) GetBySession(ctx context.Context, session
 	if sessionID == "" {
 		return nil, nil, errors.New("hosted agent triggers: session id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTriggerBySessionPath, sessionID)
+	path := fmt.Sprintf(hostedAgentTriggerBySessionPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
