@@ -3103,18 +3103,26 @@ type ModelEvaluationPreset struct {
 // MetricResultSummary represents per-metric aggregated pass/fail statistics
 // across all prompts in an evaluation run.
 type MetricResultSummary struct {
-	AvgAtKPercent  float64 `json:"avg_at_k_percent,omitempty"`
-	ConsAtKPercent float64 `json:"cons_at_k_percent,omitempty"`
-	Description    string  `json:"description,omitempty"`
-	FailCount      uint32  `json:"fail_count,omitempty"`
-	FailPercent    float64 `json:"fail_percent,omitempty"`
-	MetricName     string  `json:"metric_name,omitempty"`
-	MetricUuid     string  `json:"metric_uuid,omitempty"`
+	AvgAtKPercent  float64         `json:"avg_at_k_percent,omitempty"`
+	ConsAtKPercent float64         `json:"cons_at_k_percent,omitempty"`
+	Description    string          `json:"description,omitempty"`
+	FailCount      uint32          `json:"fail_count,omitempty"`
+	FailPercent    float64         `json:"fail_percent,omitempty"`
+	MetricName     string          `json:"metric_name,omitempty"`
+	MetricUuid     string          `json:"metric_uuid,omitempty"`
+	PassAtKCurve   []*PassAtKPoint `json:"pass_at_k_curve,omitempty"`
+	PassAtKPercent float64         `json:"pass_at_k_percent,omitempty"`
+	PassCount      uint32          `json:"pass_count,omitempty"`
+	PassPercent    float64         `json:"pass_percent,omitempty"`
+	SkipPercent    float64         `json:"skip_percent,omitempty"`
+	SkippedCount   uint32          `json:"skipped_count,omitempty"`
+}
+
+// PassAtKPoint is one point on a metric's pass@k curve, for k from 1 up to
+// the run's epochs. Only populated when epochs > 1.
+type PassAtKPoint struct {
+	K              uint32  `json:"k,omitempty"`
 	PassAtKPercent float64 `json:"pass_at_k_percent,omitempty"`
-	PassCount      uint32  `json:"pass_count,omitempty"`
-	PassPercent    float64 `json:"pass_percent,omitempty"`
-	SkipPercent    float64 `json:"skip_percent,omitempty"`
-	SkippedCount   uint32  `json:"skipped_count,omitempty"`
 }
 
 // LatencyMetrics contains latency metrics for candidate model invocations,

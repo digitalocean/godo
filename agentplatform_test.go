@@ -4016,7 +4016,11 @@ var getModelEvaluationRunResponse = `
 					"metric_uuid": "44444444-4444-4444-4444-444444444444",
 					"metric_name": "accuracy",
 					"pass_percent": 90.0,
-					"fail_percent": 10.0
+					"fail_percent": 10.0,
+					"pass_at_k_curve": [
+						{"k": 1, "pass_at_k_percent": 90.0},
+						{"k": 2, "pass_at_k_percent": 100.0}
+					]
 				}
 			],
 			"performance_metrics": {
@@ -4091,6 +4095,10 @@ func TestGetModelEvaluationRun(t *testing.T) {
 	assert.Len(t, out.Run.ResultSummary.MetricSummaries, 1)
 	assert.Equal(t, "accuracy", out.Run.ResultSummary.MetricSummaries[0].MetricName)
 	assert.Equal(t, 90.0, out.Run.ResultSummary.MetricSummaries[0].PassPercent)
+	assert.Equal(t, []*PassAtKPoint{
+		{K: 1, PassAtKPercent: 90.0},
+		{K: 2, PassAtKPercent: 100.0},
+	}, out.Run.ResultSummary.MetricSummaries[0].PassAtKCurve)
 	assert.NotNil(t, out.Run.ResultSummary.PerformanceMetrics)
 	assert.NotNil(t, out.Run.ResultSummary.PerformanceMetrics.CandidateLatency)
 	assert.Equal(t, 250.5, out.Run.ResultSummary.PerformanceMetrics.CandidateLatency.AvgE2ELatencyMs)
