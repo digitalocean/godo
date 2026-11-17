@@ -1421,7 +1421,7 @@ func TestKubernetesClusters_Create_MaxPodsPerNode(t *testing.T) {
 		Name:           want.Name,
 		RegionSlug:     want.RegionSlug,
 		VersionSlug:    want.VersionSlug,
-		MaxPodsPerNode: 450,
+		MaxPodsPerNode: want.MaxPodsPerNode,
 		NodePools: []*KubernetesNodePoolCreateRequest{
 			{
 				Size:  want.NodePools[0].Size,

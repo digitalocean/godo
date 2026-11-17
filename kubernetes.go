@@ -103,9 +103,9 @@ type KubernetesClusterCreateRequest struct {
 	// must already have a NAT gateway attached, or the create request fails with a
 	// 422. This can only be set at creation time.
 	IsolatedWorkers bool `json:"isolated_workers,omitempty"`
-	// MaxPodsPerNode sets the maximum number of pods per worker node. Supported
-	// values are 110, 220 and 450. When omitted, the default is 110. This can only
-	// be set at creation time.
+	// MaxPodsPerNode sets the maximum number of pods per worker node. Zero leaves
+	// it unset and the API applies its default. See the API reference for
+	// supported values. This can only be set at creation time.
 	MaxPodsPerNode int `json:"max_pods_per_node,omitempty"`
 	// GPUOperatorReady controls whether to launch GPU nodes in the cluster with images without GPU drivers.
 	// Mutually exclusive with other GPU-related cluster options, such as NvidiaGpuDraDriver and AmdGpuDraDriver.
