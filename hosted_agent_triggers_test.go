@@ -509,6 +509,38 @@ func TestHostedAgentTriggers_GetExecution(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func TestHostedAgentTriggerExecution_DecodesWaitingDetail(t *testing.T) {
+	const raw = `{
+		"execution_id": "exec-wait",
+		"status": "running",
+		"status_reason": "waiting_for_bound_session",
+		"status_message": "Waiting for the bound session to pause."
+	}`
+
+	var exec HostedAgentTriggerExecution
+	require.NoError(t, json.Unmarshal([]byte(raw), &exec))
+	assert.Equal(t, HostedAgentTriggerExecutionStatusRunning, exec.Status)
+	assert.Equal(t, HostedAgentTriggerExecutionWaitingForBoundSession, exec.StatusReason)
+	assert.Equal(t, "Waiting for the bound session to pause.", exec.StatusMessage)
+
+	body, err := json.Marshal(&exec)
+	require.NoError(t, err)
+	var fields map[string]any
+	require.NoError(t, json.Unmarshal(body, &fields))
+	assert.Equal(t, "waiting_for_bound_session", fields["status_reason"])
+	assert.Equal(t, "Waiting for the bound session to pause.", fields["status_message"])
+
+	// An unknown reason stays opaque, and an execution with no detail omits both fields.
+	var unknown HostedAgentTriggerExecution
+	require.NoError(t, json.Unmarshal([]byte(`{"status_reason":"some_future_reason"}`), &unknown))
+	assert.Equal(t, HostedAgentTriggerExecutionStatusReason("some_future_reason"), unknown.StatusReason)
+
+	empty, err := json.Marshal(&HostedAgentTriggerExecution{ExecutionID: "exec-plain", Status: HostedAgentTriggerExecutionStatusRunning})
+	require.NoError(t, err)
+	assert.NotContains(t, string(empty), "status_reason")
+	assert.NotContains(t, string(empty), "status_message")
+}
+
 func TestHostedAgentTriggers_Cancel(t *testing.T) {
 	setup()
 	defer teardown()
