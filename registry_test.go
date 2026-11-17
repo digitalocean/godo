@@ -1231,6 +1231,70 @@ func TestRegistries_Create(t *testing.T) {
 	require.Equal(t, want, got)
 }
 
+func TestRegistries_Create_InsightsTelemetryOptIn(t *testing.T) {
+	tests := []struct {
+		name     string
+		insights *RegistryInsightsTelemetryOptIn
+		want     string
+	}{
+		{
+			name:     "omitted",
+			insights: nil,
+			want:     "",
+		},
+		{
+			name:     "no logs choice",
+			insights: &RegistryInsightsTelemetryOptIn{},
+			want:     `{}`,
+		},
+		{
+			name:     "logs opt-in",
+			insights: &RegistryInsightsTelemetryOptIn{Logs: PtrTo(true)},
+			want:     `{"logs":true}`,
+		},
+		{
+			name:     "logs explicit opt-out",
+			insights: &RegistryInsightsTelemetryOptIn{Logs: PtrTo(false)},
+			want:     `{"logs":false}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			createRequest := &RegistryCreateRequest{
+				Name:                 "insights-registry",
+				SubscriptionTierSlug: "professional",
+				Region:               "fra1",
+				Insights:             tt.insights,
+			}
+
+			mux.HandleFunc("/v2/registries", func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, http.MethodPost)
+
+				var body map[string]json.RawMessage
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+
+				got, ok := body["insights"]
+				if tt.want == "" {
+					require.False(t, ok, "insights key should be omitted")
+				} else {
+					require.True(t, ok, "insights key should be present")
+					require.JSONEq(t, tt.want, string(got))
+				}
+
+				fmt.Fprint(w, `{"registry": {"name": "insights-registry"}}`)
+			})
+
+			got, _, err := client.Registries.Create(ctx, createRequest)
+			require.NoError(t, err)
+			require.Equal(t, "insights-registry", got.Name)
+		})
+	}
+}
+
 func TestRegistries_ListRepositoriesV2(t *testing.T) {
 	setup()
 	defer teardown()

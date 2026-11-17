@@ -54,6 +54,11 @@ func TestActionGatewayPublicOperations(t *testing.T) {
 		{"Connections", "List", "GET", "/connections", "provider=jira&sort_direction=desc", "", []interface{}{&ActionGatewayConnectionListOptions{Provider: "jira", SortDirection: "desc"}}},
 		{"Connections", "Get", "GET", "/connections/id", "", "", []interface{}{"id"}},
 		{"Connections", "Delete", "DELETE", "/connections/id", "", "", []interface{}{"id"}},
+		{"ProviderCredentials", "Create", "POST", "/provider-credentials", "", `{"provider":"github","kind":"PROVIDER_CREDENTIAL_KIND_OAUTH_CLIENT","display_name":"Production","client_id":"client","client_secret":"secret","reusable_by_team":true}`, []interface{}{&ActionGatewayProviderCredentialCreateRequest{Provider: "github", Kind: ActionGatewayProviderCredentialKindOAuthClient, DisplayName: "Production", ClientID: "client", ClientSecret: "secret", ReusableByTeam: true}}},
+		{"ProviderCredentials", "List", "GET", "/provider-credentials", "provider=github", "", []interface{}{&ActionGatewayProviderCredentialListOptions{Provider: "github"}}},
+		{"ProviderCredentials", "Get", "GET", "/provider-credentials/cred%2F1", "", "", []interface{}{"cred/1"}},
+		{"ProviderCredentials", "Update", "PATCH", "/provider-credentials/cred", "", `{"client_id":"client","client_secret":"rotated"}`, []interface{}{"cred", &ActionGatewayProviderCredentialUpdateRequest{ClientID: "client", ClientSecret: "rotated"}}},
+		{"ProviderCredentials", "Delete", "DELETE", "/provider-credentials/cred", "", "", []interface{}{"cred"}},
 		{"Sessions", "Create", "POST", "/sessions", "", `{"name":"test","tools":[]}`, []interface{}{&ActionGatewaySessionCreateRequest{Name: "test", Tools: []string{}}}},
 		{"Sessions", "List", "GET", "/sessions", "end_user_id=alice&page=2", "", []interface{}{&ActionGatewaySessionListOptions{EndUserID: "alice", Page: 2}}},
 		{"Sessions", "Search", "GET", "/sessions/search", "page_token=cursor&query=alice", "", []interface{}{&ActionGatewaySessionSearchOptions{Query: "alice", PageToken: "cursor"}}},
@@ -75,8 +80,8 @@ func TestActionGatewayPublicOperations(t *testing.T) {
 		{"ActorLimits", "Set", "POST", "/actors/alice/limits:set", "", `{"overrides":[{"category":"LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE","requests_per_minute":"10"}]}`, []interface{}{"alice", &ActionGatewaySetLimitsRequest{Overrides: []ActionGatewayLimitOverride{{Category: "LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE", RequestsPerMinute: "10"}}}}},
 		{"ActorLimits", "Clear", "POST", "/actors/alice/limits:clear", "", `{"categories":["LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE"]}`, []interface{}{"alice", &ActionGatewayClearLimitsRequest{Categories: []string{"LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE"}}}},
 	}
-	if len(operations) != 54 {
-		t.Fatalf("expected all 54 public operations, got %d", len(operations))
+	if len(operations) != 59 {
+		t.Fatalf("expected all 59 public operations, got %d", len(operations))
 	}
 	for _, operation := range operations {
 		t.Run(operation.resource+"/"+operation.name, func(t *testing.T) {
@@ -130,6 +135,17 @@ func TestActionGatewayEmptyPathArguments(t *testing.T) {
 		{"view ID", "viewID", func() error { _, _, err := client.ActionGateway.OutputViews.Get(ctx, ""); return err }},
 		{"server ref", "ref", func() error { _, _, err := client.ActionGateway.MCPServers.Get(ctx, ""); return err }},
 		{"connection ID", "id", func() error { _, _, err := client.ActionGateway.Connections.Get(ctx, ""); return err }},
+		{"provider credential ID", "id", func() error { _, _, err := client.ActionGateway.ProviderCredentials.Get(ctx, ""); return err }},
+		{"updated provider credential ID", "id", func() error {
+			_, _, err := client.ActionGateway.ProviderCredentials.Update(ctx, " ", &ActionGatewayProviderCredentialUpdateRequest{})
+			return err
+		}},
+		{"deleted provider credential ID", "id", func() error { _, _, err := client.ActionGateway.ProviderCredentials.Delete(ctx, ""); return err }},
+		{"provider credential create body", "body", func() error { _, _, err := client.ActionGateway.ProviderCredentials.Create(ctx, nil); return err }},
+		{"provider credential update body", "body", func() error {
+			_, _, err := client.ActionGateway.ProviderCredentials.Update(ctx, "cred", nil)
+			return err
+		}},
 		{"session URN", "urn", func() error { _, err := client.ActionGateway.Sessions.Delete(ctx, ""); return err }},
 		{"user ID", "userID", func() error { _, _, err := client.ActionGateway.Users.Get(ctx, ""); return err }},
 		{"actor ID", "actorID", func() error { _, _, err := client.ActionGateway.ActorLimits.Get(ctx, ""); return err }},
@@ -262,5 +278,70 @@ func TestActionGatewayResponseDecoding(t *testing.T) {
 	limits, _, err := client.ActionGateway.ActorLimits.Get(ctx, "alice")
 	if err != nil || limits.ConfiguredLimits[0].RequestsPerMinute != "10" || limits.EffectiveLimits.NativeToolCallsRequestsPerMinute != "600" {
 		t.Fatalf("limits = %+v, %v", limits, err)
+	}
+}
+
+func TestActionGatewayProviderCredentialWireShapes(t *testing.T) {
+	updates := []struct {
+		name string
+		body ActionGatewayProviderCredentialUpdateRequest
+		want string
+	}{
+		{"rename", ActionGatewayProviderCredentialUpdateRequest{DisplayName: "Renamed"}, `{"display_name":"Renamed"}`},
+		{"rotate key", ActionGatewayProviderCredentialUpdateRequest{APIKey: "key"}, `{"api_key":"key"}`},
+		{"set base URL", ActionGatewayProviderCredentialUpdateRequest{BaseURL: PtrTo("https://api.example.com")}, `{"base_url":"https://api.example.com"}`},
+		{"clear base URL", ActionGatewayProviderCredentialUpdateRequest{BaseURL: PtrTo("")}, `{"base_url":""}`},
+		{"share", ActionGatewayProviderCredentialUpdateRequest{ReusableByTeam: true}, `{"reusable_by_team":true}`},
+		{"parameters", ActionGatewayProviderCredentialUpdateRequest{CredentialParameters: map[string]interface{}{"subdomain": "example"}}, `{"credential_parameters":{"subdomain":"example"}}`},
+	}
+	for _, update := range updates {
+		t.Run(update.name, func(t *testing.T) {
+			body, err := json.Marshal(update.body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(body) != update.want {
+				t.Fatalf("body = %s, want %s", body, update.want)
+			}
+		})
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		switch request.Method + " " + request.URL.Path {
+		case "GET " + actionGatewayProviderCredentialsPath:
+			_, _ = io.WriteString(writer, `{"credentials":[{"id":"cred","provider":"github","display_name":"Production","kind":"PROVIDER_CREDENTIAL_KIND_OAUTH_CLIENT","status":"PROVIDER_CREDENTIAL_STATUS_ACTIVE","base_url":"","created_at":"2026-11-01T12:00:00Z","updated_at":"2026-11-01T13:00:00Z","reusable_by_team":true,"scope":"team","redirect_url":"https://app.example.com/oauth/callback","discovery":{"status":"pending","consented_at":null,"authorization_url":"https://cloud.digitalocean.com/authorize"}}]}`)
+		case "DELETE " + actionGatewayProviderCredentialsPath + "/cred":
+			_, _ = io.WriteString(writer, `{"credential":{"id":"cred","provider":"linear","kind":"PROVIDER_CREDENTIAL_KIND_API_KEY","status":"PROVIDER_CREDENTIAL_STATUS_DELETED","owning_user_id":"user","reusable_by_team":false,"scope":"user"},"revoked_connections":2}`)
+		default:
+			t.Errorf("unexpected request %s %s", request.Method, request.URL.Path)
+		}
+	}))
+	defer server.Close()
+	client := NewClient(server.Client())
+	client.BaseURL, _ = url.Parse(server.URL)
+	ctx := context.Background()
+
+	list, _, err := client.ActionGateway.ProviderCredentials.List(ctx, nil)
+	if err != nil || len(list.Credentials) != 1 {
+		t.Fatalf("list = %+v, %v", list, err)
+	}
+	credential := list.Credentials[0]
+	if credential.ID != "cred" || credential.Provider != "github" || credential.DisplayName != "Production" ||
+		credential.Kind != ActionGatewayProviderCredentialKindOAuthClient || credential.Status != ActionGatewayProviderCredentialStatusActive ||
+		!credential.ReusableByTeam || credential.Scope != "team" || credential.RedirectURL != "https://app.example.com/oauth/callback" ||
+		credential.CreatedAt == nil || credential.UpdatedAt == nil || !credential.UpdatedAt.After(credential.CreatedAt.Time) {
+		t.Fatalf("unexpected credential: %+v", credential)
+	}
+	if credential.Discovery == nil || credential.Discovery.Status != "pending" || credential.Discovery.ConsentedAt != nil ||
+		credential.Discovery.AuthorizationURL != "https://cloud.digitalocean.com/authorize" {
+		t.Fatalf("unexpected discovery: %+v", credential.Discovery)
+	}
+
+	deleted, _, err := client.ActionGateway.ProviderCredentials.Delete(ctx, "cred")
+	if err != nil || deleted.RevokedConnections != 2 || deleted.Credential == nil ||
+		deleted.Credential.Status != ActionGatewayProviderCredentialStatusDeleted || deleted.Credential.OwningUserID != "user" ||
+		deleted.Credential.Discovery != nil {
+		t.Fatalf("delete = %+v, %v", deleted, err)
 	}
 }
