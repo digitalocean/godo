@@ -2404,6 +2404,139 @@ func TestUpdateInferenceRouterValidation(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestListModelCatalogV2(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/catalog_v2", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		q := r.URL.Query()
+		assert.Equal(t, "1", q.Get("page"))
+		assert.Equal(t, "2", q.Get("per_page"))
+		assert.Equal(t, "llama", q.Get("search"))
+		assert.Equal(t, []string{"MODEL_SERVING_SERVERLESS", "MODEL_SERVING_DEDICATED"}, q["serving"])
+		assert.Equal(t, []string{"tool_calling"}, q["capabilities"])
+		assert.Equal(t, "MODEL_CATALOG_SORT_BY_NAME", q.Get("sort_by"))
+
+		fmt.Fprint(w, `{
+			"data": [{
+				"id": "506a3371-88d0-4047-9212-e2079497ac68",
+				"model_id": "llama3.1-70b-instruct",
+				"name": "Llama 3.1 70B",
+				"creator": "Meta",
+				"item_type": "MODEL_CATALOG_ITEM_TYPE_MODEL",
+				"context_window": "128000",
+				"parameter_count_in_billions": 70,
+				"serving": ["MODEL_SERVING_SERVERLESS"],
+				"input_modality": ["MODEL_MODALITY_TEXT"],
+				"output_modality": ["MODEL_MODALITY_TEXT"],
+				"type": "chat",
+				"pricing": {"input_price_per_million": 0.6, "reasoning_price_per_million": 1.25},
+				"performance": {
+					"window_days": 1,
+					"status": "ok",
+					"e2e_latency_p50_seconds": 0.42,
+					"throughput_p50_tok_per_s": 48.5,
+					"ttft_p50_seconds": 0.18,
+					"samples": 168
+				}
+			}],
+			"meta": {"total": 1, "page": 1, "pages": 1},
+			"links": {"pages": {"next": "https://api.digitalocean.com/v2/gen-ai/models/catalog_v2?page=2"}},
+			"available_creators": ["Meta"],
+			"available_model_types": ["chat"]
+		}`)
+	})
+
+	list, resp, err := client.AgentPlatform.ListModelCatalogV2(ctx, &ModelCatalogV2ListOptions{
+		Page:         1,
+		PerPage:      2,
+		Search:       "llama",
+		Serving:      []string{"MODEL_SERVING_SERVERLESS", "MODEL_SERVING_DEDICATED"},
+		Capabilities: []string{"tool_calling"},
+		SortBy:       "MODEL_CATALOG_SORT_BY_NAME",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	require.Len(t, list.Data, 1)
+	assert.Equal(t, "Llama 3.1 70B", list.Data[0].Name)
+	assert.Equal(t, "llama3.1-70b-instruct", list.Data[0].ModelID)
+	assert.Equal(t, "128000", list.Data[0].ContextWindow)
+	assert.Equal(t, 70.0, list.Data[0].ParameterCountInBillions)
+	require.NotNil(t, list.Data[0].Pricing)
+	assert.Equal(t, 0.6, list.Data[0].Pricing.InputPricePerMillion)
+	assert.Equal(t, 1.25, list.Data[0].Pricing.ReasoningPricePerMillion)
+	require.NotNil(t, list.Data[0].Performance)
+	assert.Equal(t, uint32(1), list.Data[0].Performance.WindowDays)
+	assert.Equal(t, "ok", list.Data[0].Performance.Status)
+	assert.Equal(t, 0.42, list.Data[0].Performance.E2ELatencyP50Seconds)
+	assert.Equal(t, 48.5, list.Data[0].Performance.ThroughputP50TokPerS)
+	assert.Equal(t, 0.18, list.Data[0].Performance.TTFTP50Seconds)
+	assert.Equal(t, uint32(168), list.Data[0].Performance.Samples)
+	assert.Equal(t, []string{"Meta"}, list.AvailableCreators)
+	require.NotNil(t, resp.Links)
+	assert.Equal(t, "https://api.digitalocean.com/v2/gen-ai/models/catalog_v2?page=2", resp.Links.Pages.Next)
+}
+
+func TestGetModelCatalogCardV2(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/catalog_v2/506a3371-88d0-4047-9212-e2079497ac68", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "llama3.1-70b-instruct", r.URL.Query().Get("model_id"))
+		fmt.Fprint(w, `{
+			"data": {
+				"id": "506a3371-88d0-4047-9212-e2079497ac68",
+				"model_id": "llama3.1-70b-instruct",
+				"name": "Llama 3.1 70B",
+				"description": "A catalog card.",
+				"code_snippets": {"curl": "curl example"},
+				"liveliness": {"source": "canary", "overall_status": "ok"},
+				"performance": {"window_days": 7, "status": "ok", "e2e_latency_p50_seconds": 0.4}
+			}
+		}`)
+	})
+
+	card, resp, err := client.AgentPlatform.GetModelCatalogCardV2(ctx, "506a3371-88d0-4047-9212-e2079497ac68", "llama3.1-70b-instruct")
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.NotNil(t, card)
+	assert.Equal(t, "A catalog card.", card.Description)
+	require.NotNil(t, card.CodeSnippets)
+	assert.Equal(t, "curl example", card.CodeSnippets.Curl)
+	require.NotNil(t, card.Liveliness)
+	assert.Equal(t, "canary", card.Liveliness.Source)
+	require.NotNil(t, card.Performance)
+	assert.Equal(t, uint32(7), card.Performance.WindowDays)
+	assert.Equal(t, 0.4, card.Performance.E2ELatencyP50Seconds)
+}
+
+func TestGetModelCatalogCardV2ByModelID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/models/catalog_v2/llama3.1-70b-instruct", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		assert.Equal(t, "llama3.1-70b-instruct", r.URL.Query().Get("model_id"))
+		fmt.Fprint(w, `{"data": {"model_id": "llama3.1-70b-instruct", "name": "Llama 3.1 70B"}}`)
+	})
+
+	card, _, err := client.AgentPlatform.GetModelCatalogCardV2(ctx, "", "llama3.1-70b-instruct")
+	require.NoError(t, err)
+	require.NotNil(t, card)
+	assert.Equal(t, "Llama 3.1 70B", card.Name)
+}
+
+func TestGetModelCatalogCardV2RequiresID(t *testing.T) {
+	setup()
+	defer teardown()
+
+	_, _, err := client.AgentPlatform.GetModelCatalogCardV2(ctx, "  ", "")
+	assert.Error(t, err)
+}
+
 func TestListAvailableModels(t *testing.T) {
 	setup()
 	defer teardown()
@@ -2749,9 +2882,11 @@ var customEvaluationMetricResponse = `
 		"metric_name": "My domain tone metric",
 		"description": "Scores adherence to our support macros",
 		"source": "EVALUATION_METRIC_SOURCE_CUSTOM",
+		"turn_type": "EVALUATION_METRIC_TURN_TYPE_SINGLE_TURN",
 		"custom_eval_config": {
 			"requires_ground_truth": true,
-			"scoring_prompt": "Grade for brand tone and factuality."
+			"scoring_prompt": "Grade for brand tone and factuality.",
+			"turn_type": "EVALUATION_METRIC_TURN_TYPE_SINGLE_TURN"
 		},
 		"associated_presets": [
 			{
@@ -3316,6 +3451,7 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 		assert.NotNil(t, got.Config)
 		assert.True(t, got.Config.RequiresGroundTruth)
 		assert.Equal(t, "Grade for brand tone and factuality.", got.Config.ScoringPrompt)
+		assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, got.Config.TurnType)
 
 		fmt.Fprint(w, customEvaluationMetricResponse)
 	})
@@ -3326,6 +3462,7 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 		Config: &CustomEvaluationMetricConfig{
 			RequiresGroundTruth: true,
 			ScoringPrompt:       "Grade for brand tone and factuality.",
+			TurnType:            EvaluationMetricTurnTypeSingleTurn,
 		},
 	}
 
@@ -3337,8 +3474,10 @@ func TestCreateCustomEvaluationMetric(t *testing.T) {
 	assert.Equal(t, "My domain tone metric", metric.MetricName)
 	assert.Equal(t, "Scores adherence to our support macros", metric.Description)
 	assert.Equal(t, EvaluationMetricSourceCustom, metric.Source)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, metric.TurnType)
 	assert.NotNil(t, metric.CustomEvalConfig)
 	assert.Equal(t, "Grade for brand tone and factuality.", metric.CustomEvalConfig.ScoringPrompt)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, metric.CustomEvalConfig.TurnType)
 	assert.Equal(t, 1, len(metric.AssociatedPresets))
 	assert.Equal(t, "Support preset", metric.AssociatedPresets[0].Name)
 }
@@ -3387,8 +3526,10 @@ func TestUpdateCustomEvaluationMetric(t *testing.T) {
 	assert.NotNil(t, metric)
 	assert.Equal(t, 200, resp.Response.StatusCode)
 	assert.Equal(t, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", metric.MetricUUID)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, metric.TurnType)
 	assert.NotNil(t, metric.CustomEvalConfig)
 	assert.True(t, metric.CustomEvalConfig.RequiresGroundTruth)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, metric.CustomEvalConfig.TurnType)
 }
 
 func TestDeleteCustomEvaluationMetric(t *testing.T) {
@@ -4323,7 +4464,8 @@ var listModelEvaluationMetricsResponse = `
 			"category": "METRIC_CATEGORY_CORRECTNESS",
 			"range_min": 0,
 			"range_max": 1,
-			"inverted": false
+			"inverted": false,
+			"turn_type": "EVALUATION_METRIC_TURN_TYPE_SINGLE_TURN"
 		},
 		{
 			"metric_uuid": "22222222-2222-2222-2222-222222222222",
@@ -4332,7 +4474,8 @@ var listModelEvaluationMetricsResponse = `
 			"metric_type": "METRIC_TYPE_GENERAL_QUALITY",
 			"metric_value_type": "METRIC_VALUE_TYPE_NUMBER",
 			"category": "METRIC_CATEGORY_SAFETY_AND_SECURITY",
-			"inverted": true
+			"inverted": true,
+			"turn_type": "EVALUATION_METRIC_TURN_TYPE_SINGLE_TURN"
 		}
 	]
 }
@@ -4356,8 +4499,30 @@ func TestListModelEvaluationMetrics(t *testing.T) {
 	assert.Equal(t, MetricTypeGeneralQuality, out.Metrics[0].MetricType)
 	assert.Equal(t, MetricValueTypePercentage, out.Metrics[0].MetricValueType)
 	assert.Equal(t, MetricCategoryCorrectness, out.Metrics[0].Category)
+	assert.Equal(t, EvaluationMetricTurnTypeSingleTurn, out.Metrics[0].TurnType)
 	assert.Equal(t, "toxicity", out.Metrics[1].MetricName)
 	assert.True(t, out.Metrics[1].Inverted)
+}
+
+func TestListModelEvaluationMetricsByTurnType(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/gen-ai/model_evaluation_metrics", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		testFormValues(t, r, values{
+			"turn_type": "EVALUATION_METRIC_TURN_TYPE_MULTI_TURN",
+		})
+		fmt.Fprint(w, listModelEvaluationMetricsResponse)
+	})
+
+	out, resp, err := client.AgentPlatform.ListModelEvaluationMetricsWithOptions(ctx, &ModelEvaluationMetricListOptions{
+		TurnType: EvaluationMetricTurnTypeMultiTurn,
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, out)
+	assert.Equal(t, 200, resp.Response.StatusCode)
+	assert.Len(t, out.Metrics, 2)
 }
 
 func TestListModelEvaluationMetricsServerError(t *testing.T) {

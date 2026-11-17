@@ -7,19 +7,64 @@
 //	DIGITALOCEAN_API_URL   API base override, including trailing slash (staging)
 //	INSIGHTS_REGION        run PromQL, logs, spans, and traces calls in this region, for example nyc3
 //	INSIGHTS_QUERY         PromQL expression (default do.droplets.cpu_time)
-//	INSIGHTS_SMOKE_WRITE=1 create, then delete, an email channel and a paused alert rule
-//	INSIGHTS_EMAIL         verified team email, required with INSIGHTS_SMOKE_WRITE=1
+//	INSIGHTS_SMOKE_WRITE=1 create, update, then delete a dashboard; and create, then
+//	                       delete, an email channel and a paused alert rule
+//	INSIGHTS_EMAIL         verified team email, required for the channel and alert
+//	                       rule writes
 package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/digitalocean/godo"
 )
+
+// dashboardSpec builds a minimal single-panel Perses dashboard document.
+func dashboardSpec(name, description string) json.RawMessage {
+	doc := map[string]any{
+		"kind":       "Dashboard",
+		"apiVersion": "perses.dev/v1alpha1",
+		"spec": map[string]any{
+			"display":   map[string]any{"name": name, "description": description},
+			"duration":  "1h",
+			"variables": []any{},
+			"layouts": []any{map[string]any{"kind": "Grid", "spec": map[string]any{"items": []any{
+				map[string]any{"x": 0, "y": 0, "width": 12, "height": 6, "content": map[string]any{"$ref": "#/spec/panels/cpu"}},
+			}}}},
+			"panels": map[string]any{"cpu": map[string]any{"kind": "Panel", "spec": map[string]any{
+				"display": map[string]any{"name": "CPU utilization"},
+				"plugin":  map[string]any{"kind": "TimeSeriesChart", "spec": map[string]any{}},
+				"queries": []any{map[string]any{"kind": "TimeSeriesQuery", "spec": map[string]any{
+					"plugin": map[string]any{"kind": "MetricsTimeSeriesQuery", "spec": map[string]any{
+						"metricName": "do.droplets.cpu_utilization", "kind": "gauge", "filters": []any{}, "groupBy": []any{},
+					}},
+				}}},
+			}}},
+		},
+	}
+	b, err := json.Marshal(doc)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+// sameJSON reports whether two JSON documents are equal ignoring key order and
+// whitespace. The API stores specs in a JSON column that normalizes both.
+func sameJSON(a, b json.RawMessage) bool {
+	var x, y any
+	if json.Unmarshal(a, &x) != nil || json.Unmarshal(b, &y) != nil {
+		return false
+	}
+	return reflect.DeepEqual(x, y)
+}
 
 func main() {
 	token := os.Getenv("DIGITALOCEAN_TOKEN")
@@ -81,6 +126,35 @@ func main() {
 			return err
 		}
 		fmt.Printf("       → %d active instance(s)\n", len(instances))
+		return nil
+	})
+
+	check("ListDashboards", func() error {
+		out, _, err := client.Insights.ListDashboards(ctx, &godo.DashboardListOptions{PerPage: 20})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("       → %d dashboard(s)", len(out.Dashboards))
+		if out.Pagination != nil {
+			fmt.Printf(", total %d", out.Pagination.Total)
+		}
+		fmt.Println()
+		return nil
+	})
+
+	check("GetDashboardSchema", func() error {
+		schema, _, err := client.Insights.GetDashboardSchema(ctx)
+		if err != nil {
+			return err
+		}
+		var doc map[string]any
+		if err := json.Unmarshal(schema, &doc); err != nil {
+			return err
+		}
+		if _, ok := doc["$schema"]; !ok {
+			return fmt.Errorf("body is not an unwrapped JSON Schema document")
+		}
+		fmt.Printf("       → %d bytes, title=%v\n", len(schema), doc["title"])
 		return nil
 	})
 
@@ -219,10 +293,115 @@ func main() {
 	}
 
 	if os.Getenv("INSIGHTS_SMOKE_WRITE") != "1" {
-		fmt.Println("SKIP write (set INSIGHTS_SMOKE_WRITE=1 and INSIGHTS_EMAIL)")
-	} else if email := os.Getenv("INSIGHTS_EMAIL"); email == "" {
-		fmt.Println("SKIP write (INSIGHTS_EMAIL is required)")
+		fmt.Println("SKIP write (set INSIGHTS_SMOKE_WRITE=1, and INSIGHTS_EMAIL for channels and alert rules)")
 	} else {
+		var dashboardUUID string
+		dashboardName := fmt.Sprintf("godo insights smoke %d", time.Now().Unix())
+		spec := dashboardSpec(dashboardName, "Created by the godo Insights smoke example. Safe to delete.")
+		check("CreateDashboard", func() error {
+			d, resp, err := client.Insights.CreateDashboard(ctx, &godo.DashboardRequest{Spec: spec})
+			if err != nil {
+				return err
+			}
+			dashboardUUID = d.UUID // record first so cleanup runs even if a check below fails
+			if resp.StatusCode != http.StatusOK {
+				return fmt.Errorf("status %d, want 200", resp.StatusCode)
+			}
+			if d.Name != dashboardName {
+				return fmt.Errorf("name %q, want %q", d.Name, dashboardName)
+			}
+			if !sameJSON(d.Spec, spec) {
+				return fmt.Errorf("spec differs from the request: %s", d.Spec)
+			}
+			fmt.Printf("       → uuid=%s name=%q\n", d.UUID, d.Name)
+			return nil
+		})
+		if dashboardUUID != "" {
+			check("GetDashboard", func() error {
+				d, _, err := client.Insights.GetDashboard(ctx, dashboardUUID)
+				if err != nil {
+					return err
+				}
+				if d.UUID != dashboardUUID {
+					return fmt.Errorf("got uuid %q", d.UUID)
+				}
+				if !sameJSON(d.Spec, spec) {
+					return fmt.Errorf("spec differs from the request: %s", d.Spec)
+				}
+				return nil
+			})
+			check("ListDashboards sorted by name", func() error {
+				out, _, err := client.Insights.ListDashboards(ctx, &godo.DashboardListOptions{
+					PerPage:       200,
+					Sort:          godo.InsightsDashboardSortName,
+					SortDirection: godo.InsightsDashboardSortAscending,
+				})
+				if err != nil {
+					return err
+				}
+				for _, d := range out.Dashboards {
+					if d.UUID == dashboardUUID {
+						return nil
+					}
+				}
+				return fmt.Errorf("dashboard %s not in the first %d", dashboardUUID, len(out.Dashboards))
+			})
+			check("CreateDashboard duplicate name is 409", func() error {
+				d, resp, err := client.Insights.CreateDashboard(ctx, &godo.DashboardRequest{Spec: spec})
+				if err == nil {
+					_, _ = client.Insights.DeleteDashboard(ctx, d.UUID)
+					return fmt.Errorf("expected an error")
+				}
+				if resp == nil || resp.StatusCode != http.StatusConflict {
+					return fmt.Errorf("got %v", err)
+				}
+				return nil
+			})
+			check("UpdateDashboard", func() error {
+				updated := dashboardSpec(dashboardName+" updated", "Updated by the godo Insights smoke example.")
+				d, _, err := client.Insights.UpdateDashboard(ctx, dashboardUUID, &godo.DashboardRequest{Spec: updated})
+				if err != nil {
+					return err
+				}
+				if d.Name != dashboardName+" updated" {
+					return fmt.Errorf("name %q not replaced", d.Name)
+				}
+				if !sameJSON(d.Spec, updated) {
+					return fmt.Errorf("spec not replaced: %s", d.Spec)
+				}
+				fmt.Printf("       → name=%q\n", d.Name)
+				return nil
+			})
+			check("DeleteDashboard", func() error {
+				resp, err := client.Insights.DeleteDashboard(ctx, dashboardUUID)
+				if err != nil {
+					return err
+				}
+				if resp.StatusCode != http.StatusOK {
+					return fmt.Errorf("status %d, want 200", resp.StatusCode)
+				}
+				return nil
+			})
+			check("GetDashboard after delete is 404", func() error {
+				_, resp, err := client.Insights.GetDashboard(ctx, dashboardUUID)
+				if err == nil {
+					return fmt.Errorf("expected an error")
+				}
+				if resp == nil || resp.StatusCode != http.StatusNotFound {
+					return fmt.Errorf("got %v", err)
+				}
+				return nil
+			})
+		}
+	}
+
+	email := os.Getenv("INSIGHTS_EMAIL")
+	switch {
+	case os.Getenv("INSIGHTS_SMOKE_WRITE") != "1":
+		// reported above
+	case email == "":
+		fmt.Println("SKIP channel and alert rule write (INSIGHTS_EMAIL is required)")
+	default:
 		var channelID, ruleID string
 		check("CreateNotificationChannel", func() error {
 			ch, _, err := client.Insights.CreateNotificationChannel(ctx, &godo.NotificationChannelRequest{

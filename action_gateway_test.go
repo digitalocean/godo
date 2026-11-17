@@ -54,18 +54,34 @@ func TestActionGatewayPublicOperations(t *testing.T) {
 		{"Connections", "List", "GET", "/connections", "provider=jira&sort_direction=desc", "", []interface{}{&ActionGatewayConnectionListOptions{Provider: "jira", SortDirection: "desc"}}},
 		{"Connections", "Get", "GET", "/connections/id", "", "", []interface{}{"id"}},
 		{"Connections", "Delete", "DELETE", "/connections/id", "", "", []interface{}{"id"}},
+		{"ProviderCredentials", "Create", "POST", "/provider-credentials", "", `{"provider":"github","kind":"PROVIDER_CREDENTIAL_KIND_OAUTH_CLIENT","display_name":"Production","client_id":"client","client_secret":"secret","reusable_by_team":true}`, []interface{}{&ActionGatewayProviderCredentialCreateRequest{Provider: "github", Kind: ActionGatewayProviderCredentialKindOAuthClient, DisplayName: "Production", ClientID: "client", ClientSecret: "secret", ReusableByTeam: true}}},
+		{"ProviderCredentials", "List", "GET", "/provider-credentials", "provider=github", "", []interface{}{&ActionGatewayProviderCredentialListOptions{Provider: "github"}}},
+		{"ProviderCredentials", "Get", "GET", "/provider-credentials/cred%2F1", "", "", []interface{}{"cred/1"}},
+		{"ProviderCredentials", "Update", "PATCH", "/provider-credentials/cred", "", `{"client_id":"client","client_secret":"rotated"}`, []interface{}{"cred", &ActionGatewayProviderCredentialUpdateRequest{ClientID: "client", ClientSecret: "rotated"}}},
+		{"ProviderCredentials", "Delete", "DELETE", "/provider-credentials/cred", "", "", []interface{}{"cred"}},
 		{"Sessions", "Create", "POST", "/sessions", "", `{"name":"test","tools":[]}`, []interface{}{&ActionGatewaySessionCreateRequest{Name: "test", Tools: []string{}}}},
 		{"Sessions", "List", "GET", "/sessions", "end_user_id=alice&page=2", "", []interface{}{&ActionGatewaySessionListOptions{EndUserID: "alice", Page: 2}}},
 		{"Sessions", "Search", "GET", "/sessions/search", "page_token=cursor&query=alice", "", []interface{}{&ActionGatewaySessionSearchOptions{Query: "alice", PageToken: "cursor"}}},
 		{"Sessions", "Delete", "DELETE", "/sessions/do:managed_agent_session:abc", "", "", []interface{}{"do:managed_agent_session:abc"}},
+		{"Endpoints", "Create", "POST", "/endpoints", "", `{"name":"support-agent","version":{"actor_id":"alice","policy":{"defaultAction":"ask"}}}`, []interface{}{&ActionGatewayEndpointCreateRequest{Name: "support-agent", Version: &ActionGatewayEndpointVersionSpec{ActorID: "alice", Policy: &ActionGatewaySessionPolicy{DefaultAction: "ask"}}}}},
+		{"Endpoints", "List", "GET", "/endpoints", "actor_id=alice&name=support-agent&page_size=20", "", []interface{}{&ActionGatewayEndpointListOptions{Name: "support-agent", ActorID: "alice", PageSize: 20}}},
+		{"Endpoints", "Search", "GET", "/endpoints/search", "page_token=cursor&query=support", "", []interface{}{&ActionGatewayEndpointSearchOptions{Query: "support", PageToken: "cursor"}}},
+		{"Endpoints", "Get", "GET", "/endpoints/1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13", "", "", []interface{}{"1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13"}},
+		{"Endpoints", "Update", "PATCH", "/endpoints/endpoint-id", "", `{"name":"renamed"}`, []interface{}{"endpoint-id", &ActionGatewayEndpointUpdateRequest{Name: "renamed"}}},
+		{"Endpoints", "Delete", "DELETE", "/endpoints/endpoint-id", "", "", []interface{}{"endpoint-id"}},
+		{"Endpoints", "ListVersions", "GET", "/endpoints/endpoint-id/versions", "page_size=10", "", []interface{}{"endpoint-id", &ActionGatewayCursorOptions{PageSize: 10}}},
+		{"Endpoints", "CreateVersion", "POST", "/endpoints/endpoint-id/versions", "", `{"tools":["exa_web_search@1"]}`, []interface{}{"endpoint-id", &ActionGatewayEndpointVersionSpec{Tools: []string{"exa_web_search@1"}}}},
+		{"Endpoints", "PromoteVersion", "POST", "/endpoints/endpoint-id/versions:promote", "", `{"version_id":"1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13.v1"}`, []interface{}{"endpoint-id", &ActionGatewayEndpointPromotionRequest{VersionID: "1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13.v1"}}},
+		{"Endpoints", "GetVersion", "GET", "/endpoint-versions/1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13.v1", "", "", []interface{}{"1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13.v1"}},
+		{"Endpoints", "DeleteVersion", "DELETE", "/endpoint-versions/1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13.v1", "", "", []interface{}{"1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13.v1"}},
 		{"Users", "List", "GET", "/users", "sort=created_at", "", []interface{}{&ActionGatewayUsersListOptions{Sort: "created_at"}}},
 		{"Users", "Get", "GET", "/users/alice%2Fbob", "", "", []interface{}{"alice/bob"}},
 		{"ActorLimits", "Get", "GET", "/actors/alice/limits", "", "", []interface{}{"alice"}},
 		{"ActorLimits", "Set", "POST", "/actors/alice/limits:set", "", `{"overrides":[{"category":"LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE","requests_per_minute":"10"}]}`, []interface{}{"alice", &ActionGatewaySetLimitsRequest{Overrides: []ActionGatewayLimitOverride{{Category: "LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE", RequestsPerMinute: "10"}}}}},
 		{"ActorLimits", "Clear", "POST", "/actors/alice/limits:clear", "", `{"categories":["LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE"]}`, []interface{}{"alice", &ActionGatewayClearLimitsRequest{Categories: []string{"LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE"}}}},
 	}
-	if len(operations) != 43 {
-		t.Fatalf("expected all 43 public operations, got %d", len(operations))
+	if len(operations) != 59 {
+		t.Fatalf("expected all 59 public operations, got %d", len(operations))
 	}
 	for _, operation := range operations {
 		t.Run(operation.resource+"/"+operation.name, func(t *testing.T) {
@@ -119,9 +135,23 @@ func TestActionGatewayEmptyPathArguments(t *testing.T) {
 		{"view ID", "viewID", func() error { _, _, err := client.ActionGateway.OutputViews.Get(ctx, ""); return err }},
 		{"server ref", "ref", func() error { _, _, err := client.ActionGateway.MCPServers.Get(ctx, ""); return err }},
 		{"connection ID", "id", func() error { _, _, err := client.ActionGateway.Connections.Get(ctx, ""); return err }},
+		{"provider credential ID", "id", func() error { _, _, err := client.ActionGateway.ProviderCredentials.Get(ctx, ""); return err }},
+		{"updated provider credential ID", "id", func() error {
+			_, _, err := client.ActionGateway.ProviderCredentials.Update(ctx, " ", &ActionGatewayProviderCredentialUpdateRequest{})
+			return err
+		}},
+		{"deleted provider credential ID", "id", func() error { _, _, err := client.ActionGateway.ProviderCredentials.Delete(ctx, ""); return err }},
+		{"provider credential create body", "body", func() error { _, _, err := client.ActionGateway.ProviderCredentials.Create(ctx, nil); return err }},
+		{"provider credential update body", "body", func() error {
+			_, _, err := client.ActionGateway.ProviderCredentials.Update(ctx, "cred", nil)
+			return err
+		}},
 		{"session URN", "urn", func() error { _, err := client.ActionGateway.Sessions.Delete(ctx, ""); return err }},
 		{"user ID", "userID", func() error { _, _, err := client.ActionGateway.Users.Get(ctx, ""); return err }},
 		{"actor ID", "actorID", func() error { _, _, err := client.ActionGateway.ActorLimits.Get(ctx, ""); return err }},
+		{"endpoint ID", "endpointID", func() error { _, _, err := client.ActionGateway.Endpoints.Get(ctx, ""); return err }},
+		{"version endpoint ID", "endpointID", func() error { _, _, err := client.ActionGateway.Endpoints.ListVersions(ctx, "", nil); return err }},
+		{"version ID", "versionID", func() error { _, _, err := client.ActionGateway.Endpoints.GetVersion(ctx, ""); return err }},
 	}
 	for _, test := range cases {
 		t.Run(test.name, func(t *testing.T) {
@@ -156,6 +186,29 @@ func TestActionGatewayWireShapes(t *testing.T) {
 		if (tools == nil) == strings.Contains(string(body), `"tools"`) {
 			t.Fatalf("tools selection not preserved: %s", body)
 		}
+	}
+	for _, tools := range [][]string{nil, {}} {
+		body, err := json.Marshal(ActionGatewayEndpointVersionSpec{Tools: tools})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if (tools == nil) == strings.Contains(string(body), `"tools"`) {
+			t.Fatalf("version tools selection not preserved: %s", body)
+		}
+	}
+	var endpoint ActionGatewayEndpoint
+	if err := json.Unmarshal([]byte(`{"id":"1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13","name":"support-agent","actor_id":"","is_default":false,"head_version":null,"insights":{"logs":true},"mcp_url":"https://actions.do-ai.run/mcp/endpoint/1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13","created_at":"2026-10-15T14:00:00Z","updated_at":"2026-10-15T14:00:00Z"}`), &endpoint); err != nil {
+		t.Fatal(err)
+	}
+	if endpoint.Name != "support-agent" || endpoint.HeadVersion != nil || endpoint.Insights == nil || endpoint.Insights.Logs == nil || *endpoint.Insights.Logs != true || endpoint.CreatedAt == nil {
+		t.Fatalf("unexpected endpoint: %+v", endpoint)
+	}
+	var version ActionGatewayEndpointVersion
+	if err := json.Unmarshal([]byte(`{"id":"1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13.v2","endpoint_id":"1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13","version_number":2,"promoted_from_version_number":1,"actor_id":"alice","policy":{"defaultAction":"deny"},"tools":{"references":[{"kind":"tool","name":"exa_web_search","version":"1"}]},"network":{"vpcUuid":"5a4981aa-9653-4bd1-bef5-d6bff52042e4","region":"nyc3"},"mcp_url":"https://actions.do-ai.run/mcp/endpoint/1b4d4e0f-9a7c-4d5b-8f3c-2a6e6e8f0a13/version/9a7c2d5b-6e8f-4a13-8f3c-2a6e1b4d4e0f","created_at":"2026-10-15T14:00:00Z","updated_at":"2026-10-15T14:00:00Z"}`), &version); err != nil {
+		t.Fatal(err)
+	}
+	if version.VersionNumber != 2 || version.PromotedFromVersionNumber != 1 || version.Policy.DefaultAction != "deny" || version.Tools == nil || version.Tools.References[0].Name != "exa_web_search" || version.Network.Region != "nyc3" {
+		t.Fatalf("unexpected version: %+v", version)
 	}
 }
 
@@ -225,5 +278,70 @@ func TestActionGatewayResponseDecoding(t *testing.T) {
 	limits, _, err := client.ActionGateway.ActorLimits.Get(ctx, "alice")
 	if err != nil || limits.ConfiguredLimits[0].RequestsPerMinute != "10" || limits.EffectiveLimits.NativeToolCallsRequestsPerMinute != "600" {
 		t.Fatalf("limits = %+v, %v", limits, err)
+	}
+}
+
+func TestActionGatewayProviderCredentialWireShapes(t *testing.T) {
+	updates := []struct {
+		name string
+		body ActionGatewayProviderCredentialUpdateRequest
+		want string
+	}{
+		{"rename", ActionGatewayProviderCredentialUpdateRequest{DisplayName: "Renamed"}, `{"display_name":"Renamed"}`},
+		{"rotate key", ActionGatewayProviderCredentialUpdateRequest{APIKey: "key"}, `{"api_key":"key"}`},
+		{"set base URL", ActionGatewayProviderCredentialUpdateRequest{BaseURL: PtrTo("https://api.example.com")}, `{"base_url":"https://api.example.com"}`},
+		{"clear base URL", ActionGatewayProviderCredentialUpdateRequest{BaseURL: PtrTo("")}, `{"base_url":""}`},
+		{"share", ActionGatewayProviderCredentialUpdateRequest{ReusableByTeam: true}, `{"reusable_by_team":true}`},
+		{"parameters", ActionGatewayProviderCredentialUpdateRequest{CredentialParameters: map[string]interface{}{"subdomain": "example"}}, `{"credential_parameters":{"subdomain":"example"}}`},
+	}
+	for _, update := range updates {
+		t.Run(update.name, func(t *testing.T) {
+			body, err := json.Marshal(update.body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(body) != update.want {
+				t.Fatalf("body = %s, want %s", body, update.want)
+			}
+		})
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		switch request.Method + " " + request.URL.Path {
+		case "GET " + actionGatewayProviderCredentialsPath:
+			_, _ = io.WriteString(writer, `{"credentials":[{"id":"cred","provider":"github","display_name":"Production","kind":"PROVIDER_CREDENTIAL_KIND_OAUTH_CLIENT","status":"PROVIDER_CREDENTIAL_STATUS_ACTIVE","base_url":"","created_at":"2026-11-01T12:00:00Z","updated_at":"2026-11-01T13:00:00Z","reusable_by_team":true,"scope":"team","redirect_url":"https://app.example.com/oauth/callback","discovery":{"status":"pending","consented_at":null,"authorization_url":"https://cloud.digitalocean.com/authorize"}}]}`)
+		case "DELETE " + actionGatewayProviderCredentialsPath + "/cred":
+			_, _ = io.WriteString(writer, `{"credential":{"id":"cred","provider":"linear","kind":"PROVIDER_CREDENTIAL_KIND_API_KEY","status":"PROVIDER_CREDENTIAL_STATUS_DELETED","owning_user_id":"user","reusable_by_team":false,"scope":"user"},"revoked_connections":2}`)
+		default:
+			t.Errorf("unexpected request %s %s", request.Method, request.URL.Path)
+		}
+	}))
+	defer server.Close()
+	client := NewClient(server.Client())
+	client.BaseURL, _ = url.Parse(server.URL)
+	ctx := context.Background()
+
+	list, _, err := client.ActionGateway.ProviderCredentials.List(ctx, nil)
+	if err != nil || len(list.Credentials) != 1 {
+		t.Fatalf("list = %+v, %v", list, err)
+	}
+	credential := list.Credentials[0]
+	if credential.ID != "cred" || credential.Provider != "github" || credential.DisplayName != "Production" ||
+		credential.Kind != ActionGatewayProviderCredentialKindOAuthClient || credential.Status != ActionGatewayProviderCredentialStatusActive ||
+		!credential.ReusableByTeam || credential.Scope != "team" || credential.RedirectURL != "https://app.example.com/oauth/callback" ||
+		credential.CreatedAt == nil || credential.UpdatedAt == nil || !credential.UpdatedAt.After(credential.CreatedAt.Time) {
+		t.Fatalf("unexpected credential: %+v", credential)
+	}
+	if credential.Discovery == nil || credential.Discovery.Status != "pending" || credential.Discovery.ConsentedAt != nil ||
+		credential.Discovery.AuthorizationURL != "https://cloud.digitalocean.com/authorize" {
+		t.Fatalf("unexpected discovery: %+v", credential.Discovery)
+	}
+
+	deleted, _, err := client.ActionGateway.ProviderCredentials.Delete(ctx, "cred")
+	if err != nil || deleted.RevokedConnections != 2 || deleted.Credential == nil ||
+		deleted.Credential.Status != ActionGatewayProviderCredentialStatusDeleted || deleted.Credential.OwningUserID != "user" ||
+		deleted.Credential.Discovery != nil {
+		t.Fatalf("delete = %+v, %v", deleted, err)
 	}
 }
