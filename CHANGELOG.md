@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.243.0] - 2026-11-17
+
+- #1228 - @ldalbert - prepayment: add available_credit to PrepaymentStatus
+
 ## [1.242.0] - 2026-11-17
 
 - #1206 - @sdharavath - hosted agents: decode trigger pause reason and waiting execution fields (MARSOHS-2624)
