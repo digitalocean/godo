@@ -32,7 +32,17 @@ func main() {
 
 	fmt.Printf("base_url=%s region=%s name=%s size=%s\n", client.BaseURL, region, name, size)
 
-	// ListPlans is skipped: GET /v2/data-cloud-platform/plans is not routed on Edge yet.
+	ok("ListPlans", func() error {
+		plans, resp, err := client.ADS.ListPlans(ctx)
+		if err != nil {
+			return fmt.Errorf("%w (status=%d req=%s)", err, status(resp), reqURL(resp))
+		}
+		fmt.Printf("       → %d plan(s)\n", len(plans.Plans))
+		for _, p := range plans.Plans {
+			fmt.Printf("         region=%s available=%v sizes=%d\n", p.RegionSlug, p.AvailableForCreate, len(p.QueryEngineSizes))
+		}
+		return nil
+	})
 
 	var ws *godo.ADSWorkspace
 	ok("CreateWorkspace", func() error {
