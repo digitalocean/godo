@@ -21,6 +21,7 @@ func TestActionGatewayPublicOperations(t *testing.T) {
 	ctx := context.Background()
 	operations := []operation{
 		{"Tools", "List", "GET", "/tools", "page=2&per_page=7&toolkit_id=exa", "", []interface{}{&ActionGatewayToolListOptions{ToolkitID: "exa", Page: 2, PerPage: 7}}},
+		{"Tools", "ListVersions", "GET", "/tools/exa/versions", "page_size=5&page_token=next", "", []interface{}{"exa", &ActionGatewayCursorOptions{PageSize: 5, PageToken: "next"}}},
 		{"Tools", "ListToolkits", "GET", "/tools/toolkits", "", "", nil},
 		{"Tools", "ListProviders", "GET", "/tools/providers", "", "", nil},
 		{"Tools", "Search", "GET", "/tools/search", "provider=a&provider=b&query=foo+bar", "", []interface{}{&ActionGatewayToolSearchOptions{Providers: []string{"a", "b"}, Query: "foo bar"}}},
@@ -80,8 +81,8 @@ func TestActionGatewayPublicOperations(t *testing.T) {
 		{"ActorLimits", "Set", "POST", "/actors/alice/limits:set", "", `{"overrides":[{"category":"LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE","requests_per_minute":"10"}]}`, []interface{}{"alice", &ActionGatewaySetLimitsRequest{Overrides: []ActionGatewayLimitOverride{{Category: "LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE", RequestsPerMinute: "10"}}}}},
 		{"ActorLimits", "Clear", "POST", "/actors/alice/limits:clear", "", `{"categories":["LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE"]}`, []interface{}{"alice", &ActionGatewayClearLimitsRequest{Categories: []string{"LIMIT_CATEGORY_WEB_SEARCH_REQUESTS_PER_MINUTE"}}}},
 	}
-	if len(operations) != 59 {
-		t.Fatalf("expected all 59 public operations, got %d", len(operations))
+	if len(operations) != 60 {
+		t.Fatalf("expected all 60 public operations, got %d", len(operations))
 	}
 	for _, operation := range operations {
 		t.Run(operation.resource+"/"+operation.name, func(t *testing.T) {
@@ -343,5 +344,26 @@ func TestActionGatewayProviderCredentialWireShapes(t *testing.T) {
 		deleted.Credential.Status != ActionGatewayProviderCredentialStatusDeleted || deleted.Credential.OwningUserID != "user" ||
 		deleted.Credential.Discovery != nil {
 		t.Fatalf("delete = %+v, %v", deleted, err)
+	}
+}
+
+func TestActionGatewayToolsListVersionsDecodesChangelog(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.EscapedPath() != actionGatewayPath+"/tools/a%2Fb/versions" {
+			t.Errorf("path = %s", request.URL.EscapedPath())
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(writer, `{"versions":[{"tool_slug":"exa","version":"v2","released_at":"2026-11-12T09:30:00Z","latest":true,"previous_version":"v1","breaking":true,"changes":[{"type":"requiredScopesAdded","values":["read"],"breaking":true}]}],"next_page_token":"n"}`)
+	}))
+	defer server.Close()
+	client := NewClient(server.Client())
+	client.BaseURL, _ = url.Parse(server.URL)
+	got, _, err := client.ActionGateway.Tools.ListVersions(context.Background(), "a/b", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := ActionGatewayToolVersionRelease{ToolSlug: "exa", Version: "v2", ReleasedAt: got.Versions[0].ReleasedAt, Latest: true, PreviousVersion: "v1", Breaking: true, Changes: []ActionGatewayToolVersionChange{{Type: "requiredScopesAdded", Values: []string{"read"}, Breaking: true}}}
+	if len(got.Versions) != 1 || !reflect.DeepEqual(got.Versions[0], want) || got.NextPageToken != "n" || got.Versions[0].ReleasedAt == nil {
+		t.Fatalf("response = %+v", got)
 	}
 }
