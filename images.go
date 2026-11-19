@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const imageBasePath = "v2/images"
@@ -199,7 +200,7 @@ func (s *ImagesServiceOp) Delete(ctx context.Context, imageID int) (*Response, e
 
 // Helper method for getting an individual image
 func (s *ImagesServiceOp) get(ctx context.Context, ID interface{}) (*Image, *Response, error) {
-	path := fmt.Sprintf("%s/%v", imageBasePath, ID)
+	path := fmt.Sprintf("%s/%s", imageBasePath, url.PathEscape(fmt.Sprint(ID)))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

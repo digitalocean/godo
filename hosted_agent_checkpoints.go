@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // HostedAgentCheckpointStatus is the lifecycle status of a session checkpoint.
@@ -87,7 +88,7 @@ func (s *HostedAgentsServiceOp) CreateCheckpoint(ctx context.Context, sessionID 
 	if create == nil {
 		create = &HostedAgentCheckpointCreateRequest{}
 	}
-	path := fmt.Sprintf(hostedAgentSessionCheckpointsPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionCheckpointsPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, create)
 	if err != nil {
 		return nil, nil, err
@@ -108,7 +109,7 @@ func (s *HostedAgentsServiceOp) ListCheckpoints(ctx context.Context, sessionID s
 	if sessionID == "" {
 		return nil, nil, errors.New("hosted agents: session id is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionCheckpointsPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionCheckpointsPath, url.PathEscape(sessionID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -133,7 +134,7 @@ func (s *HostedAgentsServiceOp) GetCheckpoint(ctx context.Context, sessionID, ch
 	if checkpointID == "" {
 		return nil, nil, errors.New("hosted agents: checkpoint id is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionCheckpointByIDPath, sessionID, checkpointID)
+	path := fmt.Sprintf(hostedAgentSessionCheckpointByIDPath, url.PathEscape(sessionID), url.PathEscape(checkpointID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -158,7 +159,7 @@ func (s *HostedAgentsServiceOp) DeleteCheckpoint(ctx context.Context, sessionID,
 	if checkpointID == "" {
 		return nil, nil, errors.New("hosted agents: checkpoint id is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionCheckpointByIDPath, sessionID, checkpointID)
+	path := fmt.Sprintf(hostedAgentSessionCheckpointByIDPath, url.PathEscape(sessionID), url.PathEscape(checkpointID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -184,7 +185,7 @@ func (s *HostedAgentsServiceOp) ForkSession(ctx context.Context, sessionID strin
 	if fork.Count < 0 || fork.Count > HostedAgentForkMaxCount {
 		return nil, nil, fmt.Errorf("hosted agents: fork count must be between 1 and %d (got %d)", HostedAgentForkMaxCount, fork.Count)
 	}
-	path := fmt.Sprintf(hostedAgentSessionForkPath, sessionID)
+	path := fmt.Sprintf(hostedAgentSessionForkPath, url.PathEscape(sessionID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, fork)
 	if err != nil {
 		return nil, nil, err
@@ -207,7 +208,7 @@ func (s *HostedAgentsServiceOp) RollbackToCheckpoint(ctx context.Context, sessio
 	if checkpointID == "" {
 		return nil, nil, errors.New("hosted agents: checkpoint id is required")
 	}
-	path := fmt.Sprintf(hostedAgentSessionCheckpointRollbackPath, sessionID, checkpointID)
+	path := fmt.Sprintf(hostedAgentSessionCheckpointRollbackPath, url.PathEscape(sessionID), url.PathEscape(checkpointID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, struct{}{})
 	if err != nil {
 		return nil, nil, err

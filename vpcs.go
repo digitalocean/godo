@@ -3,6 +3,7 @@ package godo
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -119,7 +120,7 @@ type vpcMembersRoot struct {
 
 // Get returns the details of a Virtual Private Cloud.
 func (v *VPCsServiceOp) Get(ctx context.Context, id string) (*VPC, *Response, error) {
-	path := vpcsBasePath + "/" + id
+	path := vpcsBasePath + "/" + url.PathEscape(id)
 	req, err := v.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -179,7 +180,7 @@ func (v *VPCsServiceOp) List(ctx context.Context, opt *ListOptions) ([]*VPC, *Re
 
 // Update updates a Virtual Private Cloud's properties.
 func (v *VPCsServiceOp) Update(ctx context.Context, id string, update *VPCUpdateRequest) (*VPC, *Response, error) {
-	path := vpcsBasePath + "/" + id
+	path := vpcsBasePath + "/" + url.PathEscape(id)
 	req, err := v.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -208,7 +209,7 @@ func (*vpcSetDefault) vpcSetField(in map[string]interface{}) {
 
 // Set updates specific properties of a Virtual Private Cloud.
 func (v *VPCsServiceOp) Set(ctx context.Context, id string, fields ...VPCSetField) (*VPC, *Response, error) {
-	path := vpcsBasePath + "/" + id
+	path := vpcsBasePath + "/" + url.PathEscape(id)
 	update := make(map[string]interface{}, len(fields))
 	for _, field := range fields {
 		field.vpcSetField(update)
@@ -231,7 +232,7 @@ func (v *VPCsServiceOp) Set(ctx context.Context, id string, fields ...VPCSetFiel
 // Delete deletes a Virtual Private Cloud. There is no way to recover a VPC once it has been
 // destroyed.
 func (v *VPCsServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
-	path := vpcsBasePath + "/" + id
+	path := vpcsBasePath + "/" + url.PathEscape(id)
 	req, err := v.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -246,7 +247,7 @@ func (v *VPCsServiceOp) Delete(ctx context.Context, id string) (*Response, error
 }
 
 func (v *VPCsServiceOp) ListMembers(ctx context.Context, id string, request *VPCListMembersRequest, opt *ListOptions) ([]*VPCMember, *Response, error) {
-	path := vpcsBasePath + "/" + id + "/members"
+	path := vpcsBasePath + "/" + url.PathEscape(id) + "/members"
 	pathWithResourceType, err := addOptions(path, request)
 	if err != nil {
 		return nil, nil, err

@@ -164,11 +164,10 @@ func (s *AgentChatCompletionService) NewStreaming(ctx context.Context, body *Cha
 
 // newRequest builds a request against the agent base URL with ?agent=true and bearer auth.
 func (c *AgentInferenceClient) newRequest(ctx context.Context, method, path string, body interface{}) (*http.Request, error) {
-	rel, err := url.Parse(path)
+	u, err := resolveRequestURL(c.baseURL, path)
 	if err != nil {
 		return nil, fmt.Errorf("agent inference: parse path: %w", err)
 	}
-	u := c.baseURL.ResolveReference(rel)
 
 	q := u.Query()
 	q.Set(agentInferenceQueryAgent, "true")

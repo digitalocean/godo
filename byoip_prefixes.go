@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -126,7 +127,7 @@ func (r *BYOIPPrefixServiceOp) List(ctx context.Context, opt *ListOptions) ([]*B
 
 // Get an individual BYOIP prefix details.
 func (r *BYOIPPrefixServiceOp) Get(ctx context.Context, uuid string) (*BYOIPPrefix, *Response, error) {
-	path := fmt.Sprintf("%s/%s", byoipsBasePath, uuid)
+	path := fmt.Sprintf("%s/%s", byoipsBasePath, url.PathEscape(uuid))
 
 	req, err := r.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -144,7 +145,7 @@ func (r *BYOIPPrefixServiceOp) Get(ctx context.Context, uuid string) (*BYOIPPref
 
 // GetResources return all existing BYOIP allocations for given BYOIP prefix id.
 func (r *BYOIPPrefixServiceOp) GetResources(ctx context.Context, uuid string, opt *ListOptions) ([]BYOIPPrefixResource, *Response, error) {
-	path := fmt.Sprintf("%s/%s/ips", byoipsBasePath, uuid)
+	path := fmt.Sprintf("%s/%s/ips", byoipsBasePath, url.PathEscape(uuid))
 
 	addOptions(path, opt)
 	req, err := r.client.NewRequest(ctx, http.MethodGet, path, nil)
@@ -197,7 +198,7 @@ func (r *BYOIPPrefixServiceOp) Create(ctx context.Context, byoipPrefix *BYOIPPre
 }
 
 func (r *BYOIPPrefixServiceOp) Delete(ctx context.Context, uuid string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", byoipsBasePath, uuid)
+	path := fmt.Sprintf("%s/%s", byoipsBasePath, url.PathEscape(uuid))
 
 	req, err := r.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -222,7 +223,7 @@ func (r *BYOIPPrefixServiceOp) Update(ctx context.Context, prefixUUID string, up
 		return nil, nil, fmt.Errorf("is_advertised is required")
 	}
 
-	path := fmt.Sprintf("%s/%s", byoipsBasePath, prefixUUID)
+	path := fmt.Sprintf("%s/%s", byoipsBasePath, url.PathEscape(prefixUUID))
 
 	req, err := r.client.NewRequest(ctx, http.MethodPatch, path, updateReq)
 	if err != nil {

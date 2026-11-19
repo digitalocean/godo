@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -115,7 +116,7 @@ func (n *VPCNATGatewaysServiceOp) Create(ctx context.Context, createReq *VPCNATG
 
 // Get an existing VPC NAT Gateway
 func (n *VPCNATGatewaysServiceOp) Get(ctx context.Context, id string) (*VPCNATGateway, *Response, error) {
-	req, err := n.client.NewRequest(ctx, http.MethodGet, fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, id), nil)
+	req, err := n.client.NewRequest(ctx, http.MethodGet, fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, url.PathEscape(id)), nil)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -153,7 +154,7 @@ func (n *VPCNATGatewaysServiceOp) List(ctx context.Context, opts *VPCNATGateways
 
 // Update an existing VPC NAT Gateway
 func (n *VPCNATGatewaysServiceOp) Update(ctx context.Context, id string, updateReq *VPCNATGatewayRequest) (*VPCNATGateway, *Response, error) {
-	req, err := n.client.NewRequest(ctx, http.MethodPut, fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, id), updateReq)
+	req, err := n.client.NewRequest(ctx, http.MethodPut, fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, url.PathEscape(id)), updateReq)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -167,7 +168,7 @@ func (n *VPCNATGatewaysServiceOp) Update(ctx context.Context, id string, updateR
 
 // Delete an existing VPC NAT Gateway
 func (n *VPCNATGatewaysServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
-	req, err := n.client.NewRequest(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, id), nil)
+	req, err := n.client.NewRequest(ctx, http.MethodDelete, fmt.Sprintf("%s/%s", vpcNatGatewaysBasePath, url.PathEscape(id)), nil)
 	if err != nil {
 		return nil, err
 	}

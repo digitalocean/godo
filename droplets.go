@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const dropletBasePath = "v2/droplets"
@@ -394,7 +395,7 @@ func (s *DropletsServiceOp) ListWithGPUs(ctx context.Context, opt *ListOptions) 
 // ListByName lists all Droplets filtered by name returning only exact matches.
 // It is case-insensitive
 func (s *DropletsServiceOp) ListByName(ctx context.Context, name string, opt *ListOptions) ([]Droplet, *Response, error) {
-	path := fmt.Sprintf("%s?name=%s", dropletBasePath, name)
+	path := fmt.Sprintf("%s?name=%s", dropletBasePath, url.QueryEscape(name))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -405,7 +406,7 @@ func (s *DropletsServiceOp) ListByName(ctx context.Context, name string, opt *Li
 
 // ListByTag lists all Droplets matched by a Tag.
 func (s *DropletsServiceOp) ListByTag(ctx context.Context, tag string, opt *ListOptions) ([]Droplet, *Response, error) {
-	path := fmt.Sprintf("%s?tag_name=%s", dropletBasePath, tag)
+	path := fmt.Sprintf("%s?tag_name=%s", dropletBasePath, url.QueryEscape(tag))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -515,7 +516,7 @@ func (s *DropletsServiceOp) DeleteByTag(ctx context.Context, tag string) (*Respo
 		return nil, NewArgError("tag", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s?tag_name=%s", dropletBasePath, tag)
+	path := fmt.Sprintf("%s?tag_name=%s", dropletBasePath, url.QueryEscape(tag))
 
 	return s.delete(ctx, path)
 }

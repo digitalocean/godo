@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"path"
+	"net/url"
 )
 
 const certificatesBasePath = "/v2/certificates"
@@ -60,7 +60,7 @@ var _ CertificatesService = &CertificatesServiceOp{}
 
 // Get an existing certificate by its identifier.
 func (c *CertificatesServiceOp) Get(ctx context.Context, cID string) (*Certificate, *Response, error) {
-	urlStr := path.Join(certificatesBasePath, cID)
+	urlStr := certificatesBasePath + "/" + url.PathEscape(cID)
 
 	req, err := c.client.NewRequest(ctx, http.MethodGet, urlStr, nil)
 	if err != nil {
@@ -109,7 +109,7 @@ func (c *CertificatesServiceOp) ListByName(ctx context.Context, name string, opt
 		return nil, nil, NewArgError("name", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s?name=%s", certificatesBasePath, name)
+	path := fmt.Sprintf("%s?name=%s", certificatesBasePath, url.QueryEscape(name))
 	urlStr, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -154,7 +154,7 @@ func (c *CertificatesServiceOp) Create(ctx context.Context, cr *CertificateReque
 
 // Delete a certificate by its identifier.
 func (c *CertificatesServiceOp) Delete(ctx context.Context, cID string) (*Response, error) {
-	urlStr := path.Join(certificatesBasePath, cID)
+	urlStr := certificatesBasePath + "/" + url.PathEscape(cID)
 
 	req, err := c.client.NewRequest(ctx, http.MethodDelete, urlStr, nil)
 	if err != nil {

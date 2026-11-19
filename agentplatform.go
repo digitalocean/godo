@@ -1251,7 +1251,7 @@ func (s *AgentPlatformServiceOp) CreateAgent(ctx context.Context, create *AgentC
 
 // ListAgentAPIKeys retrieves list of API Keys associated with the specified Agent Platform agent
 func (s *AgentPlatformServiceOp) ListAgentAPIKeys(ctx context.Context, agentId string, opt *ListOptions) ([]*ApiKeyInfo, *Response, error) {
-	path := fmt.Sprintf("%s/%s/api_keys", gradientBasePath, agentId)
+	path := fmt.Sprintf("%s/%s/api_keys", gradientBasePath, url.PathEscape(agentId))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1275,7 +1275,7 @@ func (s *AgentPlatformServiceOp) ListAgentAPIKeys(ctx context.Context, agentId s
 
 // CreateAgentAPIKey creates a new API key for the specified Agent Platform agent
 func (s *AgentPlatformServiceOp) CreateAgentAPIKey(ctx context.Context, agentId string, createRequest *AgentAPIKeyCreateRequest) (*ApiKeyInfo, *Response, error) {
-	path := fmt.Sprintf("%s/%s/api_keys", gradientBasePath, agentId)
+	path := fmt.Sprintf("%s/%s/api_keys", gradientBasePath, url.PathEscape(agentId))
 
 	createRequest.AgentUuid = agentId
 
@@ -1295,7 +1295,7 @@ func (s *AgentPlatformServiceOp) CreateAgentAPIKey(ctx context.Context, agentId 
 
 // UpdateAgentAPIKey updates an existing API key for the specified Agent Platform agent
 func (s *AgentPlatformServiceOp) UpdateAgentAPIKey(ctx context.Context, agentId, apiKeyId string, updateRequest *AgentAPIKeyUpdateRequest) (*ApiKeyInfo, *Response, error) {
-	path := fmt.Sprintf("%s/%s/api_keys/%s", gradientBasePath, agentId, apiKeyId)
+	path := fmt.Sprintf("%s/%s/api_keys/%s", gradientBasePath, url.PathEscape(agentId), url.PathEscape(apiKeyId))
 
 	updateRequest.AgentUuid = agentId
 
@@ -1315,7 +1315,7 @@ func (s *AgentPlatformServiceOp) UpdateAgentAPIKey(ctx context.Context, agentId,
 
 // DeleteAgentAPIKey deletes an existing API key for the specified Agent Platform agent
 func (s *AgentPlatformServiceOp) DeleteAgentAPIKey(ctx context.Context, agentId, apiKeyId string) (*ApiKeyInfo, *Response, error) {
-	path := fmt.Sprintf("%s/%s/api_keys/%s", gradientBasePath, agentId, apiKeyId)
+	path := fmt.Sprintf("%s/%s/api_keys/%s", gradientBasePath, url.PathEscape(agentId), url.PathEscape(apiKeyId))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -1333,7 +1333,7 @@ func (s *AgentPlatformServiceOp) DeleteAgentAPIKey(ctx context.Context, agentId,
 
 // RegenerateAgentAPIKey regenerates an API key for the specified Agent Platform agent
 func (s *AgentPlatformServiceOp) RegenerateAgentAPIKey(ctx context.Context, agentId, apiKeyId string) (*ApiKeyInfo, *Response, error) {
-	path := fmt.Sprintf("%s/%s/api_keys/%s/regenerate", gradientBasePath, agentId, apiKeyId)
+	path := fmt.Sprintf("%s/%s/api_keys/%s/regenerate", gradientBasePath, url.PathEscape(agentId), url.PathEscape(apiKeyId))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, nil)
 	if err != nil {
@@ -1351,7 +1351,7 @@ func (s *AgentPlatformServiceOp) RegenerateAgentAPIKey(ctx context.Context, agen
 
 // GetAgent returns the details of an Agent Platform Agent based on the Agent UUID
 func (s *AgentPlatformServiceOp) GetAgent(ctx context.Context, id string) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", gradientBasePath, id)
+	path := fmt.Sprintf("%s/%s", gradientBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -1369,7 +1369,7 @@ func (s *AgentPlatformServiceOp) GetAgent(ctx context.Context, id string) (*Agen
 
 // UpdateAgent function updates an Agent Platform Agent properties for the given UUID
 func (s *AgentPlatformServiceOp) UpdateAgent(ctx context.Context, id string, update *AgentUpdateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", gradientBasePath, id)
+	path := fmt.Sprintf("%s/%s", gradientBasePath, url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -1386,7 +1386,7 @@ func (s *AgentPlatformServiceOp) UpdateAgent(ctx context.Context, id string, upd
 
 // DeleteAgent function deletes an Agent Platform Agent by its corresponding UUID
 func (s *AgentPlatformServiceOp) DeleteAgent(ctx context.Context, id string) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s", gradientBasePath, id)
+	path := fmt.Sprintf("%s/%s", gradientBasePath, url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1403,7 +1403,7 @@ func (s *AgentPlatformServiceOp) DeleteAgent(ctx context.Context, id string) (*A
 
 // UpdateAgentVisibility function updates an Agent Platform Agent status by changing visibility to public or private.
 func (s *AgentPlatformServiceOp) UpdateAgentVisibility(ctx context.Context, id string, update *AgentVisibilityUpdateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s/deployment_visibility", gradientBasePath, id)
+	path := fmt.Sprintf("%s/%s/deployment_visibility", gradientBasePath, url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -1482,7 +1482,7 @@ func (s *AgentPlatformServiceOp) ListIndexingJobs(ctx context.Context, opt *List
 
 // ListIndexingJobDataSources returns the data sources for a specific indexing job
 func (s *AgentPlatformServiceOp) ListIndexingJobDataSources(ctx context.Context, indexingJobUUID string) (*IndexingJobDataSourcesResponse, *Response, error) {
-	path := fmt.Sprintf(IndexingJobDataSourcesPath, indexingJobUUID)
+	path := fmt.Sprintf(IndexingJobDataSourcesPath, url.PathEscape(indexingJobUUID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1499,7 +1499,7 @@ func (s *AgentPlatformServiceOp) ListIndexingJobDataSources(ctx context.Context,
 
 // GetIndexingJob retrieves the status of a specific indexing job for a knowledge base
 func (s *AgentPlatformServiceOp) GetIndexingJob(ctx context.Context, indexingJobUUID string) (*IndexingJobResponse, *Response, error) {
-	path := fmt.Sprintf(IndexingJobByIDPath, indexingJobUUID)
+	path := fmt.Sprintf(IndexingJobByIDPath, url.PathEscape(indexingJobUUID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1516,7 +1516,7 @@ func (s *AgentPlatformServiceOp) GetIndexingJob(ctx context.Context, indexingJob
 
 // CancelIndexingJob cancels a specific indexing job for a knowledge base
 func (s *AgentPlatformServiceOp) CancelIndexingJob(ctx context.Context, indexingJobUUID string) (*IndexingJobResponse, *Response, error) {
-	path := fmt.Sprintf(IndexingJobCancelPath, indexingJobUUID)
+	path := fmt.Sprintf(IndexingJobCancelPath, url.PathEscape(indexingJobUUID))
 
 	// Create the request payload
 	cancelRequest := &CancelIndexingJobRequest{
@@ -1582,7 +1582,7 @@ func (s *AgentPlatformServiceOp) CreateKnowledgeBase(ctx context.Context, knowle
 // List Data Sources for a Knowledge Base
 func (s *AgentPlatformServiceOp) ListKnowledgeBaseDataSources(ctx context.Context, knowledgeBaseID string, opt *ListOptions) ([]KnowledgeBaseDataSource, *Response, error) {
 
-	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
+	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, url.PathEscape(knowledgeBaseID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -1607,7 +1607,7 @@ func (s *AgentPlatformServiceOp) ListKnowledgeBaseDataSources(ctx context.Contex
 
 // Add Data Source to a Knowledge Base
 func (s *AgentPlatformServiceOp) AddKnowledgeBaseDataSource(ctx context.Context, knowledgeBaseID string, addDataSource *AddKnowledgeBaseDataSourceRequest) (*KnowledgeBaseDataSource, *Response, error) {
-	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, knowledgeBaseID)
+	path := fmt.Sprintf(KnowledgeBaseDataSourcesPath, url.PathEscape(knowledgeBaseID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, addDataSource)
 	if err != nil {
 		return nil, nil, err
@@ -1623,7 +1623,7 @@ func (s *AgentPlatformServiceOp) AddKnowledgeBaseDataSource(ctx context.Context,
 // Deletes data source from a knowledge base
 func (s *AgentPlatformServiceOp) DeleteKnowledgeBaseDataSource(ctx context.Context, knowledgeBaseID string, dataSourceID string) (string, string, *Response, error) {
 
-	path := fmt.Sprintf(DeleteDataSourcePath, knowledgeBaseID, dataSourceID)
+	path := fmt.Sprintf(DeleteDataSourcePath, url.PathEscape(knowledgeBaseID), url.PathEscape(dataSourceID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 
 	if err != nil {
@@ -1642,7 +1642,7 @@ func (s *AgentPlatformServiceOp) DeleteKnowledgeBaseDataSource(ctx context.Conte
 // Get information about a KnowledgeBase and its Database status
 // Database status can be "CREATING","ONLINE","POWEROFF","REBUILDING","REBALANCING","DECOMMISSIONED","FORKING","MIGRATING","RESIZING","RESTORING","POWERING_ON","UNHEALTHY"
 func (s *AgentPlatformServiceOp) GetKnowledgeBase(ctx context.Context, knowledgeBaseID string) (*KnowledgeBase, string, *Response, error) {
-	path := fmt.Sprintf(GetKnowledgeBaseByIDPath, knowledgeBaseID)
+	path := fmt.Sprintf(GetKnowledgeBaseByIDPath, url.PathEscape(knowledgeBaseID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 
 	if err != nil {
@@ -1659,7 +1659,7 @@ func (s *AgentPlatformServiceOp) GetKnowledgeBase(ctx context.Context, knowledge
 
 // Update a knowledge base
 func (s *AgentPlatformServiceOp) UpdateKnowledgeBase(ctx context.Context, knowledgeBaseID string, update *UpdateKnowledgeBaseRequest) (*KnowledgeBase, *Response, error) {
-	path := fmt.Sprintf(UpdateKnowledgeBaseByIDPath, knowledgeBaseID)
+	path := fmt.Sprintf(UpdateKnowledgeBaseByIDPath, url.PathEscape(knowledgeBaseID))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -1677,7 +1677,7 @@ func (s *AgentPlatformServiceOp) UpdateKnowledgeBase(ctx context.Context, knowle
 // Deletes a knowledge base by its corresponding UUID and returns the UUID of the deleted knowledge base
 func (s *AgentPlatformServiceOp) DeleteKnowledgeBase(ctx context.Context, knowledgeBaseID string) (string, *Response, error) {
 
-	path := fmt.Sprintf(DeleteKnowledgeBaseByIDPath, knowledgeBaseID)
+	path := fmt.Sprintf(DeleteKnowledgeBaseByIDPath, url.PathEscape(knowledgeBaseID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	fmt.Print(path)
 	if err != nil {
@@ -1695,7 +1695,7 @@ func (s *AgentPlatformServiceOp) DeleteKnowledgeBase(ctx context.Context, knowle
 // Attach a knowledge base to an agent
 func (s *AgentPlatformServiceOp) AttachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
-	path := fmt.Sprintf(AgentKnowledgeBasePath, agentID, knowledgeBaseID)
+	path := fmt.Sprintf(AgentKnowledgeBasePath, url.PathEscape(agentID), url.PathEscape(knowledgeBaseID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1713,7 +1713,7 @@ func (s *AgentPlatformServiceOp) AttachKnowledgeBaseToAgent(ctx context.Context,
 // Detach a knowledge base from an agent
 func (s *AgentPlatformServiceOp) DetachKnowledgeBaseToAgent(ctx context.Context, agentID string, knowledgeBaseID string) (*Agent, *Response, error) {
 
-	path := fmt.Sprintf(AgentKnowledgeBasePath, agentID, knowledgeBaseID)
+	path := fmt.Sprintf(AgentKnowledgeBasePath, url.PathEscape(agentID), url.PathEscape(knowledgeBaseID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -1729,7 +1729,7 @@ func (s *AgentPlatformServiceOp) DetachKnowledgeBaseToAgent(ctx context.Context,
 
 // AddAgentRoute function adds a route between a parent and child agent.
 func (s *AgentPlatformServiceOp) AddAgentRoute(ctx context.Context, parentId string, childId string, route *AgentRouteCreateRequest) (*AgentRouteResponse, *Response, error) {
-	path := fmt.Sprintf(agentRouteBasePath, parentId, childId)
+	path := fmt.Sprintf(agentRouteBasePath, url.PathEscape(parentId), url.PathEscape(childId))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, route)
 	if err != nil {
 		return nil, nil, err
@@ -1746,7 +1746,7 @@ func (s *AgentPlatformServiceOp) AddAgentRoute(ctx context.Context, parentId str
 
 // UpdateAgentRoute function updates a route between a parent and child agent.
 func (s *AgentPlatformServiceOp) UpdateAgentRoute(ctx context.Context, parentId string, childId string, route *AgentRouteUpdateRequest) (*AgentRouteResponse, *Response, error) {
-	path := fmt.Sprintf(agentRouteBasePath, parentId, childId)
+	path := fmt.Sprintf(agentRouteBasePath, url.PathEscape(parentId), url.PathEscape(childId))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, route)
 	if err != nil {
 		return nil, nil, err
@@ -1763,7 +1763,7 @@ func (s *AgentPlatformServiceOp) UpdateAgentRoute(ctx context.Context, parentId 
 
 // DeleteAgentRoute function deletes a route between a parent and child agent.
 func (s *AgentPlatformServiceOp) DeleteAgentRoute(ctx context.Context, parentId string, childId string) (*AgentRouteResponse, *Response, error) {
-	path := fmt.Sprintf(agentRouteBasePath, parentId, childId)
+	path := fmt.Sprintf(agentRouteBasePath, url.PathEscape(parentId), url.PathEscape(childId))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1780,7 +1780,7 @@ func (s *AgentPlatformServiceOp) DeleteAgentRoute(ctx context.Context, parentId 
 
 // ListAgentVersions retrieves a list of versions for the specified Agent Platform agent
 func (s *AgentPlatformServiceOp) ListAgentVersions(ctx context.Context, agentId string, opt *ListOptions) ([]*AgentVersion, *Response, error) {
-	path := fmt.Sprintf("%s/%s/versions", gradientBasePath, agentId)
+	path := fmt.Sprintf("%s/%s/versions", gradientBasePath, url.PathEscape(agentId))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -1801,7 +1801,7 @@ func (s *AgentPlatformServiceOp) ListAgentVersions(ctx context.Context, agentId 
 }
 
 func (s *AgentPlatformServiceOp) RollbackAgentVersion(ctx context.Context, agentId string, versionId string) (string, *Response, error) {
-	path := fmt.Sprintf("%s/%s/versions", gradientBasePath, agentId)
+	path := fmt.Sprintf("%s/%s/versions", gradientBasePath, url.PathEscape(agentId))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, RollbackVersionRequest{
 		AgentUuid:   agentId,
 		VersionHash: versionId,
@@ -1870,7 +1870,7 @@ func (s *AgentPlatformServiceOp) CreateAnthropicAPIKey(ctx context.Context, anth
 }
 
 func (s *AgentPlatformServiceOp) GetAnthropicAPIKey(ctx context.Context, anthropicApiKeyId string) (*AnthropicApiKeyInfo, *Response, error) {
-	path := AnthropicAPIKeysPath + "/" + anthropicApiKeyId
+	path := AnthropicAPIKeysPath + "/" + url.PathEscape(anthropicApiKeyId)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -1887,7 +1887,7 @@ func (s *AgentPlatformServiceOp) GetAnthropicAPIKey(ctx context.Context, anthrop
 }
 
 func (s *AgentPlatformServiceOp) UpdateAnthropicAPIKey(ctx context.Context, anthropicApiKeyId string, anthropicAPIKeyUpdate *AnthropicAPIKeyUpdateRequest) (*AnthropicApiKeyInfo, *Response, error) {
-	path := AnthropicAPIKeysPath + "/" + anthropicApiKeyId
+	path := AnthropicAPIKeysPath + "/" + url.PathEscape(anthropicApiKeyId)
 
 	if anthropicAPIKeyUpdate.ApiKeyUuid == "" {
 		anthropicAPIKeyUpdate.ApiKeyUuid = anthropicApiKeyId
@@ -1911,7 +1911,7 @@ func (s *AgentPlatformServiceOp) UpdateAnthropicAPIKey(ctx context.Context, anth
 }
 
 func (s *AgentPlatformServiceOp) DeleteAnthropicAPIKey(ctx context.Context, anthropicApiKeyId string) (*AnthropicApiKeyInfo, *Response, error) {
-	path := AnthropicAPIKeysPath + "/" + anthropicApiKeyId
+	path := AnthropicAPIKeysPath + "/" + url.PathEscape(anthropicApiKeyId)
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -1928,7 +1928,7 @@ func (s *AgentPlatformServiceOp) DeleteAnthropicAPIKey(ctx context.Context, anth
 }
 
 func (s *AgentPlatformServiceOp) ListAgentsByAnthropicAPIKey(ctx context.Context, anthropicApiKeyId string, opt *ListOptions) ([]*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s/agents", AnthropicAPIKeysPath, anthropicApiKeyId)
+	path := fmt.Sprintf("%s/%s/agents", AnthropicAPIKeysPath, url.PathEscape(anthropicApiKeyId))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -2003,7 +2003,7 @@ func (s *AgentPlatformServiceOp) CreateOpenAIAPIKey(ctx context.Context, openaiA
 }
 
 func (s *AgentPlatformServiceOp) GetOpenAIAPIKey(ctx context.Context, openaiApiKeyId string) (*OpenAiApiKey, *Response, error) {
-	path := OpenAIAPIKeysPath + "/" + openaiApiKeyId
+	path := OpenAIAPIKeysPath + "/" + url.PathEscape(openaiApiKeyId)
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -2020,7 +2020,7 @@ func (s *AgentPlatformServiceOp) GetOpenAIAPIKey(ctx context.Context, openaiApiK
 }
 
 func (s *AgentPlatformServiceOp) UpdateOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, openaiAPIKeyUpdate *OpenAIAPIKeyUpdateRequest) (*OpenAiApiKey, *Response, error) {
-	path := OpenAIAPIKeysPath + "/" + openaiApiKeyId
+	path := OpenAIAPIKeysPath + "/" + url.PathEscape(openaiApiKeyId)
 
 	if openaiAPIKeyUpdate.ApiKeyUuid == "" {
 		openaiAPIKeyUpdate.ApiKeyUuid = openaiApiKeyId
@@ -2044,7 +2044,7 @@ func (s *AgentPlatformServiceOp) UpdateOpenAIAPIKey(ctx context.Context, openaiA
 }
 
 func (s *AgentPlatformServiceOp) DeleteOpenAIAPIKey(ctx context.Context, openaiApiKeyId string) (*OpenAiApiKey, *Response, error) {
-	path := OpenAIAPIKeysPath + "/" + openaiApiKeyId
+	path := OpenAIAPIKeysPath + "/" + url.PathEscape(openaiApiKeyId)
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -2061,7 +2061,7 @@ func (s *AgentPlatformServiceOp) DeleteOpenAIAPIKey(ctx context.Context, openaiA
 }
 
 func (s *AgentPlatformServiceOp) ListAgentsByOpenAIAPIKey(ctx context.Context, openaiApiKeyId string, opt *ListOptions) ([]*Agent, *Response, error) {
-	path := fmt.Sprintf("%s/%s/agents", OpenAIAPIKeysPath, openaiApiKeyId)
+	path := fmt.Sprintf("%s/%s/agents", OpenAIAPIKeysPath, url.PathEscape(openaiApiKeyId))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -2087,7 +2087,7 @@ func (s *AgentPlatformServiceOp) ListAgentsByOpenAIAPIKey(ctx context.Context, o
 
 // Attaches a functionroute to an agent.
 func (g *AgentPlatformServiceOp) CreateFunctionRoute(ctx context.Context, id string, create *FunctionRouteCreateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf(functionRouteBasePath, id)
+	path := fmt.Sprintf(functionRouteBasePath, url.PathEscape(id))
 
 	if create.AgentUuid == "" {
 		return nil, nil, fmt.Errorf("AgentUuid is required")
@@ -2125,7 +2125,7 @@ func (g *AgentPlatformServiceOp) CreateFunctionRoute(ctx context.Context, id str
 
 // Deletes a functionroute to an agent.
 func (g *AgentPlatformServiceOp) DeleteFunctionRoute(ctx context.Context, agent_id string, function_id string) (*Agent, *Response, error) {
-	path := fmt.Sprintf(UpdateFunctionRoutePath, agent_id, function_id)
+	path := fmt.Sprintf(UpdateFunctionRoutePath, url.PathEscape(agent_id), url.PathEscape(function_id))
 	req, err := g.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2143,7 +2143,7 @@ func (g *AgentPlatformServiceOp) DeleteFunctionRoute(ctx context.Context, agent_
 
 // Updates a functionroute to an agent.
 func (g *AgentPlatformServiceOp) UpdateFunctionRoute(ctx context.Context, agent_id string, function_id string, update *FunctionRouteUpdateRequest) (*Agent, *Response, error) {
-	path := fmt.Sprintf(UpdateFunctionRoutePath, agent_id, function_id)
+	path := fmt.Sprintf(UpdateFunctionRoutePath, url.PathEscape(agent_id), url.PathEscape(function_id))
 	req, err := g.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -2219,7 +2219,7 @@ func (s *AgentPlatformServiceOp) GetInferenceRouter(ctx context.Context, uuid st
 		return nil, nil, fmt.Errorf("uuid is required")
 	}
 
-	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, uuid)
+	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, url.PathEscape(uuid))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2277,7 +2277,7 @@ func (s *AgentPlatformServiceOp) UpdateInferenceRouter(ctx context.Context, uuid
 		return nil, nil, fmt.Errorf("at least one of name, description, policies, or fallback_models must be set")
 	}
 
-	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, uuid)
+	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, url.PathEscape(uuid))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -2298,7 +2298,7 @@ func (s *AgentPlatformServiceOp) DeleteInferenceRouter(ctx context.Context, uuid
 		return nil, nil, fmt.Errorf("uuid is required")
 	}
 
-	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, uuid)
+	path := fmt.Sprintf("%s/%s", inferenceRoutersBasePath, url.PathEscape(uuid))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2804,7 +2804,7 @@ func (s *AgentPlatformServiceOp) GetCustomModel(ctx context.Context, uuid string
 	if uuid == "" {
 		return nil, nil, fmt.Errorf("uuid is required")
 	}
-	path := fmt.Sprintf(customModelByIDPath, uuid)
+	path := fmt.Sprintf(customModelByIDPath, url.PathEscape(uuid))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -2849,7 +2849,7 @@ func (s *AgentPlatformServiceOp) DeleteCustomModel(ctx context.Context, uuid str
 	if uuid == "" {
 		return nil, nil, fmt.Errorf("uuid is required")
 	}
-	path := fmt.Sprintf(customModelByIDPath, uuid)
+	path := fmt.Sprintf(customModelByIDPath, url.PathEscape(uuid))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -2923,7 +2923,7 @@ func (s *AgentPlatformServiceOp) DeleteModelEvaluationRun(ctx context.Context, e
 	if evalRunUUID == "" {
 		return nil, nil, fmt.Errorf("eval run uuid is required")
 	}
-	path := fmt.Sprintf(modelEvaluationRunByIDPath, evalRunUUID)
+	path := fmt.Sprintf(modelEvaluationRunByIDPath, url.PathEscape(evalRunUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -2944,7 +2944,7 @@ func (s *AgentPlatformServiceOp) DeleteModelEvaluationPreset(ctx context.Context
 	if evalPresetUUID == "" {
 		return nil, nil, fmt.Errorf("eval preset uuid is required")
 	}
-	path := fmt.Sprintf(modelEvaluationPresetByIDPath, evalPresetUUID)
+	path := fmt.Sprintf(modelEvaluationPresetByIDPath, url.PathEscape(evalPresetUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -2968,7 +2968,7 @@ func (s *AgentPlatformServiceOp) CancelModelEvaluationRun(ctx context.Context, e
 	if evalRunUUID == "" {
 		return nil, nil, fmt.Errorf("eval run uuid is required")
 	}
-	path := fmt.Sprintf(modelEvaluationRunCancelPath, evalRunUUID)
+	path := fmt.Sprintf(modelEvaluationRunCancelPath, url.PathEscape(evalRunUUID))
 
 	cancelRequest := &CancelModelEvaluationRunRequest{
 		EvalRunUUID: evalRunUUID,
@@ -2997,7 +2997,7 @@ func (s *AgentPlatformServiceOp) UpdateModelEvaluationRun(ctx context.Context, e
 	if updateRequest == nil {
 		return nil, nil, fmt.Errorf("update request is required")
 	}
-	path := fmt.Sprintf(UpdateModelEvaluationRunPath, evalRunUUID)
+	path := fmt.Sprintf(UpdateModelEvaluationRunPath, url.PathEscape(evalRunUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, updateRequest)
 	if err != nil {
@@ -3513,7 +3513,7 @@ func (s *AgentPlatformServiceOp) GetModelEvaluationRun(ctx context.Context, eval
 	if evalRunUUID == "" {
 		return nil, nil, fmt.Errorf("eval run uuid is required")
 	}
-	path := fmt.Sprintf(modelEvaluationRunByIDPath, evalRunUUID)
+	path := fmt.Sprintf(modelEvaluationRunByIDPath, url.PathEscape(evalRunUUID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -3543,7 +3543,7 @@ func (s *AgentPlatformServiceOp) GetModelEvaluationPreset(ctx context.Context, e
 	if evalPresetUUID == "" {
 		return nil, nil, fmt.Errorf("eval preset uuid is required")
 	}
-	path := fmt.Sprintf(modelEvaluationPresetByIDPath, evalPresetUUID)
+	path := fmt.Sprintf(modelEvaluationPresetByIDPath, url.PathEscape(evalPresetUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -3564,7 +3564,7 @@ func (s *AgentPlatformServiceOp) GetModelEvaluationRunResultsDownloadURL(ctx con
 	if evalRunUUID == "" {
 		return nil, nil, fmt.Errorf("eval run uuid is required")
 	}
-	path := fmt.Sprintf(modelEvaluationRunResultsDownloadURLPath, evalRunUUID)
+	path := fmt.Sprintf(modelEvaluationRunResultsDownloadURLPath, url.PathEscape(evalRunUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -3676,7 +3676,7 @@ func (s *AgentPlatformServiceOp) DeleteEvaluationDataset(ctx context.Context, da
 	if datasetUUID == "" {
 		return nil, nil, fmt.Errorf("dataset uuid is required")
 	}
-	path := fmt.Sprintf(evaluationDatasetByIDPath, datasetUUID)
+	path := fmt.Sprintf(evaluationDatasetByIDPath, url.PathEscape(datasetUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -3699,7 +3699,7 @@ func (s *AgentPlatformServiceOp) UpdateCustomModelMetadata(ctx context.Context, 
 	if updateRequest == nil {
 		return nil, nil, fmt.Errorf("update request is required")
 	}
-	path := fmt.Sprintf(customModelMetadataPath, uuid)
+	path := fmt.Sprintf(customModelMetadataPath, url.PathEscape(uuid))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, updateRequest)
 	if err != nil {
@@ -3742,7 +3742,7 @@ func (s *AgentPlatformServiceOp) UpdateCustomEvaluationMetric(ctx context.Contex
 		return nil, nil, fmt.Errorf("update request is required")
 	}
 
-	path := fmt.Sprintf(customEvaluationMetricByIDPath, metricUUID)
+	path := fmt.Sprintf(customEvaluationMetricByIDPath, url.PathEscape(metricUUID))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
@@ -3762,7 +3762,7 @@ func (s *AgentPlatformServiceOp) DeleteCustomEvaluationMetric(ctx context.Contex
 		return nil, fmt.Errorf("metricUUID is required")
 	}
 
-	path := fmt.Sprintf(customEvaluationMetricByIDPath, metricUUID)
+	path := fmt.Sprintf(customEvaluationMetricByIDPath, url.PathEscape(metricUUID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err

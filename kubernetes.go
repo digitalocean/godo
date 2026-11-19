@@ -719,7 +719,7 @@ type kubernetesUpgradesRoot struct {
 
 // Get retrieves the details of a Kubernetes cluster.
 func (svc *KubernetesServiceOp) Get(ctx context.Context, clusterID string) (*KubernetesCluster, *Response, error) {
-	path := fmt.Sprintf("%s/%s", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -734,7 +734,7 @@ func (svc *KubernetesServiceOp) Get(ctx context.Context, clusterID string) (*Kub
 
 // GetUser retrieves the details of a Kubernetes cluster user.
 func (svc *KubernetesServiceOp) GetUser(ctx context.Context, clusterID string) (*KubernetesClusterUser, *Response, error) {
-	path := fmt.Sprintf("%s/%s/user", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/user", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -750,7 +750,7 @@ func (svc *KubernetesServiceOp) GetUser(ctx context.Context, clusterID string) (
 // GetUpgrades retrieves versions a Kubernetes cluster can be upgraded to. An
 // upgrade can be requested using `Upgrade`.
 func (svc *KubernetesServiceOp) GetUpgrades(ctx context.Context, clusterID string) ([]*KubernetesVersion, *Response, error) {
-	path := fmt.Sprintf("%s/%s/upgrades", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/upgrades", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -781,7 +781,7 @@ func (svc *KubernetesServiceOp) Create(ctx context.Context, create *KubernetesCl
 // Delete deletes a Kubernetes cluster. There is no way to recover a cluster
 // once it has been destroyed.
 func (svc *KubernetesServiceOp) Delete(ctx context.Context, clusterID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -797,7 +797,7 @@ func (svc *KubernetesServiceOp) Delete(ctx context.Context, clusterID string) (*
 // Users can choose to delete specific volumes, volume snapshots or load balancers along with the cluster
 // There is no way to recover a cluster or the specified resources once destroyed.
 func (svc *KubernetesServiceOp) DeleteSelective(ctx context.Context, clusterID string, request *KubernetesClusterDeleteSelectiveRequest) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/destroy_with_associated_resources/selective", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/destroy_with_associated_resources/selective", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, request)
 	if err != nil {
 		return nil, err
@@ -812,7 +812,7 @@ func (svc *KubernetesServiceOp) DeleteSelective(ctx context.Context, clusterID s
 // DeleteDangerous deletes a Kubernetes cluster and all its associated resources. There is no way to recover a cluster
 // or it's associated resources once destroyed.
 func (svc *KubernetesServiceOp) DeleteDangerous(ctx context.Context, clusterID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/destroy_with_associated_resources/dangerous", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/destroy_with_associated_resources/dangerous", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -828,7 +828,7 @@ func (svc *KubernetesServiceOp) DeleteDangerous(ctx context.Context, clusterID s
 // for deletion along with the cluster. See DeleteSelective
 // Associated resources include volumes, volume snapshots and load balancers.
 func (svc *KubernetesServiceOp) ListAssociatedResourcesForDeletion(ctx context.Context, clusterID string) (*KubernetesAssociatedResources, *Response, error) {
-	path := fmt.Sprintf("%s/%s/destroy_with_associated_resources", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/destroy_with_associated_resources", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -877,7 +877,7 @@ type KubernetesClusterConfig struct {
 
 // GetKubeConfig returns a Kubernetes config file for the specified cluster.
 func (svc *KubernetesServiceOp) GetKubeConfig(ctx context.Context, clusterID string, get *KubernetesClusterKubeconfigGetRequest) (*KubernetesClusterConfig, *Response, error) {
-	path := fmt.Sprintf("%s/%s/kubeconfig", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/kubeconfig", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -901,7 +901,7 @@ func (svc *KubernetesServiceOp) GetKubeConfig(ctx context.Context, clusterID str
 // GetKubeConfigWithExpiry returns a Kubernetes config file for the specified cluster with expiry_seconds.
 // Expiry only makes sense for token-based kubeconfigs.
 func (svc *KubernetesServiceOp) GetKubeConfigWithExpiry(ctx context.Context, clusterID string, expirySeconds int64) (*KubernetesClusterConfig, *Response, error) {
-	path := fmt.Sprintf("%s/%s/kubeconfig", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/kubeconfig", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -923,7 +923,7 @@ func (svc *KubernetesServiceOp) GetKubeConfigWithExpiry(ctx context.Context, clu
 
 // GetCredentials returns a Kubernetes API server credentials for the specified cluster.
 func (svc *KubernetesServiceOp) GetCredentials(ctx context.Context, clusterID string, get *KubernetesClusterCredentialsGetRequest) (*KubernetesClusterCredentials, *Response, error) {
-	path := fmt.Sprintf("%s/%s/credentials", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/credentials", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -943,7 +943,7 @@ func (svc *KubernetesServiceOp) GetCredentials(ctx context.Context, clusterID st
 
 // Update updates a Kubernetes cluster's properties.
 func (svc *KubernetesServiceOp) Update(ctx context.Context, clusterID string, update *KubernetesClusterUpdateRequest) (*KubernetesCluster, *Response, error) {
-	path := fmt.Sprintf("%s/%s", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -959,7 +959,7 @@ func (svc *KubernetesServiceOp) Update(ctx context.Context, clusterID string, up
 // Upgrade upgrades a Kubernetes cluster to a new version. Valid upgrade
 // versions for a given cluster can be retrieved with `GetUpgrades`.
 func (svc *KubernetesServiceOp) Upgrade(ctx context.Context, clusterID string, upgrade *KubernetesClusterUpgradeRequest) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/upgrade", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/upgrade", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, upgrade)
 	if err != nil {
 		return nil, err
@@ -969,7 +969,7 @@ func (svc *KubernetesServiceOp) Upgrade(ctx context.Context, clusterID string, u
 
 // CreateNodePool creates a new node pool in an existing Kubernetes cluster.
 func (svc *KubernetesServiceOp) CreateNodePool(ctx context.Context, clusterID string, create *KubernetesNodePoolCreateRequest) (*KubernetesNodePool, *Response, error) {
-	path := fmt.Sprintf("%s/%s/node_pools", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/node_pools", kubernetesClustersPath, url.PathEscape(clusterID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, create)
 	if err != nil {
 		return nil, nil, err
@@ -984,7 +984,7 @@ func (svc *KubernetesServiceOp) CreateNodePool(ctx context.Context, clusterID st
 
 // GetNodePool retrieves an existing node pool in a Kubernetes cluster.
 func (svc *KubernetesServiceOp) GetNodePool(ctx context.Context, clusterID, poolID string) (*KubernetesNodePool, *Response, error) {
-	path := fmt.Sprintf("%s/%s/node_pools/%s", kubernetesClustersPath, clusterID, poolID)
+	path := fmt.Sprintf("%s/%s/node_pools/%s", kubernetesClustersPath, url.PathEscape(clusterID), url.PathEscape(poolID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -999,10 +999,7 @@ func (svc *KubernetesServiceOp) GetNodePool(ctx context.Context, clusterID, pool
 
 // GetNodePoolTemplate retrieves the template used for a given node pool to scale up from zero.
 func (svc *KubernetesServiceOp) GetNodePoolTemplate(ctx context.Context, clusterID string, nodePoolName string) (*KubernetesNodePoolTemplate, *Response, error) {
-	path, err := url.JoinPath(kubernetesClustersPath, clusterID, "node_pools_template", nodePoolName)
-	if err != nil {
-		return nil, nil, err
-	}
+	path := fmt.Sprintf("%s/%s/node_pools_template/%s", kubernetesClustersPath, url.PathEscape(clusterID), url.PathEscape(nodePoolName))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1017,7 +1014,7 @@ func (svc *KubernetesServiceOp) GetNodePoolTemplate(ctx context.Context, cluster
 
 // ListNodePools lists all the node pools found in a Kubernetes cluster.
 func (svc *KubernetesServiceOp) ListNodePools(ctx context.Context, clusterID string, opts *ListOptions) ([]*KubernetesNodePool, *Response, error) {
-	path := fmt.Sprintf("%s/%s/node_pools", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/node_pools", kubernetesClustersPath, url.PathEscape(clusterID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -1036,7 +1033,7 @@ func (svc *KubernetesServiceOp) ListNodePools(ctx context.Context, clusterID str
 
 // UpdateNodePool updates the details of an existing node pool.
 func (svc *KubernetesServiceOp) UpdateNodePool(ctx context.Context, clusterID, poolID string, update *KubernetesNodePoolUpdateRequest) (*KubernetesNodePool, *Response, error) {
-	path := fmt.Sprintf("%s/%s/node_pools/%s", kubernetesClustersPath, clusterID, poolID)
+	path := fmt.Sprintf("%s/%s/node_pools/%s", kubernetesClustersPath, url.PathEscape(clusterID), url.PathEscape(poolID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -1052,7 +1049,7 @@ func (svc *KubernetesServiceOp) UpdateNodePool(ctx context.Context, clusterID, p
 // RecycleNodePoolNodes is DEPRECATED please use DeleteNode
 // The method will be removed in godo 2.0.
 func (svc *KubernetesServiceOp) RecycleNodePoolNodes(ctx context.Context, clusterID, poolID string, recycle *KubernetesNodePoolRecycleNodesRequest) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/node_pools/%s/recycle", kubernetesClustersPath, clusterID, poolID)
+	path := fmt.Sprintf("%s/%s/node_pools/%s/recycle", kubernetesClustersPath, url.PathEscape(clusterID), url.PathEscape(poolID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, recycle)
 	if err != nil {
 		return nil, err
@@ -1066,7 +1063,7 @@ func (svc *KubernetesServiceOp) RecycleNodePoolNodes(ctx context.Context, cluste
 
 // DeleteNodePool deletes a node pool, and subsequently all the nodes in that pool.
 func (svc *KubernetesServiceOp) DeleteNodePool(ctx context.Context, clusterID, poolID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/node_pools/%s", kubernetesClustersPath, clusterID, poolID)
+	path := fmt.Sprintf("%s/%s/node_pools/%s", kubernetesClustersPath, url.PathEscape(clusterID), url.PathEscape(poolID))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -1080,7 +1077,7 @@ func (svc *KubernetesServiceOp) DeleteNodePool(ctx context.Context, clusterID, p
 
 // DeleteNode deletes a specific node in a node pool.
 func (svc *KubernetesServiceOp) DeleteNode(ctx context.Context, clusterID, poolID, nodeID string, deleteReq *KubernetesNodeDeleteRequest) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/node_pools/%s/nodes/%s", kubernetesClustersPath, clusterID, poolID, nodeID)
+	path := fmt.Sprintf("%s/%s/node_pools/%s/nodes/%s", kubernetesClustersPath, url.PathEscape(clusterID), url.PathEscape(poolID), url.PathEscape(nodeID))
 	if deleteReq != nil {
 		v := make(url.Values)
 		if deleteReq.SkipDrain {
@@ -1160,7 +1157,7 @@ type runClusterlintRoot struct {
 
 // RunClusterlint schedules a clusterlint run for the specified cluster
 func (svc *KubernetesServiceOp) RunClusterlint(ctx context.Context, clusterID string, req *KubernetesRunClusterlintRequest) (string, *Response, error) {
-	path := fmt.Sprintf("%s/%s/clusterlint", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/clusterlint", kubernetesClustersPath, url.PathEscape(clusterID))
 	request, err := svc.client.NewRequest(ctx, http.MethodPost, path, req)
 	if err != nil {
 		return "", nil, err
@@ -1179,7 +1176,7 @@ type clusterlintDiagnosticsRoot struct {
 
 // GetClusterlintResults fetches the diagnostics after clusterlint run completes
 func (svc *KubernetesServiceOp) GetClusterlintResults(ctx context.Context, clusterID string, req *KubernetesGetClusterlintRequest) ([]*ClusterlintDiagnostic, *Response, error) {
-	path := fmt.Sprintf("%s/%s/clusterlint", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/clusterlint", kubernetesClustersPath, url.PathEscape(clusterID))
 	if req != nil {
 		v := make(url.Values)
 		if req.RunId != "" {
@@ -1203,7 +1200,7 @@ func (svc *KubernetesServiceOp) GetClusterlintResults(ctx context.Context, clust
 }
 
 func (svc *KubernetesServiceOp) GetClusterStatusMessages(ctx context.Context, clusterID string, req *KubernetesGetClusterStatusMessagesRequest) ([]*KubernetesClusterStatusMessage, *Response, error) {
-	path := fmt.Sprintf("%s/%s/status_messages", kubernetesClustersPath, clusterID)
+	path := fmt.Sprintf("%s/%s/status_messages", kubernetesClustersPath, url.PathEscape(clusterID))
 
 	if req != nil {
 		v := make(url.Values)

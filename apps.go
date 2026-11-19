@@ -283,7 +283,7 @@ type appHealthRoot struct {
 }
 
 func (s *AppsServiceOp) GetAppHealth(ctx context.Context, appID string) (*AppHealth, *Response, error) {
-	path := fmt.Sprintf("%s/%s/health", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/health", appsBasePath, netURL.PathEscape(appID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -314,7 +314,7 @@ func (s *AppsServiceOp) Create(ctx context.Context, create *AppCreateRequest) (*
 
 // Get an app.
 func (s *AppsServiceOp) Get(ctx context.Context, appID string) (*App, *Response, error) {
-	path := fmt.Sprintf("%s/%s", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s", appsBasePath, netURL.PathEscape(appID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -358,7 +358,7 @@ func (s *AppsServiceOp) List(ctx context.Context, opts *ListOptions) ([]*App, *R
 
 // Update an app.
 func (s *AppsServiceOp) Update(ctx context.Context, appID string, update *AppUpdateRequest) (*App, *Response, error) {
-	path := fmt.Sprintf("%s/%s", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s", appsBasePath, netURL.PathEscape(appID))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -374,7 +374,7 @@ func (s *AppsServiceOp) Update(ctx context.Context, appID string, update *AppUpd
 
 // Delete an app.
 func (s *AppsServiceOp) Delete(ctx context.Context, appID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s", appsBasePath, netURL.PathEscape(appID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -404,7 +404,7 @@ func (s *AppsServiceOp) Propose(ctx context.Context, propose *AppProposeRequest)
 
 // Restart restarts an app.
 func (s *AppsServiceOp) Restart(ctx context.Context, appID string, opts *AppRestartRequest) (*Deployment, *Response, error) {
-	path := fmt.Sprintf("%s/%s/restart", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/restart", appsBasePath, netURL.PathEscape(appID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, opts)
 	if err != nil {
@@ -420,7 +420,7 @@ func (s *AppsServiceOp) Restart(ctx context.Context, appID string, opts *AppRest
 
 // GetDeployment gets an app deployment.
 func (s *AppsServiceOp) GetDeployment(ctx context.Context, appID, deploymentID string) (*Deployment, *Response, error) {
-	path := fmt.Sprintf("%s/%s/deployments/%s", appsBasePath, appID, deploymentID)
+	path := fmt.Sprintf("%s/%s/deployments/%s", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(deploymentID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -435,7 +435,7 @@ func (s *AppsServiceOp) GetDeployment(ctx context.Context, appID, deploymentID s
 
 // ListDeployments lists an app deployments.
 func (s *AppsServiceOp) ListDeployments(ctx context.Context, appID string, opts *ListOptions) ([]*Deployment, *Response, error) {
-	path := fmt.Sprintf("%s/%s/deployments", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/deployments", appsBasePath, netURL.PathEscape(appID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -464,7 +464,7 @@ func (s *AppsServiceOp) ListDeployments(ctx context.Context, appID string, opts 
 
 // CreateDeployment creates an app deployment.
 func (s *AppsServiceOp) CreateDeployment(ctx context.Context, appID string, create ...*DeploymentCreateRequest) (*Deployment, *Response, error) {
-	path := fmt.Sprintf("%s/%s/deployments", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/deployments", appsBasePath, netURL.PathEscape(appID))
 
 	var createReq *DeploymentCreateRequest
 	for _, c := range create {
@@ -485,7 +485,7 @@ func (s *AppsServiceOp) CreateDeployment(ctx context.Context, appID string, crea
 
 // ListJobInvocations lists all job invocations for a given app.
 func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, opts *ListJobInvocationsOptions) ([]*JobInvocation, *Response, error) {
-	path := fmt.Sprintf("%s/%s/job-invocations", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/job-invocations", appsBasePath, netURL.PathEscape(appID))
 
 	path, err := addOptions(path, opts)
 	if err != nil {
@@ -514,7 +514,7 @@ func (s *AppsServiceOp) ListJobInvocations(ctx context.Context, appID string, op
 
 // GetJobInvocation gets a specific job invocation for a given app.
 func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *GetJobInvocationOptions) (*JobInvocation, *Response, error) {
-	url := fmt.Sprintf("%s/%s/job-invocations/%s", appsBasePath, appID, jobInvocationId)
+	url := fmt.Sprintf("%s/%s/job-invocations/%s", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(jobInvocationId))
 
 	url, err := addOptions(url, opts)
 	if err != nil {
@@ -536,7 +536,7 @@ func (s *AppsServiceOp) GetJobInvocation(ctx context.Context, appID string, jobI
 
 // GetJobInvocationLogs retrieves job invocation logs.
 func (s *AppsServiceOp) GetJobInvocationLogs(ctx context.Context, appID, jobInvocationId string, opts *GetJobInvocationLogsOptions) (*AppLogs, *Response, error) {
-	url := fmt.Sprintf("%s/%s/jobs/%s/invocations/%s/logs?type=JOB_INVOCATION", appsBasePath, appID, opts.JobName, jobInvocationId)
+	url := fmt.Sprintf("%s/%s/jobs/%s/invocations/%s/logs?type=JOB_INVOCATION", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(opts.JobName), netURL.PathEscape(jobInvocationId))
 
 	if opts.Follow {
 		url += fmt.Sprintf("&follow=%t", opts.Follow)
@@ -559,7 +559,7 @@ func (s *AppsServiceOp) GetJobInvocationLogs(ctx context.Context, appID, jobInvo
 
 // CancelJobInvocation cancels a specific job invocation for a given app.
 func (s *AppsServiceOp) CancelJobInvocation(ctx context.Context, appID string, jobInvocationId string, opts *CancelJobInvocationOptions) (*JobInvocation, *Response, error) {
-	url := fmt.Sprintf("%s/%s/job-invocations/%s/cancel", appsBasePath, appID, jobInvocationId)
+	url := fmt.Sprintf("%s/%s/job-invocations/%s/cancel", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(jobInvocationId))
 
 	url, err := addOptions(url, opts)
 	if err != nil {
@@ -581,7 +581,7 @@ func (s *AppsServiceOp) CancelJobInvocation(ctx context.Context, appID string, j
 
 // ListEvents lists all events for a given app.
 func (s *AppsServiceOp) ListEvents(ctx context.Context, appID string, opts *ListEventsOptions) ([]*Event, *Response, error) {
-	path := fmt.Sprintf("%s/%s/events", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/events", appsBasePath, netURL.PathEscape(appID))
 
 	path, err := addOptions(path, opts)
 	if err != nil {
@@ -611,7 +611,7 @@ func (s *AppsServiceOp) ListEvents(ctx context.Context, appID string, opts *List
 
 // GetEvent retrieves a single event for an app.
 func (s *AppsServiceOp) GetEvent(ctx context.Context, appID, eventID string) (*Event, *Response, error) {
-	url := fmt.Sprintf("%s/%s/events/%s", appsBasePath, appID, eventID)
+	url := fmt.Sprintf("%s/%s/events/%s", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(eventID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -628,7 +628,7 @@ func (s *AppsServiceOp) GetEvent(ctx context.Context, appID, eventID string) (*E
 
 // CancelEvent cancels an in-progress autoscaling event.
 func (s *AppsServiceOp) CancelEvent(ctx context.Context, appID, eventID string) (*Event, *Response, error) {
-	url := fmt.Sprintf("%s/%s/events/%s/cancel", appsBasePath, appID, eventID)
+	url := fmt.Sprintf("%s/%s/events/%s/cancel", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(eventID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, url, nil)
 	if err != nil {
@@ -645,7 +645,7 @@ func (s *AppsServiceOp) CancelEvent(ctx context.Context, appID, eventID string) 
 
 // GetEventLogs retrieves logs for an autoscaling event.
 func (s *AppsServiceOp) GetEventLogs(ctx context.Context, appID, eventID string, opts *GetEventLogsOptions) (*AppLogs, *Response, error) {
-	url := fmt.Sprintf("%s/%s/events/%s/logs?type=%s", appsBasePath, appID, eventID, AppLogTypeAutoscaleEvent)
+	url := fmt.Sprintf("%s/%s/events/%s/logs?type=%s", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(eventID), AppLogTypeAutoscaleEvent)
 
 	if opts != nil {
 		if opts.Follow {
@@ -673,12 +673,12 @@ func (s *AppsServiceOp) GetEventLogs(ctx context.Context, appID, eventID string,
 func (s *AppsServiceOp) GetLogs(ctx context.Context, appID, deploymentID, component string, logType AppLogType, follow bool, tailLines int) (*AppLogs, *Response, error) {
 	var url string
 	if deploymentID == "" {
-		url = fmt.Sprintf("%s/%s/logs?type=%s&follow=%t&tail_lines=%d", appsBasePath, appID, logType, follow, tailLines)
+		url = fmt.Sprintf("%s/%s/logs?type=%s&follow=%t&tail_lines=%d", appsBasePath, netURL.PathEscape(appID), netURL.QueryEscape(string(logType)), follow, tailLines)
 	} else {
-		url = fmt.Sprintf("%s/%s/deployments/%s/logs?type=%s&follow=%t&tail_lines=%d", appsBasePath, appID, deploymentID, logType, follow, tailLines)
+		url = fmt.Sprintf("%s/%s/deployments/%s/logs?type=%s&follow=%t&tail_lines=%d", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(deploymentID), netURL.QueryEscape(string(logType)), follow, tailLines)
 	}
 	if component != "" {
-		url = fmt.Sprintf("%s&component_name=%s", url, component)
+		url = fmt.Sprintf("%s&component_name=%s", url, netURL.QueryEscape(component))
 	}
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, url, nil)
@@ -705,9 +705,9 @@ func (s *AppsServiceOp) GetExec(ctx context.Context, appID, deploymentID, compon
 func (s *AppsServiceOp) GetExecWithOpts(ctx context.Context, appID, componentName string, opts *AppGetExecOptions) (*AppExec, *Response, error) {
 	var url string
 	if opts.DeploymentID == "" {
-		url = fmt.Sprintf("%s/%s/components/%s/exec", appsBasePath, appID, componentName)
+		url = fmt.Sprintf("%s/%s/components/%s/exec", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(componentName))
 	} else {
-		url = fmt.Sprintf("%s/%s/deployments/%s/components/%s/exec", appsBasePath, appID, opts.DeploymentID, componentName)
+		url = fmt.Sprintf("%s/%s/deployments/%s/components/%s/exec", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(opts.DeploymentID), netURL.PathEscape(componentName))
 	}
 
 	params := map[string]string{
@@ -778,7 +778,7 @@ func (s *AppsServiceOp) ListTiers(ctx context.Context) ([]*AppTier, *Response, e
 // Deprecated: The '/v2/apps/tiers/{slug}' endpoints have been deprecated as app
 // tiers are no longer tied to instance sizes. The concept of tiers is being retired.
 func (s *AppsServiceOp) GetTier(ctx context.Context, slug string) (*AppTier, *Response, error) {
-	path := fmt.Sprintf("%s/tiers/%s", appsBasePath, slug)
+	path := fmt.Sprintf("%s/tiers/%s", appsBasePath, netURL.PathEscape(slug))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -808,7 +808,7 @@ func (s *AppsServiceOp) ListInstanceSizes(ctx context.Context) ([]*AppInstanceSi
 
 // GetInstanceSize retrieves information about a specific instance size for service, worker, and job components.
 func (s *AppsServiceOp) GetInstanceSize(ctx context.Context, slug string) (*AppInstanceSize, *Response, error) {
-	path := fmt.Sprintf("%s/tiers/instance_sizes/%s", appsBasePath, slug)
+	path := fmt.Sprintf("%s/tiers/instance_sizes/%s", appsBasePath, netURL.PathEscape(slug))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -823,7 +823,7 @@ func (s *AppsServiceOp) GetInstanceSize(ctx context.Context, slug string) (*AppI
 
 // ListAlerts retrieves a list of alerts on an app
 func (s *AppsServiceOp) ListAlerts(ctx context.Context, appID string) ([]*AppAlert, *Response, error) {
-	path := fmt.Sprintf("%s/%s/alerts", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/alerts", appsBasePath, netURL.PathEscape(appID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -838,7 +838,7 @@ func (s *AppsServiceOp) ListAlerts(ctx context.Context, appID string) ([]*AppAle
 
 // UpdateAlertDestinations updates the alert destinations of an app's alert
 func (s *AppsServiceOp) UpdateAlertDestinations(ctx context.Context, appID, alertID string, update *AlertDestinationUpdateRequest) (*AppAlert, *Response, error) {
-	path := fmt.Sprintf("%s/%s/alerts/%s/destinations", appsBasePath, appID, alertID)
+	path := fmt.Sprintf("%s/%s/alerts/%s/destinations", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(alertID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -884,7 +884,7 @@ func (s *AppsServiceOp) ListBuildpacks(ctx context.Context) ([]*Buildpack, *Resp
 
 // UpgradeBuildpack upgrades a buildpack for an app.
 func (s *AppsServiceOp) UpgradeBuildpack(ctx context.Context, appID string, opts UpgradeBuildpackOptions) (*UpgradeBuildpackResponse, *Response, error) {
-	path := fmt.Sprintf("%s/%s/upgrade_buildpack", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/upgrade_buildpack", appsBasePath, netURL.PathEscape(appID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -899,7 +899,7 @@ func (s *AppsServiceOp) UpgradeBuildpack(ctx context.Context, appID string, opts
 
 // GetAppDatabaseConnectionDetails retrieves credentials for databases associated with the app.
 func (s *AppsServiceOp) GetAppDatabaseConnectionDetails(ctx context.Context, appID string) ([]*GetDatabaseConnectionDetailsResponse, *Response, error) {
-	path := fmt.Sprintf("%s/%s/database_connection_details", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/database_connection_details", appsBasePath, netURL.PathEscape(appID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -914,7 +914,7 @@ func (s *AppsServiceOp) GetAppDatabaseConnectionDetails(ctx context.Context, app
 
 // ResetDatabasePassword resets credentials for a database component associated with the app.
 func (s *AppsServiceOp) ResetDatabasePassword(ctx context.Context, appID string, component string) (*Deployment, *Response, error) {
-	path := fmt.Sprintf("%s/%s/components/%s/reset_password", appsBasePath, appID, component)
+	path := fmt.Sprintf("%s/%s/components/%s/reset_password", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(component))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -938,7 +938,7 @@ func (s *AppsServiceOp) ToggleDatabaseTrustedSource(
 	*Response,
 	error,
 ) {
-	path := fmt.Sprintf("%s/%s/components/%s/trusted_sources", appsBasePath, appID, component)
+	path := fmt.Sprintf("%s/%s/components/%s/trusted_sources", appsBasePath, netURL.PathEscape(appID), netURL.PathEscape(component))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -954,7 +954,7 @@ func (s *AppsServiceOp) ToggleDatabaseTrustedSource(
 // GetAppInstances returns a list of emphemeral compute instances of the current deployment for an app.
 // opts is reserved for future use.
 func (s *AppsServiceOp) GetAppInstances(ctx context.Context, appID string, opts *GetAppInstancesOpts) ([]*AppInstance, *Response, error) {
-	path := fmt.Sprintf("%s/%s/instances", appsBasePath, appID)
+	path := fmt.Sprintf("%s/%s/instances", appsBasePath, netURL.PathEscape(appID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

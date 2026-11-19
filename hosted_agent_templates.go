@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -184,7 +185,7 @@ func (s *HostedAgentsServiceOp) GetTemplate(ctx context.Context, templateID stri
 	if templateID == "" {
 		return nil, nil, errors.New("hosted agents: template id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTemplateByIDPath, templateID)
+	path := fmt.Sprintf(hostedAgentTemplateByIDPath, url.PathEscape(templateID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -208,7 +209,7 @@ func (s *HostedAgentsServiceOp) UpdateTemplate(ctx context.Context, templateID s
 	if update == nil {
 		return nil, nil, errors.New("hosted agents: update template request is required")
 	}
-	path := fmt.Sprintf(hostedAgentTemplateByIDPath, templateID)
+	path := fmt.Sprintf(hostedAgentTemplateByIDPath, url.PathEscape(templateID))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -229,7 +230,7 @@ func (s *HostedAgentsServiceOp) DeleteTemplate(ctx context.Context, templateID s
 	if templateID == "" {
 		return nil, nil, errors.New("hosted agents: template id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTemplateByIDPath, templateID)
+	path := fmt.Sprintf(hostedAgentTemplateByIDPath, url.PathEscape(templateID))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -247,7 +248,7 @@ func (s *HostedAgentsServiceOp) ListTemplateBuilds(ctx context.Context, template
 	if templateID == "" {
 		return nil, nil, errors.New("hosted agents: template id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTemplateBuildsPath, templateID)
+	path := fmt.Sprintf(hostedAgentTemplateBuildsPath, url.PathEscape(templateID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -272,7 +273,7 @@ func (s *HostedAgentsServiceOp) GetTemplateBuild(ctx context.Context, templateID
 	if buildID == "" {
 		return nil, nil, errors.New("hosted agents: build id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTemplateBuildByIDPath, templateID, buildID)
+	path := fmt.Sprintf(hostedAgentTemplateBuildByIDPath, url.PathEscape(templateID), url.PathEscape(buildID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -296,7 +297,7 @@ func (s *HostedAgentsServiceOp) GetTemplateBuildLogs(ctx context.Context, templa
 	if buildID == "" {
 		return nil, nil, errors.New("hosted agents: build id is required")
 	}
-	path := fmt.Sprintf(hostedAgentTemplateBuildLogsByIDPath, templateID, buildID)
+	path := fmt.Sprintf(hostedAgentTemplateBuildLogsByIDPath, url.PathEscape(templateID), url.PathEscape(buildID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err

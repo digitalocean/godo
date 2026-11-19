@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const spacesKeysBasePath = "v2/spaces/keys"
@@ -102,7 +103,7 @@ func (s *SpacesKeysServiceOp) Delete(ctx context.Context, accessKey string) (*Re
 		return nil, NewArgError("accessKey", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", spacesKeysBasePath, accessKey)
+	path := fmt.Sprintf("%s/%s", spacesKeysBasePath, url.PathEscape(accessKey))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -124,7 +125,7 @@ func (s *SpacesKeysServiceOp) Update(ctx context.Context, accessKey string, upda
 		return nil, nil, NewArgError("updateRequest", "cannot be nil")
 	}
 
-	path := fmt.Sprintf("%s/%s", spacesKeysBasePath, accessKey)
+	path := fmt.Sprintf("%s/%s", spacesKeysBasePath, url.PathEscape(accessKey))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
@@ -171,7 +172,7 @@ func (s *SpacesKeysServiceOp) Get(ctx context.Context, accessKey string) (*Space
 		return nil, nil, NewArgError("accessKey", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", spacesKeysBasePath, accessKey)
+	path := fmt.Sprintf("%s/%s", spacesKeysBasePath, url.PathEscape(accessKey))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err

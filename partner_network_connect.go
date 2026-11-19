@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -282,7 +283,7 @@ func (s *PartnerAttachmentServiceOp) Create(ctx context.Context, create *Partner
 
 // Get returns the details of a Partner Attachment.
 func (s *PartnerAttachmentServiceOp) Get(ctx context.Context, id string) (*PartnerAttachment, *Response, error) {
-	path := fmt.Sprintf("%s/%s", partnerNetworkConnectBasePath, id)
+	path := fmt.Sprintf("%s/%s", partnerNetworkConnectBasePath, url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -299,7 +300,7 @@ func (s *PartnerAttachmentServiceOp) Get(ctx context.Context, id string) (*Partn
 
 // Update updates a Partner Attachment properties.
 func (s *PartnerAttachmentServiceOp) Update(ctx context.Context, id string, update *PartnerAttachmentUpdateRequest) (*PartnerAttachment, *Response, error) {
-	path := fmt.Sprintf("%s/%s", partnerNetworkConnectBasePath, id)
+	path := fmt.Sprintf("%s/%s", partnerNetworkConnectBasePath, url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, update)
 	if err != nil {
 		return nil, nil, err
@@ -316,7 +317,7 @@ func (s *PartnerAttachmentServiceOp) Update(ctx context.Context, id string, upda
 
 // Delete deletes a Partner Attachment.
 func (s *PartnerAttachmentServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", partnerNetworkConnectBasePath, id)
+	path := fmt.Sprintf("%s/%s", partnerNetworkConnectBasePath, url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -331,7 +332,7 @@ func (s *PartnerAttachmentServiceOp) Delete(ctx context.Context, id string) (*Re
 }
 
 func (s *PartnerAttachmentServiceOp) GetServiceKey(ctx context.Context, id string) (*ServiceKey, *Response, error) {
-	path := fmt.Sprintf("%s/%s/service_key", partnerNetworkConnectBasePath, id)
+	path := fmt.Sprintf("%s/%s/service_key", partnerNetworkConnectBasePath, url.PathEscape(id))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -348,7 +349,7 @@ func (s *PartnerAttachmentServiceOp) GetServiceKey(ctx context.Context, id strin
 
 // ListRoutes lists all remote routes for a Partner Attachment.
 func (s *PartnerAttachmentServiceOp) ListRoutes(ctx context.Context, id string, opt *ListOptions) ([]*RemoteRoute, *Response, error) {
-	path, err := addOptions(fmt.Sprintf("%s/%s/remote_routes", partnerNetworkConnectBasePath, id), opt)
+	path, err := addOptions(fmt.Sprintf("%s/%s/remote_routes", partnerNetworkConnectBasePath, url.PathEscape(id)), opt)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -374,7 +375,7 @@ func (s *PartnerAttachmentServiceOp) ListRoutes(ctx context.Context, id string, 
 
 // GetBGPAuthKey returns Partner Attachment bgp auth key
 func (s *PartnerAttachmentServiceOp) GetBGPAuthKey(ctx context.Context, iaID string) (*BgpAuthKey, *Response, error) {
-	path := fmt.Sprintf("%s/%s/bgp_auth_key", partnerNetworkConnectBasePath, iaID)
+	path := fmt.Sprintf("%s/%s/bgp_auth_key", partnerNetworkConnectBasePath, url.PathEscape(iaID))
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -391,7 +392,7 @@ func (s *PartnerAttachmentServiceOp) GetBGPAuthKey(ctx context.Context, iaID str
 
 // RegenerateServiceKey regenerates the service key of a Partner Attachment.
 func (s *PartnerAttachmentServiceOp) RegenerateServiceKey(ctx context.Context, iaID string) (*RegenerateServiceKey, *Response, error) {
-	path := fmt.Sprintf("%s/%s/service_key", partnerNetworkConnectBasePath, iaID)
+	path := fmt.Sprintf("%s/%s/service_key", partnerNetworkConnectBasePath, url.PathEscape(iaID))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
 		return nil, nil, err

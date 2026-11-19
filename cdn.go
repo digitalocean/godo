@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -107,7 +108,7 @@ func (c CDNServiceOp) Get(ctx context.Context, id string) (*CDN, *Response, erro
 		return nil, nil, NewArgError("id", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s", cdnBasePath, id)
+	path := fmt.Sprintf("%s/%s", cdnBasePath, url.PathEscape(id))
 
 	req, err := c.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -161,7 +162,7 @@ func (c CDNServiceOp) update(ctx context.Context, id string, updateRequest inter
 	if len(id) == 0 {
 		return nil, nil, NewArgError("id", "cannot be an empty string")
 	}
-	path := fmt.Sprintf("%s/%s", cdnBasePath, id)
+	path := fmt.Sprintf("%s/%s", cdnBasePath, url.PathEscape(id))
 
 	req, err := c.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
@@ -187,7 +188,7 @@ func (c CDNServiceOp) FlushCache(ctx context.Context, id string, flushCacheReque
 		return nil, NewArgError("id", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s/cache", cdnBasePath, id)
+	path := fmt.Sprintf("%s/%s/cache", cdnBasePath, url.PathEscape(id))
 
 	req, err := c.client.NewRequest(ctx, http.MethodDelete, path, flushCacheRequest)
 	if err != nil {
@@ -205,7 +206,7 @@ func (c CDNServiceOp) Delete(ctx context.Context, id string) (*Response, error) 
 		return nil, NewArgError("id", "cannot be an empty string")
 	}
 
-	path := fmt.Sprintf("%s/%s", cdnBasePath, id)
+	path := fmt.Sprintf("%s/%s", cdnBasePath, url.PathEscape(id))
 
 	req, err := c.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {

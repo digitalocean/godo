@@ -133,11 +133,10 @@ type BatchResultsResponse struct {
 // rather than the default api.digitalocean.com. The resulting absolute URL is
 // passed to Client.NewRequest so that standard headers and auth are applied.
 func (s *BatchInferenceServiceOp) newRequest(ctx context.Context, method, path string, body interface{}) (*http.Request, error) {
-	rel, err := url.Parse(path)
+	u, err := resolveRequestURL(s.baseURL, path)
 	if err != nil {
 		return nil, err
 	}
-	u := s.baseURL.ResolveReference(rel)
 	return s.client.NewRequest(ctx, method, u.String(), body)
 }
 
@@ -221,7 +220,7 @@ func (s *BatchInferenceServiceOp) ListJobs(ctx context.Context, opts *ListBatche
 
 // GetJob retrieves a batch inference job by ID.
 func (s *BatchInferenceServiceOp) GetJob(ctx context.Context, batchID string) (*Batch, *Response, error) {
-	path := fmt.Sprintf(batchInferenceByIDPath, batchID)
+	path := fmt.Sprintf(batchInferenceByIDPath, url.PathEscape(batchID))
 
 	req, err := s.newRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -238,7 +237,7 @@ func (s *BatchInferenceServiceOp) GetJob(ctx context.Context, batchID string) (*
 
 // CancelJob requests cancellation of a batch inference job.
 func (s *BatchInferenceServiceOp) CancelJob(ctx context.Context, batchID string) (*Batch, *Response, error) {
-	path := fmt.Sprintf(batchInferenceCancelPath, batchID)
+	path := fmt.Sprintf(batchInferenceCancelPath, url.PathEscape(batchID))
 
 	req, err := s.newRequest(ctx, http.MethodPost, path, nil)
 	if err != nil {
@@ -255,7 +254,7 @@ func (s *BatchInferenceServiceOp) CancelJob(ctx context.Context, batchID string)
 
 // GetJobResult retrieves the result download URLs for a completed batch inference job.
 func (s *BatchInferenceServiceOp) GetJobResult(ctx context.Context, batchID string) (*BatchResultsResponse, *Response, error) {
-	path := fmt.Sprintf(batchInferenceResultsPath, batchID)
+	path := fmt.Sprintf(batchInferenceResultsPath, url.PathEscape(batchID))
 
 	req, err := s.newRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

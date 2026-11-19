@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -1204,7 +1205,7 @@ func (svc *DatabasesServiceOp) List(ctx context.Context, opts *ListOptions) ([]D
 
 // Get retrieves the details of a database cluster
 func (svc *DatabasesServiceOp) Get(ctx context.Context, databaseID string) (*Database, *Response, error) {
-	path := fmt.Sprintf(databaseSinglePath, databaseID)
+	path := fmt.Sprintf(databaseSinglePath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1219,7 +1220,7 @@ func (svc *DatabasesServiceOp) Get(ctx context.Context, databaseID string) (*Dat
 
 // GetCA retrieves the CA of a database cluster.
 func (svc *DatabasesServiceOp) GetCA(ctx context.Context, databaseID string) (*DatabaseCA, *Response, error) {
-	path := fmt.Sprintf(databaseCAPath, databaseID)
+	path := fmt.Sprintf(databaseCAPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1250,7 +1251,7 @@ func (svc *DatabasesServiceOp) Create(ctx context.Context, create *DatabaseCreat
 // Delete deletes a database cluster. There is no way to recover a cluster once
 // it has been destroyed.
 func (svc *DatabasesServiceOp) Delete(ctx context.Context, databaseID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", databaseBasePath, databaseID)
+	path := fmt.Sprintf("%s/%s", databaseBasePath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -1264,7 +1265,7 @@ func (svc *DatabasesServiceOp) Delete(ctx context.Context, databaseID string) (*
 
 // Resize resizes a database cluster by number of nodes or size
 func (svc *DatabasesServiceOp) Resize(ctx context.Context, databaseID string, resize *DatabaseResizeRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseResizePath, databaseID)
+	path := fmt.Sprintf(databaseResizePath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, resize)
 	if err != nil {
 		return nil, err
@@ -1278,7 +1279,7 @@ func (svc *DatabasesServiceOp) Resize(ctx context.Context, databaseID string, re
 
 // Migrate migrates a database cluster to a new region
 func (svc *DatabasesServiceOp) Migrate(ctx context.Context, databaseID string, migrate *DatabaseMigrateRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseMigratePath, databaseID)
+	path := fmt.Sprintf(databaseMigratePath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, migrate)
 	if err != nil {
 		return nil, err
@@ -1292,7 +1293,7 @@ func (svc *DatabasesServiceOp) Migrate(ctx context.Context, databaseID string, m
 
 // UpdateMaintenance updates the maintenance window on a cluster
 func (svc *DatabasesServiceOp) UpdateMaintenance(ctx context.Context, databaseID string, maintenance *DatabaseUpdateMaintenanceRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseMaintenancePath, databaseID)
+	path := fmt.Sprintf(databaseMaintenancePath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, maintenance)
 	if err != nil {
 		return nil, err
@@ -1306,7 +1307,7 @@ func (svc *DatabasesServiceOp) UpdateMaintenance(ctx context.Context, databaseID
 
 // GetStorageAutoscale retrieves the storage autoscaling configuration for a database cluster.
 func (svc *DatabasesServiceOp) GetStorageAutoscale(ctx context.Context, databaseID string) (*DatabaseStorageAutoscale, *Response, error) {
-	path := fmt.Sprintf(databaseStorageAutoscalePath, databaseID)
+	path := fmt.Sprintf(databaseStorageAutoscalePath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1321,7 +1322,7 @@ func (svc *DatabasesServiceOp) GetStorageAutoscale(ctx context.Context, database
 
 // UpdateStorageAutoscale updates the storage autoscaling configuration on a cluster
 func (svc *DatabasesServiceOp) UpdateStorageAutoscale(ctx context.Context, databaseID string, autoscale *DatabaseStorageAutoscale) (*Response, error) {
-	path := fmt.Sprintf(databaseStorageAutoscalePath, databaseID)
+	path := fmt.Sprintf(databaseStorageAutoscalePath, url.PathEscape(databaseID))
 	root := &databaseStorageAutoscaleRoot{
 		StorageAutoscale: autoscale,
 	}
@@ -1338,7 +1339,7 @@ func (svc *DatabasesServiceOp) UpdateStorageAutoscale(ctx context.Context, datab
 
 // InstallUpdate starts installation of updates
 func (svc *DatabasesServiceOp) InstallUpdate(ctx context.Context, databaseID string) (*Response, error) {
-	path := fmt.Sprintf(databaseUpdateInstallationPath, databaseID)
+	path := fmt.Sprintf(databaseUpdateInstallationPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, nil)
 	if err != nil {
 		return nil, err
@@ -1352,7 +1353,7 @@ func (svc *DatabasesServiceOp) InstallUpdate(ctx context.Context, databaseID str
 
 // ListBackups returns a list of the current backups of a database
 func (svc *DatabasesServiceOp) ListBackups(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseBackup, *Response, error) {
-	path := fmt.Sprintf(databaseBackupsPath, databaseID)
+	path := fmt.Sprintf(databaseBackupsPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -1371,7 +1372,7 @@ func (svc *DatabasesServiceOp) ListBackups(ctx context.Context, databaseID strin
 
 // GetUser returns the database user identified by userID
 func (svc *DatabasesServiceOp) GetUser(ctx context.Context, databaseID, userID string) (*DatabaseUser, *Response, error) {
-	path := fmt.Sprintf(databaseUserPath, databaseID, userID)
+	path := fmt.Sprintf(databaseUserPath, url.PathEscape(databaseID), url.PathEscape(userID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1386,7 +1387,7 @@ func (svc *DatabasesServiceOp) GetUser(ctx context.Context, databaseID, userID s
 
 // ListUsers returns all database users for the database
 func (svc *DatabasesServiceOp) ListUsers(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseUser, *Response, error) {
-	path := fmt.Sprintf(databaseUsersPath, databaseID)
+	path := fmt.Sprintf(databaseUsersPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -1405,7 +1406,7 @@ func (svc *DatabasesServiceOp) ListUsers(ctx context.Context, databaseID string,
 
 // CreateUser will create a new database user
 func (svc *DatabasesServiceOp) CreateUser(ctx context.Context, databaseID string, createUser *DatabaseCreateUserRequest) (*DatabaseUser, *Response, error) {
-	path := fmt.Sprintf(databaseUsersPath, databaseID)
+	path := fmt.Sprintf(databaseUsersPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createUser)
 	if err != nil {
 		return nil, nil, err
@@ -1420,7 +1421,7 @@ func (svc *DatabasesServiceOp) CreateUser(ctx context.Context, databaseID string
 
 // UpdateUser will update an existing database user
 func (svc *DatabasesServiceOp) UpdateUser(ctx context.Context, databaseID, userID string, updateUser *DatabaseUpdateUserRequest) (*DatabaseUser, *Response, error) {
-	path := fmt.Sprintf(databaseUserPath, databaseID, userID)
+	path := fmt.Sprintf(databaseUserPath, url.PathEscape(databaseID), url.PathEscape(userID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateUser)
 	if err != nil {
 		return nil, nil, err
@@ -1435,7 +1436,7 @@ func (svc *DatabasesServiceOp) UpdateUser(ctx context.Context, databaseID, userI
 
 // ResetUserAuth will reset user authentication
 func (svc *DatabasesServiceOp) ResetUserAuth(ctx context.Context, databaseID, userID string, resetAuth *DatabaseResetUserAuthRequest) (*DatabaseUser, *Response, error) {
-	path := fmt.Sprintf(databaseResetUserAuthPath, databaseID, userID)
+	path := fmt.Sprintf(databaseResetUserAuthPath, url.PathEscape(databaseID), url.PathEscape(userID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, resetAuth)
 	if err != nil {
 		return nil, nil, err
@@ -1450,7 +1451,7 @@ func (svc *DatabasesServiceOp) ResetUserAuth(ctx context.Context, databaseID, us
 
 // DeleteUser will delete an existing database user
 func (svc *DatabasesServiceOp) DeleteUser(ctx context.Context, databaseID, userID string) (*Response, error) {
-	path := fmt.Sprintf(databaseUserPath, databaseID, userID)
+	path := fmt.Sprintf(databaseUserPath, url.PathEscape(databaseID), url.PathEscape(userID))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -1464,7 +1465,7 @@ func (svc *DatabasesServiceOp) DeleteUser(ctx context.Context, databaseID, userI
 
 // ListDBs returns all databases for a given database cluster
 func (svc *DatabasesServiceOp) ListDBs(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseDB, *Response, error) {
-	path := fmt.Sprintf(databaseDBsPath, databaseID)
+	path := fmt.Sprintf(databaseDBsPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -1483,7 +1484,7 @@ func (svc *DatabasesServiceOp) ListDBs(ctx context.Context, databaseID string, o
 
 // GetDB returns a single database by name
 func (svc *DatabasesServiceOp) GetDB(ctx context.Context, databaseID, name string) (*DatabaseDB, *Response, error) {
-	path := fmt.Sprintf(databaseDBPath, databaseID, name)
+	path := fmt.Sprintf(databaseDBPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1498,7 +1499,7 @@ func (svc *DatabasesServiceOp) GetDB(ctx context.Context, databaseID, name strin
 
 // CreateDB will create a new database
 func (svc *DatabasesServiceOp) CreateDB(ctx context.Context, databaseID string, createDB *DatabaseCreateDBRequest) (*DatabaseDB, *Response, error) {
-	path := fmt.Sprintf(databaseDBsPath, databaseID)
+	path := fmt.Sprintf(databaseDBsPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createDB)
 	if err != nil {
 		return nil, nil, err
@@ -1513,7 +1514,7 @@ func (svc *DatabasesServiceOp) CreateDB(ctx context.Context, databaseID string, 
 
 // DeleteDB will delete an existing database
 func (svc *DatabasesServiceOp) DeleteDB(ctx context.Context, databaseID, name string) (*Response, error) {
-	path := fmt.Sprintf(databaseDBPath, databaseID, name)
+	path := fmt.Sprintf(databaseDBPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -1527,7 +1528,7 @@ func (svc *DatabasesServiceOp) DeleteDB(ctx context.Context, databaseID, name st
 
 // ListPools returns all connection pools for a given database cluster
 func (svc *DatabasesServiceOp) ListPools(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabasePool, *Response, error) {
-	path := fmt.Sprintf(databasePoolsPath, databaseID)
+	path := fmt.Sprintf(databasePoolsPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -1546,7 +1547,7 @@ func (svc *DatabasesServiceOp) ListPools(ctx context.Context, databaseID string,
 
 // GetPool returns a single database connection pool by name
 func (svc *DatabasesServiceOp) GetPool(ctx context.Context, databaseID, name string) (*DatabasePool, *Response, error) {
-	path := fmt.Sprintf(databasePoolPath, databaseID, name)
+	path := fmt.Sprintf(databasePoolPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1561,7 +1562,7 @@ func (svc *DatabasesServiceOp) GetPool(ctx context.Context, databaseID, name str
 
 // CreatePool will create a new database connection pool
 func (svc *DatabasesServiceOp) CreatePool(ctx context.Context, databaseID string, createPool *DatabaseCreatePoolRequest) (*DatabasePool, *Response, error) {
-	path := fmt.Sprintf(databasePoolsPath, databaseID)
+	path := fmt.Sprintf(databasePoolsPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createPool)
 	if err != nil {
 		return nil, nil, err
@@ -1576,7 +1577,7 @@ func (svc *DatabasesServiceOp) CreatePool(ctx context.Context, databaseID string
 
 // DeletePool will delete an existing database connection pool
 func (svc *DatabasesServiceOp) DeletePool(ctx context.Context, databaseID, name string) (*Response, error) {
-	path := fmt.Sprintf(databasePoolPath, databaseID, name)
+	path := fmt.Sprintf(databasePoolPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -1590,7 +1591,7 @@ func (svc *DatabasesServiceOp) DeletePool(ctx context.Context, databaseID, name 
 
 // UpdatePool will update an existing database connection pool
 func (svc *DatabasesServiceOp) UpdatePool(ctx context.Context, databaseID, name string, updatePool *DatabaseUpdatePoolRequest) (*Response, error) {
-	path := fmt.Sprintf(databasePoolPath, databaseID, name)
+	path := fmt.Sprintf(databasePoolPath, url.PathEscape(databaseID), url.PathEscape(name))
 
 	if updatePool == nil {
 		return nil, NewArgError("updatePool", "cannot be nil")
@@ -1621,7 +1622,7 @@ func (svc *DatabasesServiceOp) UpdatePool(ctx context.Context, databaseID, name 
 
 // GetReplica returns a single database replica
 func (svc *DatabasesServiceOp) GetReplica(ctx context.Context, databaseID, name string) (*DatabaseReplica, *Response, error) {
-	path := fmt.Sprintf(databaseReplicaPath, databaseID, name)
+	path := fmt.Sprintf(databaseReplicaPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1636,7 +1637,7 @@ func (svc *DatabasesServiceOp) GetReplica(ctx context.Context, databaseID, name 
 
 // ListReplicas returns all read-only replicas for a given database cluster
 func (svc *DatabasesServiceOp) ListReplicas(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseReplica, *Response, error) {
-	path := fmt.Sprintf(databaseReplicasPath, databaseID)
+	path := fmt.Sprintf(databaseReplicasPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -1655,7 +1656,7 @@ func (svc *DatabasesServiceOp) ListReplicas(ctx context.Context, databaseID stri
 
 // CreateReplica will create a new database connection pool
 func (svc *DatabasesServiceOp) CreateReplica(ctx context.Context, databaseID string, createReplica *DatabaseCreateReplicaRequest) (*DatabaseReplica, *Response, error) {
-	path := fmt.Sprintf(databaseReplicasPath, databaseID)
+	path := fmt.Sprintf(databaseReplicasPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createReplica)
 	if err != nil {
 		return nil, nil, err
@@ -1670,7 +1671,7 @@ func (svc *DatabasesServiceOp) CreateReplica(ctx context.Context, databaseID str
 
 // DeleteReplica will delete an existing database replica
 func (svc *DatabasesServiceOp) DeleteReplica(ctx context.Context, databaseID, name string) (*Response, error) {
-	path := fmt.Sprintf(databaseReplicaPath, databaseID, name)
+	path := fmt.Sprintf(databaseReplicaPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -1684,7 +1685,7 @@ func (svc *DatabasesServiceOp) DeleteReplica(ctx context.Context, databaseID, na
 
 // PromoteReplicaToPrimary will sever the read replica integration and then promote the replica cluster to be a R/W cluster
 func (svc *DatabasesServiceOp) PromoteReplicaToPrimary(ctx context.Context, databaseID, name string) (*Response, error) {
-	path := fmt.Sprintf(databasePromoteReplicaToPrimaryPath, databaseID, name)
+	path := fmt.Sprintf(databasePromoteReplicaToPrimaryPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, nil)
 	if err != nil {
 		return nil, err
@@ -1698,7 +1699,7 @@ func (svc *DatabasesServiceOp) PromoteReplicaToPrimary(ctx context.Context, data
 
 // GetEvictionPolicy loads the eviction policy for a given Redis cluster.
 func (svc *DatabasesServiceOp) GetEvictionPolicy(ctx context.Context, databaseID string) (string, *Response, error) {
-	path := fmt.Sprintf(databaseEvictionPolicyPath, databaseID)
+	path := fmt.Sprintf(databaseEvictionPolicyPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return "", nil, err
@@ -1716,7 +1717,7 @@ func (svc *DatabasesServiceOp) GetEvictionPolicy(ctx context.Context, databaseID
 // The valid eviction policies are documented by the exported string constants
 // with the prefix `EvictionPolicy`.
 func (svc *DatabasesServiceOp) SetEvictionPolicy(ctx context.Context, databaseID, policy string) (*Response, error) {
-	path := fmt.Sprintf(databaseEvictionPolicyPath, databaseID)
+	path := fmt.Sprintf(databaseEvictionPolicyPath, url.PathEscape(databaseID))
 	root := &evictionPolicyRoot{EvictionPolicy: policy}
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, root)
 	if err != nil {
@@ -1731,7 +1732,7 @@ func (svc *DatabasesServiceOp) SetEvictionPolicy(ctx context.Context, databaseID
 
 // GetSQLMode loads the SQL Mode settings for a given MySQL cluster.
 func (svc *DatabasesServiceOp) GetSQLMode(ctx context.Context, databaseID string) (string, *Response, error) {
-	path := fmt.Sprintf(databaseSQLModePath, databaseID)
+	path := fmt.Sprintf(databaseSQLModePath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return "", nil, err
@@ -1746,7 +1747,7 @@ func (svc *DatabasesServiceOp) GetSQLMode(ctx context.Context, databaseID string
 
 // SetSQLMode updates the SQL Mode settings for a given MySQL cluster.
 func (svc *DatabasesServiceOp) SetSQLMode(ctx context.Context, databaseID string, sqlModes ...string) (*Response, error) {
-	path := fmt.Sprintf(databaseSQLModePath, databaseID)
+	path := fmt.Sprintf(databaseSQLModePath, url.PathEscape(databaseID))
 	root := &sqlModeRoot{SQLMode: strings.Join(sqlModes, ",")}
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, root)
 	if err != nil {
@@ -1761,7 +1762,7 @@ func (svc *DatabasesServiceOp) SetSQLMode(ctx context.Context, databaseID string
 
 // GetFirewallRules loads the inbound sources for a given cluster.
 func (svc *DatabasesServiceOp) GetFirewallRules(ctx context.Context, databaseID string) ([]DatabaseFirewallRule, *Response, error) {
-	path := fmt.Sprintf(databaseFirewallRulesPath, databaseID)
+	path := fmt.Sprintf(databaseFirewallRulesPath, url.PathEscape(databaseID))
 	root := new(databaseFirewallRuleRoot)
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -1778,7 +1779,7 @@ func (svc *DatabasesServiceOp) GetFirewallRules(ctx context.Context, databaseID 
 
 // UpdateFirewallRules sets the inbound sources for a given cluster.
 func (svc *DatabasesServiceOp) UpdateFirewallRules(ctx context.Context, databaseID string, firewallRulesReq *DatabaseUpdateFirewallRulesRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseFirewallRulesPath, databaseID)
+	path := fmt.Sprintf(databaseFirewallRulesPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, firewallRulesReq)
 	if err != nil {
 		return nil, err
@@ -1788,7 +1789,7 @@ func (svc *DatabasesServiceOp) UpdateFirewallRules(ctx context.Context, database
 
 // GetDOSettings retrieves the DigitalOcean-specific settings for a given cluster.
 func (svc *DatabasesServiceOp) GetDOSettings(ctx context.Context, databaseID string) (*DOSettings, *Response, error) {
-	path := fmt.Sprintf(databaseDOSettingsPath, databaseID)
+	path := fmt.Sprintf(databaseDOSettingsPath, url.PathEscape(databaseID))
 	root := new(doSettingsRoot)
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -1803,7 +1804,7 @@ func (svc *DatabasesServiceOp) GetDOSettings(ctx context.Context, databaseID str
 
 // UpdateDOSettings updates the DigitalOcean-specific settings for a given cluster.
 func (svc *DatabasesServiceOp) UpdateDOSettings(ctx context.Context, databaseID string, updateReq *DatabaseUpdateDOSettingsRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseDOSettingsPath, databaseID)
+	path := fmt.Sprintf(databaseDOSettingsPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateReq)
 	if err != nil {
 		return nil, err
@@ -1813,7 +1814,7 @@ func (svc *DatabasesServiceOp) UpdateDOSettings(ctx context.Context, databaseID 
 
 // GetPostgreSQLConfig retrieves the config for a PostgreSQL database cluster.
 func (svc *DatabasesServiceOp) GetPostgreSQLConfig(ctx context.Context, databaseID string) (*PostgreSQLConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1828,7 +1829,7 @@ func (svc *DatabasesServiceOp) GetPostgreSQLConfig(ctx context.Context, database
 
 // UpdatePostgreSQLConfig updates the config for a PostgreSQL database cluster.
 func (svc *DatabasesServiceOp) UpdatePostgreSQLConfig(ctx context.Context, databaseID string, config *PostgreSQLConfig) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	root := &databasePostgreSQLConfigRoot{
 		Config: config,
 	}
@@ -1845,7 +1846,7 @@ func (svc *DatabasesServiceOp) UpdatePostgreSQLConfig(ctx context.Context, datab
 
 // GetRedisConfig retrieves the config for a Redis database cluster.
 func (svc *DatabasesServiceOp) GetRedisConfig(ctx context.Context, databaseID string) (*RedisConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1860,7 +1861,7 @@ func (svc *DatabasesServiceOp) GetRedisConfig(ctx context.Context, databaseID st
 
 // UpdateRedisConfig updates the config for a Redis database cluster.
 func (svc *DatabasesServiceOp) UpdateRedisConfig(ctx context.Context, databaseID string, config *RedisConfig) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 
 	// We provide consts for use with SetEvictionPolicy method. Unfortunately, those are
 	// in a different format than what can be used for RedisConfig.RedisMaxmemoryPolicy.
@@ -1888,7 +1889,7 @@ func (svc *DatabasesServiceOp) UpdateRedisConfig(ctx context.Context, databaseID
 
 // GetValkeyConfig updates the config for a Valkey database cluster.
 func (svc *DatabasesServiceOp) GetValkeyConfig(ctx context.Context, databaseID string) (*ValkeyConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1903,7 +1904,7 @@ func (svc *DatabasesServiceOp) GetValkeyConfig(ctx context.Context, databaseID s
 
 // UpdateValkeyConfig updates the config for a Valkey database cluster.
 func (svc *DatabasesServiceOp) UpdateValkeyConfig(ctx context.Context, databaseID string, config *ValkeyConfig) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	root := &databaseValkeyConfigRoot{
 		Config: config,
 	}
@@ -1920,7 +1921,7 @@ func (svc *DatabasesServiceOp) UpdateValkeyConfig(ctx context.Context, databaseI
 
 // GetMySQLConfig retrieves the config for a MySQL database cluster.
 func (svc *DatabasesServiceOp) GetMySQLConfig(ctx context.Context, databaseID string) (*MySQLConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1935,7 +1936,7 @@ func (svc *DatabasesServiceOp) GetMySQLConfig(ctx context.Context, databaseID st
 
 // UpdateMySQLConfig updates the config for a MySQL database cluster.
 func (svc *DatabasesServiceOp) UpdateMySQLConfig(ctx context.Context, databaseID string, config *MySQLConfig) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	root := &databaseMySQLConfigRoot{
 		Config: config,
 	}
@@ -1952,7 +1953,7 @@ func (svc *DatabasesServiceOp) UpdateMySQLConfig(ctx context.Context, databaseID
 
 // GetMongoDBConfig retrieves the config for a MongoDB database cluster.
 func (svc *DatabasesServiceOp) GetMongoDBConfig(ctx context.Context, databaseID string) (*MongoDBConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1967,7 +1968,7 @@ func (svc *DatabasesServiceOp) GetMongoDBConfig(ctx context.Context, databaseID 
 
 // UpdateMongoDBConfig updates the config for a MongoDB database cluster.
 func (svc *DatabasesServiceOp) UpdateMongoDBConfig(ctx context.Context, databaseID string, config *MongoDBConfig) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	root := &databaseMongoDBConfigRoot{
 		Config: config,
 	}
@@ -1984,7 +1985,7 @@ func (svc *DatabasesServiceOp) UpdateMongoDBConfig(ctx context.Context, database
 
 // GetKafkaConfig retrieves the config for a Kafka database cluster.
 func (svc *DatabasesServiceOp) GetKafkaConfig(ctx context.Context, databaseID string) (*KafkaConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -1999,7 +2000,7 @@ func (svc *DatabasesServiceOp) GetKafkaConfig(ctx context.Context, databaseID st
 
 // UpdateKafkaConfig updates the config for a Kafka database cluster.
 func (svc *DatabasesServiceOp) UpdateKafkaConfig(ctx context.Context, databaseID string, config *KafkaConfig) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	root := &databaseKafkaConfigRoot{
 		Config: config,
 	}
@@ -2016,7 +2017,7 @@ func (svc *DatabasesServiceOp) UpdateKafkaConfig(ctx context.Context, databaseID
 
 // GetAdvancedPostgresSQLConfig retrieves the config for an advanced_pg database cluster.
 func (svc *DatabasesServiceOp) GetAdvancedPostgresSQLConfig(ctx context.Context, databaseID string) (*AdvancedPostgresConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2031,7 +2032,7 @@ func (svc *DatabasesServiceOp) GetAdvancedPostgresSQLConfig(ctx context.Context,
 
 // UpdateAdvancedPostgresSQLConfig updates the config for an advanced_pg database cluster.
 func (svc *DatabasesServiceOp) UpdateAdvancedPostgresSQLConfig(ctx context.Context, databaseID string, config *AdvancedPostgresConfigUpdate) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	root := &databaseAdvancedPostgresConfigUpdateRoot{
 		Config: config,
 	}
@@ -2048,7 +2049,7 @@ func (svc *DatabasesServiceOp) UpdateAdvancedPostgresSQLConfig(ctx context.Conte
 
 // GetAdvancedMySQLConfig retrieves the config for an advanced_mysql database cluster.
 func (svc *DatabasesServiceOp) GetAdvancedMySQLConfig(ctx context.Context, databaseID string) (*AdvancedMySQLConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2063,7 +2064,7 @@ func (svc *DatabasesServiceOp) GetAdvancedMySQLConfig(ctx context.Context, datab
 
 // UpdateAdvancedMySQLConfig updates the config for an advanced_mysql database cluster.
 func (svc *DatabasesServiceOp) UpdateAdvancedMySQLConfig(ctx context.Context, databaseID string, config *AdvancedMySQLConfigUpdate) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	root := &databaseAdvancedMySQLConfigUpdateRoot{
 		Config: config,
 	}
@@ -2080,7 +2081,7 @@ func (svc *DatabasesServiceOp) UpdateAdvancedMySQLConfig(ctx context.Context, da
 
 // GetOpensearchConfig retrieves the config for a Opensearch database cluster.
 func (svc *DatabasesServiceOp) GetOpensearchConfig(ctx context.Context, databaseID string) (*OpensearchConfig, *Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2095,7 +2096,7 @@ func (svc *DatabasesServiceOp) GetOpensearchConfig(ctx context.Context, database
 
 // UpdateOpensearchConfig updates the config for a Opensearch database cluster.
 func (svc *DatabasesServiceOp) UpdateOpensearchConfig(ctx context.Context, databaseID string, config *OpensearchConfig) (*Response, error) {
-	path := fmt.Sprintf(databaseConfigPath, databaseID)
+	path := fmt.Sprintf(databaseConfigPath, url.PathEscape(databaseID))
 	root := &databaseOpensearchConfigRoot{
 		Config: config,
 	}
@@ -2128,7 +2129,7 @@ func (svc *DatabasesServiceOp) ListOptions(ctx context.Context) (*DatabaseOption
 
 // UpgradeMajorVersion upgrades the major version of a cluster.
 func (svc *DatabasesServiceOp) UpgradeMajorVersion(ctx context.Context, databaseID string, upgradeReq *UpgradeVersionRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseUpgradeMajorVersionPath, databaseID)
+	path := fmt.Sprintf(databaseUpgradeMajorVersionPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, upgradeReq)
 	if err != nil {
 		return nil, err
@@ -2144,7 +2145,7 @@ func (svc *DatabasesServiceOp) UpgradeMajorVersion(ctx context.Context, database
 
 // ListTopics returns all topics for a given kafka cluster
 func (svc *DatabasesServiceOp) ListTopics(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseTopic, *Response, error) {
-	path := fmt.Sprintf(databaseTopicsPath, databaseID)
+	path := fmt.Sprintf(databaseTopicsPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -2163,7 +2164,7 @@ func (svc *DatabasesServiceOp) ListTopics(ctx context.Context, databaseID string
 
 // GetTopic returns a single kafka topic by name
 func (svc *DatabasesServiceOp) GetTopic(ctx context.Context, databaseID, name string) (*DatabaseTopic, *Response, error) {
-	path := fmt.Sprintf(databaseTopicPath, databaseID, name)
+	path := fmt.Sprintf(databaseTopicPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2178,7 +2179,7 @@ func (svc *DatabasesServiceOp) GetTopic(ctx context.Context, databaseID, name st
 
 // CreateTopic will create a new kafka topic
 func (svc *DatabasesServiceOp) CreateTopic(ctx context.Context, databaseID string, createTopic *DatabaseCreateTopicRequest) (*DatabaseTopic, *Response, error) {
-	path := fmt.Sprintf(databaseTopicsPath, databaseID)
+	path := fmt.Sprintf(databaseTopicsPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createTopic)
 	if err != nil {
 		return nil, nil, err
@@ -2193,7 +2194,7 @@ func (svc *DatabasesServiceOp) CreateTopic(ctx context.Context, databaseID strin
 
 // UpdateTopic updates a single kafka topic
 func (svc *DatabasesServiceOp) UpdateTopic(ctx context.Context, databaseID string, name string, updateTopic *DatabaseUpdateTopicRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseTopicPath, databaseID, name)
+	path := fmt.Sprintf(databaseTopicPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateTopic)
 	if err != nil {
 		return nil, err
@@ -2208,7 +2209,7 @@ func (svc *DatabasesServiceOp) UpdateTopic(ctx context.Context, databaseID strin
 
 // DeleteTopic will delete an existing kafka topic
 func (svc *DatabasesServiceOp) DeleteTopic(ctx context.Context, databaseID, name string) (*Response, error) {
-	path := fmt.Sprintf(databaseTopicPath, databaseID, name)
+	path := fmt.Sprintf(databaseTopicPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -2250,7 +2251,7 @@ func (svc *DatabasesServiceOp) UpdateMetricsCredentials(ctx context.Context, upd
 
 // ListDatabaseEvents returns all the events for a given cluster
 func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseEvent, *Response, error) {
-	path := fmt.Sprintf(databaseEvents, databaseID)
+	path := fmt.Sprintf(databaseEvents, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -2271,7 +2272,7 @@ func (svc *DatabasesServiceOp) ListDatabaseEvents(ctx context.Context, databaseI
 
 // ListIndexes returns all indexes for a given opensearch cluster
 func (svc *DatabasesServiceOp) ListIndexes(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseIndex, *Response, error) {
-	path := fmt.Sprintf(databaseIndexesPath, databaseID)
+	path := fmt.Sprintf(databaseIndexesPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -2290,7 +2291,7 @@ func (svc *DatabasesServiceOp) ListIndexes(ctx context.Context, databaseID strin
 
 // DeleteIndex will delete an existing opensearch index
 func (svc *DatabasesServiceOp) DeleteIndex(ctx context.Context, databaseID, name string) (*Response, error) {
-	path := fmt.Sprintf(databaseIndexPath, databaseID, name)
+	path := fmt.Sprintf(databaseIndexPath, url.PathEscape(databaseID), url.PathEscape(name))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -2304,7 +2305,7 @@ func (svc *DatabasesServiceOp) DeleteIndex(ctx context.Context, databaseID, name
 
 // CreateLogsink creates a new logsink for a database
 func (svc *DatabasesServiceOp) CreateLogsink(ctx context.Context, databaseID string, createLogsink *DatabaseCreateLogsinkRequest) (*DatabaseLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
+	path := fmt.Sprintf(databaseLogsinksPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createLogsink)
 	if err != nil {
 		return nil, nil, err
@@ -2320,7 +2321,7 @@ func (svc *DatabasesServiceOp) CreateLogsink(ctx context.Context, databaseID str
 
 // GetLogsink gets a logsink for a database
 func (svc *DatabasesServiceOp) GetLogsink(ctx context.Context, databaseID string, logsinkID string) (*DatabaseLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
+	path := fmt.Sprintf(databaseLogsinkPath, url.PathEscape(databaseID), url.PathEscape(logsinkID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2336,7 +2337,7 @@ func (svc *DatabasesServiceOp) GetLogsink(ctx context.Context, databaseID string
 
 // ListTopics returns all topics for a given kafka cluster
 func (svc *DatabasesServiceOp) ListLogsinks(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseLogsink, *Response, error) {
-	path := fmt.Sprintf(databaseLogsinksPath, databaseID)
+	path := fmt.Sprintf(databaseLogsinksPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -2355,7 +2356,7 @@ func (svc *DatabasesServiceOp) ListLogsinks(ctx context.Context, databaseID stri
 
 // UpdateLogsink updates a logsink for a database cluster
 func (svc *DatabasesServiceOp) UpdateLogsink(ctx context.Context, databaseID string, logsinkID string, updateLogsink *DatabaseUpdateLogsinkRequest) (*Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
+	path := fmt.Sprintf(databaseLogsinkPath, url.PathEscape(databaseID), url.PathEscape(logsinkID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateLogsink)
 	if err != nil {
 		return nil, err
@@ -2370,7 +2371,7 @@ func (svc *DatabasesServiceOp) UpdateLogsink(ctx context.Context, databaseID str
 
 // DeleteLogsink deletes a logsink for a database cluster
 func (svc *DatabasesServiceOp) DeleteLogsink(ctx context.Context, databaseID, logsinkID string) (*Response, error) {
-	path := fmt.Sprintf(databaseLogsinkPath, databaseID, logsinkID)
+	path := fmt.Sprintf(databaseLogsinkPath, url.PathEscape(databaseID), url.PathEscape(logsinkID))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -2385,7 +2386,7 @@ func (svc *DatabasesServiceOp) DeleteLogsink(ctx context.Context, databaseID, lo
 // StartOnlineMigration starts an online migration for a database. Migrating a cluster establishes a connection with an existing cluster
 // and replicates its contents to the target cluster. Online migration is only available for MySQL, PostgreSQL, Redis and Valkey clusters.
 func (svc *DatabasesServiceOp) StartOnlineMigration(ctx context.Context, databaseID string, onlineMigration *DatabaseStartOnlineMigrationRequest) (*DatabaseOnlineMigrationStatus, *Response, error) {
-	path := fmt.Sprintf(databaseOnlineMigrationsPath, databaseID)
+	path := fmt.Sprintf(databaseOnlineMigrationsPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, onlineMigration)
 	if err != nil {
 		return nil, nil, err
@@ -2401,7 +2402,7 @@ func (svc *DatabasesServiceOp) StartOnlineMigration(ctx context.Context, databas
 
 // GetOnlineMigrationStatus retrieves the status of the most recent online migration
 func (svc *DatabasesServiceOp) GetOnlineMigrationStatus(ctx context.Context, databaseID string) (*DatabaseOnlineMigrationStatus, *Response, error) {
-	path := fmt.Sprintf(databaseOnlineMigrationsPath, databaseID)
+	path := fmt.Sprintf(databaseOnlineMigrationsPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2417,7 +2418,7 @@ func (svc *DatabasesServiceOp) GetOnlineMigrationStatus(ctx context.Context, dat
 
 // StopOnlineMigration stops an online migration
 func (svc *DatabasesServiceOp) StopOnlineMigration(ctx context.Context, databaseID, migrationID string) (*Response, error) {
-	path := fmt.Sprintf(databaseOnlineMigrationPath, databaseID, migrationID)
+	path := fmt.Sprintf(databaseOnlineMigrationPath, url.PathEscape(databaseID), url.PathEscape(migrationID))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -2431,7 +2432,7 @@ func (svc *DatabasesServiceOp) StopOnlineMigration(ctx context.Context, database
 
 // ListKafkaSchemaRegistry lists the kafka schema registry subjects
 func (svc *DatabasesServiceOp) ListKafkaSchemaRegistry(ctx context.Context, databaseID string, opts *ListOptions) ([]DatabaseKafkaSchemaRegistrySubject, *Response, error) {
-	path := fmt.Sprintf(databaseKafkaSchemaRegistryPath, databaseID)
+	path := fmt.Sprintf(databaseKafkaSchemaRegistryPath, url.PathEscape(databaseID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -2451,7 +2452,7 @@ func (svc *DatabasesServiceOp) ListKafkaSchemaRegistry(ctx context.Context, data
 
 // CreateKafkaSchemaRegistry creates a kafka schema registry subject
 func (svc *DatabasesServiceOp) CreateKafkaSchemaRegistry(ctx context.Context, databaseID string, createKafkaSchemaRegistry *DatabaseKafkaSchemaRegistryRequest) (*DatabaseKafkaSchemaRegistrySubject, *Response, error) {
-	path := fmt.Sprintf(databaseKafkaSchemaRegistryPath, databaseID)
+	path := fmt.Sprintf(databaseKafkaSchemaRegistryPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPost, path, createKafkaSchemaRegistry)
 	if err != nil {
 		return nil, nil, err
@@ -2467,7 +2468,7 @@ func (svc *DatabasesServiceOp) CreateKafkaSchemaRegistry(ctx context.Context, da
 
 // GetKafkaSchemaRegistry retrieves a kafka schema registry subject
 func (svc *DatabasesServiceOp) GetKafkaSchemaRegistry(ctx context.Context, databaseID, subjectName string) (*DatabaseKafkaSchemaRegistrySubject, *Response, error) {
-	path := fmt.Sprintf(databaseKafkaSchemaRegistrySubjectPath, databaseID, subjectName)
+	path := fmt.Sprintf(databaseKafkaSchemaRegistrySubjectPath, url.PathEscape(databaseID), url.PathEscape(subjectName))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2483,7 +2484,7 @@ func (svc *DatabasesServiceOp) GetKafkaSchemaRegistry(ctx context.Context, datab
 
 // DeleteKafkaSchemaRegistry deletes a kafka schema registry subject
 func (svc *DatabasesServiceOp) DeleteKafkaSchemaRegistry(ctx context.Context, databaseID, subjectName string) (*Response, error) {
-	path := fmt.Sprintf(databaseKafkaSchemaRegistrySubjectPath, databaseID, subjectName)
+	path := fmt.Sprintf(databaseKafkaSchemaRegistrySubjectPath, url.PathEscape(databaseID), url.PathEscape(subjectName))
 	req, err := svc.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -2498,7 +2499,7 @@ func (svc *DatabasesServiceOp) DeleteKafkaSchemaRegistry(ctx context.Context, da
 
 // UpdateKafkaSchemaRegistryConfig updates the configuration for a kafka schema registry
 func (svc *DatabasesServiceOp) UpdateKafkaSchemaRegistryConfig(ctx context.Context, databaseID string, updateKafkaSchemaRegistryConfig *DatabaseKafkaSchemaRegistryConfig) (*DatabaseKafkaSchemaRegistryConfig, *Response, error) {
-	path := fmt.Sprintf(databaseKafkaSchemaRegistryConfigPath, databaseID)
+	path := fmt.Sprintf(databaseKafkaSchemaRegistryConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateKafkaSchemaRegistryConfig)
 	if err != nil {
 		return nil, nil, err
@@ -2514,7 +2515,7 @@ func (svc *DatabasesServiceOp) UpdateKafkaSchemaRegistryConfig(ctx context.Conte
 
 // GetKafkaSchemaRegistryConfig retrieves the configuration for a kafka schema registry
 func (svc *DatabasesServiceOp) GetKafkaSchemaRegistryConfig(ctx context.Context, databaseID string) (*DatabaseKafkaSchemaRegistryConfig, *Response, error) {
-	path := fmt.Sprintf(databaseKafkaSchemaRegistryConfigPath, databaseID)
+	path := fmt.Sprintf(databaseKafkaSchemaRegistryConfigPath, url.PathEscape(databaseID))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
@@ -2530,7 +2531,7 @@ func (svc *DatabasesServiceOp) GetKafkaSchemaRegistryConfig(ctx context.Context,
 
 // UpdateKafkaSchemaRegistrySubjectConfig updates the configuration for a kafka schema registry subject
 func (svc *DatabasesServiceOp) UpdateKafkaSchemaRegistrySubjectConfig(ctx context.Context, databaseID, subject string, updateKafkaSchemaRegistrySubjectConfig *DatabaseKafkaSchemaRegistryConfig) (*DatabaseKafkaSchemaRegistrySubjectConfigResponse, *Response, error) {
-	path := fmt.Sprintf(databaseKafkaSchemaRegistrySubjectConfigPath, databaseID, subject)
+	path := fmt.Sprintf(databaseKafkaSchemaRegistrySubjectConfigPath, url.PathEscape(databaseID), url.PathEscape(subject))
 	req, err := svc.client.NewRequest(ctx, http.MethodPut, path, updateKafkaSchemaRegistrySubjectConfig)
 	if err != nil {
 		return nil, nil, err
@@ -2546,7 +2547,7 @@ func (svc *DatabasesServiceOp) UpdateKafkaSchemaRegistrySubjectConfig(ctx contex
 
 // GetKafkaSchemaRegistrySubjectConfig retrieves the configuration for a kafka schema registry subject
 func (svc *DatabasesServiceOp) GetKafkaSchemaRegistrySubjectConfig(ctx context.Context, databaseID, subject string) (*DatabaseKafkaSchemaRegistrySubjectConfigResponse, *Response, error) {
-	path := fmt.Sprintf(databaseKafkaSchemaRegistrySubjectConfigPath, databaseID, subject)
+	path := fmt.Sprintf(databaseKafkaSchemaRegistrySubjectConfigPath, url.PathEscape(databaseID), url.PathEscape(subject))
 	req, err := svc.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err

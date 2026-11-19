@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const tagsBasePath = "v2/tags"
@@ -151,7 +152,7 @@ func (s *TagsServiceOp) List(ctx context.Context, opt *ListOptions) ([]Tag, *Res
 
 // Get a single tag
 func (s *TagsServiceOp) Get(ctx context.Context, name string) (*Tag, *Response, error) {
-	path := fmt.Sprintf("%s/%s", tagsBasePath, name)
+	path := fmt.Sprintf("%s/%s", tagsBasePath, url.PathEscape(name))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -193,7 +194,7 @@ func (s *TagsServiceOp) Delete(ctx context.Context, name string) (*Response, err
 		return nil, NewArgError("name", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", tagsBasePath, name)
+	path := fmt.Sprintf("%s/%s", tagsBasePath, url.PathEscape(name))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err
@@ -214,7 +215,7 @@ func (s *TagsServiceOp) TagResources(ctx context.Context, name string, tagReques
 		return nil, NewArgError("tagRequest", "cannot be nil")
 	}
 
-	path := fmt.Sprintf("%s/%s/resources", tagsBasePath, name)
+	path := fmt.Sprintf("%s/%s/resources", tagsBasePath, url.PathEscape(name))
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, tagRequest)
 	if err != nil {
 		return nil, err
@@ -235,7 +236,7 @@ func (s *TagsServiceOp) UntagResources(ctx context.Context, name string, untagRe
 		return nil, NewArgError("tagRequest", "cannot be nil")
 	}
 
-	path := fmt.Sprintf("%s/%s/resources", tagsBasePath, name)
+	path := fmt.Sprintf("%s/%s/resources", tagsBasePath, url.PathEscape(name))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, untagRequest)
 	if err != nil {
 		return nil, err

@@ -521,7 +521,7 @@ func WithRetryAndBackoffs(retryConfig RetryConfig) ClientOpt {
 // BaseURL of the Client. Relative URLS should always be specified without a preceding slash. If specified, the
 // value pointed to by body is JSON encoded and included in as the request body.
 func (c *Client) NewRequest(ctx context.Context, method, urlStr string, body interface{}) (*http.Request, error) {
-	u, err := c.BaseURL.Parse(urlStr)
+	u, err := resolveRequestURL(c.BaseURL, urlStr)
 	if err != nil {
 		return nil, err
 	}

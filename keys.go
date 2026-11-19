@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const keysBasePath = "v2/account/keys"
@@ -123,7 +124,7 @@ func (s *KeysServiceOp) GetByFingerprint(ctx context.Context, fingerprint string
 		return nil, nil, NewArgError("fingerprint", "cannot not be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", keysBasePath, fingerprint)
+	path := fmt.Sprintf("%s/%s", keysBasePath, url.PathEscape(fingerprint))
 	return s.get(ctx, path)
 }
 
@@ -182,7 +183,7 @@ func (s *KeysServiceOp) UpdateByFingerprint(ctx context.Context, fingerprint str
 		return nil, nil, NewArgError("updateRequest", "cannot be nil")
 	}
 
-	path := fmt.Sprintf("%s/%s", keysBasePath, fingerprint)
+	path := fmt.Sprintf("%s/%s", keysBasePath, url.PathEscape(fingerprint))
 	req, err := s.client.NewRequest(ctx, "PUT", path, updateRequest)
 	if err != nil {
 		return nil, nil, err
@@ -225,6 +226,6 @@ func (s *KeysServiceOp) DeleteByFingerprint(ctx context.Context, fingerprint str
 		return nil, NewArgError("fingerprint", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", keysBasePath, fingerprint)
+	path := fmt.Sprintf("%s/%s", keysBasePath, url.PathEscape(fingerprint))
 	return s.delete(ctx, path)
 }

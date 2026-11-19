@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const oneClickBasePath = "v2/1-clicks"
@@ -47,7 +48,7 @@ type InstallKubernetesAppsResponse struct {
 
 // List returns a list of the available 1-click applications.
 func (ocs *OneClickServiceOp) List(ctx context.Context, oneClickType string) ([]*OneClick, *Response, error) {
-	path := fmt.Sprintf(`%s?type=%s`, oneClickBasePath, oneClickType)
+	path := fmt.Sprintf(`%s?type=%s`, oneClickBasePath, url.QueryEscape(oneClickType))
 
 	req, err := ocs.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

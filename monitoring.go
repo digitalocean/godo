@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/digitalocean/godo/metrics"
@@ -324,7 +325,7 @@ func (s *MonitoringServiceOp) ListAlertPolicies(ctx context.Context, opt *ListOp
 
 // GetAlertPolicy gets a single alert policy
 func (s *MonitoringServiceOp) GetAlertPolicy(ctx context.Context, uuid string) (*AlertPolicy, *Response, error) {
-	path := fmt.Sprintf("%s/%s", alertPolicyBasePath, uuid)
+	path := fmt.Sprintf("%s/%s", alertPolicyBasePath, url.PathEscape(uuid))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -369,7 +370,7 @@ func (s *MonitoringServiceOp) UpdateAlertPolicy(ctx context.Context, uuid string
 		return nil, nil, NewArgError("updateRequest", "cannot be nil")
 	}
 
-	path := fmt.Sprintf("%s/%s", alertPolicyBasePath, uuid)
+	path := fmt.Sprintf("%s/%s", alertPolicyBasePath, url.PathEscape(uuid))
 	req, err := s.client.NewRequest(ctx, http.MethodPut, path, updateRequest)
 	if err != nil {
 		return nil, nil, err
@@ -390,7 +391,7 @@ func (s *MonitoringServiceOp) DeleteAlertPolicy(ctx context.Context, uuid string
 		return nil, NewArgError("uuid", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", alertPolicyBasePath, uuid)
+	path := fmt.Sprintf("%s/%s", alertPolicyBasePath, url.PathEscape(uuid))
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
 		return nil, err

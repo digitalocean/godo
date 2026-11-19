@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -298,7 +299,7 @@ func (s *DedicatedInferenceServiceOp) Create(ctx context.Context, createRequest 
 
 // Get an existing Dedicated Inference by its UUID.
 func (s *DedicatedInferenceServiceOp) Get(ctx context.Context, id string) (*DedicatedInference, *Response, error) {
-	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, id)
+	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -316,7 +317,7 @@ func (s *DedicatedInferenceServiceOp) Get(ctx context.Context, id string) (*Dedi
 
 // Delete an existing Dedicated Inference by its UUID.
 func (s *DedicatedInferenceServiceOp) Delete(ctx context.Context, id string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, id)
+	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -328,7 +329,7 @@ func (s *DedicatedInferenceServiceOp) Delete(ctx context.Context, id string) (*R
 
 // Update an existing Dedicated Inference.
 func (s *DedicatedInferenceServiceOp) Update(ctx context.Context, id string, updateRequest *DedicatedInferenceUpdateRequest) (*DedicatedInference, *Response, error) {
-	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, id)
+	path := fmt.Sprintf("%s/%s", dedicatedInferenceBasePath, url.PathEscape(id))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPatch, path, updateRequest)
 	if err != nil {
@@ -373,7 +374,7 @@ func (s *DedicatedInferenceServiceOp) List(ctx context.Context, opt *DedicatedIn
 
 // ListAccelerators lists accelerators for a Dedicated Inference.
 func (s *DedicatedInferenceServiceOp) ListAccelerators(ctx context.Context, diID string, opt *DedicatedInferenceListAcceleratorsOptions) ([]DedicatedInferenceAcceleratorInfo, *Response, error) {
-	basePath := fmt.Sprintf("%s/%s/accelerators", dedicatedInferenceBasePath, diID)
+	basePath := fmt.Sprintf("%s/%s/accelerators", dedicatedInferenceBasePath, url.PathEscape(diID))
 	path, err := addOptions(basePath, opt)
 	if err != nil {
 		return nil, nil, err
@@ -401,7 +402,7 @@ func (s *DedicatedInferenceServiceOp) ListAccelerators(ctx context.Context, diID
 
 // CreateToken creates a new auth token for a Dedicated Inference.
 func (s *DedicatedInferenceServiceOp) CreateToken(ctx context.Context, diID string, createRequest *DedicatedInferenceTokenCreateRequest) (*DedicatedInferenceToken, *Response, error) {
-	path := fmt.Sprintf("%s/%s/tokens", dedicatedInferenceBasePath, diID)
+	path := fmt.Sprintf("%s/%s/tokens", dedicatedInferenceBasePath, url.PathEscape(diID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodPost, path, createRequest)
 	if err != nil {
@@ -419,7 +420,7 @@ func (s *DedicatedInferenceServiceOp) CreateToken(ctx context.Context, diID stri
 
 // ListTokens lists all auth tokens for a Dedicated Inference.
 func (s *DedicatedInferenceServiceOp) ListTokens(ctx context.Context, diID string, opt *ListOptions) ([]DedicatedInferenceToken, *Response, error) {
-	basePath := fmt.Sprintf("%s/%s/tokens", dedicatedInferenceBasePath, diID)
+	basePath := fmt.Sprintf("%s/%s/tokens", dedicatedInferenceBasePath, url.PathEscape(diID))
 	path, err := addOptions(basePath, opt)
 	if err != nil {
 		return nil, nil, err
@@ -447,7 +448,7 @@ func (s *DedicatedInferenceServiceOp) ListTokens(ctx context.Context, diID strin
 
 // RevokeToken revokes (deletes) an auth token for a Dedicated Inference.
 func (s *DedicatedInferenceServiceOp) RevokeToken(ctx context.Context, diID string, tokenID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s/tokens/%s", dedicatedInferenceBasePath, diID, tokenID)
+	path := fmt.Sprintf("%s/%s/tokens/%s", dedicatedInferenceBasePath, url.PathEscape(diID), url.PathEscape(tokenID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {

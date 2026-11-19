@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -42,11 +43,11 @@ type vpcSubnetsRoot struct {
 }
 
 func vpcSubnetsBasePath(vpcID string) string {
-	return fmt.Sprintf("%s/%s/subnets", vpcsBasePath, vpcID)
+	return fmt.Sprintf("%s/%s/subnets", vpcsBasePath, url.PathEscape(vpcID))
 }
 
 func vpcSubnetPath(vpcID, subnetID string) string {
-	return fmt.Sprintf("%s/%s/subnets/%s", vpcsBasePath, vpcID, subnetID)
+	return fmt.Sprintf("%s/%s/subnets/%s", vpcsBasePath, url.PathEscape(vpcID), url.PathEscape(subnetID))
 }
 
 // CreateSubnet creates a new subnet within a VPC.

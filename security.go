@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -150,7 +151,7 @@ func (s *SecurityServiceOp) GetScan(ctx context.Context, scanUUID string, opts *
 		return nil, nil, NewArgError("scanUUID", "cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/%s", securityScansBasePath, scanUUID)
+	path := fmt.Sprintf("%s/%s", securityScansBasePath, url.PathEscape(scanUUID))
 	path, err := addOptions(path, opts)
 	if err != nil {
 		return nil, nil, err
@@ -215,9 +216,9 @@ func (s *SecurityServiceOp) ListFindingAffectedResources(ctx context.Context, li
 	path := fmt.Sprintf(
 		"%s/%s/%s/%s/%s",
 		securityScansBasePath,
-		listFindingAffectedResourcesRequest.ScanUUID,
+		url.PathEscape(listFindingAffectedResourcesRequest.ScanUUID),
 		securityScansFindingsPath,
-		listFindingAffectedResourcesRequest.FindingUUID,
+		url.PathEscape(listFindingAffectedResourcesRequest.FindingUUID),
 		securityAffectedResources,
 	)
 	path, err := addOptions(path, opts)

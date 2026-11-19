@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -117,7 +118,7 @@ func (i Invoice) String() string {
 
 // Get detailed invoice items for an Invoice
 func (s *InvoicesServiceOp) Get(ctx context.Context, invoiceUUID string, opt *ListOptions) (*Invoice, *Response, error) {
-	path := fmt.Sprintf("%s/%s", invoicesBasePath, invoiceUUID)
+	path := fmt.Sprintf("%s/%s", invoicesBasePath, url.PathEscape(invoiceUUID))
 	path, err := addOptions(path, opt)
 	if err != nil {
 		return nil, nil, err
@@ -173,7 +174,7 @@ func (s *InvoicesServiceOp) List(ctx context.Context, opt *ListOptions) (*Invoic
 
 // GetSummary returns a summary of metadata and summarized usage for an Invoice
 func (s *InvoicesServiceOp) GetSummary(ctx context.Context, invoiceUUID string) (*InvoiceSummary, *Response, error) {
-	path := fmt.Sprintf("%s/%s/summary", invoicesBasePath, invoiceUUID)
+	path := fmt.Sprintf("%s/%s/summary", invoicesBasePath, url.PathEscape(invoiceUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -191,7 +192,7 @@ func (s *InvoicesServiceOp) GetSummary(ctx context.Context, invoiceUUID string) 
 
 // GetPDF returns the pdf for an Invoice
 func (s *InvoicesServiceOp) GetPDF(ctx context.Context, invoiceUUID string) ([]byte, *Response, error) {
-	path := fmt.Sprintf("%s/%s/pdf", invoicesBasePath, invoiceUUID)
+	path := fmt.Sprintf("%s/%s/pdf", invoicesBasePath, url.PathEscape(invoiceUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -209,7 +210,7 @@ func (s *InvoicesServiceOp) GetPDF(ctx context.Context, invoiceUUID string) ([]b
 
 // GetCSV returns the csv for an Invoice
 func (s *InvoicesServiceOp) GetCSV(ctx context.Context, invoiceUUID string) ([]byte, *Response, error) {
-	path := fmt.Sprintf("%s/%s/csv", invoicesBasePath, invoiceUUID)
+	path := fmt.Sprintf("%s/%s/csv", invoicesBasePath, url.PathEscape(invoiceUUID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

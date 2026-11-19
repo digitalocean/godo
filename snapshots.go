@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 const snapshotBasePath = "v2/snapshots"
@@ -90,7 +91,7 @@ func (s *SnapshotsServiceOp) Get(ctx context.Context, snapshotID string) (*Snaps
 
 // Delete an snapshot.
 func (s *SnapshotsServiceOp) Delete(ctx context.Context, snapshotID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", snapshotBasePath, snapshotID)
+	path := fmt.Sprintf("%s/%s", snapshotBasePath, url.PathEscape(snapshotID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
@@ -104,7 +105,7 @@ func (s *SnapshotsServiceOp) Delete(ctx context.Context, snapshotID string) (*Re
 
 // Helper method for getting an individual snapshot
 func (s *SnapshotsServiceOp) get(ctx context.Context, ID string) (*Snapshot, *Response, error) {
-	path := fmt.Sprintf("%s/%s", snapshotBasePath, ID)
+	path := fmt.Sprintf("%s/%s", snapshotBasePath, url.PathEscape(ID))
 
 	req, err := s.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {

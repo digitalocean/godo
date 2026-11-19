@@ -3,7 +3,7 @@ package godo
 import (
 	"context"
 	"net/http"
-	"path"
+	"net/url"
 	"strconv"
 )
 
@@ -125,7 +125,7 @@ var _ FirewallsService = &FirewallsServiceOp{}
 
 // Get an existing Firewall by its identifier.
 func (fw *FirewallsServiceOp) Get(ctx context.Context, fID string) (*Firewall, *Response, error) {
-	path := path.Join(firewallsBasePath, fID)
+	path := firewallsBasePath + "/" + url.PathEscape(fID)
 
 	req, err := fw.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -159,7 +159,7 @@ func (fw *FirewallsServiceOp) Create(ctx context.Context, fr *FirewallRequest) (
 
 // Update an existing Firewall with new configuration.
 func (fw *FirewallsServiceOp) Update(ctx context.Context, fID string, fr *FirewallRequest) (*Firewall, *Response, error) {
-	path := path.Join(firewallsBasePath, fID)
+	path := firewallsBasePath + "/" + url.PathEscape(fID)
 
 	req, err := fw.client.NewRequest(ctx, "PUT", path, fr)
 	if err != nil {
@@ -177,7 +177,7 @@ func (fw *FirewallsServiceOp) Update(ctx context.Context, fID string, fr *Firewa
 
 // Delete a Firewall by its identifier.
 func (fw *FirewallsServiceOp) Delete(ctx context.Context, fID string) (*Response, error) {
-	path := path.Join(firewallsBasePath, fID)
+	path := firewallsBasePath + "/" + url.PathEscape(fID)
 	return fw.createAndDoReq(ctx, http.MethodDelete, path, nil)
 }
 
@@ -193,7 +193,7 @@ func (fw *FirewallsServiceOp) List(ctx context.Context, opt *ListOptions) ([]Fir
 
 // ListByDroplet Firewalls.
 func (fw *FirewallsServiceOp) ListByDroplet(ctx context.Context, dID int, opt *ListOptions) ([]Firewall, *Response, error) {
-	basePath := path.Join(dropletBasePath, strconv.Itoa(dID), "firewalls")
+	basePath := dropletBasePath + "/" + strconv.Itoa(dID) + "/firewalls"
 	path, err := addOptions(basePath, opt)
 	if err != nil {
 		return nil, nil, err
@@ -204,37 +204,37 @@ func (fw *FirewallsServiceOp) ListByDroplet(ctx context.Context, dID int, opt *L
 
 // AddDroplets to a Firewall.
 func (fw *FirewallsServiceOp) AddDroplets(ctx context.Context, fID string, dropletIDs ...int) (*Response, error) {
-	path := path.Join(firewallsBasePath, fID, "droplets")
+	path := firewallsBasePath + "/" + url.PathEscape(fID) + "/droplets"
 	return fw.createAndDoReq(ctx, http.MethodPost, path, &dropletsRequest{IDs: dropletIDs})
 }
 
 // RemoveDroplets from a Firewall.
 func (fw *FirewallsServiceOp) RemoveDroplets(ctx context.Context, fID string, dropletIDs ...int) (*Response, error) {
-	path := path.Join(firewallsBasePath, fID, "droplets")
+	path := firewallsBasePath + "/" + url.PathEscape(fID) + "/droplets"
 	return fw.createAndDoReq(ctx, http.MethodDelete, path, &dropletsRequest{IDs: dropletIDs})
 }
 
 // AddTags to a Firewall.
 func (fw *FirewallsServiceOp) AddTags(ctx context.Context, fID string, tags ...string) (*Response, error) {
-	path := path.Join(firewallsBasePath, fID, "tags")
+	path := firewallsBasePath + "/" + url.PathEscape(fID) + "/tags"
 	return fw.createAndDoReq(ctx, http.MethodPost, path, &tagsRequest{Tags: tags})
 }
 
 // RemoveTags from a Firewall.
 func (fw *FirewallsServiceOp) RemoveTags(ctx context.Context, fID string, tags ...string) (*Response, error) {
-	path := path.Join(firewallsBasePath, fID, "tags")
+	path := firewallsBasePath + "/" + url.PathEscape(fID) + "/tags"
 	return fw.createAndDoReq(ctx, http.MethodDelete, path, &tagsRequest{Tags: tags})
 }
 
 // AddRules to a Firewall.
 func (fw *FirewallsServiceOp) AddRules(ctx context.Context, fID string, rr *FirewallRulesRequest) (*Response, error) {
-	path := path.Join(firewallsBasePath, fID, "rules")
+	path := firewallsBasePath + "/" + url.PathEscape(fID) + "/rules"
 	return fw.createAndDoReq(ctx, http.MethodPost, path, rr)
 }
 
 // RemoveRules from a Firewall.
 func (fw *FirewallsServiceOp) RemoveRules(ctx context.Context, fID string, rr *FirewallRulesRequest) (*Response, error) {
-	path := path.Join(firewallsBasePath, fID, "rules")
+	path := firewallsBasePath + "/" + url.PathEscape(fID) + "/rules"
 	return fw.createAndDoReq(ctx, http.MethodDelete, path, rr)
 }
 

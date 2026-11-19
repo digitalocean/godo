@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -63,15 +64,15 @@ type routesRoot struct {
 }
 
 func vpcRoutesPath(vpcUUID string) string {
-	return fmt.Sprintf("%s/%s/routes", vpcsBasePath, vpcUUID)
+	return fmt.Sprintf("%s/%s/routes", vpcsBasePath, url.PathEscape(vpcUUID))
 }
 
 func subnetRoutesPath(vpcUUID, subnetUUID string) string {
-	return fmt.Sprintf("%s/%s/subnets/%s/routes", vpcsBasePath, vpcUUID, subnetUUID)
+	return fmt.Sprintf("%s/%s/subnets/%s/routes", vpcsBasePath, url.PathEscape(vpcUUID), url.PathEscape(subnetUUID))
 }
 
 func subnetRoutePath(vpcUUID, subnetUUID, routeUUID string) string {
-	return fmt.Sprintf("%s/%s/subnets/%s/routes/%s", vpcsBasePath, vpcUUID, subnetUUID, routeUUID)
+	return fmt.Sprintf("%s/%s/subnets/%s/routes/%s", vpcsBasePath, url.PathEscape(vpcUUID), url.PathEscape(subnetUUID), url.PathEscape(routeUUID))
 }
 
 // ListVPCRoutes lists VPC-scoped routes. Entries are read-only in the public API.
