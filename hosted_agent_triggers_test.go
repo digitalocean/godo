@@ -292,6 +292,52 @@ func TestHostedAgentTriggers_Get(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func TestHostedAgentTriggers_List_DecodesStatusReason(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const pausedJSON = `{
+		"trigger_id": "trig-orphan",
+		"status": "paused",
+		"status_reason": "agent_config_deleted",
+		"status_message": "This trigger was paused because its agent config was deleted."
+	}`
+	const futureJSON = `{
+		"trigger_id": "trig-future",
+		"status": "paused",
+		"status_reason": "some_future_reason",
+		"status_message": "Paused for a reason this client does not know."
+	}`
+
+	mux.HandleFunc("/v2/harness-runtime/triggers", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprintf(w, `{"triggers":[%s,%s,%s]}`, pausedJSON, futureJSON, hostedAgentTriggerJSON)
+	})
+
+	got, _, err := client.HostedAgentTriggers.List(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, got.Triggers, 3)
+
+	paused := got.Triggers[0]
+	assert.Equal(t, HostedAgentTriggerStatusPaused, paused.Status)
+	assert.Equal(t, HostedAgentTriggerStatusReasonAgentConfigDeleted, paused.StatusReason)
+	assert.Equal(t, "This trigger was paused because its agent config was deleted.", paused.StatusMessage)
+
+	// An unknown reason stays opaque rather than failing the decode.
+	future := got.Triggers[1]
+	assert.Equal(t, HostedAgentTriggerStatusReason("some_future_reason"), future.StatusReason)
+	assert.Equal(t, "Paused for a reason this client does not know.", future.StatusMessage)
+
+	// A trigger the service did not pause carries neither field.
+	plain := got.Triggers[2]
+	assert.Empty(t, plain.StatusReason)
+	assert.Empty(t, plain.StatusMessage)
+	body, err := json.Marshal(&plain)
+	require.NoError(t, err)
+	assert.NotContains(t, string(body), "status_reason")
+	assert.NotContains(t, string(body), "status_message")
+}
+
 func TestHostedAgentTriggers_Get_EmptyID(t *testing.T) {
 	setup()
 	defer teardown()
