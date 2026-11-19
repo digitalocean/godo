@@ -9,6 +9,7 @@ import (
 )
 
 // ADSTarballUpload is an upload grant returned when a named tarball object is absent.
+// URL is a short-lived upload grant. Do not log this struct with %v or %+v.
 type ADSTarballUpload struct {
 	URL       string `json:"url,omitempty"`
 	ObjectKey string `json:"object_key,omitempty"`
