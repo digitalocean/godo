@@ -587,8 +587,64 @@ func TestADS_UpdateDataFlow(t *testing.T) {
 		Region:          adsTestRegion,
 		ID:              adsTestDataFlowID,
 		Workspace:       adsTestUUID,
-		DesiredReplicas: 2,
+		DesiredReplicas: PtrTo(int32(2)),
 		SecretRefs:      []string{"db-password"},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, &ADSDataFlowUpdateResponse{UUID: adsTestDataFlowID, State: "active"}, got)
+}
+
+func TestADS_UpdateDataFlow_DesiredReplicasZero(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID+"/data-flows/"+adsTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{
+			"id": "df-019fb39c-14d9-7080-933e-b9b90e25acda",
+			"workspace": "ws-019fb39c-14d9-7080-933e-b9b90e25acda",
+			"desired_replicas": 0
+		}`, string(raw))
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"uuid":"df-019fb39c-14d9-7080-933e-b9b90e25acda","state":"active"}`)
+	})
+
+	got, resp, err := client.ADS.UpdateDataFlow(ctx, &ADSDataFlowUpdateRequest{
+		Region:          adsTestRegion,
+		ID:              adsTestDataFlowID,
+		Workspace:       adsTestUUID,
+		DesiredReplicas: PtrTo(int32(0)),
+	})
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	assert.Equal(t, &ADSDataFlowUpdateResponse{UUID: adsTestDataFlowID, State: "active"}, got)
+}
+
+func TestADS_UpdateDataFlow_DesiredReplicasNilOmitted(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/data-cloud-platform/tor1/workspaces/"+adsTestUUID+"/data-flows/"+adsTestDataFlowID, func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		raw, err := io.ReadAll(r.Body)
+		require.NoError(t, err)
+		assert.JSONEq(t, `{
+			"id": "df-019fb39c-14d9-7080-933e-b9b90e25acda",
+			"workspace": "ws-019fb39c-14d9-7080-933e-b9b90e25acda",
+			"max_replicas": 5
+		}`, string(raw))
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, `{"uuid":"df-019fb39c-14d9-7080-933e-b9b90e25acda","state":"active"}`)
+	})
+
+	got, resp, err := client.ADS.UpdateDataFlow(ctx, &ADSDataFlowUpdateRequest{
+		Region:      adsTestRegion,
+		ID:          adsTestDataFlowID,
+		Workspace:   adsTestUUID,
+		MaxReplicas: 5,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, resp)

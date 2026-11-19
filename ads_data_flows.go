@@ -78,11 +78,13 @@ type ADSListDataFlowsResponse struct {
 // ADSDataFlowUpdateRequest is the body for UpdateDataFlow.
 // Region is path-only and is not sent in the JSON body. Workspace and ID are
 // required path segments and are also sent in the body.
+// A nil DesiredReplicas leaves the replica count unchanged; 0 pauses the data
+// flow and must be sent without other fields.
 type ADSDataFlowUpdateRequest struct {
 	Region          string          `json:"-"`
 	ID              string          `json:"id"`
 	Workspace       string          `json:"workspace"`
-	DesiredReplicas int32           `json:"desired_replicas,omitempty"`
+	DesiredReplicas *int32          `json:"desired_replicas,omitempty"`
 	MaxReplicas     int32           `json:"max_replicas,omitempty"`
 	SecretRefs      []string        `json:"secret_refs,omitempty"`
 	ClearSecretRefs bool            `json:"clear_secret_refs,omitempty"`
