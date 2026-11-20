@@ -2421,7 +2421,7 @@ func TestHostedAgents_UpdateSessionConfig_PermissionsRefused(t *testing.T) {
 	setup()
 	defer teardown()
 
-	const msg = `permissions can't change live on hermes for: bash rule \"rm -rf *\" (only do.actions allow/deny rules can change on this agent). Remove these changes and send the update again.`
+	const msg = `permissions can't change live on hermes for: bash rule \"rm -rf *\" (only do.actions allow/deny rules can change on this agent). Remove these changes and send the update again (update_unsupported)`
 	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
@@ -2432,6 +2432,7 @@ func TestHostedAgents_UpdateSessionConfig_PermissionsRefused(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 	assert.Contains(t, err.Error(), `permissions can't change live on hermes for: bash rule "rm -rf *"`)
+	assert.Contains(t, err.Error(), "(update_unsupported)")
 }
 
 func TestHostedAgents_UpdateSessionConfig_Unchanged(t *testing.T) {

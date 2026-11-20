@@ -1411,15 +1411,20 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // new session, including adding, removing or changing a custom MCP server).
 //
 // permissions is the full policy, in the same form as at create: the default
-// action and every rule, so a rule left out is removed. It applies from the
-// agent's next tool call, with no restart. What can change depends on the
-// agent: claude-code and opencode take any default and rule; openhands takes
-// the default and bash, file.* and web.fetch rules; hermes and langgraph take
-// only do.actions rules and a default of allow or deny; other agents take
-// none. permissions.filesystem and permissions.network never change live.
-// Only what differs from the current policy is checked. If any of it can't
-// apply, the whole PATCH is a 409 and nothing is applied, tools, env and
-// secrets included; the error message names the changes to drop.
+// action and every rule, so a rule left out is removed. "permissions: {}"
+// removes the policy (the agent's built-in default applies); "permissions:
+// null" is a 400. It applies from the agent's next tool call, with no restart,
+// except on langgraph, where a change to do.actions rules or the default
+// restarts the agent. What can change depends on the agent: claude-code and
+// opencode take any default and rule; openhands takes the default and bash,
+// file.read, file.write and web.fetch rules; hermes and langgraph take only
+// do.actions rules and a default of allow or deny; other agents take none.
+// permissions.filesystem and permissions.network never change live. Only what
+// differs from the current policy is checked. If any of it can't apply, the
+// whole PATCH is a 409 and nothing is applied, tools, env and secrets
+// included; the error message names the changes to drop. A session created
+// before live permission updates were released also gets a 409: create a new
+// session.
 //
 // The model can change only on a session whose model provider is DigitalOcean
 // Serverless Inference (created with HARNESS_INFERENCE_MODEL and no inference
