@@ -10,13 +10,30 @@ import (
 	"github.com/digitalocean/godo"
 )
 
-// Usage: HOSTED_AGENT_SESSION_ID=... HOSTED_AGENT_MANIFEST_YAML=$'tools:\n  - ...' go run .
+// permissionsManifest is sent when HOSTED_AGENT_MANIFEST_YAML is unset. It
+// replaces the session's whole permission policy; the agent must be able to
+// apply each change live, or the update is refused with a 409.
+const permissionsManifest = `permissions:
+  default: ask
+  rules:
+    - tool: bash
+      match:
+        command: "rm -rf *"
+      action: deny
+    - tool: do.actions/exa_web_search
+      action: allow
+`
+
+// Usage: HOSTED_AGENT_SESSION_ID=... [HOSTED_AGENT_MANIFEST_YAML=$'tools:\n  - ...'] go run .
 func main() {
 	sessionID := os.Getenv("HOSTED_AGENT_SESSION_ID")
 	manifest := os.Getenv("HOSTED_AGENT_MANIFEST_YAML")
-	if sessionID == "" || manifest == "" {
-		fmt.Fprintln(os.Stderr, "HOSTED_AGENT_SESSION_ID and HOSTED_AGENT_MANIFEST_YAML are required")
+	if sessionID == "" {
+		fmt.Fprintln(os.Stderr, "HOSTED_AGENT_SESSION_ID is required")
 		os.Exit(2)
+	}
+	if manifest == "" {
+		manifest = permissionsManifest
 	}
 
 	client := mustClient()

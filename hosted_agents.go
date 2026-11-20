@@ -124,13 +124,14 @@ type HostedAgentsService interface {
 	GetSession(context.Context, string) (*HostedAgentSession, *Response, error)
 	// UpdateSession patches session-scoped settings on an existing session and
 	// returns the updated snapshot. Never touches the agent manifest or config;
-	// use UpdateSessionConfig to change tools, env or secrets.
+	// use UpdateSessionConfig to change tools, env, secrets or permissions.
 	UpdateSession(context.Context, string, *HostedAgentSessionUpdateRequest) (*HostedAgentSession, *Response, error)
 	// UpdateSessionConfig patches the live configuration of a session (tools,
-	// env, secrets) from a partial manifest YAML. The server answers 202 with
-	// outcome ACCEPTED and the session in SESSION_STATUS_UPDATING; callers poll
-	// GetSession until the status leaves UPDATING and then read Session.Update.
-	// An unchanged manifest answers 200 with outcome UNCHANGED.
+	// env, secrets, permissions) from a partial manifest YAML. The server
+	// answers 202 with outcome ACCEPTED and the session in
+	// SESSION_STATUS_UPDATING; callers poll GetSession until the status leaves
+	// UPDATING and then read Session.Update. An unchanged manifest answers 200
+	// with outcome UNCHANGED.
 	UpdateSessionConfig(context.Context, string, *HostedAgentSessionConfigUpdateRequest) (*HostedAgentSessionConfigUpdateResponse, *Response, error)
 	DestroySession(context.Context, string) (*Response, error)
 	PauseSession(context.Context, string) (*Response, error)
@@ -718,7 +719,7 @@ type HostedAgentSessionFromEnvironmentRequest = HostedAgentSessionFromConfigRequ
 // HostedAgentSessionUpdateRequest is the body for PATCH
 // /v2/harness-runtime/sessions/{session_id}: an allowlisted subset of session-scoped
 // settings (see HostedAgentsService.UpdateSessionConfig for live config
-// changes such as tools, env and secrets). The server rejects
+// changes such as tools, env, secrets and permissions). The server rejects
 // unknown top-level keys, and rejects an empty object, so every field is a
 // pointer: nil omits it and leaves the server-side value untouched.
 type HostedAgentSessionUpdateRequest struct {
@@ -1139,8 +1140,9 @@ type HostedAgentWorkspaceTransferCancelResponse struct {
 
 // HostedAgentSessionConfigUpdateRequest is the body for PATCH
 // /v2/harness-runtime/sessions/{session_id} when changing live configuration.
-// ManifestYAML holds only the sections to change (tools, env, secrets); absent
-// sections are untouched. It cannot be combined with resume_on_topoff.
+// ManifestYAML holds only the sections to change (tools, env, secrets,
+// permissions); absent sections are untouched. It cannot be combined with
+// resume_on_topoff.
 type HostedAgentSessionConfigUpdateRequest struct {
 	ManifestYAML string `json:"manifest_yaml"`
 }
@@ -1395,18 +1397,29 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 }
 
 // UpdateSessionConfig patches the live configuration of a session from a
-// partial manifest YAML (tools, env, secrets). In tools, only Action Gateway
-// (do.actions) entries can change; the session's custom MCP servers must be
-// sent back exactly as they are. The response carries the
+// partial manifest YAML (tools, env, secrets, permissions). In tools, only
+// Action Gateway (do.actions) entries can change; the session's custom MCP
+// servers must be sent back exactly as they are. The response carries the
 // session, the outcome (ACCEPTED on HTTP 202, UNCHANGED on HTTP 200) and any
 // warnings. godo does not wait: on ACCEPTED the session is
 // SESSION_STATUS_UPDATING and the caller polls GetSession until the status
 // leaves UPDATING, then reads Session.Update. See the API error statuses: 400
-// (invalid patch, including a top-level model or permissions section; change
-// the model through env.HARNESS_INFERENCE_MODEL), 403 (feature not enabled),
-// 409 (session status does not allow an update, or a turn or approval is in
-// progress), 422 (requires a new session, including
-// adding, removing or changing a custom MCP server).
+// (invalid patch, including a top-level model section; change the model
+// through env.HARNESS_INFERENCE_MODEL), 403 (feature not enabled), 409
+// (session status does not allow an update, a turn or approval is in
+// progress, or the agent can't apply a permissions change), 422 (requires a
+// new session, including adding, removing or changing a custom MCP server).
+//
+// permissions is the full policy, in the same form as at create: the default
+// action and every rule, so a rule left out is removed. It applies from the
+// agent's next tool call, with no restart. What can change depends on the
+// agent: claude-code and opencode take any default and rule; openhands takes
+// the default and bash, file.* and web.fetch rules; hermes and langgraph take
+// only do.actions rules and a default of allow or deny; other agents take
+// none. permissions.filesystem and permissions.network never change live.
+// Only what differs from the current policy is checked. If any of it can't
+// apply, the whole PATCH is a 409 and nothing is applied, tools, env and
+// secrets included; the error message names the changes to drop.
 //
 // The model can change only on a session whose model provider is DigitalOcean
 // Serverless Inference (created with HARNESS_INFERENCE_MODEL and no inference
