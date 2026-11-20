@@ -101,6 +101,28 @@ func TestBYOIPPrefixes_GetResources(t *testing.T) {
 	}
 }
 
+func TestBYOIPPrefixes_GetResourcesListOptions(t *testing.T) {
+	setup()
+	defer teardown()
+	mux.HandleFunc("/v2/byoip_prefixes/1de94988-5102-4aae-b17d-f71b98707b88/ips", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		q := r.URL.Query()
+		if got := q.Get("page"); got != "2" {
+			t.Errorf("page = %q, expected %q", got, "2")
+		}
+		if got := q.Get("per_page"); got != "50" {
+			t.Errorf("per_page = %q, expected %q", got, "50")
+		}
+		fmt.Fprint(w, `{"ips": [], "meta": {"total": 0}}`)
+	})
+
+	opt := &ListOptions{Page: 2, PerPage: 50}
+	_, _, err := client.BYOIPPrefixes.GetResources(ctx, "1de94988-5102-4aae-b17d-f71b98707b88", opt)
+	if err != nil {
+		t.Errorf("BYOIPs.GetResources returned error: %v", err)
+	}
+}
+
 func TestBYOIPPrefixes_Create(t *testing.T) {
 	setup()
 	defer teardown()
