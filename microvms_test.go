@@ -1317,6 +1317,47 @@ func TestMicroVMs_ConsoleURL_EmptyID(t *testing.T) {
 	}
 }
 
+func TestMicroVMs_PortForwardURL(t *testing.T) {
+	setup()
+	defer teardown()
+
+	got, err := client.MicroVMs.PortForwardURL("aaa-111", 8080)
+	if err != nil {
+		t.Fatalf("PortForwardURL returned error: %v", err)
+	}
+	want := "ws://" + client.BaseURL.Host + "/v2/microvms/aaa-111/port_forward?port=8080"
+	if got != want {
+		t.Errorf("PortForwardURL = %q, expected %q", got, want)
+	}
+
+	got, err = NewClient(nil).MicroVMs.PortForwardURL("aaa-111", 80)
+	if err != nil {
+		t.Fatalf("PortForwardURL returned error: %v", err)
+	}
+	want = "wss://api.digitalocean.com/v2/microvms/aaa-111/port_forward?port=80"
+	if got != want {
+		t.Errorf("PortForwardURL = %q, expected %q", got, want)
+	}
+}
+
+func TestMicroVMs_PortForwardURL_InvalidArgs(t *testing.T) {
+	c := NewClient(nil)
+	for _, tc := range []struct {
+		id   string
+		port int
+	}{
+		{"aaa-111", 0},
+		{"aaa-111", 65536},
+		{"aaa-111", -1},
+		{"", 80},
+	} {
+		_, err := c.MicroVMs.PortForwardURL(tc.id, tc.port)
+		if _, ok := err.(*ArgError); !ok {
+			t.Errorf("PortForwardURL(%q, %d): expected *ArgError, got %T: %v", tc.id, tc.port, err, err)
+		}
+	}
+}
+
 func TestMarshalMicroVMConsoleResize(t *testing.T) {
 	got, err := MarshalMicroVMConsoleResize(24, 80)
 	if err != nil {
