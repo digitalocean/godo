@@ -63,12 +63,18 @@ func (s *SSEReader) Next() (*SSEEvent, error) {
 		eof := err == io.EOF
 
 		if len(line) == 0 {
-			if haveAny {
+			if haveData {
 				ev := s.makeEvent(eventTyp, retry)
 				if eof {
 					s.err = io.EOF
 				}
 				return ev, nil
+			}
+			if haveAny {
+				// Per the SSE spec an event without a data field is not
+				// dispatched (e.g. a block with only id/retry/event fields).
+				eventTyp, retry, haveAny = "", 0, false
+				s.scratch = s.scratch[:0]
 			}
 			if eof {
 				s.err = io.EOF
@@ -118,9 +124,11 @@ func (s *SSEReader) Next() (*SSEEvent, error) {
 		}
 
 		if eof {
-			ev := s.makeEvent(eventTyp, retry)
 			s.err = io.EOF
-			return ev, nil
+			if !haveData {
+				return nil, io.EOF
+			}
+			return s.makeEvent(eventTyp, retry), nil
 		}
 		if err != nil {
 			s.err = err

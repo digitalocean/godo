@@ -376,3 +376,38 @@ func equalStrings(a, b []string) bool {
 	}
 	return true
 }
+
+func TestSSEReader_SkipsEventsWithoutData(t *testing.T) {
+	for _, metadata := range []string{"id: 42", "retry: 1500", "event: ping", "extension: ignored"} {
+		t.Run(metadata, func(t *testing.T) {
+			r := NewSSEReader(strings.NewReader(metadata + "\n\ndata: hello\n\ndata: [DONE]\n\n"))
+			ev, err := r.Next()
+			if err != nil {
+				t.Fatalf("Next: unexpected error %v", err)
+			}
+			if string(ev.Data) != "hello" {
+				t.Fatalf("Data = %q, want %q", ev.Data, "hello")
+			}
+			if ev.Event != "message" || ev.Retry != 0 {
+				t.Fatalf("metadata leaked into next event: %+v", ev)
+			}
+			ev, err = r.Next()
+			if err != nil || string(ev.Data) != "[DONE]" {
+				t.Fatalf("second event = %+v, %v", ev, err)
+			}
+			if _, err = r.Next(); err != io.EOF {
+				t.Fatalf("expected io.EOF, got %v", err)
+			}
+		})
+	}
+}
+
+func TestSSEReader_DatalessFinalEventAtEOF(t *testing.T) {
+	r := NewSSEReader(strings.NewReader("data: hello\n\nid: 7"))
+	if ev, err := r.Next(); err != nil || string(ev.Data) != "hello" {
+		t.Fatalf("first event = %+v, %v", ev, err)
+	}
+	if _, err := r.Next(); err != io.EOF {
+		t.Fatalf("expected io.EOF, got %v", err)
+	}
+}
