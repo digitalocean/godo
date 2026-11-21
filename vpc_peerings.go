@@ -163,6 +163,9 @@ func (v *VPCsServiceOp) CreateVPCPeeringByVPCID(ctx context.Context, id string, 
 // ListVPCPeeringsByVPCID lists all Virtual Private Cloud Peerings for requested VPC ID.
 func (v *VPCsServiceOp) ListVPCPeeringsByVPCID(ctx context.Context, id string, opt *ListOptions) ([]*VPCPeering, *Response, error) {
 	path, err := addOptions(vpcsBasePath+"/"+id+"/peerings", opt)
+	if err != nil {
+		return nil, nil, err
+	}
 	req, err := v.client.NewRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
 		return nil, nil, err
