@@ -106,6 +106,7 @@ func testClientServices(t *testing.T, c *Client) {
 		"HostedAgents",
 		"ADS",
 		"Routes",
+		"V2",
 	}
 
 	cp := reflect.ValueOf(c)
@@ -116,6 +117,7 @@ func testClientServices(t *testing.T, c *Client) {
 			t.Errorf("c.%s shouldn't be nil", s)
 		}
 	}
+
 }
 
 func testClientDefaultBaseURL(t *testing.T, c *Client) {

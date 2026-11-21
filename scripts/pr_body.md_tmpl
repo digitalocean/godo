@@ -1,0 +1,16 @@
+## Summary
+
+Bot regeneration of `Client.V2` from [digitalocean/openapi@${TARGET}](https://github.com/digitalocean/openapi/commit/${TARGET}).
+
+Previous pin: `${CURRENT}` → new pin: `${TARGET}`
+
+${TITLE}
+
+## Test plan
+
+- [ ] CI passes (`go test ./...`)
+- [ ] Spot-check new/changed `v2/*.gen.go` service methods
+- [ ] Confirm `DO_OPENAPI_COMMIT_SHA.txt` matches the OpenAPI commit
+
+## OpenAPI changelist
+
