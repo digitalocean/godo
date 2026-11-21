@@ -831,42 +831,66 @@ type ValkeyConfig struct {
 	ValkeyNumberOfDatabases             *int    `json:"valkey_number_of_databases,omitempty"`
 }
 
+// MySQLIncrementalBackupConfig holds incremental backup settings for MySQL database clusters.
+type MySQLIncrementalBackupConfig struct {
+	Enabled                *bool   `json:"enabled,omitempty"`
+	FullBackupWeekSchedule *string `json:"full_backup_week_schedule,omitempty"`
+}
+
 // MySQLConfig holds advanced configurations for MySQL database clusters.
 type MySQLConfig struct {
-	ConnectTimeout               *int     `json:"connect_timeout,omitempty"`
-	DefaultTimeZone              *string  `json:"default_time_zone,omitempty"`
-	InnodbLogBufferSize          *int     `json:"innodb_log_buffer_size,omitempty"`
-	InnodbOnlineAlterLogMaxSize  *int     `json:"innodb_online_alter_log_max_size,omitempty"`
-	InnodbLockWaitTimeout        *int     `json:"innodb_lock_wait_timeout,omitempty"`
-	InteractiveTimeout           *int     `json:"interactive_timeout,omitempty"`
-	MaxAllowedPacket             *int     `json:"max_allowed_packet,omitempty"`
-	NetReadTimeout               *int     `json:"net_read_timeout,omitempty"`
-	SortBufferSize               *int     `json:"sort_buffer_size,omitempty"`
-	SQLMode                      *string  `json:"sql_mode,omitempty"`
-	SQLRequirePrimaryKey         *bool    `json:"sql_require_primary_key,omitempty"`
-	WaitTimeout                  *int     `json:"wait_timeout,omitempty"`
-	NetWriteTimeout              *int     `json:"net_write_timeout,omitempty"`
-	GroupConcatMaxLen            *int     `json:"group_concat_max_len,omitempty"`
-	InformationSchemaStatsExpiry *int     `json:"information_schema_stats_expiry,omitempty"`
-	InnodbFtMinTokenSize         *int     `json:"innodb_ft_min_token_size,omitempty"`
-	InnodbFtServerStopwordTable  *string  `json:"innodb_ft_server_stopword_table,omitempty"`
-	InnodbPrintAllDeadlocks      *bool    `json:"innodb_print_all_deadlocks,omitempty"`
-	InnodbRollbackOnTimeout      *bool    `json:"innodb_rollback_on_timeout,omitempty"`
-	InternalTmpMemStorageEngine  *string  `json:"internal_tmp_mem_storage_engine,omitempty"`
-	MaxHeapTableSize             *int     `json:"max_heap_table_size,omitempty"`
-	TmpTableSize                 *int     `json:"tmp_table_size,omitempty"`
-	SlowQueryLog                 *bool    `json:"slow_query_log,omitempty"`
-	LongQueryTime                *float32 `json:"long_query_time,omitempty"`
-	BackupHour                   *int     `json:"backup_hour,omitempty"`
-	BackupMinute                 *int     `json:"backup_minute,omitempty"`
-	BinlogRetentionPeriod        *int     `json:"binlog_retention_period,omitempty"`
-	InnodbChangeBufferMaxSize    *int     `json:"innodb_change_buffer_max_size,omitempty"`
-	InnodbFlushNeighbors         *int     `json:"innodb_flush_neighbors,omitempty"`
-	InnodbReadIoThreads          *int     `json:"innodb_read_io_threads,omitempty"`
-	InnodbThreadConcurrency      *int     `json:"innodb_thread_concurrency,omitempty"`
-	InnodbWriteIoThreads         *int     `json:"innodb_write_io_threads,omitempty"`
-	NetBufferLength              *int     `json:"net_buffer_length,omitempty"`
-	LogOutput                    *string  `json:"log_output,omitempty"`
+	ConnectTimeout               *int                          `json:"connect_timeout,omitempty"`
+	DefaultTimeZone              *string                       `json:"default_time_zone,omitempty"`
+	InnodbLogBufferSize          *int                          `json:"innodb_log_buffer_size,omitempty"`
+	InnodbOnlineAlterLogMaxSize  *int                          `json:"innodb_online_alter_log_max_size,omitempty"`
+	InnodbLockWaitTimeout        *int                          `json:"innodb_lock_wait_timeout,omitempty"`
+	InteractiveTimeout           *int                          `json:"interactive_timeout,omitempty"`
+	MaxAllowedPacket             *int                          `json:"max_allowed_packet,omitempty"`
+	NetReadTimeout               *int                          `json:"net_read_timeout,omitempty"`
+	SortBufferSize               *int                          `json:"sort_buffer_size,omitempty"`
+	SQLMode                      *string                       `json:"sql_mode,omitempty"`
+	SQLRequirePrimaryKey         *bool                         `json:"sql_require_primary_key,omitempty"`
+	WaitTimeout                  *int                          `json:"wait_timeout,omitempty"`
+	NetWriteTimeout              *int                          `json:"net_write_timeout,omitempty"`
+	GroupConcatMaxLen            *int                          `json:"group_concat_max_len,omitempty"`
+	InformationSchemaStatsExpiry *int                          `json:"information_schema_stats_expiry,omitempty"`
+	InnodbFtMinTokenSize         *int                          `json:"innodb_ft_min_token_size,omitempty"`
+	InnodbFtServerStopwordTable  *string                       `json:"innodb_ft_server_stopword_table,omitempty"`
+	InnodbPrintAllDeadlocks      *bool                         `json:"innodb_print_all_deadlocks,omitempty"`
+	InnodbRollbackOnTimeout      *bool                         `json:"innodb_rollback_on_timeout,omitempty"`
+	InternalTmpMemStorageEngine  *string                       `json:"internal_tmp_mem_storage_engine,omitempty"`
+	MaxHeapTableSize             *int                          `json:"max_heap_table_size,omitempty"`
+	TmpTableSize                 *int                          `json:"tmp_table_size,omitempty"`
+	SlowQueryLog                 *bool                         `json:"slow_query_log,omitempty"`
+	LongQueryTime                *float32                      `json:"long_query_time,omitempty"`
+	BackupHour                   *int                          `json:"backup_hour,omitempty"`
+	BackupMinute                 *int                          `json:"backup_minute,omitempty"`
+	BinlogRetentionPeriod        *int                          `json:"binlog_retention_period,omitempty"`
+	InnodbChangeBufferMaxSize    *int                          `json:"innodb_change_buffer_max_size,omitempty"`
+	InnodbFlushNeighbors         *int                          `json:"innodb_flush_neighbors,omitempty"`
+	InnodbReadIoThreads          *int                          `json:"innodb_read_io_threads,omitempty"`
+	InnodbThreadConcurrency      *int                          `json:"innodb_thread_concurrency,omitempty"`
+	InnodbWriteIoThreads         *int                          `json:"innodb_write_io_threads,omitempty"`
+	NetBufferLength              *int                          `json:"net_buffer_length,omitempty"`
+	LogOutput                    *string                       `json:"log_output,omitempty"`
+	AutomaticSPPrivileges        *bool                         `json:"automatic_sp_privileges,omitempty"`
+	DivPrecisionIncrement        *int                          `json:"div_precision_increment,omitempty"`
+	EndMarkersInJSON             *bool                         `json:"end_markers_in_json,omitempty"`
+	EqRangeIndexDiveLimit        *int                          `json:"eq_range_index_dive_limit,omitempty"`
+	InnodbAdaptiveHashIndex      *bool                         `json:"innodb_adaptive_hash_index,omitempty"`
+	InnodbFtEnableStopword       *bool                         `json:"innodb_ft_enable_stopword,omitempty"`
+	InnodbFtMaxTokenSize         *int                          `json:"innodb_ft_max_token_size,omitempty"`
+	InnodbFtNumWordOptimize      *int                          `json:"innodb_ft_num_word_optimize,omitempty"`
+	InnodbFtResultCacheLimit     *int                          `json:"innodb_ft_result_cache_limit,omitempty"`
+	InnodbFtUserStopwordTable    *string                       `json:"innodb_ft_user_stopword_table,omitempty"`
+	InnodbOptimizeFulltextOnly   *bool                         `json:"innodb_optimize_fulltext_only,omitempty"`
+	MaxExecutionTime             *int                          `json:"max_execution_time,omitempty"`
+	MaxSeeksForKey               *int                          `json:"max_seeks_for_key,omitempty"`
+	MySQLIncrementalBackup       *MySQLIncrementalBackupConfig `json:"mysql_incremental_backup,omitempty"`
+	OptimizerPruneLevel          *int                          `json:"optimizer_prune_level,omitempty"`
+	OptimizerSearchDepth         *int                          `json:"optimizer_search_depth,omitempty"`
+	OptimizerSwitch              *string                       `json:"optimizer_switch,omitempty"`
+	WindowingUseHighPrecision    *bool                         `json:"windowing_use_high_precision,omitempty"`
 }
 
 // MongoDBConfig holds advanced configurations for MongoDB database clusters.
