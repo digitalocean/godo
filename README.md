@@ -256,6 +256,20 @@ deleted, err := tpl.Delete(ctx)              // false if it is already gone
 
 The raw calls are `client.Sandboxes.CreateTemplate`, `GetTemplate`, `ListTemplates`, `UpdateTemplate`, `DeleteTemplate`, `ListTemplateBuilds` and `GetTemplateBuild`.
 
+Take and manage snapshots of a running or paused sandbox:
+
+```go
+// Name and TTL are optional. The capture is asynchronous.
+snap, err := sb.CreateSnapshot(ctx, &sandbox.SnapshotParams{Name: "my-snapshot", TTL: "168h"})
+err = snap.WaitUntilReady(ctx, nil) // fails, with the API's message, if the snapshot failed
+
+for s, err := range c.ListSnapshots(&sandbox.ListSnapshotsParams{SandboxID: sb.ID()}).All(ctx) { ... }
+again, err := c.GetSnapshot(ctx, snap.ID())   // again.Info.Size() is the size in bytes once complete
+deleted, err := snap.Delete(ctx)               // false if it is already gone
+```
+
+The raw calls are `client.Sandboxes.CreateSnapshot`, `GetSnapshot`, `ListSnapshots` and `DeleteSnapshot`. A snapshot captures the boot disk and memory, not the workspace data disk. The API does not yet have a way to start a sandbox from a snapshot.
+
 The raw calls are `client.Sandboxes.StartCommand`, `ListCommands`, `StreamCommand`, `SignalCommand` and `WriteCommandStdin`. Output can only be read while a command runs: a command that exits before the stream attaches fails with a 404 (`sandbox.IsNotFound`). File transfer is not available yet: it needs routes that are not in the API.
 
 ## Examples
