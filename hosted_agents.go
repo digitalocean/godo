@@ -1417,7 +1417,8 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // except on langgraph, where a change to do.actions rules or the default
 // restarts the agent. What can change depends on the agent: claude-code and
 // opencode take any default and rule; openhands takes the default and bash,
-// file.read, file.write and web.fetch rules; hermes and langgraph take only
+// file.read, file.write and web.fetch rules; codex takes the default and bash
+// and do.actions rules, with allow, ask or deny; hermes and langgraph take only
 // do.actions rules and a default of allow or deny; other agents take none.
 // permissions.filesystem and permissions.network never change live. Only what
 // differs from the current policy is checked. If any of it can't apply, the
