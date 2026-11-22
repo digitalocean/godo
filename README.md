@@ -237,6 +237,25 @@ running, err := sb.Commands.List(ctx)                // PID, Cmd, Cwd
 err = sb.Commands.Connect(running[0].PID).Kill(ctx) // SIGTERM; Signal(ctx, godo.SandboxCommandSignalKill) to force
 ```
 
+Build and manage custom templates:
+
+```go
+// Build a template from an OCI image (rebased onto a base template, coding-base by default).
+tpl, err := c.CreateTemplate(ctx, &sandbox.TemplateParams{
+    Name:         "my-template",
+    SourceOCIRef: "registry.digitalocean.com/my-team/my-image:v1",
+})
+err = tpl.WaitUntilReady(ctx, nil)           // the build is asynchronous; fails if it fails
+sb, err := c.Create(ctx, &sandbox.CreateParams{Template: tpl.Name()})
+
+for t, err := range c.ListTemplates(nil).All(ctx) { ... }
+err = tpl.Update(ctx, &sandbox.TemplateUpdate{SourceOCIRef: "registry.digitalocean.com/my-team/my-image:v2"})
+builds, err := tpl.Builds(0).NextItems(ctx)  // []godo.SandboxTemplateBuild, with Status and Error
+deleted, err := tpl.Delete(ctx)              // false if it is already gone
+```
+
+The raw calls are `client.Sandboxes.CreateTemplate`, `GetTemplate`, `ListTemplates`, `UpdateTemplate`, `DeleteTemplate`, `ListTemplateBuilds` and `GetTemplateBuild`.
+
 The raw calls are `client.Sandboxes.StartCommand`, `ListCommands`, `StreamCommand`, `SignalCommand` and `WriteCommandStdin`. Output can only be read while a command runs: a command that exits before the stream attaches fails with a 404 (`sandbox.IsNotFound`). File transfer is not available yet: it needs routes that are not in the API.
 
 ## Examples
