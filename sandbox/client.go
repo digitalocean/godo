@@ -104,7 +104,7 @@ func (c *Client) Create(ctx context.Context, params *CreateParams) (*Sandbox, er
 	if err != nil {
 		return nil, err
 	}
-	return &Sandbox{client: c, Info: *info}, nil
+	return newSandbox(c, *info), nil
 }
 
 // Get fetches a sandbox by ID.
@@ -113,7 +113,7 @@ func (c *Client) Get(ctx context.Context, id string) (*Sandbox, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Sandbox{client: c, Info: *info}, nil
+	return newSandbox(c, *info), nil
 }
 
 // Connect fetches a sandbox by ID and resumes it if it is paused.
@@ -148,7 +148,7 @@ func (c *Client) Pause(ctx context.Context, id string) (*Sandbox, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Sandbox{client: c, Info: *info}, nil
+	return newSandbox(c, *info), nil
 }
 
 // ListParams are the options for List. Every field is optional.
@@ -203,7 +203,7 @@ func (p *Paginator) NextItems(ctx context.Context) ([]*Sandbox, error) {
 	p.token = list.NextPageToken
 	out := make([]*Sandbox, len(list.Sandboxes))
 	for i := range list.Sandboxes {
-		out[i] = &Sandbox{client: p.client, Info: list.Sandboxes[i]}
+		out[i] = newSandbox(p.client, list.Sandboxes[i])
 	}
 	return out, nil
 }

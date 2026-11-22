@@ -15,6 +15,15 @@ type Sandbox struct {
 
 	// Info is the record as last returned by the API. Refresh updates it.
 	Info godo.Sandbox
+
+	// Commands starts, lists and streams the commands running in this sandbox.
+	Commands *Commands
+}
+
+func newSandbox(c *Client, info godo.Sandbox) *Sandbox {
+	sb := &Sandbox{client: c, Info: info}
+	sb.Commands = &Commands{client: c, sandboxID: info.ID}
+	return sb
 }
 
 // ID is the sandbox ID.
@@ -107,6 +116,9 @@ func (s *Sandbox) WaitUntilRunning(ctx context.Context, opts *WaitOptions) error
 		case <-time.After(interval):
 		}
 		if err := s.Refresh(ctx); err != nil {
+			if ctx.Err() != nil {
+				return fmt.Errorf("sandbox: %s was not running in time (last state %s): %w", s.Info.ID, s.Info.State, ctx.Err())
+			}
 			return err
 		}
 	}
