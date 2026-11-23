@@ -1416,11 +1416,13 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // null" is a 400. It applies from the agent's next tool call, with no restart,
 // except on langgraph, where a change to do.actions rules or the default
 // restarts the agent. What can change depends on the agent: claude-code and
-// opencode take any default and rule; openhands takes the default and bash,
-// file.read, file.write and web.fetch rules; codex takes the default and bash
-// and do.actions rules, with allow, ask or deny; hermes and langgraph take only
-// do.actions rules and a default of allow or deny; other agents take none.
-// permissions.filesystem and permissions.network never change live. Only what
+// opencode take the default and bash, file.read, file.write, mcp and
+// do.actions rules; openhands takes the default and bash, file.read,
+// file.write and web.fetch rules; codex takes the default and bash and
+// do.actions rules, with allow, ask or deny; hermes and langgraph take only
+// do.actions rules and a default of allow or deny; other agents take none. On
+// claude-code and openhands, while the session uses do.actions tools, the
+// default and do.actions rules can't change. permissions.filesystem and permissions.network never change live. Only what
 // differs from the current policy is checked. If any of it can't apply, the
 // whole PATCH is a 409 and nothing is applied, tools, env and secrets
 // included; the error message names the changes to drop. A session created
