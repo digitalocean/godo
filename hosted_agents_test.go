@@ -2411,6 +2411,49 @@ func TestHostedAgents_UpdateSessionConfig_Unchanged(t *testing.T) {
 	assert.Nil(t, got.Session.Update)
 }
 
+func TestHostedAgents_UpdateSessionConfig_URLBoundAndEgressChanges(t *testing.T) {
+	setup()
+	defer teardown()
+
+	manifest := "secrets:\n  JIRA_API_TOKEN:\n    value: v\n    url: https://example.atlassian.net/rest/api/3\negress:\n  allow_hosts: [example.atlassian.net]\n"
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		var body map[string]any
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, manifest, body["manifest_yaml"])
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{
+			"session": {
+				"session_id": "sess-cfg",
+				"status": "SESSION_STATUS_UPDATING",
+				"update": {
+					"update_id": "u1",
+					"state": "APPLYING",
+					"sections": ["secrets", "egress"],
+					"changes": {
+						"secrets": {"changed": ["JIRA_API_TOKEN"]},
+						"egress": {"mode": "allowlist", "added": ["example.atlassian.net"], "removed": ["203.0.113.10"]}
+					}
+				}
+			},
+			"outcome": "ACCEPTED"
+		}`)
+	})
+
+	got, _, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: manifest})
+	require.NoError(t, err)
+	require.NotNil(t, got.Session.Update)
+	ch := got.Session.Update.Changes
+	require.NotNil(t, ch)
+	assert.Equal(t, []string{"JIRA_API_TOKEN"}, ch.Secrets.Changed)
+	assert.Equal(t, &HostedAgentSessionConfigEgressChanges{
+		Mode:    "allowlist",
+		Added:   []string{"example.atlassian.net"},
+		Removed: []string{"203.0.113.10"},
+	}, ch.Egress)
+}
+
 func TestHostedAgents_UpdateSessionConfig_Validation(t *testing.T) {
 	setup()
 	defer teardown()
