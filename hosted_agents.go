@@ -1417,7 +1417,7 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // (invalid patch, including a top-level model or permissions section; change
 // the model through env.HARNESS_INFERENCE_MODEL), 403 (feature not enabled),
 // 409 (session status does not allow an update, a turn or approval is in
-// progress, or the agent runtime does not support the change), 422 (requires a
+// progress, or the session's mutability does not allow the change), 422 (requires a
 // new session, including adding, removing or changing a custom MCP server, or
 // changing egress.vpc_uuid or egress.subnet_uuid).
 //
@@ -1429,8 +1429,9 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // cannot be changed back to a plain secret. The url must be https:// with an
 // exact hostname, an optional path, and no port, query or fragment.
 //
-// egress replaces the session's allowlist: allow_hosts (hostnames) and
-// allow_ips (exact IP addresses, not CIDR ranges). Hosts and IPs left out are
+// egress replaces the session's allowlist. Send it as an object with
+// allow_hosts (hostnames) and allow_ips (exact IP addresses, not CIDR ranges);
+// only this form is supported in an update. Hosts and IPs left out are
 // removed. The VPC cannot change: omit vpc_uuid and subnet_uuid, or send their
 // current values.
 //
