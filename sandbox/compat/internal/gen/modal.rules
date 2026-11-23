@@ -1,0 +1,19 @@
+^(Function|FunctionCall|Cls|ClsInstance|FunctionService|FunctionCallService|ClsService|FunctionLogsManager|FunctionCallLogsManager)\.	a serverless Functions API, which DigitalOcean Sandboxes does not have
+^(Queue|QueueService)\.	a queues API, which DigitalOcean Sandboxes does not have
+^(SandboxFilesystem|SidecarFilesystem)\.	a sandbox file transfer API
+\.(Open|CopyFromLocal|CopyToLocal|ListFiles|MakeDirectory|ReadBytes|ReadText|Remove|Stat|Watch|WriteBytes|WriteText)$	a sandbox file transfer API
+^SandboxFile\.	a sandbox file transfer API
+\.(Tunnels|CreateConnectToken)$	a ports and tunnels API
+\.(GetTags|SetTags|ExperimentalSetName)$	a sandbox tags and names API
+^(Volume|VolumeService)\.	a volumes API
+^(CloudBucketMount|CloudBucketMountService)\.	a cloud bucket mounts API
+\.(SnapshotFilesystem|SnapshotDirectory|MountImage|UnmountImage|ExperimentalGetExitSnapshot|ExperimentalFromSnapshot)$	a create-sandbox-from-snapshot API
+^(Sidecar|SidecarContainer|SidecarService)	a sidecar containers API
+^(Environment|EnvironmentService|EnvironmentObjectsService|EnvironmentAppsService)	an environments API
+^(Logs|SandboxLogsManager)	a sandbox logs API
+\.(Stats|Metrics|Info|GetCurrentStats|Instance|WithBatching|WithConcurrency|WithOptions|UpdateAutoscaler)$	a metrics and autoscaling API
+\.(Stop|Info)$	an apps API
+\.(ExperimentalPause|ExperimentalResume)$	a persistent sandbox pause API
+^(SecretService|Secret)\.	a named secrets store API
+^(ImageService|Image)\.	an image registry API
+^(App|AppService|AppSandboxesManager)\.	an apps API

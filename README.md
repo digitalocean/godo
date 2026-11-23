@@ -272,6 +272,74 @@ The raw calls are `client.Sandboxes.CreateSnapshot`, `GetSnapshot`, `ListSnapsho
 
 The raw calls are `client.Sandboxes.StartCommand`, `ListCommands`, `StreamCommand`, `SignalCommand` and `WriteCommandStdin`. Output can only be read while a command runs: a command that exits before the stream attaches fails with a 404 (`sandbox.IsNotFound`). File transfer is not available yet: it needs routes that are not in the API.
 
+## Migrating from Modal and Daytona
+
+The `sandbox/compat` packages are for migration only. They mirror the Go SDK of
+another sandbox provider, so code written for it keeps its method names and
+signatures and mostly needs a new import path. Underneath, the calls use the
+DigitalOcean Sandboxes API. New code should use the `sandbox` package.
+
+| Package | Mirrors | Version |
+|---|---|---|
+| `github.com/digitalocean/godo/sandbox/compat/daytona` (with `types`, `options`, `errors`, `apiclient`, `toolbox`) | `github.com/daytonaio/daytona/libs/sdk-go` | v0.190.0 |
+| `github.com/digitalocean/godo/sandbox/compat/modal` | `github.com/modal-labs/modal-client/go` | v0.11.2 |
+
+There is no E2B package: E2B has no official Go SDK. The vendor SDKs are not
+dependencies of godo; their declarations are mirrored (see `sandbox/compat/NOTICE`).
+Nothing in godo imports these packages.
+
+```go
+// was: client, err := daytona.NewClient()   (github.com/daytonaio/daytona/libs/sdk-go/pkg/daytona)
+import "github.com/digitalocean/godo/sandbox/compat/daytona"
+
+client, err := daytona.NewClient() // reads DIGITALOCEAN_ACCESS_TOKEN
+sb, err := client.Create(ctx, types.SnapshotParams{Snapshot: "coding-base"})
+res, err := sb.Process.ExecuteCommand(ctx, "echo hello")
+```
+
+```go
+// was: client, err := modal.NewClient()   (github.com/modal-labs/modal-client/go)
+import "github.com/digitalocean/godo/sandbox/compat/modal"
+
+client, err := modal.NewClient() // reads DIGITALOCEAN_ACCESS_TOKEN
+app, _ := client.Apps.FromName(ctx, "my-app", nil)
+img := client.Images.FromRegistry("python:3.12-slim", nil)
+sb, err := client.Sandboxes.Create(ctx, app, img, &modal.SandboxCreateParams{})
+p, err := sb.Exec(ctx, []string{"python", "-c", "print('hi')"}, nil)
+```
+
+Both clients read the token from `DIGITALOCEAN_ACCESS_TOKEN` only. They never read
+`DAYTONA_API_KEY`, `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET` or `~/.modal.toml`, so a
+vendor credential is never sent to DigitalOcean. A token given in code is used as
+the DigitalOcean token: `DaytonaConfig.APIKey` and `ClientParams.TokenSecret`.
+
+A method that DigitalOcean Sandboxes cannot do yet keeps its signature and returns
+a `*compat.NotImplementedError`. Test for it with `errors.Is(err, compat.ErrNotImplemented)`.
+The message names the method and the missing API, for example
+`Daytona.Sandbox.Archive is not implemented on DigitalOcean Sandboxes yet: needs a sandbox auto-archive API`.
+A method with no error result panics with that error instead. A parameter that has
+no DigitalOcean equivalent (Daytona `Labels`, Modal `Timeout`) fails the call when
+it is set, so nothing is silently ignored. These stubs are replaced with real calls
+as the missing APIs arrive.
+
+| Area | Daytona | Modal |
+|---|---|---|
+| Create, get, list | Works: `Create` with `SnapshotParams` or an image reference, `Get` (by ID), `List`, `ListSeq` | Works: `Sandboxes.Create`, `ExperimentalCreate`, `FromID`, `List` |
+| Pause, resume, delete | Works: `Stop`, `Start`, `Pause`, `Delete`, `RefreshData`, `WaitForStart`, `WaitForStop` | Works: `ExperimentalPause`, `ExperimentalResume`, `Terminate`, `Detach`, `Poll`, `Wait`, `WaitUntilReady` |
+| Run commands | Works: `Process.ExecuteCommand` (cwd, env, timeout) | Works: `Sandbox.Exec` with stdin, stdout and stderr streams, and `Command` as an entrypoint |
+| Images and templates | Works: `Snapshot.Create/Get/List/Delete` map to templates; an image reference is built into a template | Works: `Images.FromRegistry`, `Image.Build`, and `DockerfileCommands` for `RUN`, `ENV`, `WORKDIR` |
+| Snapshots of a sandbox | Works: `ExperimentalCreateSnapshot` | Works: `ExperimentalSnapshot`, `SandboxSnapshots.FromID` |
+| Environment variables, secrets | Works: `EnvVars` | Works: `Env`, `Secrets.FromMap` |
+| Network | Works: `NetworkBlockAll` | Works: `BlockNetwork` |
+| Not implemented yet | Files, git, LSP, PTY, sessions, code interpreter, computer use, volumes, preview links, labels, names, auto-stop/archive/delete, resize, GPU, fork, `*DockerImage` builder | Files, PTY, tunnels, volumes, cloud bucket mounts, tags, names, timeouts, regions, GPU, ports, filesystem and exit snapshots, restore from a snapshot, Functions, Cls, Queues, Sidecars, named secrets |
+
+Differences that are not errors: a Daytona `Snapshot` is a DigitalOcean template, not a
+DigitalOcean snapshot; the Modal sandbox does not end when its `Command` exits;
+`Terminate` and `Wait` report exit code 0 when no entrypoint ran; Daytona `Result`
+holds stdout and stderr in the order they arrived. The `apiclient` and `toolbox`
+packages hold only the types the SDK surface needs, with no accessor methods.
+The compat code needs Go 1.23.
+
 ## Examples
 
 

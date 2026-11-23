@@ -1,0 +1,17 @@
+^FileSystemService\.	a sandbox file transfer API (upload, download, list, search, permissions)
+^GitService\.	a git API
+^LspServerService\.	an LSP API
+^(ComputerUseService|MouseService|KeyboardService|ScreenshotService|DisplayService|RecordingService|AccessibilityService)\.	a desktop automation API
+^CodeInterpreterService\.	a code interpreter API
+^PtyHandle\.	a PTY API
+\.(CreatePty|ConnectPty|CreatePtySession|GetPtySessionInfo|KillPtySession|ListPtySessions|ResizePtySession)$	a PTY API
+^VolumeService\.	a volumes API
+\.CodeRun$	a code interpreter API
+\.(GetPreviewLink|GetSignedPreviewLink|ExpireSignedPreviewLink)$	a ports and preview links API
+\.SetLabels$	a sandbox labels API
+\.(SetAutoArchiveInterval|SetAutoDeleteInterval|Archive)$	a sandbox auto-archive and auto-delete API
+\.(Resize|ResizeWithTimeout|WaitForResize)$	a sandbox resize API
+\.ExperimentalFork	a create-sandbox-from-snapshot API
+\.UpdateNetworkSettings$	a sandbox network policy update API
+\.(.*Session.*|GetEntrypoint.*)$	a command sessions and entrypoint logs API
+\.(GetUserHomeDir|GetWorkingDir)$	a sandbox environment API

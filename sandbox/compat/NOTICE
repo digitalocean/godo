@@ -1,0 +1,27 @@
+The packages under sandbox/compat/daytona and sandbox/compat/modal mirror the
+public Go API of two vendor SDKs, so that code written for them can run on
+DigitalOcean Sandboxes after an import change.
+
+  sandbox/compat/daytona  Daytona Go SDK
+      github.com/daytonaio/daytona/libs/sdk-go v0.190.0
+      (and its api-client-go and toolbox-api-client-go v0.190.0)
+      Licensed under the Apache License 2.0: see LICENSE.daytona.
+
+  sandbox/compat/modal    Modal Go SDK
+      github.com/modal-labs/modal-client/go v0.11.2
+      Licensed under the Apache License 2.0: see LICENSE.modal.
+
+What is mirrored:
+  - Type, constant and function declarations, and method signatures, as in the
+    vendor packages. The files named zz_generated.go, types.go in apiclient and
+    toolbox, and (in Daytona) errors/errors.go, options/options.go and
+    types/types.go, are produced from the vendor sources by
+    internal/gen. They keep the vendor's declarations; the method bodies are
+    DigitalOcean code.
+  - modal/errors.go and daytona/errors/errors.go, options/options.go and
+    types/types.go are copied from the vendor sources with import paths
+    changed. Their original copyright and license headers are kept where the
+    vendor had them.
+
+The vendor SDKs are not dependencies of godo: nothing here imports them.
+All other code in this directory is part of godo and is under godo's license.
