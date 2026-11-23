@@ -1414,8 +1414,8 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // warnings. godo does not wait: on ACCEPTED the session is
 // SESSION_STATUS_UPDATING and the caller polls GetSession until the status
 // leaves UPDATING, then reads Session.Update. See the API error statuses: 400
-// (invalid patch, including a top-level model or permissions section; change
-// the model through env.HARNESS_INFERENCE_MODEL), 403 (feature not enabled),
+// (invalid patch, including a top-level model or permissions section or a
+// malformed model name; change the model through env), 403 (feature not enabled),
 // 409 (session status does not allow an update, a turn or approval is in
 // progress, or the session's mutability does not allow the change), 422 (requires a
 // new session, including adding, removing or changing a custom MCP server, or
@@ -1443,11 +1443,23 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // secrets cannot gain either one: the update ends FAILED with
 // requires_new_session.
 //
-// The model can change only on a session whose model provider is DigitalOcean
-// Serverless Inference (created with HARNESS_INFERENCE_MODEL and no inference
-// endpoint of its own): set HARNESS_INFERENCE_MODEL in env to another
-// Serverless Inference model id or router:<name>. A session on any other model
-// provider cannot change its model (422).
+// The model changes through env, in the key that matches the endpoint the
+// session was created with:
+//   - DigitalOcean Serverless Inference (HARNESS_INFERENCE_MODEL, no endpoint
+//     of its own): HARNESS_INFERENCE_MODEL, set to a model id or router:<name>.
+//   - Its own OpenAI-compatible endpoint (OPENAI_BASE_URL): MODEL, which is
+//     read before OPENAI_MODEL.
+//   - Its own Anthropic endpoint (ANTHROPIC_BASE_URL) or the Anthropic API (an
+//     ANTHROPIC_API_KEY secret): ANTHROPIC_MODEL, which is read before MODEL.
+//
+// A session keeps its model endpoint: changing the provider or the base URL,
+// or adding or removing HARNESS_INFERENCE_MODEL, is a 422. On a session with
+// its own endpoint, removing the model key selects the agent's default model,
+// and the provider key (OPENAI_API_KEY or ANTHROPIC_API_KEY) can only be
+// rotated: removing it, adding it, or changing its url or scheme is a 422.
+// Rotating a URL-bound provider key follows the URL-bound secret rules above.
+// A model name must be one line of at most 256 bytes, with no leading or
+// trailing whitespace and no " #" or ": " (400).
 //
 // The session status must be SESSION_STATUS_READY, SESSION_STATUS_DETACHED or
 // SESSION_STATUS_PAUSED (a paused session is resumed for the update and paused
