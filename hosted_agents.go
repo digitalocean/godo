@@ -1437,7 +1437,7 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // URL-bound secret and egress changes do not restart the agent: an update
 // that changes only those ends APPLIED, and the proxy applies the change on
 // the session's next outbound connection. Open connections are not closed.
-// Both need URL-bound secret and egress updates enabled for the team (422
+// Both need URL-bound secret and egress updates enabled for the team (403
 // otherwise). A session created with unrestricted egress and no URL-bound
 // secrets cannot gain either one: the update ends FAILED with
 // requires_new_session.
