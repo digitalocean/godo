@@ -90,6 +90,7 @@ type MicroVMsService interface {
 	Get(ctx context.Context, id string) (*MicroVM, *Response, error)
 	Create(ctx context.Context, createRequest *MicroVMCreateRequest) (*MicroVM, *Response, error)
 	Update(ctx context.Context, id string, updateRequest *MicroVMUpdateRequest) (*MicroVM, *Response, error)
+	Fork(ctx context.Context, id string, forkRequest *MicroVMForkRequest) (*MicroVMFork, *Response, error)
 	Pause(ctx context.Context, id string) (*MicroVM, *Response, error)
 	Resume(ctx context.Context, id string) (*MicroVM, *Response, error)
 	Delete(ctx context.Context, id string) (*Response, error)
@@ -309,6 +310,27 @@ type MicroVMUpdateRequest struct {
 	Tags *[]string `json:"tags,omitempty"`
 	// AutoPause changes the idle timeout. IdleTimeout must be set.
 	AutoPause *AutoPauseConfig `json:"auto_pause,omitempty"`
+}
+
+// MicroVMForkRequest represents a request to fork a MicroVM into copies.
+// Every field is optional.
+type MicroVMForkRequest struct {
+	// Count is the number of copies. Zero means one; the platform sets the
+	// maximum.
+	Count int `json:"count,omitempty"`
+	// Name is the base name of the copies. A single copy takes it as given;
+	// several take <name>-1 to <name>-N. Generated from the source's name
+	// when empty.
+	Name string `json:"name,omitempty"`
+	// Tags are added to every copy, on top of the source's tags.
+	Tags []string `json:"tags,omitempty"`
+}
+
+// MicroVMFork is an accepted fork: the copies, in creating, and the
+// checkpoint they start from.
+type MicroVMFork struct {
+	MicroVMs     []MicroVM `json:"microvms"`
+	CheckpointID string    `json:"checkpoint_id"`
 }
 
 // MicroVMCheckpointCreateRequest represents a request to create a checkpoint.
@@ -556,6 +578,9 @@ type ListMicroVMsOptions struct {
 	Region  string `url:"region,omitempty"`
 	Name    string `url:"name,omitempty"`
 	TagName string `url:"tag_name,omitempty"`
+	// SourceCheckpointID lists the MicroVMs restored from a checkpoint,
+	// including the copies made by a fork.
+	SourceCheckpointID string `url:"source_checkpoint_id,omitempty"`
 }
 
 // List lists all MicroVMs, with optional pagination.
@@ -604,7 +629,8 @@ func (s *MicroVMsServiceOp) ListByTag(ctx context.Context, tag string, opt *List
 	return s.ListFiltered(ctx, filtered)
 }
 
-// ListFiltered lists MicroVMs using any combination of region, name, and tag.
+// ListFiltered lists MicroVMs using any combination of region, name, tag,
+// and source checkpoint.
 func (s *MicroVMsServiceOp) ListFiltered(ctx context.Context, opt *ListMicroVMsOptions) ([]MicroVM, *Response, error) {
 	path := microVMBasePath
 	path, err := addOptions(path, opt)
@@ -698,6 +724,35 @@ func (s *MicroVMsServiceOp) Update(ctx context.Context, id string, updateRequest
 	}
 
 	return root.MicroVM, resp, nil
+}
+
+// Fork creates copies of a running or paused MicroVM. It returns at once,
+// with the copies in creating and the checkpoint they start from; poll each
+// copy with Get until it is running or failed. Copies settle independently.
+// A nil forkRequest makes one copy.
+func (s *MicroVMsServiceOp) Fork(ctx context.Context, id string, forkRequest *MicroVMForkRequest) (*MicroVMFork, *Response, error) {
+	if id == "" {
+		return nil, nil, NewArgError("id", "cannot be empty")
+	}
+
+	if forkRequest == nil {
+		forkRequest = &MicroVMForkRequest{}
+	}
+
+	path := fmt.Sprintf("%s/%s/fork", microVMBasePath, id)
+
+	req, err := s.client.NewRequest(ctx, http.MethodPost, path, forkRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	root := new(MicroVMFork)
+	resp, err := s.client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return root, resp, nil
 }
 
 // Pause synchronously transitions a RUNNING MicroVM to PAUSED. It blocks
