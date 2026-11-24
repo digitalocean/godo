@@ -2,6 +2,7 @@ package godo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -52,6 +53,33 @@ type Action struct {
 	ResourceType string     `json:"resource_type"`
 	Region       *Region    `json:"region,omitempty"`
 	RegionSlug   string     `json:"region_slug,omitempty"`
+}
+
+// UnmarshalJSON decodes an Action. Numeric IDs returned by the API can
+// exceed the range of int; an ID that does not fit is left at zero rather
+// than failing the decode.
+func (a *Action) UnmarshalJSON(data []byte) error {
+	type plain Action
+	aux := &struct {
+		*plain
+		ID         json.Number `json:"id"`
+		ResourceID json.Number `json:"resource_id"`
+	}{plain: (*plain)(a)}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	a.ID = intFromNumber(aux.ID)
+	a.ResourceID = intFromNumber(aux.ResourceID)
+	return nil
+}
+
+// intFromNumber converts a JSON number to int, yielding zero for a value
+// that does not fit instead of failing the decode.
+func intFromNumber(n json.Number) int {
+	if v, err := n.Int64(); err == nil && int64(int(v)) == v {
+		return int(v)
+	}
+	return 0
 }
 
 // List all actions

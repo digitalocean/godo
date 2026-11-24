@@ -1,6 +1,7 @@
 package godo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -125,6 +126,35 @@ func TestAction_Get(t *testing.T) {
 
 	if action.RegionSlug != "slug" {
 		t.Fatalf("unexpected response, invalid region slug")
+	}
+}
+
+func TestAction_UnmarshalOversizedIDs(t *testing.T) {
+	// Action and resource IDs that do not fit into int must not fail the
+	// decode; they stay reachable through the links' HREF values.
+	jBlob := []byte(`{
+		"id": 9223372036854775808,
+		"status": "completed",
+		"type": "create",
+		"resource_id": 9223372036854775808,
+		"resource_type": "droplet",
+		"region_slug": "nyc3"
+	}`)
+
+	var action Action
+	if err := json.Unmarshal(jBlob, &action); err != nil {
+		t.Fatalf("unmarshal Action with oversized ids: %v", err)
+	}
+
+	if action.ID != 0 {
+		t.Errorf("expected ID to stay 0 for an ID that overflows int, got %d", action.ID)
+	}
+	if action.ResourceID != 0 {
+		t.Errorf("expected ResourceID to stay 0 for an ID that overflows int, got %d", action.ResourceID)
+	}
+	if action.Status != ActionCompleted || action.Type != "create" ||
+		action.ResourceType != "droplet" || action.RegionSlug != "nyc3" {
+		t.Errorf("remaining fields not decoded: %+v", action)
 	}
 }
 

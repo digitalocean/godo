@@ -2,6 +2,9 @@ package godo
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
 	"testing"
 )
 
@@ -234,6 +237,88 @@ func TestLinks_NextPageToken(t *testing.T) {
 			Pages: &Pages{},
 		}}, "")
 	})
+}
+
+func TestLinkAction_UnmarshalOversizedID(t *testing.T) {
+	// The API can return action IDs that do not fit into int, for example on
+	// 32-bit platforms or once the counter outgrows 64-bit ints. Decoding
+	// must not fail: the full ID stays available through HREF.
+	jBlob := []byte(`{
+		"links": {
+			"actions": [
+				{"id": 9223372036854775808, "rel": "create", "href": "https://api.digitalocean.com/v2/actions/9223372036854775808"}
+			]
+		}
+	}`)
+
+	var list godoList
+	if err := json.Unmarshal(jBlob, &list); err != nil {
+		t.Fatalf("unmarshal LinkAction with oversized id: %v", err)
+	}
+
+	if len(list.Links.Actions) != 1 {
+		t.Fatalf("expected 1 link action, got %d", len(list.Links.Actions))
+	}
+
+	action := list.Links.Actions[0]
+	if action.ID != 0 {
+		t.Errorf("expected ID to stay 0 for an ID that overflows int, got %d", action.ID)
+	}
+	if action.Rel != "create" {
+		t.Errorf("expected Rel %q, got %q", "create", action.Rel)
+	}
+	if action.HREF != "https://api.digitalocean.com/v2/actions/9223372036854775808" {
+		t.Errorf("unexpected HREF %q", action.HREF)
+	}
+}
+
+func TestLinkAction_UnmarshalLargeID(t *testing.T) {
+	// 2771062950 exceeds 32-bit int; it fits int on 64-bit platforms.
+	jBlob := []byte(`{
+		"links": {
+			"actions": [
+				{"id": 2771062950, "rel": "create", "href": "https://api.digitalocean.com/v2/actions/2771062950"}
+			]
+		}
+	}`)
+
+	var list godoList
+	if err := json.Unmarshal(jBlob, &list); err != nil {
+		t.Fatalf("unmarshal LinkAction with large id: %v", err)
+	}
+
+	action := list.Links.Actions[0]
+	if strconv.IntSize == 64 && action.ID != 2771062950 {
+		t.Errorf("expected ID 2771062950 on a 64-bit platform, got %d", action.ID)
+	}
+	if strconv.IntSize == 32 && action.ID != 0 {
+		t.Errorf("expected ID to stay 0 on a 32-bit platform, got %d", action.ID)
+	}
+}
+
+func TestLinkAction_GetFallsBackToHREF(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/actions/9223372036854775808", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"action": {"id": 9223372036854775808, "status": "completed", "type": "create"}}`)
+	})
+
+	// An action ID that overflowed int leaves ID at 0 but is still
+	// reachable through the link's HREF.
+	linkAction := &LinkAction{
+		Rel:  "create",
+		HREF: "https://api.digitalocean.com/v2/actions/9223372036854775808",
+	}
+
+	action, _, err := linkAction.Get(ctx, client)
+	if err != nil {
+		t.Fatalf("LinkAction.Get returned error: %v", err)
+	}
+	if action.Status != ActionCompleted {
+		t.Errorf("expected status %q, got %q", ActionCompleted, action.Status)
+	}
 }
 
 func TestLinks_ParseNextPageToken(t *testing.T) {
