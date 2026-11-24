@@ -1,0 +1,83 @@
+name: Sync Agent Rules
+# Triggered by digitalocean/openapi when agents/ changes on main.
+# Copies the files at that commit and opens (or updates) a PR. The PR's own
+# CI runs the shared test cases.
+on:
+  workflow_dispatch:
+    inputs:
+      openapi_sha:
+        description: "The digitalocean/openapi commit to copy agents/ from"
+        required: true
+        type: string
+
+concurrency:
+  group: sync-agent-rules
+  cancel-in-progress: false
+
+env:
+  RULES_DIR: internal/agents
+  BRANCH_PREFIX: openapi/agent-rules-sync
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.WORKFLOW_TOKEN }}
+
+      - name: Download agent detection files
+        env:
+          OPENAPI_SHA: ${{ github.event.inputs.openapi_sha }}
+        run: |
+          if [[ ! "$OPENAPI_SHA" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "openapi_sha must be a commit SHA, got: $OPENAPI_SHA"
+            exit 1
+          fi
+          for f in agents.json agents.schema.json testcases.json; do
+            curl --fail --silent --show-error -o "$RULES_DIR/$f" \
+              "https://raw.githubusercontent.com/digitalocean/openapi/$OPENAPI_SHA/agents/$f"
+          done
+
+      - name: Create or update pull request
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_TOKEN }}
+          OPENAPI_SHA: ${{ github.event.inputs.openapi_sha }}
+        run: |
+          short_sha="${OPENAPI_SHA:0:7}"
+          branch="$BRANCH_PREFIX-$short_sha"
+
+          # Closes every open sync PR except the one on branch $1, with comment $2.
+          close_other_sync_prs() {
+            gh pr list --state open --limit 100 --json number,headRefName \
+              --jq ".[] | select(.headRefName | startswith(\"$BRANCH_PREFIX-\")) | select(.headRefName != \"$1\") | .number" |
+              while read -r number; do
+                gh pr close "$number" --comment "$2" --delete-branch
+              done
+          }
+
+          if git diff --quiet -- "$RULES_DIR"; then
+            echo "Agent detection files are already up to date."
+            close_other_sync_prs "" "Closing: main already matches digitalocean/openapi@$short_sha."
+            exit 0
+          fi
+
+          title="[bot] Sync agent detection rules from digitalocean/openapi@$short_sha"
+          body="Copies \`agents/\` from https://github.com/digitalocean/openapi/tree/$OPENAPI_SHA/agents into \`$RULES_DIR/\`. Edit these files in digitalocean/openapi, not here."
+
+          git config --global user.email "api-engineering@digitalocean.com"
+          git config --global user.name "API Engineering"
+          git checkout -B "$branch"
+          git add "$RULES_DIR"
+          git commit -m "$title"
+          git push --force origin "$branch"
+
+          if [[ "$(gh pr view "$branch" --json state --jq .state 2>/dev/null)" == "OPEN" ]]; then
+            gh pr edit "$branch" --title "$title" --body "$body"
+            pr_url="$(gh pr view "$branch" --json url --jq .url)"
+          else
+            pr_url="$(gh pr create --title "$title" --body "$body" --head "$branch" -r digitalocean/api-cli)"
+          fi
+
+          close_other_sync_prs "$branch" "Superseded by $pr_url."
