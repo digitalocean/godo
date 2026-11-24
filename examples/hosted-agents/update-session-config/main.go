@@ -10,30 +10,18 @@ import (
 	"github.com/digitalocean/godo"
 )
 
-// permissionsManifest is sent when HOSTED_AGENT_MANIFEST_YAML is unset. It
-// replaces the session's whole permission policy; the agent must be able to
-// apply each change live, or the update is refused with a 409.
-const permissionsManifest = `permissions:
-  default: ask
-  rules:
-    - tool: bash
-      match:
-        command: "rm -rf *"
-      action: deny
-    - tool: do.actions/exa_web_search
-      action: allow
-`
-
-// Usage: HOSTED_AGENT_SESSION_ID=... [HOSTED_AGENT_MANIFEST_YAML=$'tools:\n  - ...'] go run .
+// Usage: HOSTED_AGENT_SESSION_ID=... HOSTED_AGENT_MANIFEST_YAML=$'tools:\n  - ...' go run .
+//
+// A permissions section replaces the session's whole policy, so list every
+// rule to keep:
+//
+//	HOSTED_AGENT_MANIFEST_YAML=$'permissions:\n  default: ask\n  rules:\n    - tool: bash\n      match: {command: "rm -rf *"}\n      action: deny\n'
 func main() {
 	sessionID := os.Getenv("HOSTED_AGENT_SESSION_ID")
 	manifest := os.Getenv("HOSTED_AGENT_MANIFEST_YAML")
-	if sessionID == "" {
-		fmt.Fprintln(os.Stderr, "HOSTED_AGENT_SESSION_ID is required")
+	if sessionID == "" || manifest == "" {
+		fmt.Fprintln(os.Stderr, "HOSTED_AGENT_SESSION_ID and HOSTED_AGENT_MANIFEST_YAML are required")
 		os.Exit(2)
-	}
-	if manifest == "" {
-		manifest = permissionsManifest
 	}
 
 	client := mustClient()
@@ -60,6 +48,14 @@ func main() {
 		if s.Status != godo.HostedAgentSessionStatusUpdating {
 			if s.Update != nil {
 				fmt.Printf("update %s: %s %s\n", s.Update.UpdateID, s.Update.State, s.Update.Detail)
+				if c := s.Update.Changes; c != nil && c.Permissions != nil {
+					if c.Permissions.Default != nil {
+						fmt.Printf("permissions default: %q\n", *c.Permissions.Default)
+					}
+					if r := c.Permissions.Rules; r != nil {
+						fmt.Printf("permissions rules: added=%v removed=%v changed=%v\n", r.Added, r.Removed, r.Changed)
+					}
+				}
 			}
 			return
 		}

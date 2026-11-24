@@ -1201,14 +1201,26 @@ type HostedAgentSessionConfigEgressChanges struct {
 	Removed []string `json:"removed,omitempty"`
 }
 
+// HostedAgentSessionConfigPermissionsChanges lists a permissions change.
+// Default is the new default action when it changed, and an empty string when
+// the default was removed. Rules names the rules added, removed or changed by
+// tool and match (bash "git *", do.actions/web_search); a rule kept with
+// another action or at another position is changed, since the last matching
+// rule wins.
+type HostedAgentSessionConfigPermissionsChanges struct {
+	Default *string                                 `json:"default,omitempty"`
+	Rules   *HostedAgentSessionConfigSectionChanges `json:"rules,omitempty"`
+}
+
 // HostedAgentSessionConfigChanges summarises changes per manifest section.
 // Secrets.Changed names the secrets that got a new value or were bound to
 // another URL or scheme; it never carries values.
 type HostedAgentSessionConfigChanges struct {
-	Tools   *HostedAgentSessionConfigSectionChanges `json:"tools,omitempty"`
-	Env     *HostedAgentSessionConfigSectionChanges `json:"env,omitempty"`
-	Secrets *HostedAgentSessionConfigSectionChanges `json:"secrets,omitempty"`
-	Egress  *HostedAgentSessionConfigEgressChanges  `json:"egress,omitempty"`
+	Tools       *HostedAgentSessionConfigSectionChanges     `json:"tools,omitempty"`
+	Env         *HostedAgentSessionConfigSectionChanges     `json:"env,omitempty"`
+	Secrets     *HostedAgentSessionConfigSectionChanges     `json:"secrets,omitempty"`
+	Egress      *HostedAgentSessionConfigEgressChanges      `json:"egress,omitempty"`
+	Permissions *HostedAgentSessionConfigPermissionsChanges `json:"permissions,omitempty"`
 }
 
 // HostedAgentSessionConfigUpdate describes one config update (or rollback) of a session.
@@ -1418,7 +1430,8 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // leaves UPDATING, then reads Session.Update. See the API error statuses: 400
 // (invalid patch, including a top-level model section, permissions: null or a
 // malformed model name; change the model through env), 403 (feature not
-// enabled, including permission updates for a permissions change), 409
+// enabled, including permission updates for a manifest with a permissions
+// section, even one that matches the session's policy), 409
 // (session status does not allow an update, a turn or approval is in
 // progress, the session's mutability does not allow the change, or the agent
 // can't apply a permissions change), 422 (requires a new session, including
@@ -1437,14 +1450,15 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // file.write and web.fetch rules; codex takes the default and bash and
 // do.actions rules, with allow, ask or deny; hermes and langgraph take only
 // do.actions rules and a default of allow or deny; other agents take none. On
-// claude-code and openhands, while the session uses do.actions tools, the
-// default and do.actions rules can't change. permissions.filesystem and
+// openhands, while the session uses do.actions tools, the default can't
+// change. permissions.filesystem and
 // permissions.network never change live: leave them out to keep the
 // session's, and setting them to something else is a 409. Only what differs
 // from the current policy is checked. If any of it can't apply, the whole
 // PATCH is a 409 and nothing is applied, tools, env and secrets included; the
 // error message names the changes to drop. A session created before live
 // permission updates were released also gets a 409: create a new session.
+// Session.Update.Changes.Permissions lists the default and rules that changed.
 //
 // A URL-bound secret can be rotated (a new value as a string), moved
 // ({value, url, scheme}), added ({value, url}; scheme defaults to bearer) or
