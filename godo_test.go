@@ -528,6 +528,19 @@ func TestCheckResponse(t *testing.T) {
 			},
 		},
 		{
+			title: "id in body",
+			input: &http.Response{
+				Request:    &http.Request{},
+				StatusCode: http.StatusConflict,
+				Body:       io.NopCloser(strings.NewReader(`{"id":"session_busy","message":"m","request_id":"dead-beef"}`)),
+			},
+			expected: &ErrorResponse{
+				ID:        "session_busy",
+				Message:   "m",
+				RequestID: "dead-beef",
+			},
+		},
+		{
 			title: "request_id in header",
 			input: &http.Response{
 				Request:    &http.Request{},

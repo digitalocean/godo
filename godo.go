@@ -227,6 +227,12 @@ type ErrorResponse struct {
 	// HTTP response that caused this error
 	Response *http.Response
 
+	// ID is the machine-readable error identifier, such as "not_found" for a
+	// 404. Some services return a more specific id for one condition (e.g.
+	// "session_busy"); branch on it rather than on Message. Empty when the
+	// response body has no id.
+	ID string `json:"id"`
+
 	// Error message
 	Message string `json:"message"`
 
