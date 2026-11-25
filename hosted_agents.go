@@ -131,7 +131,11 @@ type HostedAgentsService interface {
 	// answers 202 with outcome ACCEPTED and the session in
 	// SESSION_STATUS_UPDATING; callers poll GetSession until the status leaves
 	// UPDATING and then read Session.Update. An unchanged manifest answers 200
-	// with outcome UNCHANGED.
+	// with outcome UNCHANGED. An OAuth secret that names a provider connection
+	// with actor can switch to another connection of the same provider: send
+	// it as {source: oauth, provider, actor} with the new connection's user_id
+	// as actor, and keep every other secret as {}. The agent restarts to read
+	// the new token.
 	UpdateSessionConfig(context.Context, string, *HostedAgentSessionConfigUpdateRequest) (*HostedAgentSessionConfigUpdateResponse, *Response, error)
 	DestroySession(context.Context, string) (*Response, error)
 	PauseSession(context.Context, string) (*Response, error)
@@ -1142,7 +1146,9 @@ type HostedAgentWorkspaceTransferCancelResponse struct {
 // /v2/harness-runtime/sessions/{session_id} when changing live configuration.
 // ManifestYAML holds only the sections to change (tools, env, secrets,
 // permissions); absent sections are untouched. It cannot be combined with
-// resume_on_topoff.
+// resume_on_topoff. In secrets, {source: oauth, provider, actor} switches an
+// OAuth secret that was created with actor to another connection of the same
+// provider.
 type HostedAgentSessionConfigUpdateRequest struct {
 	ManifestYAML string `json:"manifest_yaml"`
 }
