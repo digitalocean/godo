@@ -8,6 +8,7 @@ import (
 	"iter"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/digitalocean/godo"
 )
@@ -31,6 +32,12 @@ type ExecOptions struct {
 	EnvVars map[string]string
 	// TimeoutSeconds bounds the run. Zero means the service default.
 	TimeoutSeconds int64
+	// Timeout is TimeoutSeconds as a duration, rounded up to whole seconds. Set
+	// only one of Timeout and TimeoutSeconds. It must not be negative.
+	Timeout time.Duration
+	// Check makes Run and RunShell return a *CommandError, with the result, when
+	// the process exits with a non-zero code.
+	Check bool
 	// Stdin is sent to the process with the start request.
 	Stdin []byte
 	// OnStdout and OnStderr are called with each chunk of output as it arrives.
@@ -54,6 +61,9 @@ type ExecStartOptions struct {
 	EnvVars map[string]string
 	// TimeoutSeconds bounds the run. Zero means the service default.
 	TimeoutSeconds int64
+	// Timeout is TimeoutSeconds as a duration, rounded up to whole seconds. Set
+	// only one of Timeout and TimeoutSeconds. It must not be negative.
+	Timeout time.Duration
 	// Stdin is a first stdin chunk sent with the start request.
 	Stdin []byte
 	// KeepStdinOpen keeps stdin open for ExecSession.WriteStdin. Nil means
@@ -67,6 +77,8 @@ type ExecStartOptions struct {
 // ExecResult is the outcome of a process that exited. A non-zero ExitCode is
 // not an error.
 type ExecResult struct {
+	// OK is true when ExitCode is 0.
+	OK         bool
 	ExitCode   int32
 	Stdout     string
 	Stderr     string
@@ -75,6 +87,32 @@ type ExecResult struct {
 	Status string
 	// Error is set when the process failed abnormally.
 	Error string
+}
+
+// CommandError is returned by Exec.Run and Exec.RunShell with ExecOptions.Check
+// set, when the process exits with a non-zero code. Use errors.As to get it.
+type CommandError struct {
+	// Result is the outcome of the process. It is never nil.
+	Result *ExecResult
+}
+
+func (e *CommandError) Error() string {
+	return fmt.Sprintf("sandbox: command exited with code %d", e.Result.ExitCode)
+}
+
+// execTimeoutSeconds returns the timeout in seconds from the two ways to set
+// it. A duration is rounded up to whole seconds.
+func execTimeoutSeconds(seconds int64, d time.Duration) (int64, error) {
+	if d < 0 {
+		return 0, errors.New("sandbox: timeout must not be negative")
+	}
+	if d == 0 {
+		return seconds, nil
+	}
+	if seconds != 0 {
+		return 0, errors.New("sandbox: set only one of Timeout and TimeoutSeconds")
+	}
+	return int64((d + time.Second - 1) / time.Second), nil
 }
 
 // ExecEvent is one event of an exec's output. Type is EventStarted,
@@ -97,17 +135,22 @@ type ExecEvent struct {
 const maxTerminalSize = 1000
 
 // Run runs an executable and its arguments and waits for it to exit. A
-// non-zero exit code is returned in the ExecResult, not as an error. A nil opts
-// uses the defaults.
+// non-zero exit code is returned in the ExecResult, not as an error, unless
+// opts.Check is set: then Run returns the result and a *CommandError. A nil
+// opts uses the defaults.
 func (e *Exec) Run(ctx context.Context, argv []string, opts *ExecOptions) (*ExecResult, error) {
 	if opts == nil {
 		opts = &ExecOptions{}
+	}
+	timeout, err := execTimeoutSeconds(opts.TimeoutSeconds, opts.Timeout)
+	if err != nil {
+		return nil, err
 	}
 	req := &godo.SandboxExecStartRequest{
 		Argv:           argv,
 		Workdir:        opts.Cwd,
 		EnvVars:        opts.EnvVars,
-		TimeoutSeconds: opts.TimeoutSeconds,
+		TimeoutSeconds: timeout,
 		Stdin:          opts.Stdin,
 	}
 	if err := validateExec(req); err != nil {
@@ -119,7 +162,14 @@ func (e *Exec) Run(ctx context.Context, argv []string, opts *ExecOptions) (*Exec
 	}
 	s := &ExecSession{client: e.client, sandboxID: e.sandboxID, stream: stream}
 	defer s.Close()
-	return s.Wait(ctx, &AttachOptions{OnStdout: opts.OnStdout, OnStderr: opts.OnStderr})
+	res, err := s.Wait(ctx, &AttachOptions{OnStdout: opts.OnStdout, OnStderr: opts.OnStderr})
+	if err != nil {
+		return nil, err
+	}
+	if opts.Check && !res.OK {
+		return res, &CommandError{Result: res}
+	}
+	return res, nil
 }
 
 // RunShell runs a shell command (bash -lc <command>) and waits for it to exit.
@@ -138,12 +188,16 @@ func (e *Exec) Start(ctx context.Context, argv []string, opts *ExecStartOptions)
 	if opts == nil {
 		opts = &ExecStartOptions{}
 	}
+	timeout, err := execTimeoutSeconds(opts.TimeoutSeconds, opts.Timeout)
+	if err != nil {
+		return nil, err
+	}
 	keepOpen := opts.KeepStdinOpen == nil || *opts.KeepStdinOpen
 	req := &godo.SandboxExecStartRequest{
 		Argv:           argv,
 		Workdir:        opts.Cwd,
 		EnvVars:        opts.EnvVars,
-		TimeoutSeconds: opts.TimeoutSeconds,
+		TimeoutSeconds: timeout,
 		KeepStdinOpen:  keepOpen,
 		Stdin:          opts.Stdin,
 	}
@@ -355,6 +409,7 @@ func (s *ExecSession) Wait(ctx context.Context, opts *AttachOptions) (*ExecResul
 				}
 			}
 			return &ExecResult{
+				OK:         ev.ExitCode == 0,
 				ExitCode:   ev.ExitCode,
 				Stdout:     stdout.String(),
 				Stderr:     stderr.String(),

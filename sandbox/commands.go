@@ -60,7 +60,9 @@ type AttachOptions struct {
 // Result is the outcome of a command that exited. A non-zero ExitCode is not an
 // error.
 type Result struct {
-	PID      int64
+	PID int64
+	// OK is true when ExitCode is 0.
+	OK       bool
 	ExitCode int32
 	Stdout   string
 	Stderr   string
@@ -254,6 +256,7 @@ func (c *Command) Wait(ctx context.Context, opts *AttachOptions) (*Result, error
 			stderr.WriteString(errDec.flush())
 			return &Result{
 				PID:      c.PID,
+				OK:       ev.ExitCode == 0,
 				ExitCode: ev.ExitCode,
 				Stdout:   stdout.String(),
 				Stderr:   stderr.String(),

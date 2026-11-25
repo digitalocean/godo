@@ -16,7 +16,12 @@
 //	data, err := sb.Files.Read(ctx, "/workspace/hello.txt")
 //
 //	res, err := sb.Exec.RunShell(ctx, "cat /workspace/hello.txt", nil)
-//	fmt.Print(res.Stdout, res.ExitCode)
+//	fmt.Print(res.Stdout, res.ExitCode, res.OK)
+//
+// A non-zero exit is not an error unless ExecOptions.Check is set: then Run and
+// RunShell return the result and a *CommandError. ExecOptions.Timeout sets the
+// timeout as a time.Duration. Go keeps sb.Exec.Run because Go cannot call a
+// struct field.
 //
 // Every call goes through godo's Sandboxes service, so auth, retries and
 // User-Agent match the rest of godo. Use that service

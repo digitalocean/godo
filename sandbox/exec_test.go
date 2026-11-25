@@ -2,11 +2,13 @@ package sandbox_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/digitalocean/godo/sandbox"
 )
@@ -254,5 +256,85 @@ func TestExecPlainStartHasNoIDAndRejectsStdin(t *testing.T) {
 	res, err := s.Wait(ctx, nil)
 	if err != nil || res.ExitCode != 1 || res.Stdout != "x" {
 		t.Errorf("Wait = %+v, %v", res, err)
+	}
+}
+
+func TestExecOKAndCheck(t *testing.T) {
+	a, sb := sandboxWithCommands(t)
+	ctx := context.Background()
+
+	a.handlers[execPath] = reply(200, stdout([]byte("fine\n"))+execExit(0, "1"))
+	res, err := sb.Exec.RunShell(ctx, "true", &sandbox.ExecOptions{Check: true})
+	if err != nil || !res.OK {
+		t.Errorf("zero exit with Check: res=%+v err=%v", res, err)
+	}
+
+	a.handlers[execPath] = reply(200, stderr([]byte("bad\n"))+execExit(4, "1"))
+	res, err = sb.Exec.RunShell(ctx, "exit 4", nil)
+	if err != nil || res.OK || res.ExitCode != 4 {
+		t.Errorf("non-zero without Check: res=%+v err=%v", res, err)
+	}
+
+	res, err = sb.Exec.RunShell(ctx, "exit 4", &sandbox.ExecOptions{Check: true})
+	var ce *sandbox.CommandError
+	if !errors.As(err, &ce) {
+		t.Fatalf("err = %v, want *CommandError", err)
+	}
+	if ce.Result == nil || ce.Result != res || res.ExitCode != 4 || res.OK || res.Stderr != "bad\n" {
+		t.Errorf("result = %+v, error result = %+v", res, ce.Result)
+	}
+	if err.Error() != "sandbox: command exited with code 4" {
+		t.Errorf("message = %q", err.Error())
+	}
+}
+
+func TestExecTimeout(t *testing.T) {
+	a, sb := sandboxWithCommands(t)
+	ctx := context.Background()
+	a.handlers[execPath] = reply(200, execExit(0, "1"))
+
+	for d, want := range map[time.Duration]string{90 * time.Second: "90", 1500 * time.Millisecond: "2", time.Millisecond: "1"} {
+		if _, err := sb.Exec.Run(ctx, []string{"ls"}, &sandbox.ExecOptions{Timeout: d}); err != nil {
+			t.Fatal(err)
+		}
+		if got := a.bodies[len(a.bodies)-1]["timeout_seconds"]; got != want {
+			t.Errorf("Timeout %v: timeout_seconds = %v, want %s", d, got, want)
+		}
+	}
+
+	s, err := sb.Exec.Start(ctx, []string{"ls"}, &sandbox.ExecStartOptions{Timeout: 1500 * time.Millisecond, KeepStdinOpen: new(bool)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s.Close()
+	if got := a.bodies[len(a.bodies)-1]["timeout_seconds"]; got != "2" {
+		t.Errorf("Start: timeout_seconds = %v", got)
+	}
+
+	before := len(a.calls)
+	for name, f := range map[string]func() error{
+		"negative": func() error {
+			_, err := sb.Exec.Run(ctx, []string{"ls"}, &sandbox.ExecOptions{Timeout: -time.Second})
+			return err
+		},
+		"both": func() error {
+			_, err := sb.Exec.Run(ctx, []string{"ls"}, &sandbox.ExecOptions{Timeout: time.Second, TimeoutSeconds: 5})
+			return err
+		},
+		"negative start": func() error {
+			_, err := sb.Exec.Start(ctx, []string{"ls"}, &sandbox.ExecStartOptions{Timeout: -time.Second})
+			return err
+		},
+		"both start": func() error {
+			_, err := sb.Exec.Start(ctx, []string{"ls"}, &sandbox.ExecStartOptions{Timeout: time.Second, TimeoutSeconds: 5})
+			return err
+		},
+	} {
+		if f() == nil {
+			t.Errorf("%s: no error", name)
+		}
+	}
+	if len(a.calls) != before {
+		t.Errorf("validation sent requests: %v", a.calls[before:])
 	}
 }

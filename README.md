@@ -316,7 +316,9 @@ err = term.Resize(ctx, 40, 120) // 1 to 1000
 res, err = term.Wait(ctx, &sandbox.AttachOptions{OnStdout: func(text string) { fmt.Print(text) }})
 ```
 
-A failing executable is not an error: it is an `ExecResult` with its exit code (127 for a missing one). A stream that ends before the process exits is an error. The `ctx` passed to `Start` governs the stream for the whole session. Templates built before interactive exec reject `PTY` and kept-open stdin with a 400 (`sandbox.IsInvalidRequest`). The raw calls are `client.Sandboxes.StartExec`, `WriteExecStdin` and `ResizeExec`.
+Set `Check: true` to get a `*sandbox.CommandError` (use `errors.As`) when the process exits non-zero: `Run` and `RunShell` still return the result, and `CommandError.Result` holds it too. `ExecOptions.Timeout` and `ExecStartOptions.Timeout` take a `time.Duration`, rounded up to whole seconds, as an alternative to `TimeoutSeconds` (set only one). `ExecResult.OK` is true when the exit code is 0. Go keeps `sb.Exec.Run` rather than a callable `sb.Exec(...)` because Go cannot call a struct field.
+
+A failing executable is not an error without `Check`: it is an `ExecResult` with its exit code (127 for a missing one). A stream that ends before the process exits is an error. The `ctx` passed to `Start` governs the stream for the whole session. Templates built before interactive exec reject `PTY` and kept-open stdin with a 400 (`sandbox.IsInvalidRequest`). The raw calls are `client.Sandboxes.StartExec`, `WriteExecStdin` and `ResizeExec`.
 
 The raw calls are `client.Sandboxes.StartCommand`, `ListCommands`, `StreamCommand`, `SignalCommand` and `WriteCommandStdin`. Output can only be read while a command runs: a command that exits before the stream attaches fails with a 404 (`sandbox.IsNotFound`).
 
