@@ -812,6 +812,7 @@ func TestHostedAgents_GetSession_Mutability(t *testing.T) {
 		{"egress", func(m *HostedAgentSessionMutability) { m.Egress = true }},
 		{"system_prompt", func(m *HostedAgentSessionMutability) { m.SystemPrompt = true }},
 		{"custom_tools", func(m *HostedAgentSessionMutability) { m.CustomTools = true }},
+		{"skills", func(m *HostedAgentSessionMutability) { m.Skills = true }},
 	}
 	for _, f := range fields {
 		t.Run(f.key, func(t *testing.T) {
@@ -836,9 +837,9 @@ func TestHostedAgents_GetSession_Mutability(t *testing.T) {
 		setup()
 		defer teardown()
 
-		const allTrue = `{"model":true,"env":true,"secrets":true,"tools":true,"permissions":true,"egress":true,"system_prompt":true,"custom_tools":true}`
+		const allTrue = `{"model":true,"env":true,"secrets":true,"tools":true,"permissions":true,"egress":true,"system_prompt":true,"custom_tools":true,"skills":true}`
 		mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprint(w, `{"session":{"session_id":"sess-abc123","mutability":{"model":true,"env":true,"secrets":true,"tools":true,"permissions":true,"egress":true,"system_prompt":true,"custom_tools":true,"a_future_key":true}}}`)
+			fmt.Fprint(w, `{"session":{"session_id":"sess-abc123","mutability":{"model":true,"env":true,"secrets":true,"tools":true,"permissions":true,"egress":true,"system_prompt":true,"custom_tools":true,"skills":true,"a_future_key":true}}}`)
 		})
 
 		got, _, err := client.HostedAgents.GetSession(ctx, "sess-abc123")
@@ -846,7 +847,7 @@ func TestHostedAgents_GetSession_Mutability(t *testing.T) {
 		require.NotNil(t, got.Mutability)
 		assert.Equal(t, HostedAgentSessionMutability{
 			Model: true, Env: true, Secrets: true, Tools: true, Permissions: true, Egress: true,
-			SystemPrompt: true, CustomTools: true,
+			SystemPrompt: true, CustomTools: true, Skills: true,
 		}, *got.Mutability)
 
 		// The keys are always encoded under the same names, so a false is explicit.
@@ -855,7 +856,7 @@ func TestHostedAgents_GetSession_Mutability(t *testing.T) {
 		assert.JSONEq(t, allTrue, string(raw))
 		raw, err = json.Marshal(&HostedAgentSessionMutability{})
 		require.NoError(t, err)
-		assert.JSONEq(t, `{"model":false,"env":false,"secrets":false,"tools":false,"permissions":false,"egress":false,"system_prompt":false,"custom_tools":false}`, string(raw))
+		assert.JSONEq(t, `{"model":false,"env":false,"secrets":false,"tools":false,"permissions":false,"egress":false,"system_prompt":false,"custom_tools":false,"skills":false}`, string(raw))
 	})
 }
 
@@ -2516,6 +2517,68 @@ func TestHostedAgents_UpdateSessionConfig_PermissionsRefused(t *testing.T) {
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 	assert.Contains(t, err.Error(), `permissions can't change live on hermes for: bash rule "rm -rf *"`)
 	assert.Contains(t, err.Error(), "(update_unsupported)")
+}
+
+func TestHostedAgents_UpdateSessionConfig_Skills(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const manifest = "skills:\n  - name: release-checklist\n    description: Use when preparing a release.\n    instructions: |\n      1. Bump the version.\n      2. Tag the release.\n    allowed_tools: [bash]\n"
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		var body map[string]string
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, map[string]string{"manifest_yaml": manifest}, body)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{"session":{"session_id":"sess-cfg","status":"SESSION_STATUS_UPDATING","update":{"update_id":"upd-3","state":"APPLYING","sections":["skills"],"changes":{"skills":{"added":["release-checklist"],"removed":["code-review"],"changed":["triage"]}}}},"outcome":"ACCEPTED"}`)
+	})
+
+	got, _, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: manifest})
+	require.NoError(t, err)
+	assert.Equal(t, HostedAgentSessionConfigUpdateOutcomeAccepted, got.Outcome)
+	assert.Equal(t, []string{"skills"}, got.Session.Update.Sections)
+	skills := got.Session.Update.Changes.Skills
+	require.NotNil(t, skills)
+	assert.Equal(t, []string{"release-checklist"}, skills.Added)
+	assert.Equal(t, []string{"code-review"}, skills.Removed)
+	assert.Equal(t, []string{"triage"}, skills.Changed)
+}
+
+func TestHostedAgents_UpdateSessionConfig_SkillsRefused(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const msg = "skills cannot be updated on a running hermes session (update_unsupported); create a new session to change skills"
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		fmt.Fprintf(w, `{"id":"conflict","message":"%s"}`, msg)
+	})
+
+	_, resp, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: "skills: []\n"})
+	require.Error(t, err)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+	assert.Contains(t, err.Error(), msg)
+}
+
+// An agent that refuses the new skills ends the update FAILED with
+// update_failed, reverted, and the session keeps its previous skills.
+func TestHostedAgentSession_DecodesSkillsUpdateFailure(t *testing.T) {
+	var s HostedAgentSession
+	require.NoError(t, json.Unmarshal([]byte(`{
+		"session_id":"s","status":"SESSION_STATUS_READY",
+		"config_drifted":true,
+		"config_diff":{"skills":{"added":["triage"]}},
+		"update":{"update_id":"u","state":"FAILED","error":"update_failed","reverted":true,"sections":["skills"],"changes":{"skills":{"added":["release-checklist"]}},"detail":"the agent could not take the new skills"}
+	}`), &s))
+	assert.Equal(t, []string{"triage"}, s.ConfigDiff.Skills.Added)
+	assert.Equal(t, HostedAgentSessionConfigUpdateStateFailed, s.Update.State)
+	assert.Equal(t, HostedAgentSessionConfigUpdateErrorUpdateFailed, s.Update.Error)
+	assert.True(t, s.Update.Reverted)
+	assert.Equal(t, []string{"release-checklist"}, s.Update.Changes.Skills.Added)
 }
 
 func TestHostedAgents_UpdateSessionConfig_Unchanged(t *testing.T) {

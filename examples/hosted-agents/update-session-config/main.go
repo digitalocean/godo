@@ -21,6 +21,11 @@ import (
 // secret created with actor; keep any other secret as {}):
 //
 //	HOSTED_AGENT_MANIFEST_YAML=$'secrets:\n  GITHUB_TOKEN:\n    source: oauth\n    provider: github\n    actor: github2\n' go run .
+//
+// A skills section replaces the session's whole skill list (claude-code,
+// codex and opencode), so list every skill to keep; skills: [] removes them:
+//
+//	HOSTED_AGENT_MANIFEST_YAML=$'skills:\n  - name: release-checklist\n    description: Use when preparing a release.\n    instructions: Bump the version, then tag it.\n' go run .
 func main() {
 	sessionID := os.Getenv("HOSTED_AGENT_SESSION_ID")
 	manifest := os.Getenv("HOSTED_AGENT_MANIFEST_YAML")
@@ -60,6 +65,9 @@ func main() {
 					if r := c.Permissions.Rules; r != nil {
 						fmt.Printf("permissions rules: added=%v removed=%v changed=%v\n", r.Added, r.Removed, r.Changed)
 					}
+				}
+				if c := s.Update.Changes; c != nil && c.Skills != nil {
+					fmt.Printf("skills: added=%v removed=%v changed=%v\n", c.Skills.Added, c.Skills.Removed, c.Skills.Changed)
 				}
 			}
 			return
