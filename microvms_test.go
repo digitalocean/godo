@@ -182,17 +182,21 @@ func TestMicroVMs_ListFiltered(t *testing.T) {
 		if got, want := q.Get("tag_name"), "prod"; got != want {
 			t.Errorf("tag_name query = %q, expected %q", got, want)
 		}
-		if got, want := q.Get("source_checkpoint_id"), "cp-1"; got != want {
-			t.Errorf("source_checkpoint_id query = %q, expected %q", got, want)
+		if got, want := q.Get("fork_id"), "fork-1"; got != want {
+			t.Errorf("fork_id query = %q, expected %q", got, want)
+		}
+		if got, want := q.Get("forked_from"), "aaa-111"; got != want {
+			t.Errorf("forked_from query = %q, expected %q", got, want)
 		}
 		fmt.Fprint(w, `{"microvms": [{"id": "aaa-111"}]}`)
 	})
 
 	microVMs, _, err := client.MicroVMs.ListFiltered(ctx, &ListMicroVMsOptions{
-		Region:             "nyc1",
-		Name:               "agent-sandbox-1",
-		TagName:            "prod",
-		SourceCheckpointID: "cp-1",
+		Region:     "nyc1",
+		Name:       "agent-sandbox-1",
+		TagName:    "prod",
+		ForkID:     "fork-1",
+		ForkedFrom: "aaa-111",
 	})
 	if err != nil {
 		t.Fatalf("MicroVMs.ListFiltered returned error: %v", err)
@@ -457,9 +461,10 @@ func TestMicroVMs_Fork(t *testing.T) {
 				w.WriteHeader(http.StatusCreated)
 				fmt.Fprint(w, `{
 					"microvms": [
-						{"id": "bbb-1", "name": "eval-worker-1", "state": "creating", "source": {"checkpoint_id": "cp-1"}},
-						{"id": "bbb-2", "name": "eval-worker-2", "state": "creating", "source": {"checkpoint_id": "cp-1"}}
+						{"id": "bbb-1", "name": "eval-worker-1", "state": "creating", "source": {"checkpoint_id": "cp-1"}, "fork_id": "fork-1", "forked_from": "aaa-111"},
+						{"id": "bbb-2", "name": "eval-worker-2", "state": "creating", "source": {"checkpoint_id": "cp-1"}, "fork_id": "fork-1", "forked_from": "aaa-111"}
 					],
+					"fork_id": "fork-1",
 					"checkpoint_id": "cp-1"
 				}`)
 			})
@@ -471,9 +476,10 @@ func TestMicroVMs_Fork(t *testing.T) {
 
 			want := &MicroVMFork{
 				MicroVMs: []MicroVM{
-					{ID: "bbb-1", Name: "eval-worker-1", State: MicroVMStateCreating, Source: &MicroVMSource{CheckpointID: "cp-1"}},
-					{ID: "bbb-2", Name: "eval-worker-2", State: MicroVMStateCreating, Source: &MicroVMSource{CheckpointID: "cp-1"}},
+					{ID: "bbb-1", Name: "eval-worker-1", State: MicroVMStateCreating, Source: &MicroVMSource{CheckpointID: "cp-1"}, ForkID: "fork-1", ForkedFrom: "aaa-111"},
+					{ID: "bbb-2", Name: "eval-worker-2", State: MicroVMStateCreating, Source: &MicroVMSource{CheckpointID: "cp-1"}, ForkID: "fork-1", ForkedFrom: "aaa-111"},
 				},
+				ForkID:       "fork-1",
 				CheckpointID: "cp-1",
 			}
 			if !reflect.DeepEqual(fork, want) {

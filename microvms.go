@@ -220,6 +220,11 @@ type MicroVM struct {
 	// EgressPolicy is the outbound allow list set at create, as supplied.
 	// Nil when the MicroVM has no policy and egress is unrestricted.
 	EgressPolicy *MicroVMEgressPolicy `json:"egress_policy,omitempty"`
+	// ForkID identifies the fork that created this MicroVM, and ForkedFrom
+	// is the MicroVM it was forked from. Both are empty unless a fork
+	// created the MicroVM.
+	ForkID     string `json:"fork_id,omitempty"`
+	ForkedFrom string `json:"forked_from,omitempty"`
 }
 
 // MicroVMEgressAction is what happens to a destination no egress rule matches.
@@ -326,11 +331,14 @@ type MicroVMForkRequest struct {
 	Tags []string `json:"tags,omitempty"`
 }
 
-// MicroVMFork is an accepted fork: the copies, in creating, and the
-// checkpoint they start from.
+// MicroVMFork is an accepted fork: the copies, in creating, the id of the
+// fork, and the checkpoint the copies start from.
 type MicroVMFork struct {
-	MicroVMs     []MicroVM `json:"microvms"`
-	CheckpointID string    `json:"checkpoint_id"`
+	MicroVMs []MicroVM `json:"microvms"`
+	// ForkID identifies this fork. Every copy carries it, and
+	// ListMicroVMsOptions.ForkID lists them. Treat it as opaque.
+	ForkID       string `json:"fork_id"`
+	CheckpointID string `json:"checkpoint_id"`
 }
 
 // MicroVMCheckpointCreateRequest represents a request to create a checkpoint.
@@ -578,9 +586,10 @@ type ListMicroVMsOptions struct {
 	Region  string `url:"region,omitempty"`
 	Name    string `url:"name,omitempty"`
 	TagName string `url:"tag_name,omitempty"`
-	// SourceCheckpointID lists the MicroVMs restored from a checkpoint,
-	// including the copies made by a fork.
-	SourceCheckpointID string `url:"source_checkpoint_id,omitempty"`
+	// ForkID lists the copies one fork created. ForkedFrom lists the
+	// MicroVMs forked from a MicroVM, across all of its forks.
+	ForkID     string `url:"fork_id,omitempty"`
+	ForkedFrom string `url:"forked_from,omitempty"`
 }
 
 // List lists all MicroVMs, with optional pagination.
@@ -630,7 +639,7 @@ func (s *MicroVMsServiceOp) ListByTag(ctx context.Context, tag string, opt *List
 }
 
 // ListFiltered lists MicroVMs using any combination of region, name, tag,
-// and source checkpoint.
+// fork, and fork source.
 func (s *MicroVMsServiceOp) ListFiltered(ctx context.Context, opt *ListMicroVMsOptions) ([]MicroVM, *Response, error) {
 	path := microVMBasePath
 	path, err := addOptions(path, opt)
@@ -730,6 +739,9 @@ func (s *MicroVMsServiceOp) Update(ctx context.Context, id string, updateRequest
 // with the copies in creating and the checkpoint they start from; poll each
 // copy with Get until it is running or failed. Copies settle independently.
 // A nil forkRequest makes one copy.
+//
+// Fork is not idempotent: calling it again forks again. If a call's outcome
+// is unknown, list with ListMicroVMsOptions.ForkedFrom before retrying.
 func (s *MicroVMsServiceOp) Fork(ctx context.Context, id string, forkRequest *MicroVMForkRequest) (*MicroVMFork, *Response, error) {
 	if id == "" {
 		return nil, nil, NewArgError("id", "cannot be empty")
