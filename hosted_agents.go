@@ -1454,7 +1454,10 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // change. permissions.filesystem and
 // permissions.network never change live: leave them out to keep the
 // session's, and setting them to something else is a 409. Only what differs
-// from the current policy is checked. If any of it can't apply, the whole
+// from the current policy is checked, and a removed rule counts: a rule of a
+// type the agent can't change must be kept in every permissions section you
+// send, so "permissions: {}" is a 409 while the policy has one (a file.read
+// rule on codex, a bash rule on hermes). If any of it can't apply, the whole
 // PATCH is a 409 and nothing is applied, tools, env and secrets included; the
 // error message names the changes to drop. A session created before live
 // permission updates were released also gets a 409: create a new session.
