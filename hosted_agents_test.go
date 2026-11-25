@@ -795,6 +795,83 @@ func TestHostedAgents_GetSession(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+// Every key is decoded and encoded under its own JSON name. Each case sends
+// one key set to true and expects only that field true, so a mistyped tag (the
+// key decodes to false) or a tag that points at another field (a different
+// field turns on) fails its case.
+func TestHostedAgents_GetSession_Mutability(t *testing.T) {
+	fields := []struct {
+		key string
+		set func(*HostedAgentSessionMutability)
+	}{
+		{"model", func(m *HostedAgentSessionMutability) { m.Model = true }},
+		{"env", func(m *HostedAgentSessionMutability) { m.Env = true }},
+		{"secrets", func(m *HostedAgentSessionMutability) { m.Secrets = true }},
+		{"tools", func(m *HostedAgentSessionMutability) { m.Tools = true }},
+		{"permissions", func(m *HostedAgentSessionMutability) { m.Permissions = true }},
+		{"egress", func(m *HostedAgentSessionMutability) { m.Egress = true }},
+		{"system_prompt", func(m *HostedAgentSessionMutability) { m.SystemPrompt = true }},
+		{"custom_tools", func(m *HostedAgentSessionMutability) { m.CustomTools = true }},
+	}
+	for _, f := range fields {
+		t.Run(f.key, func(t *testing.T) {
+			setup()
+			defer teardown()
+
+			mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+				testMethod(t, r, http.MethodGet)
+				fmt.Fprintf(w, `{"session":{"session_id":"sess-abc123","mutability":{%q:true}}}`, f.key)
+			})
+
+			got, _, err := client.HostedAgents.GetSession(ctx, "sess-abc123")
+			require.NoError(t, err)
+			require.NotNil(t, got.Mutability)
+			var want HostedAgentSessionMutability
+			f.set(&want)
+			assert.Equal(t, want, *got.Mutability, "only %q is true", f.key)
+		})
+	}
+
+	t.Run("all true, unknown key ignored, round trip", func(t *testing.T) {
+		setup()
+		defer teardown()
+
+		const allTrue = `{"model":true,"env":true,"secrets":true,"tools":true,"permissions":true,"egress":true,"system_prompt":true,"custom_tools":true}`
+		mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprint(w, `{"session":{"session_id":"sess-abc123","mutability":{"model":true,"env":true,"secrets":true,"tools":true,"permissions":true,"egress":true,"system_prompt":true,"custom_tools":true,"a_future_key":true}}}`)
+		})
+
+		got, _, err := client.HostedAgents.GetSession(ctx, "sess-abc123")
+		require.NoError(t, err)
+		require.NotNil(t, got.Mutability)
+		assert.Equal(t, HostedAgentSessionMutability{
+			Model: true, Env: true, Secrets: true, Tools: true, Permissions: true, Egress: true,
+			SystemPrompt: true, CustomTools: true,
+		}, *got.Mutability)
+
+		// The keys are always encoded under the same names, so a false is explicit.
+		raw, err := json.Marshal(got.Mutability)
+		require.NoError(t, err)
+		assert.JSONEq(t, allTrue, string(raw))
+		raw, err = json.Marshal(&HostedAgentSessionMutability{})
+		require.NoError(t, err)
+		assert.JSONEq(t, `{"model":false,"env":false,"secrets":false,"tools":false,"permissions":false,"egress":false,"system_prompt":false,"custom_tools":false}`, string(raw))
+	})
+}
+
+func TestHostedAgents_GetSession_MutabilityAbsent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"session":{"session_id":"sess-abc123"}}`)
+	})
+
+	got, _, err := client.HostedAgents.GetSession(ctx, "sess-abc123")
+	require.NoError(t, err)
+	assert.Nil(t, got.Mutability, "an older server omits it")
+}
+
 func TestHostedAgents_DestroySession(t *testing.T) {
 	setup()
 	defer teardown()
@@ -2392,6 +2469,53 @@ func TestHostedAgents_UpdateSessionConfig(t *testing.T) {
 	assert.Equal(t, HostedAgentSessionConfigUpdateStateApplying, got.Session.Update.State)
 	assert.Equal(t, HostedAgentSessionConfigUpdateKindUpdate, got.Session.Update.Kind)
 	assert.Equal(t, []string{"do.actions"}, got.Session.Update.Changes.Tools.Added)
+}
+
+func TestHostedAgents_UpdateSessionConfig_Permissions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const manifest = "permissions:\n  default: ask\n  rules:\n    - tool: bash\n      match:\n        command: \"rm -rf *\"\n      action: deny\n    - tool: do.actions/exa_web_search\n      action: allow\n"
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		var body map[string]string
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, map[string]string{"manifest_yaml": manifest}, body)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{"session":{"session_id":"sess-cfg","status":"SESSION_STATUS_UPDATING","update":{"update_id":"upd-2","state":"APPLYING","sections":["permissions"],"changes":{"permissions":{"default":"ask","rules":{"added":["bash \"rm -rf *\""],"changed":["do.actions/exa_web_search"]}}}}},"outcome":"ACCEPTED"}`)
+	})
+
+	got, _, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: manifest})
+	require.NoError(t, err)
+	assert.Equal(t, HostedAgentSessionConfigUpdateOutcomeAccepted, got.Outcome)
+	assert.Equal(t, []string{"permissions"}, got.Session.Update.Sections)
+	perms := got.Session.Update.Changes.Permissions
+	require.NotNil(t, perms)
+	require.NotNil(t, perms.Default)
+	assert.Equal(t, "ask", *perms.Default)
+	assert.Equal(t, []string{`bash "rm -rf *"`}, perms.Rules.Added)
+	assert.Equal(t, []string{"do.actions/exa_web_search"}, perms.Rules.Changed)
+}
+
+func TestHostedAgents_UpdateSessionConfig_PermissionsRefused(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const msg = `permissions can't change live on hermes for: bash rule \"rm -rf *\" (only do.actions allow/deny rules and an allow or deny default action can change on this agent). Remove these changes and send the update again (update_unsupported)`
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		fmt.Fprintf(w, `{"id":"conflict","message":"%s"}`, msg)
+	})
+
+	_, resp, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: "permissions:\n  rules:\n    - tool: bash\n      match: {command: \"rm -rf *\"}\n      action: deny\n"})
+	require.Error(t, err)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+	assert.Contains(t, err.Error(), `permissions can't change live on hermes for: bash rule "rm -rf *"`)
+	assert.Contains(t, err.Error(), "(update_unsupported)")
 }
 
 func TestHostedAgents_UpdateSessionConfig_Unchanged(t *testing.T) {
