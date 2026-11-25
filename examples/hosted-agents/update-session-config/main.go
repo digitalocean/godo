@@ -11,6 +11,11 @@ import (
 )
 
 // Usage: HOSTED_AGENT_SESSION_ID=... HOSTED_AGENT_MANIFEST_YAML=$'tools:\n  - ...' go run .
+//
+// A permissions section replaces the session's whole policy, so list every
+// rule to keep:
+//
+//	HOSTED_AGENT_MANIFEST_YAML=$'permissions:\n  default: ask\n  rules:\n    - tool: bash\n      match: {command: "rm -rf *"}\n      action: deny\n'
 func main() {
 	sessionID := os.Getenv("HOSTED_AGENT_SESSION_ID")
 	manifest := os.Getenv("HOSTED_AGENT_MANIFEST_YAML")
@@ -43,6 +48,14 @@ func main() {
 		if s.Status != godo.HostedAgentSessionStatusUpdating {
 			if s.Update != nil {
 				fmt.Printf("update %s: %s %s\n", s.Update.UpdateID, s.Update.State, s.Update.Detail)
+				if c := s.Update.Changes; c != nil && c.Permissions != nil {
+					if c.Permissions.Default != nil {
+						fmt.Printf("permissions default: %q\n", *c.Permissions.Default)
+					}
+					if r := c.Permissions.Rules; r != nil {
+						fmt.Printf("permissions rules: added=%v removed=%v changed=%v\n", r.Added, r.Removed, r.Changed)
+					}
+				}
 			}
 			return
 		}

@@ -2394,6 +2394,53 @@ func TestHostedAgents_UpdateSessionConfig(t *testing.T) {
 	assert.Equal(t, []string{"do.actions"}, got.Session.Update.Changes.Tools.Added)
 }
 
+func TestHostedAgents_UpdateSessionConfig_Permissions(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const manifest = "permissions:\n  default: ask\n  rules:\n    - tool: bash\n      match:\n        command: \"rm -rf *\"\n      action: deny\n    - tool: do.actions/exa_web_search\n      action: allow\n"
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodPatch)
+		var body map[string]string
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		assert.Equal(t, map[string]string{"manifest_yaml": manifest}, body)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		fmt.Fprint(w, `{"session":{"session_id":"sess-cfg","status":"SESSION_STATUS_UPDATING","update":{"update_id":"upd-2","state":"APPLYING","sections":["permissions"],"changes":{"permissions":{"default":"ask","rules":{"added":["bash \"rm -rf *\""],"changed":["do.actions/exa_web_search"]}}}}},"outcome":"ACCEPTED"}`)
+	})
+
+	got, _, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: manifest})
+	require.NoError(t, err)
+	assert.Equal(t, HostedAgentSessionConfigUpdateOutcomeAccepted, got.Outcome)
+	assert.Equal(t, []string{"permissions"}, got.Session.Update.Sections)
+	perms := got.Session.Update.Changes.Permissions
+	require.NotNil(t, perms)
+	require.NotNil(t, perms.Default)
+	assert.Equal(t, "ask", *perms.Default)
+	assert.Equal(t, []string{`bash "rm -rf *"`}, perms.Rules.Added)
+	assert.Equal(t, []string{"do.actions/exa_web_search"}, perms.Rules.Changed)
+}
+
+func TestHostedAgents_UpdateSessionConfig_PermissionsRefused(t *testing.T) {
+	setup()
+	defer teardown()
+
+	const msg = `permissions can't change live on hermes for: bash rule \"rm -rf *\" (only do.actions allow/deny rules and an allow or deny default action can change on this agent). Remove these changes and send the update again (update_unsupported)`
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-cfg", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
+		fmt.Fprintf(w, `{"id":"conflict","message":"%s"}`, msg)
+	})
+
+	_, resp, err := client.HostedAgents.UpdateSessionConfig(ctx, "sess-cfg", &HostedAgentSessionConfigUpdateRequest{ManifestYAML: "permissions:\n  rules:\n    - tool: bash\n      match: {command: \"rm -rf *\"}\n      action: deny\n"})
+	require.Error(t, err)
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+	assert.Contains(t, err.Error(), `permissions can't change live on hermes for: bash rule "rm -rf *"`)
+	assert.Contains(t, err.Error(), "(update_unsupported)")
+}
+
 func TestHostedAgents_UpdateSessionConfig_Unchanged(t *testing.T) {
 	setup()
 	defer teardown()
