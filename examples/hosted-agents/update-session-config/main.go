@@ -16,6 +16,11 @@ import (
 // rule to keep:
 //
 //	HOSTED_AGENT_MANIFEST_YAML=$'permissions:\n  default: ask\n  rules:\n    - tool: bash\n      match: {command: "rm -rf *"}\n      action: deny\n'
+//
+// To switch the session's GitHub OAuth secret to the connection github2 (a
+// secret created with actor; keep any other secret as {}):
+//
+//	HOSTED_AGENT_MANIFEST_YAML=$'secrets:\n  GITHUB_TOKEN:\n    source: oauth\n    provider: github\n    actor: github2\n' go run .
 func main() {
 	sessionID := os.Getenv("HOSTED_AGENT_SESSION_ID")
 	manifest := os.Getenv("HOSTED_AGENT_MANIFEST_YAML")
