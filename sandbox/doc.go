@@ -1,5 +1,6 @@
 // Package sandbox is the DigitalOcean Sandbox SDK: a small client over the
-// /v2/sandboxes API with defaults, waiting and paging.
+// /v2/sandboxes API with defaults, waiting and paging, commands and file
+// transfer.
 //
 //	c, err := sandbox.NewClient(nil) // reads DIGITALOCEAN_ACCESS_TOKEN
 //	if err != nil { ... }
@@ -10,6 +11,9 @@
 //
 //	_ = sb.Pause(ctx)
 //	_ = sb.Resume(ctx)
+//
+//	_, err = sb.Files.Write(ctx, "/workspace/hello.txt", []byte("hello\n"))
+//	data, err := sb.Files.Read(ctx, "/workspace/hello.txt")
 //
 // Every call goes through godo's Sandboxes service, so auth, retries and
 // User-Agent match the rest of godo. Use that service

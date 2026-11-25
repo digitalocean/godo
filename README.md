@@ -270,7 +270,26 @@ deleted, err := snap.Delete(ctx)               // false if it is already gone
 
 The raw calls are `client.Sandboxes.CreateSnapshot`, `GetSnapshot`, `ListSnapshots` and `DeleteSnapshot`. A snapshot captures the boot disk and memory, not the workspace data disk. The API does not yet have a way to start a sandbox from a snapshot.
 
-The raw calls are `client.Sandboxes.StartCommand`, `ListCommands`, `StreamCommand`, `SignalCommand` and `WriteCommandStdin`. Output can only be read while a command runs: a command that exits before the stream attaches fails with a 404 (`sandbox.IsNotFound`). File transfer is not available yet: it needs routes that are not in the API.
+Read and write files with `sb.Files`:
+
+```go
+info, err := sb.Files.Write(ctx, "/workspace/hello.txt", []byte("hello\n")) // sends the SHA-256; the sandbox checks it
+data, err := sb.Files.Read(ctx, "/workspace/hello.txt")                     // checked against the SHA-256 the sandbox sends
+
+info, err = sb.Files.WriteArchive(ctx, "/workspace/src", tarball) // extract a tar archive into a directory
+tarball, err = sb.Files.ReadArchive(ctx, "/workspace/src")       // a directory (or file) as a tar archive
+
+entries, err := sb.Files.List(ctx, "/workspace", &sandbox.ListFilesOptions{Depth: 2}) // Name, Type, Size, Mode, ModifiedTime, ...
+entry, err := sb.Files.GetInfo(ctx, "/workspace/hello.txt")  // sandbox.IsNotFound(err) when the path is missing
+ok, err := sb.Files.Exists(ctx, "/workspace/hello.txt")
+created, dir, err := sb.Files.MakeDir(ctx, "/workspace/out") // creates parents; created is false if it existed
+moved, err := sb.Files.Move(ctx, "/workspace/hello.txt", "/workspace/out/hello.txt")
+err = sb.Files.Remove(ctx, "/workspace/out")                 // recursive; a missing path succeeds
+```
+
+`FileEntry.Type` is `sandbox.FileTypeFile`, `FileTypeDirectory`, `FileTypeSymlink` or `FileTypeUnspecified`. A transfer moves up to 50 MiB (`godo.SandboxFileMaxBytes`); reading a directory needs `ReadArchive`. The raw calls are `client.Sandboxes.UploadFile`, `DownloadFile`, `ListFiles`, `GetFileInfo`, `FileExists`, `MakeDirectory`, `MoveFile` and `RemoveFile`. `DownloadFile` strips the integrity footer the API appends and fails when the SHA-256 does not match. When the sandbox answers `503` (too many concurrent transfers), `UploadFile` and `DownloadFile` retry up to 3 times (after 500ms, 1s and 2s, or the `Retry-After` delay); a client with `RetryConfig` set, such as one from `godo.NewFromToken` or `sandbox.NewClient`, leaves that retry to go-retryablehttp instead.
+
+The raw calls are `client.Sandboxes.StartCommand`, `ListCommands`, `StreamCommand`, `SignalCommand` and `WriteCommandStdin`. Output can only be read while a command runs: a command that exits before the stream attaches fails with a 404 (`sandbox.IsNotFound`).
 
 ## Examples
 

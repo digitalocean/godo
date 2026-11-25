@@ -18,11 +18,15 @@ type Sandbox struct {
 
 	// Commands starts, lists and streams the commands running in this sandbox.
 	Commands *Commands
+
+	// Files reads, writes and lists the files in this sandbox.
+	Files *Files
 }
 
 func newSandbox(c *Client, info godo.Sandbox) *Sandbox {
 	sb := &Sandbox{client: c, Info: info}
 	sb.Commands = &Commands{client: c, sandboxID: info.ID}
+	sb.Files = &Files{client: c, sandboxID: info.ID}
 	return sb
 }
 

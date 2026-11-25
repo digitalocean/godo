@@ -39,6 +39,15 @@ type SandboxesService interface {
 	GetSnapshot(context.Context, string) (*SandboxSnapshot, *Response, error)
 	ListSnapshots(context.Context, *SandboxSnapshotListOptions) (*SandboxSnapshotList, *Response, error)
 	DeleteSnapshot(context.Context, string) (*Response, error)
+
+	UploadFile(context.Context, string, *SandboxFileUploadRequest) (*SandboxFileUpload, *Response, error)
+	DownloadFile(context.Context, string, *SandboxFileDownloadRequest) ([]byte, *Response, error)
+	ListFiles(context.Context, string, string, int) ([]SandboxFileEntry, *Response, error)
+	GetFileInfo(context.Context, string, string) (*SandboxFileEntry, *Response, error)
+	FileExists(context.Context, string, string) (bool, *Response, error)
+	MakeDirectory(context.Context, string, string) (*SandboxDirectoryCreated, *Response, error)
+	MoveFile(context.Context, string, string, string) (*SandboxFileEntry, *Response, error)
+	RemoveFile(context.Context, string, string) (*Response, error)
 }
 
 // SandboxesServiceOp handles communication with the sandbox related methods of

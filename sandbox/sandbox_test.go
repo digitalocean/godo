@@ -1,9 +1,11 @@
 package sandbox_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -24,6 +26,7 @@ type api struct {
 	handlers map[string]http.HandlerFunc
 	calls    []string
 	bodies   []map[string]interface{}
+	raw      [][]byte
 	auth     string
 }
 
@@ -34,9 +37,12 @@ func newAPI(t *testing.T) (*api, *sandbox.Client) {
 		key := r.Method + " " + r.URL.Path
 		a.calls = append(a.calls, key)
 		a.auth = r.Header.Get("Authorization")
+		data, _ := io.ReadAll(r.Body)
+		a.raw = append(a.raw, data)
 		var body map[string]interface{}
-		_ = json.NewDecoder(r.Body).Decode(&body)
+		_ = json.Unmarshal(data, &body)
 		a.bodies = append(a.bodies, body)
+		r.Body = io.NopCloser(bytes.NewReader(data))
 		h, ok := a.handlers[key]
 		if !ok {
 			t.Errorf("unexpected request %s", key)
