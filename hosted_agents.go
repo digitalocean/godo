@@ -583,8 +583,8 @@ type HostedAgentSessionMutability struct {
 	// SystemPrompt: the standing instruction can be replaced.
 	SystemPrompt bool `json:"system_prompt"`
 	// CustomTools: a custom MCP server (name, url) in tools can be added,
-	// modified or removed. It also needs Tools. The agent restarts to take the
-	// change. False until the session's agent supports it, and for a session
+	// modified or removed. It also needs Tools. The agent restarts when the
+	// change alters its environment. False until the session's agent supports it, and for a session
 	// created before that.
 	CustomTools bool `json:"custom_tools"`
 }
@@ -1480,7 +1480,10 @@ func (s *HostedAgentsServiceOp) UpdateSession(ctx context.Context, sessionID str
 // changing egress.vpc_uuid or egress.subnet_uuid).
 //
 // A custom MCP server change where Mutability.CustomTools is true restarts the
-// agent: the update ends APPLIED_RESTARTED. A server with auth that is added,
+// agent when it alters the agent's environment (a server added, removed or
+// moved, or a changed credential): the update then ends APPLIED_RESTARTED. A
+// change that does not, such as editing the tools allowlist of an existing
+// server, ends APPLIED. A server with auth that is added,
 // moved to another url or given another secret slot must carry its credential
 // in the same patch: send the secret's value in secrets, or use a URL-bound
 // secret whose url covers the server's URL (host, path prefix and default port
