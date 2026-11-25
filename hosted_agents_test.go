@@ -795,6 +795,42 @@ func TestHostedAgents_GetSession(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
+func TestHostedAgents_GetSession_Mutability(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, http.MethodGet)
+		fmt.Fprint(w, `{"session":{"session_id":"sess-abc123","mutability":{"model":true,"env":true,"secrets":true,"tools":true,"permissions":true,"egress":true,"system_prompt":false,"custom_tools":false,"a_future_key":true}}}`)
+	})
+
+	got, _, err := client.HostedAgents.GetSession(ctx, "sess-abc123")
+	require.NoError(t, err)
+	require.NotNil(t, got.Mutability)
+	assert.Equal(t, HostedAgentSessionMutability{
+		Model: true, Env: true, Secrets: true, Tools: true, Permissions: true, Egress: true,
+	}, *got.Mutability)
+	assert.False(t, got.Mutability.CustomTools)
+
+	// Round trip: the keys are always encoded, so a false is explicit.
+	raw, err := json.Marshal(got.Mutability)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"model":true,"env":true,"secrets":true,"tools":true,"permissions":true,"egress":true,"system_prompt":false,"custom_tools":false}`, string(raw))
+}
+
+func TestHostedAgents_GetSession_MutabilityAbsent(t *testing.T) {
+	setup()
+	defer teardown()
+
+	mux.HandleFunc("/v2/harness-runtime/sessions/sess-abc123", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, `{"session":{"session_id":"sess-abc123"}}`)
+	})
+
+	got, _, err := client.HostedAgents.GetSession(ctx, "sess-abc123")
+	require.NoError(t, err)
+	assert.Nil(t, got.Mutability, "an older server omits it")
+}
+
 func TestHostedAgents_DestroySession(t *testing.T) {
 	setup()
 	defer teardown()
