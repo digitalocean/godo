@@ -21,12 +21,17 @@ type Sandbox struct {
 
 	// Files reads, writes and lists the files in this sandbox.
 	Files *Files
+
+	// Exec runs processes in this sandbox and streams their output, stdin and
+	// terminal.
+	Exec *Exec
 }
 
 func newSandbox(c *Client, info godo.Sandbox) *Sandbox {
 	sb := &Sandbox{client: c, Info: info}
 	sb.Commands = &Commands{client: c, sandboxID: info.ID}
 	sb.Files = &Files{client: c, sandboxID: info.ID}
+	sb.Exec = &Exec{client: c, sandboxID: info.ID}
 	return sb
 }
 

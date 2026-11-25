@@ -28,6 +28,10 @@ type SandboxesService interface {
 	SignalCommand(context.Context, string, int64, SandboxCommandSignal) (*Response, error)
 	WriteCommandStdin(context.Context, string, int64, *SandboxCommandStdinRequest) (*Response, error)
 
+	StartExec(context.Context, string, *SandboxExecStartRequest) (*SandboxExecStream, *Response, error)
+	WriteExecStdin(context.Context, string, string, *SandboxExecStdinRequest) (int64, *Response, error)
+	ResizeExec(context.Context, string, string, int64, int64) (*Response, error)
+
 	ListTemplates(context.Context, *SandboxTemplateListOptions) (*SandboxTemplateList, *Response, error)
 	CreateTemplate(context.Context, *SandboxTemplateCreateRequest) (*SandboxTemplate, *Response, error)
 	GetTemplate(context.Context, string) (*SandboxTemplate, *Response, error)

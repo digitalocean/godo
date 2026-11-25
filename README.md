@@ -289,6 +289,35 @@ err = sb.Files.Remove(ctx, "/workspace/out")                 // recursive; a mis
 
 `FileEntry.Type` is `sandbox.FileTypeFile`, `FileTypeDirectory`, `FileTypeSymlink` or `FileTypeUnspecified`. A transfer moves up to 50 MiB (`godo.SandboxFileMaxBytes`); reading a directory needs `ReadArchive`. The raw calls are `client.Sandboxes.UploadFile`, `DownloadFile`, `ListFiles`, `GetFileInfo`, `FileExists`, `MakeDirectory`, `MoveFile` and `RemoveFile`. `DownloadFile` strips the integrity footer the API appends and fails when the SHA-256 does not match. When the sandbox answers `503` (too many concurrent transfers), `UploadFile` and `DownloadFile` retry up to 3 times (after 500ms, 1s and 2s, or the `Retry-After` delay); a client with `RetryConfig` set, such as one from `godo.NewFromToken` or `sandbox.NewClient`, leaves that retry to go-retryablehttp instead.
 
+Run processes with `sb.Exec`. Its output streams on the request that starts the process, so prefer `sb.Exec.Run` over `sb.Commands.Run` for short commands: there is no attach race.
+
+```go
+// An executable and its arguments, or a shell string (bash -lc): wait for the result.
+res, err := sb.Exec.Run(ctx, []string{"ls", "-la"}, &sandbox.ExecOptions{Cwd: "/workspace"})
+res, err = sb.Exec.RunShell(ctx, `echo "Hello"; exit 3`, &sandbox.ExecOptions{
+    Stdin:    []byte("input"),                         // optional, sent with the start request
+    OnStdout: func(text string) { fmt.Print(text) }, // optional, as output arrives
+})
+fmt.Println(res.Stdout, res.ExitCode, res.DurationMS) // a non-zero exit code is returned, not an error
+
+// Interactive: stdin stays open by default, and ExecID is set once it starts.
+s, err := sb.Exec.Start(ctx, []string{"cat"}, nil)
+defer s.Close()                                   // disconnects; the process may keep running
+err = s.WriteStdin(ctx, []byte("hello\n"), false) // the session tracks the stdin offset
+err = s.CloseStdin(ctx)
+for ev, err := range s.Events(ctx) {              // started, stdout, stderr, exit
+    if err != nil { ... }
+    if ev.Type == sandbox.EventStdout { fmt.Print(ev.Text) }
+}
+
+// A terminal: an empty argv starts the guest's default shell.
+term, err := sb.Exec.Start(ctx, nil, &sandbox.ExecStartOptions{PTY: &sandbox.PTYOptions{Rows: 24, Cols: 80}})
+err = term.Resize(ctx, 40, 120) // 1 to 1000
+res, err = term.Wait(ctx, &sandbox.AttachOptions{OnStdout: func(text string) { fmt.Print(text) }})
+```
+
+A failing executable is not an error: it is an `ExecResult` with its exit code (127 for a missing one). A stream that ends before the process exits is an error. The `ctx` passed to `Start` governs the stream for the whole session. Templates built before interactive exec reject `PTY` and kept-open stdin with a 400 (`sandbox.IsInvalidRequest`). The raw calls are `client.Sandboxes.StartExec`, `WriteExecStdin` and `ResizeExec`.
+
 The raw calls are `client.Sandboxes.StartCommand`, `ListCommands`, `StreamCommand`, `SignalCommand` and `WriteCommandStdin`. Output can only be read while a command runs: a command that exits before the stream attaches fails with a 404 (`sandbox.IsNotFound`).
 
 ## Examples
