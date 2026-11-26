@@ -448,6 +448,18 @@ func New(httpClient *http.Client, opts ...ClientOpt) (*Client, error) {
 				return true, nil
 			}
 
+			// Do not retry sandbox streaming starts: a 504 on POST …/exec often
+			// means the process timed out (or the gateway gave up waiting for the
+			// first SSE event). Retrying re-runs the command and stretches the
+			// failure to ~1 minute with RetryMax=4.
+			if resp != nil && resp.Request != nil {
+				path := resp.Request.URL.Path
+				if resp.StatusCode == http.StatusGatewayTimeout ||
+					(resp.StatusCode >= 500 && (strings.Contains(path, "/exec") || strings.HasSuffix(path, "/stream"))) {
+					return false, nil
+				}
+			}
+
 			return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
 		}
 

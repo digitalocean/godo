@@ -131,7 +131,9 @@ func (c *Client) Connect(ctx context.Context, id string) (*Sandbox, error) {
 }
 
 // Kill deletes a sandbox by ID. It reports false, with no error, when the
-// sandbox does not exist.
+// sandbox does not exist (HTTP 404). When the public API returns success for an
+// already-deleted id, Kill reports true — callers that need "was it still
+// there?" should Get after Kill or rely on a NotFound delete response.
 func (c *Client) Kill(ctx context.Context, id string) (bool, error) {
 	if _, err := c.API.Sandboxes.Delete(ctx, id); err != nil {
 		if IsNotFound(err) {

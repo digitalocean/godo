@@ -769,6 +769,46 @@ func TestWithRetryAndBackoffs(t *testing.T) {
 	}
 }
 
+func TestWithRetryAndBackoffs_NoRetryOnSandboxExec504(t *testing.T) {
+	setup()
+	defer teardown()
+
+	var hits int32
+	url, _ := url.Parse(server.URL)
+	mux.HandleFunc("/v2/sandboxes/abc/exec", func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		w.WriteHeader(http.StatusGatewayTimeout)
+		w.Write([]byte(`{"id":"timeout","message":"deadline exceeded"}`))
+	})
+
+	tokenSrc := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: "tok"})
+	oauthClient := oauth2.NewClient(oauth2.NoContext, tokenSrc)
+	waitMin := PtrTo(0.01)
+	waitMax := PtrTo(0.02)
+	client, err := New(oauthClient, WithRetryAndBackoffs(RetryConfig{
+		RetryMax: 3, RetryWaitMin: waitMin, RetryWaitMax: waitMax,
+	}))
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	client.BaseURL = url
+
+	req, err := client.NewRequest(ctx, http.MethodPost, "/v2/sandboxes/abc/exec", nil)
+	if err != nil {
+		t.Fatalf("err: %v", err)
+	}
+	_, err = client.Do(context.Background(), req, nil)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if hits != 1 {
+		t.Fatalf("expected a single attempt for exec 504, got %d", hits)
+	}
+	if strings.Contains(err.Error(), "giving up after") {
+		t.Fatalf("expected no retry attempts header, got: %v", err)
+	}
+}
+
 func TestWithRetryAndBackoffsLogger(t *testing.T) {
 	// Mock server which always responds 500.
 	setup()
