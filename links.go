@@ -2,7 +2,10 @@ package godo
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 )
 
@@ -25,6 +28,23 @@ type LinkAction struct {
 	ID   int    `json:"id,omitempty"`
 	Rel  string `json:"rel,omitempty"`
 	HREF string `json:"href,omitempty"`
+}
+
+// UnmarshalJSON decodes a LinkAction. The API can return action IDs that do
+// not fit into int (the action counter has outgrown 32-bit ints); rather than
+// failing the whole decode, such an ID is left at zero and remains reachable
+// through HREF, which carries the full value.
+func (la *LinkAction) UnmarshalJSON(data []byte) error {
+	type plain LinkAction
+	aux := &struct {
+		*plain
+		ID json.Number `json:"id"`
+	}{plain: (*plain)(la)}
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+	la.ID = intFromNumber(aux.ID)
+	return nil
 }
 
 // CurrentPage is current page of the list
@@ -119,5 +139,37 @@ func pageTokenFromURL(urlText string) (string, error) {
 
 // Get a link action by id.
 func (la *LinkAction) Get(ctx context.Context, client *Client) (*Action, *Response, error) {
-	return client.Actions.Get(ctx, la.ID)
+	if la.ID > 0 || la.HREF == "" {
+		return client.Actions.Get(ctx, la.ID)
+	}
+	// The action ID did not fit into int; the full ID is still present in
+	// the HREF path.
+	actionPath, ok := linkActionPath(la.HREF)
+	if !ok {
+		return client.Actions.Get(ctx, la.ID)
+	}
+	req, err := client.NewRequest(ctx, http.MethodGet, actionPath, nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	root := new(actionRoot)
+	resp, err := client.Do(ctx, req, root)
+	if err != nil {
+		return nil, resp, err
+	}
+	return root.Event, resp, err
+}
+
+// linkActionPath returns the API path for the action a link's HREF points
+// to. It reports false when the HREF does not end in a numeric action ID.
+func linkActionPath(href string) (string, bool) {
+	u, err := url.Parse(href)
+	if err != nil {
+		return "", false
+	}
+	id := path.Base(u.Path)
+	if _, err := strconv.ParseUint(id, 10, 64); err != nil {
+		return "", false
+	}
+	return actionsBasePath + "/" + id, true
 }
