@@ -659,6 +659,36 @@ type DatabaseUpdateLogsinkRequest struct {
 	Config *DatabaseLogsinkConfig `json:"config"`
 }
 
+// MarshalJSON implements custom JSON marshaling for DatabaseUpdateLogsinkRequest
+// to ensure the TLS field is always included for rsyslog configurations, which
+// require it even when false. Elasticsearch and OpenSearch configurations
+// (identified by the absence of rsyslog fields) keep omitting it.
+func (r DatabaseUpdateLogsinkRequest) MarshalJSON() ([]byte, error) {
+	if r.Config != nil && (r.Config.Server != "" || r.Config.Port != 0 || r.Config.Format != "") {
+		type rsyslogConfig struct {
+			URL          string  `json:"url,omitempty"`
+			IndexPrefix  string  `json:"index_prefix,omitempty"`
+			IndexDaysMax int     `json:"index_days_max,omitempty"`
+			Timeout      float32 `json:"timeout,omitempty"`
+			Server       string  `json:"server,omitempty"`
+			Port         int     `json:"port,omitempty"`
+			TLS          bool    `json:"tls"` // Always include for rsyslog
+			Format       string  `json:"format,omitempty"`
+			Logline      string  `json:"logline,omitempty"`
+			SD           string  `json:"sd,omitempty"`
+			CA           string  `json:"ca,omitempty"`
+			Key          string  `json:"key,omitempty"`
+			Cert         string  `json:"cert,omitempty"`
+		}
+		return json.Marshal(struct {
+			Config *rsyslogConfig `json:"config"`
+		}{Config: (*rsyslogConfig)(r.Config)})
+	}
+
+	type alias DatabaseUpdateLogsinkRequest
+	return json.Marshal(alias(r))
+}
+
 // DatabaseLogsinkConfig represents one of the configurable options (rsyslog_logsink, elasticsearch_logsink, or opensearch_logsink) for a logsink.
 type DatabaseLogsinkConfig struct {
 	URL          string  `json:"url,omitempty"`
