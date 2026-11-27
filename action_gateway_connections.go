@@ -60,6 +60,9 @@ type ActionGatewayConnectionAuthorization struct {
 
 // ActionGatewayConnection describes a user's provider authorization.
 type ActionGatewayConnection struct {
+	// ProviderData contains optional provider account and workspace metadata returned by Get and List.
+	ProviderData json.RawMessage `json:"provider_data,omitempty"`
+
 	ID                   string                          `json:"id"`
 	Provider             string                          `json:"provider"`
 	ProviderDisplayName  string                          `json:"provider_display_name"`

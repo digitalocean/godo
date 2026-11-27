@@ -367,3 +367,46 @@ func TestActionGatewayToolsListVersionsDecodesChangelog(t *testing.T) {
 		t.Fatalf("response = %+v", got)
 	}
 }
+
+func TestActionGatewayConnectionProviderData(t *testing.T) {
+	for _, metadata := range []string{"", `{}`, `{"workspace":{"id":9007199254740993},"decimal":1.2300}`} {
+		t.Run(metadata, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				body := `{"connection":{"id":"fixture"`
+				if metadata != "" {
+					body += `,"provider_data":` + metadata
+				}
+				_, _ = io.WriteString(w, body+`}}`)
+			}))
+			defer server.Close()
+			client := NewClient(server.Client())
+			client.BaseURL, _ = url.Parse(server.URL)
+			response, _, err := client.ActionGateway.Connections.Get(context.Background(), "fixture")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(response.Connection.ProviderData) != metadata {
+				t.Fatalf("provider data = %s, want %s", response.Connection.ProviderData, metadata)
+			}
+		})
+	}
+}
+
+func TestActionGatewayConnectionListProviderData(t *testing.T) {
+	const metadata = `{"scope":"read","token_type":"Bearer","workspace":{"id":9007199254740993}}`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"connections":[{"id":"fixture","provider_data":`+metadata+`},{"id":"absent"}]}`)
+	}))
+	defer server.Close()
+	client := NewClient(server.Client())
+	client.BaseURL, _ = url.Parse(server.URL)
+	response, _, err := client.ActionGateway.Connections.List(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(response.Connections) != 2 || string(response.Connections[0].ProviderData) != metadata || response.Connections[1].ProviderData != nil {
+		t.Fatalf("unexpected connection metadata: %+v", response.Connections)
+	}
+}
