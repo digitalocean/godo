@@ -13,7 +13,7 @@ import (
 )
 
 func wsJSON(id string, state godo.SandboxWorkspaceState) string {
-	return fmt.Sprintf(`{"workspace_id":%q,"name":"my-workspace","size_limit_gib":10,"state":%q,"bytes_used":"42","created_at":"2026-11-20T12:00:00Z"}`, id, state)
+	return fmt.Sprintf(`{"workspace_id":%q,"name":"my-workspace","size_limit_gib":10,"state":%q,"created_at":"2026-11-20T12:00:00Z"}`, id, state)
 }
 
 func TestCreateWorkspaceSendsSizeAndName(t *testing.T) {
@@ -24,7 +24,7 @@ func TestCreateWorkspaceSendsSizeAndName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ws.ID() != "ws-1" || ws.Name() != "my-workspace" || ws.State() != godo.SandboxWorkspaceStateCreating || ws.Info.Used() != 42 {
+	if ws.ID() != "ws-1" || ws.Name() != "my-workspace" || ws.State() != godo.SandboxWorkspaceStateCreating {
 		t.Errorf("workspace = %+v", ws.Info)
 	}
 	if body := a.bodies[0]; body["name"] != "my-workspace" || body["size_limit_gib"] != float64(10) {

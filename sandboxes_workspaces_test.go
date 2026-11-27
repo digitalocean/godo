@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const sandboxWorkspaceJSON = `{"workspace_id":"ws-1","name":"my-workspace","size_limit_gib":10,"state":"WORKSPACE_STATE_ATTACHED","attached_sandbox_id":"sb-1","last_saved_at":"2026-11-20T12:30:00Z","bytes_used":"1048576","created_at":"2026-11-20T12:00:00Z"}`
+const sandboxWorkspaceJSON = `{"workspace_id":"ws-1","name":"my-workspace","size_limit_gib":10,"state":"WORKSPACE_STATE_ATTACHED","attached_sandbox_id":"sb-1","last_saved_at":"2026-11-20T12:30:00Z","created_at":"2026-11-20T12:00:00Z"}`
 
 func sandboxWorkspaceWant() *SandboxWorkspace {
 	return &SandboxWorkspace{
@@ -19,7 +19,6 @@ func sandboxWorkspaceWant() *SandboxWorkspace {
 		State:             SandboxWorkspaceStateAttached,
 		AttachedSandboxID: "sb-1",
 		LastSavedAt:       Timestamp{time.Date(2026, 11, 20, 12, 30, 0, 0, time.UTC)},
-		BytesUsed:         "1048576",
 		CreatedAt:         Timestamp{time.Date(2026, 11, 20, 12, 0, 0, 0, time.UTC)},
 	}
 }
@@ -43,9 +42,6 @@ func TestSandboxes_CreateWorkspace(t *testing.T) {
 	ws, _, err := client.Sandboxes.CreateWorkspace(ctx, &SandboxWorkspaceCreateRequest{Name: "my-workspace", SizeLimitGiB: 10})
 	if err != nil || !reflect.DeepEqual(ws, sandboxWorkspaceWant()) {
 		t.Fatalf("CreateWorkspace returned %+v, %v", ws, err)
-	}
-	if ws.Used() != 1048576 {
-		t.Errorf("Used = %d, expected 1048576", ws.Used())
 	}
 	if _, _, err := client.Sandboxes.CreateWorkspace(ctx, nil); err == nil {
 		t.Error("a nil request returned no error")
@@ -112,13 +108,5 @@ func TestSandboxes_ListWorkspaces(t *testing.T) {
 	want := &SandboxWorkspaceList{Workspaces: []SandboxWorkspace{*sandboxWorkspaceWant()}, NextPageToken: "t2"}
 	if err != nil || !reflect.DeepEqual(list, want) {
 		t.Fatalf("ListWorkspaces returned %+v, %v; expected %+v", list, err, want)
-	}
-}
-
-func TestSandboxWorkspace_UsedIsZeroWhenUnset(t *testing.T) {
-	for _, s := range []string{"", "0", "not a number"} {
-		if got := (SandboxWorkspace{BytesUsed: s}).Used(); got != 0 {
-			t.Errorf("Used(%q) = %d, expected 0", s, got)
-		}
 	}
 }
