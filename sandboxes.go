@@ -39,6 +39,12 @@ type SandboxesService interface {
 	DeleteTemplate(context.Context, string) (*Response, error)
 	ListTemplateBuilds(context.Context, string, *SandboxTemplateListOptions) (*SandboxTemplateBuildList, *Response, error)
 	GetTemplateBuild(context.Context, string, string) (*SandboxTemplateBuild, *Response, error)
+
+	ListWorkspaces(context.Context, *SandboxWorkspaceListOptions) (*SandboxWorkspaceList, *Response, error)
+	CreateWorkspace(context.Context, *SandboxWorkspaceCreateRequest) (*SandboxWorkspace, *Response, error)
+	GetWorkspace(context.Context, string) (*SandboxWorkspace, *Response, error)
+	DeleteWorkspace(context.Context, string) (*Response, error)
+
 	CreateSnapshot(context.Context, string, *SandboxSnapshotCreateRequest) (*SandboxSnapshot, *Response, error)
 	GetSnapshot(context.Context, string) (*SandboxSnapshot, *Response, error)
 	ListSnapshots(context.Context, *SandboxSnapshotListOptions) (*SandboxSnapshotList, *Response, error)
@@ -99,6 +105,8 @@ type SandboxCreateRequest struct {
 	AllowInternetAccess *bool `json:"allow_internet_access,omitempty"`
 	// EnvVars are environment variables for the sandbox. The values are secrets.
 	EnvVars map[string]string `json:"env_vars,omitempty"`
+	// WorkspaceID attaches an available persistent workspace to the sandbox.
+	WorkspaceID string `json:"workspace_id,omitempty"`
 }
 
 // SandboxListOptions specifies the optional parameters to List.

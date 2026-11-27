@@ -77,6 +77,8 @@ type CreateParams struct {
 	AllowInternetAccess *bool
 	// EnvVars are environment variables for the sandbox. The values are secrets.
 	EnvVars map[string]string
+	// WorkspaceID attaches an available persistent workspace to the sandbox.
+	WorkspaceID string
 }
 
 // Create creates a sandbox. It returns once the sandbox is running. A nil
@@ -100,6 +102,7 @@ func (c *Client) Create(ctx context.Context, params *CreateParams) (*Sandbox, er
 		SizeSlug:            size,
 		AllowInternetAccess: params.AllowInternetAccess,
 		EnvVars:             params.EnvVars,
+		WorkspaceID:         params.WorkspaceID,
 	})
 	if err != nil {
 		return nil, err
